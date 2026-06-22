@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,9 @@ import org.junit.jupiter.api.Test;
 class NoCjkTextTest {
     private static final Pattern CJK = Pattern.compile("[\\p{IsHan}\\p{InHiragana}\\p{InKatakana}\\p{InHangul_Syllables}]");
     private static final Set<String> SKIPPED_DIRS = Set.of(".git", ".idea", ".mvn", "target");
+    private static final Set<String> BINARY_EXTENSIONS = Set.of(
+            ".jar", ".class", ".zip", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".pdf", ".bin"
+    );
 
     @Test
     void projectFilesDoNotContainCjkText() throws IOException {
@@ -29,7 +33,7 @@ class NoCjkTextTest {
         }
 
         if (!violations.isEmpty()) {
-            fail(String.join(System.lineSeparator(), violations));
+            fail("CJK text is not allowed in pk-backend-app. Fix or remove:\n" + String.join(System.lineSeparator(), violations));
         }
     }
 
@@ -40,16 +44,29 @@ class NoCjkTextTest {
             }
         }
         String fileName = path.getFileName().toString();
-        return !fileName.endsWith(".class") && !fileName.endsWith(".jar");
+        int dot = fileName.lastIndexOf('.');
+        if (dot >= 0 && BINARY_EXTENSIONS.contains(fileName.substring(dot).toLowerCase())) {
+            return false;
+        }
+        return true;
     }
 
     private void inspect(Path path, Path root, List<String> violations) {
         try {
             String content = Files.readString(path, StandardCharsets.UTF_8);
-            if (CJK.matcher(content).find()) {
-                violations.add(root.relativize(path) + " contains disallowed CJK text");
+            String[] lines = content.split("\n", -1);
+            for (int i = 0; i < lines.length; i++) {
+                Matcher matcher = CJK.matcher(lines[i]);
+                if (matcher.find()) {
+                    String relative = root.relativize(path).toString();
+                    String snippet = lines[i].trim();
+                    if (snippet.length() > 120) {
+                        snippet = snippet.substring(0, 117) + "...";
+                    }
+                    violations.add(relative + ":" + (i + 1) + " -> " + snippet);
+                }
             }
-        } catch (IOException | RuntimeException ignored) {
+        } catch (IOException ignored) {
         }
     }
 }

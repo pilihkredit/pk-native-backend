@@ -1,4 +1,4 @@
-# pk-backend
+# pk-backend-app
 
 Modular monolith backend for the PK aggregation platform, aligned with [pk technical architecture](https://ek8l1y505u.feishu.cn/wiki/ClEowIu2OiFYyIknYhec9Hf8nJe).
 
@@ -63,10 +63,21 @@ Client APIs use `/api/pk/v1` (see interface documentation v0.4.x).
 
 Health check: `GET /api/pk/v1/platform/status`
 
-## Source rules
+## Source rules (mandatory)
 
-- Project source, config, logs, and docs use English only (no CJK in repo).
-- Run `./mvnw -pl pk-quality test` before opening a change.
+**English only — no Chinese or CJK anywhere in this repository.**
+
+Applies to source, comments, logs, config, SQL, docs, and future development. See [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
+
+Enforcement:
+
+```bash
+./mvnw clean verify          # includes NoCjkTextTest (build fails on CJK)
+./mvnw -pl pk-quality test   # gate only
+
+# Optional pre-commit hook:
+git config core.hooksPath .githooks
+```
 
 ## Stack
 

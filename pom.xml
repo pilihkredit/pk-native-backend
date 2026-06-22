@@ -4,11 +4,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.pk</groupId>
-    <artifactId>pk-backend</artifactId>
+    <artifactId>pk-backend-app</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>pk-backend</name>
+    <name>pk-backend-app</name>
     <description>PK aggregation platform backend (modular monolith)</description>
 
     <modules>
