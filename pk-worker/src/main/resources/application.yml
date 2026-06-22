@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: pk-worker
+  datasource:
+    url: ${PK_DB_URL:jdbc:mysql://localhost:3306/pk?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
+    username: ${PK_DB_USERNAME:pk}
+    password: ${PK_DB_PASSWORD:pk}
+  flyway:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+server:
+  port: ${PK_WORKER_PORT:8081}
+
+pk:
+  worker:
+    outbox:
+      enabled: false
+      poll-interval-ms: 5000
