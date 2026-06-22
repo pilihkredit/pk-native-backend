@@ -1,0 +1,29 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: pk-mysql-local
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: pk_root_local
+      MYSQL_DATABASE: pk
+      MYSQL_USER: pk
+      MYSQL_PASSWORD: pk
+      TZ: Asia/Jakarta
+    volumes:
+      - pk-mysql-data:/var/lib/mysql
+      - ./sql/create_pk_schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+07:00
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-upk", "-ppk"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  pk-mysql-data:

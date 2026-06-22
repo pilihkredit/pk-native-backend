@@ -11,7 +11,7 @@ This applies to all current and future work, including:
 - Java source, tests, and annotations
 - Comments and Javadoc
 - Log messages and exception messages exposed to operators
-- Configuration (`application.yml`, `.properties`, Flyway scripts)
+- Configuration (`application.yml`, `.properties`, SQL DDL scripts under `sql/`)
 - SQL DDL/DML and migration files
 - README, CONTRIBUTING, AGENTS, and other project docs
 - Git commit messages (recommended; enforced by pre-commit for CJK in staged files)

@@ -18,7 +18,7 @@ Other Maven modules are code boundaries only, not separate deployables.
 | `pk-app` | HTTP entry: validation, DTO assembly, fast persist + enqueue |
 | `pk-worker` | Async jobs by queue: `callback` > `submit` > `poll` > `reconcile` |
 | `pk-core` | Domain models, credit/loan state machines, ports, error codes |
-| `pk-infra` | MySQL, Flyway, Redis/queue/OSS integration (planned) |
+| `pk-infra` | MySQL, Redis/queue/OSS integration (planned) |
 | `pk-adapter-pendanaan` | Pendanaan OpenAPI mapping, OAuth, callback parsing |
 | `pk-quality` | Dependency and CJK text gates |
 
@@ -40,22 +40,60 @@ External write path: Controller -> ApplicationService -> business table + `outbo
 
 ## Database
 
-Reference DDL: `sql/create_pk_schema.sql`. Flyway is wired in `pk-infra` but disabled until migrations are added.
+Schema is managed **manually** (no Flyway). With Docker MySQL for local dev:
+
+```bash
+docker compose up -d mysql
+docker compose ps          # wait until healthy
+```
+
+Local credentials match `application-local.yml`: database `pk`, user `pk`, password `pk`, port `3306`.  
+On first start, `sql/create_pk_schema.sql` is applied automatically.
+
+Without Docker:
 
 ```bash
 mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS pk DEFAULT CHARSET utf8mb4"
 mysql -u root -p pk < sql/create_pk_schema.sql
 ```
 
+Add new tables or columns via reviewed SQL scripts under `sql/`; apply in test/prod through your release process.
+
 ## Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PK_DB_URL` | `jdbc:mysql://localhost:3306/pk` | MySQL JDBC URL |
-| `PK_DB_USERNAME` | `pk` | Database user |
-| `PK_DB_PASSWORD` | `pk` | Database password |
-| `PK_APP_PORT` | `8080` | `pk-app` HTTP port |
-| `PK_WORKER_PORT` | `8081` | `pk-worker` HTTP port |
+Active profile: `SPRING_PROFILES_ACTIVE` — `local` (default), `test`, or `prod`.
+
+| Profile | Use | Database | Notes |
+|---------|-----|----------|--------|
+| `local` | Developer machine | `localhost:3306/pk` (built-in defaults) | `com.pk` DEBUG logs; worker outbox **off** |
+| `test` | Staging / QA | **`PK_DB_URL` / `PK_DB_USERNAME` / `PK_DB_PASSWORD` required** | Worker outbox **on** |
+| `prod` | Production | Same env vars as test | Stricter logging; actuator exposes `health` only |
+
+```bash
+# Local (default)
+./mvnw -pl pk-app spring-boot:run
+
+# Test
+SPRING_PROFILES_ACTIVE=test \
+  PK_DB_URL='jdbc:mysql://test-host:3306/pk?...' \
+  PK_DB_USERNAME=pk PK_DB_PASSWORD=*** \
+  ./mvnw -pl pk-app spring-boot:run
+
+# Production
+SPRING_PROFILES_ACTIVE=prod PK_DB_URL=... PK_DB_USERNAME=... PK_DB_PASSWORD=... \
+  java -jar pk-app/target/pk-app-*.jar
+```
+
+| Variable | Local default | Test / Prod |
+|----------|---------------|-------------|
+| `SPRING_PROFILES_ACTIVE` | `local` | `test` or `prod` |
+| `PK_DB_URL` | in `application-local.yml` | **required** |
+| `PK_DB_USERNAME` | `pk` | **required** |
+| `PK_DB_PASSWORD` | `pk` | **required** |
+| `PK_APP_PORT` | `8080` | optional |
+| `PK_WORKER_PORT` | `8081` | optional |
+
+Config files: `pk-app` and `pk-worker` each have `application.yml` + `application-{local,test,prod}.yml`.
 
 ## API prefix
 
