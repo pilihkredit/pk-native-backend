@@ -65,15 +65,15 @@ Health check: `GET /api/pk/v1/platform/status`
 
 ## Source rules (mandatory)
 
-**English only — no Chinese or CJK anywhere in this repository.**
+**English only — no Chinese or CJK anywhere in this repository. No personal names or emails in repository files.**
 
 Applies to source, comments, logs, config, SQL, docs, and future development. See [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
 
 Enforcement:
 
 ```bash
-./mvnw clean verify          # includes NoCjkTextTest (build fails on CJK)
-./mvnw -pl pk-quality test   # gate only
+./mvnw clean verify          # CJK + personal-identifier gates (pk-quality)
+./mvnw -pl pk-quality test   # gates only
 
 # Recommended: pre-commit blocks build/IDE paths and CJK
 git config core.hooksPath .githooks

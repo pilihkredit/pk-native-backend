@@ -4,6 +4,8 @@
 
 **No Chinese (or any CJK script) is allowed anywhere in this repository.**
 
+**No personal names or personal email addresses** may appear in repository files (source, comments, docs, config). Git commit authors are configured locally and are outside file scans; still avoid signing commits with personal identifiers in messages or `Co-authored-by` trailers when possible.
+
 This applies to all current and future work, including:
 
 - Java source, tests, and annotations
@@ -25,17 +27,18 @@ User-facing API `msg` fields returned to the mobile app must stay **English** pe
 | Chinese log text | English log text with structured fields (`traceId`, `applyId`) |
 | Chinese README sections | English documentation |
 | Inline Chinese for "temporary" notes | English; remove before merge |
+| Personal names or emails in code/comments | Role-based attribution only; use `blocked-personal-substrings.txt` for CI blocklist |
 
 ### Enforcement
 
-1. **CI / local build**: `./mvnw clean verify` runs `NoCjkTextTest` in `pk-quality` and **fails the build** on any CJK character in tracked project files.
+1. **CI / local build**: `./mvnw clean verify` runs `pk-quality` gates (`NoCjkTextTest`, `NoPersonalIdentifiersTest`) and **fails the build** on violations.
 2. **Pre-commit** (recommended):
 
    ```bash
    git config core.hooksPath .githooks
    ```
 
-   The hook blocks staged `target/`, IDE metadata, and CJK text before each commit.
+   The hook blocks staged `target/`, IDE metadata, CJK text, and personal identifiers before each commit.
 
 3. **Manual check**:
 
@@ -53,4 +56,5 @@ Before opening a PR or merging:
 
 - [ ] `./mvnw clean verify` passes
 - [ ] No CJK in new or changed files
+- [ ] No personal names or emails in new or changed files
 - [ ] New user-visible strings are English (or `*Display` formatting logic only)
