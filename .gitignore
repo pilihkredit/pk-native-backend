@@ -39,3 +39,4 @@ surefire-reports/
 .env.*
 *.local.yml
 application-local.yml
+blocked-personal-substrings.local.txt

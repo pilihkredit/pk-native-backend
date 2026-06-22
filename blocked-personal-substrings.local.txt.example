@@ -1,0 +1,5 @@
+# Copy to repo root as blocked-personal-substrings.local.txt (gitignored).
+# One blocked substring per line. Lines starting with # are ignored.
+#
+# YOUR_USERNAME_HERE
+# YOUR_EMAIL_HERE

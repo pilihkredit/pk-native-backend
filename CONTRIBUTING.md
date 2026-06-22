@@ -27,7 +27,7 @@ User-facing API `msg` fields returned to the mobile app must stay **English** pe
 | Chinese log text | English log text with structured fields (`traceId`, `applyId`) |
 | Chinese README sections | English documentation |
 | Inline Chinese for "temporary" notes | English; remove before merge |
-| Personal names or emails in code/comments | Role-based attribution only; use `blocked-personal-substrings.txt` for CI blocklist |
+| Personal names or emails in code/comments | Role-based attribution only; use local `blocked-personal-substrings.local.txt` (gitignored) |
 
 ### Enforcement
 
@@ -48,7 +48,16 @@ User-facing API `msg` fields returned to the mobile app must stay **English** pe
 
 ### Ignored paths (do not force-add)
 
-`target/`, `.idea/`, `.vscode/`, `.cursor/`, `*.iml`, `*.log`, `.DS_Store`, local env files — see `.gitignore`.
+`target/`, `.idea/`, `.vscode/`, `.cursor/`, `*.iml`, `*.log`, `.DS_Store`, `blocked-personal-substrings.local.txt`, local env files — see `.gitignore`.
+
+### Local personal-identifier gate (optional, never commit names)
+
+```bash
+cp blocked-personal-substrings.local.txt.example blocked-personal-substrings.local.txt
+# Edit the local file with substrings to block (file is gitignored)
+```
+
+Or: `export PK_QUALITY_BLOCKED_SUBSTRINGS='substring1,substring2'`
 
 ### Review checklist
 

@@ -10,7 +10,7 @@ When editing this repository, follow these rules without exception.
 
 **Never include personal names, personal emails, or other team-member identifiers** in source, comments, docs, or commit messages you suggest.
 
-Blocked substrings are enforced by `NoPersonalIdentifiersTest` (see `pk-quality/src/test/resources/blocked-personal-substrings.txt`). Add new entries there only when onboarding shared blocklist updates — do not embed names in application code.
+The blocklist is **never stored in Git**. Configure locally via gitignored `blocked-personal-substrings.local.txt` (copy from `.example`) or environment variable `PK_QUALITY_BLOCKED_SUBSTRINGS`. `NoPersonalIdentifiersTest` scans the repo when a local blocklist is present.
 
 Forbidden locations include: source code, comments, tests, YAML/XML/SQL, markdown docs, commit messages you suggest, and generated snippets shown for copy-paste into the repo.
 
