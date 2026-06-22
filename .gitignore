@@ -1,6 +1,41 @@
+# Maven / Java build
 target/
+out/
+build/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+dependency-reduced-pom.xml
+*.class
+*.jar
+!/.mvn/wrapper/maven-wrapper.jar
+
+# IDE
 .idea/
-.vscode/
 *.iml
-*.log
+*.ipr
+*.iws
+.vscode/
+.cursor/
+.settings/
+.classpath
+.project
+.factorypath
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Logs and local runtime
+*.log
+logs/
+
+# Test output outside target (should not happen)
+surefire-reports/
+
+# Secrets / local overrides
+.env
+.env.*
+*.local.yml
+application-local.yml

@@ -12,8 +12,8 @@ This applies to all current and future work, including:
 - Configuration (`application.yml`, `.properties`, Flyway scripts)
 - SQL DDL/DML and migration files
 - README, CONTRIBUTING, AGENTS, and other project docs
-- Git commit messages (recommended; not enforced by CI)
-- Cursor rules and agent instructions under `.cursor/`
+- Git commit messages (recommended; enforced by pre-commit for CJK in staged files)
+- Agent instructions in [AGENTS.md](AGENTS.md) (local `.cursor/` is gitignored)
 
 User-facing API `msg` fields returned to the mobile app must stay **English** per the interface specification (`v0.4.x`). Locale-specific display strings are produced by the backend as `*Display` fields for Indonesian (`id-ID`), not by embedding CJK or Chinese in this codebase.
 
@@ -29,17 +29,23 @@ User-facing API `msg` fields returned to the mobile app must stay **English** pe
 ### Enforcement
 
 1. **CI / local build**: `./mvnw clean verify` runs `NoCjkTextTest` in `pk-quality` and **fails the build** on any CJK character in tracked project files.
-2. **Pre-commit** (optional but recommended):
+2. **Pre-commit** (recommended):
 
    ```bash
    git config core.hooksPath .githooks
    ```
+
+   The hook blocks staged `target/`, IDE metadata, and CJK text before each commit.
 
 3. **Manual check**:
 
    ```bash
    ./mvnw -pl pk-quality test
    ```
+
+### Ignored paths (do not force-add)
+
+`target/`, `.idea/`, `.vscode/`, `.cursor/`, `*.iml`, `*.log`, `.DS_Store`, local env files — see `.gitignore`.
 
 ### Review checklist
 
