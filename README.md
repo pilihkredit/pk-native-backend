@@ -75,9 +75,13 @@ Enforcement:
 ./mvnw clean verify          # includes NoCjkTextTest (build fails on CJK)
 ./mvnw -pl pk-quality test   # gate only
 
-# Optional pre-commit hook:
+# Recommended: pre-commit blocks build/IDE paths and CJK
 git config core.hooksPath .githooks
 ```
+
+## Git hygiene
+
+Never commit `target/`, IDE folders (`.idea/`, `.vscode/`, `.cursor/`), logs, or secrets. See `.gitignore`. The pre-commit hook rejects staged build or IDE paths.
 
 ## Stack
 
