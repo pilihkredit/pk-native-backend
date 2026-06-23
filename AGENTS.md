@@ -31,6 +31,6 @@ After substantive changes, run:
 - Modular monolith: deploy `pk-app` and `pk-worker` only.
 - Layering: `Controller -> ApplicationService -> pk-core -> Port (adapter/infra)`.
 - External writes: persist + `outbox_event` in one transaction; worker calls adapter.
-- API prefix: `/api/pk/v1`; response `msg` in English.
+- API prefix: `/api/v1`; response `msg` in English.
 
 See [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md).

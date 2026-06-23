@@ -97,9 +97,9 @@ Config files: `pk-app` and `pk-worker` each have `application.yml` + `applicatio
 
 ## API prefix
 
-Client APIs use `/api/pk/v1` (see interface documentation v0.4.x).
+Client APIs use `/api/v1` (see interface documentation v0.4.x). Controllers declare paths relative to this prefix (e.g. `@RequestMapping("/auth")`).
 
-Health check: `GET /api/pk/v1/platform/status`
+Health check: `GET /api/v1/platform/status`
 
 ## Source rules (mandatory)
 
