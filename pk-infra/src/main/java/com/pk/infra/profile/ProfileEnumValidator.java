@@ -20,4 +20,13 @@ public final class ProfileEnumValidator {
             throw new ApiException(ApiCode.INVALID_EDUCATION_DEGREE);
         }
     }
+
+    public void validateRelationship(Integer relationship) {
+        if (relationship == null) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (!profileEnumCatalog.isValid(ProfileEnumFieldKey.RELATIONSHIP, relationship)) {
+            throw new ApiException(ApiCode.INVALID_CONTACT_RELATIONSHIP);
+        }
+    }
 }

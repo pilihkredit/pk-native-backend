@@ -4,7 +4,9 @@ import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
 import com.pk.app.profile.application.ProfileEnumApplicationService;
 import com.pk.app.profile.application.ProfileApplicationService;
+import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
+import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileEnumsResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
 import com.pk.app.security.SecurityContextSupport;
@@ -83,6 +85,31 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileApplicationService.savePersonal(principal, request),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /**
+     * Save emergency contacts during onboarding.
+     *
+     * Requires at least two contacts. Contact mobiles must differ from the user's own number
+     * and from each other. Idempotent by requestId.
+     *
+     * @param request     contacts module payload
+     * @param httpRequest servlet request for trace id
+     * @return requestId and moduleStatus COMPLETED
+     */
+    @PostMapping("/contacts")
+    public ApiResponse<ProfileContactsSaveResponse> saveContacts(
+            @Valid @RequestBody ProfileContactsSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.saveContacts(principal, request),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

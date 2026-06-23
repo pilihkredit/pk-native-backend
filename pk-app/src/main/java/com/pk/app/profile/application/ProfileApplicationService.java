@@ -1,6 +1,8 @@
 package com.pk.app.profile.application;
 
+import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
+import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -39,5 +41,30 @@ public class ProfileApplicationService {
                 )
         );
         return new ProfilePersonalSaveResponse(result.requestId(), result.moduleStatus());
+    }
+
+    @Transactional
+    public ProfileContactsSaveResponse saveContacts(
+            AuthenticatedPrincipal principal,
+            ProfileContactsSaveRequest request
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        ProfileServiceFacade.ContactsSaveResult result = profileServiceFacade.saveContacts(
+                principal.profileId(),
+                principal.mobileNo(),
+                new ProfileServiceFacade.ContactsSaveCommand(
+                        request.requestId(),
+                        request.contacts().stream()
+                                .map(contact -> new ProfileServiceFacade.ContactItemCommand(
+                                        contact.relationship(),
+                                        contact.contactName(),
+                                        contact.contactMobile()
+                                ))
+                                .toList()
+                )
+        );
+        return new ProfileContactsSaveResponse(result.requestId(), result.moduleStatus());
     }
 }

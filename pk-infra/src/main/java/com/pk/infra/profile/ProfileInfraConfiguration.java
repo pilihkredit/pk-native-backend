@@ -39,12 +39,14 @@ public class ProfileInfraConfiguration {
     @Bean
     ProfileServiceFacade profileServiceFacade(
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
+            com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             AreaHierarchyValidator areaHierarchyValidator,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             ProfileEnumValidator profileEnumValidator
     ) {
         return new ProfileServiceFacade(
                 profilePersonalRepository,
+                profileContactRepository,
                 areaHierarchyValidator,
                 sensitiveFieldEncryptor,
                 profileEnumValidator
