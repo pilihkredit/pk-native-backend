@@ -15,9 +15,3 @@ server:
 
 pk:
   environment: ${SPRING_PROFILES_ACTIVE:local}
-  auth:
-    jwt-secret: ${PK_AUTH_JWT_SECRET:pk-local-dev-jwt-secret-change-me-in-production-32bytes}
-    access-token-ttl-seconds: 604800
-    otp-expire-seconds: 300
-    otp-resend-seconds: 60
-    otp-fixed-code: ${PK_AUTH_OTP_FIXED_CODE:123456}

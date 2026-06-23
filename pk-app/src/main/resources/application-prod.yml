@@ -18,8 +18,3 @@ management:
     web:
       exposure:
         include: health
-
-pk:
-  auth:
-    jwt-secret: ${PK_AUTH_JWT_SECRET}
-    otp-fixed-code: ${PK_AUTH_OTP_FIXED_CODE:}
