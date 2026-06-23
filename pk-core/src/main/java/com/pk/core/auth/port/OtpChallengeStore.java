@@ -14,8 +14,4 @@ public interface OtpChallengeStore {
     Optional<Duration> timeUntilResendAllowed(String deviceNo);
 
     void markSent(String deviceNo, Duration resendInterval);
-
-    Optional<Duration> timeUntilMobileCheckAllowed(String deviceNo, String mobileNo);
-
-    void markMobileChecked(String deviceNo, String mobileNo, Duration interval);
 }

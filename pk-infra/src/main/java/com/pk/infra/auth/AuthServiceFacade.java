@@ -117,13 +117,8 @@ public class AuthServiceFacade {
         if (deviceNo.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        Optional<Duration> wait = otpChallengeStore.timeUntilMobileCheckAllowed(deviceNo, mobileNo);
-        if (wait.isPresent()) {
-            throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
-        }
 
         boolean registered = userAuthRepository.findByMobileNo(mobileNo).isPresent();
-        otpChallengeStore.markMobileChecked(deviceNo, mobileNo, authProperties.otpResendInterval());
         return new MobileCheckResult(registered, registered ? "EXISTING" : "NEW");
     }
 

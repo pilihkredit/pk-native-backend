@@ -11,7 +11,6 @@ public class RedisOtpChallengeStore implements OtpChallengeStore {
     private static final String TOKEN_PREFIX = "auth:otp:token:";
     private static final String MOBILE_PREFIX = "auth:otp:mobile:";
     private static final String RESEND_DEVICE_PREFIX = "auth:otp:resend:device:";
-    private static final String MOBILE_CHECK_PREFIX = "auth:mobile-check:";
 
     private final StringRedisTemplate redisTemplate;
 
@@ -66,19 +65,5 @@ public class RedisOtpChallengeStore implements OtpChallengeStore {
     @Override
     public void markSent(String deviceNo, Duration resendInterval) {
         redisTemplate.opsForValue().set(RESEND_DEVICE_PREFIX + deviceNo, "1", resendInterval);
-    }
-
-    @Override
-    public Optional<Duration> timeUntilMobileCheckAllowed(String deviceNo, String mobileNo) {
-        Long ttlSeconds = redisTemplate.getExpire(MOBILE_CHECK_PREFIX + deviceNo + ":" + mobileNo);
-        if (ttlSeconds == null || ttlSeconds <= 0) {
-            return Optional.empty();
-        }
-        return Optional.of(Duration.ofSeconds(ttlSeconds));
-    }
-
-    @Override
-    public void markMobileChecked(String deviceNo, String mobileNo, Duration interval) {
-        redisTemplate.opsForValue().set(MOBILE_CHECK_PREFIX + deviceNo + ":" + mobileNo, "1", interval);
     }
 }

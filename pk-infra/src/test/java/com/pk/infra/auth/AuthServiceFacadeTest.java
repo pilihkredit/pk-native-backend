@@ -120,8 +120,6 @@ class AuthServiceFacadeTest {
 
     @Test
     void returnsExistingWhenMobileIsRegistered() {
-        when(otpChallengeStore.timeUntilMobileCheckAllowed("device-1", "8123456789"))
-                .thenReturn(Optional.empty());
         when(userAuthRepository.findByMobileNo("8123456789"))
                 .thenReturn(Optional.of(new UserProfileSummary(1L, "UABC", "8123456789", false)));
 
@@ -129,34 +127,16 @@ class AuthServiceFacadeTest {
 
         assertThat(result.registered()).isTrue();
         assertThat(result.accountStatus()).isEqualTo("EXISTING");
-        verify(otpChallengeStore).markMobileChecked("device-1", "8123456789", Duration.ofSeconds(60));
     }
 
     @Test
     void returnsNewWhenMobileIsNotRegistered() {
-        when(otpChallengeStore.timeUntilMobileCheckAllowed("device-1", "8123456789"))
-                .thenReturn(Optional.empty());
         when(userAuthRepository.findByMobileNo("8123456789")).thenReturn(Optional.empty());
 
         var result = facade.checkMobileRegistration("8123456789", "device-1");
 
         assertThat(result.registered()).isFalse();
         assertThat(result.accountStatus()).isEqualTo("NEW");
-        verify(otpChallengeStore).markMobileChecked("device-1", "8123456789", Duration.ofSeconds(60));
-    }
-
-    @Test
-    void rejectsMobileCheckWhenRateLimited() {
-        when(otpChallengeStore.timeUntilMobileCheckAllowed("device-1", "8123456789"))
-                .thenReturn(Optional.of(Duration.ofSeconds(20)));
-
-        assertThatThrownBy(() -> facade.checkMobileRegistration("8123456789", "device-1"))
-                .isInstanceOf(ApiException.class)
-                .extracting("apiCode")
-                .isEqualTo(ApiCode.TOO_MANY_REQUESTS);
-
-        verify(userAuthRepository, never()).findByMobileNo(any());
-        verify(otpChallengeStore, never()).markMobileChecked(any(), any(), any());
     }
 
     @Test
