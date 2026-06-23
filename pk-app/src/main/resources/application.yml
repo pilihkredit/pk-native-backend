@@ -17,6 +17,9 @@ pk:
   environment: ${SPRING_PROFILES_ACTIVE:local}
   api:
     v1-prefix: ${PK_API_V1_PREFIX:/api/v1}
+    logging:
+      enabled: ${PK_API_LOGGING_ENABLED:true}
+      max-body-bytes: ${PK_API_LOGGING_MAX_BODY_BYTES:65536}
   auth:
     access-token-ttl: ${PK_AUTH_ACCESS_TOKEN_TTL:15m}
     refresh-token-ttl: ${PK_AUTH_REFRESH_TOKEN_TTL:30d}
@@ -25,3 +28,5 @@ pk:
     otp-daily-limit: ${PK_AUTH_OTP_DAILY_LIMIT:10}
     otp-daily-limit-zone: ${PK_AUTH_OTP_DAILY_LIMIT_ZONE:Asia/Jakarta}
     jwt-secret: ${PK_AUTH_JWT_SECRET:local-dev-secret-change-in-prod-min-32-chars}
+  security:
+    field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY:local-dev-field-encryption-key-32b}

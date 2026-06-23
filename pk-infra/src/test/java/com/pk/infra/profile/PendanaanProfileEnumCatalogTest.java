@@ -1,0 +1,35 @@
+package com.pk.infra.profile;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.pk.core.profile.catalog.ProfileEnumFieldKey;
+import com.pk.core.profile.catalog.ProfileOnboardingModule;
+import org.junit.jupiter.api.Test;
+
+class PendanaanProfileEnumCatalogTest {
+    private final PendanaanProfileEnumCatalog catalog = new PendanaanProfileEnumCatalog();
+
+    @Test
+    void listsPersonalModuleFields() {
+        var fields = catalog.listFieldsByModule(ProfileOnboardingModule.PERSONAL);
+
+        assertThat(fields).hasSize(1);
+        assertThat(fields.getFirst().fieldKey()).isEqualTo("educationDegree");
+        assertThat(fields.getFirst().options()).hasSize(9);
+    }
+
+    @Test
+    void validatesEducationDegreeRange() {
+        assertThat(catalog.isValid(ProfileEnumFieldKey.EDUCATION_DEGREE, 5)).isTrue();
+        assertThat(catalog.isValid(ProfileEnumFieldKey.EDUCATION_DEGREE, 9)).isFalse();
+    }
+
+    @Test
+    void includesRelationshipValuesFromLenderDoc() {
+        var relationship = catalog.findField(ProfileEnumFieldKey.RELATIONSHIP).orElseThrow();
+
+        assertThat(relationship.options())
+                .extracting(option -> option.value())
+                .containsExactly(0, 1, 10, 11, 12, 13, 14, 15);
+    }
+}
