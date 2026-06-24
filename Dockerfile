@@ -12,7 +12,13 @@ ENV MAVEN_OPTS="-Xmx768m -Xms256m -XX:+UseG1GC -XX:MaxMetaspaceSize=256m"
 COPY . .
 
 # -T 1: single-threaded build to lower peak memory usage.
+# repackage must run (see pk-app/pom.xml); fail the image build if the jar is not executable.
 RUN mvn clean package -T 1 -DskipTests -Dmaven.test.skip=true -pl pk-app -am -B && \
+    BOOT_JAR="pk-app/target/pk-app-0.1.0-SNAPSHOT.jar" && \
+    test "$(stat -c%s "${BOOT_JAR}")" -gt 1000000 && \
+    jar xf "${BOOT_JAR}" META-INF/MANIFEST.MF && \
+    grep -q 'Start-Class:' META-INF/MANIFEST.MF && \
+    cp "${BOOT_JAR}" /tmp/app.jar && \
     echo "pk-app build finished"
 
 # ==========================================
@@ -22,7 +28,7 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-COPY --from=build /app/pk-app/target/pk-app-0.1.0-SNAPSHOT.jar /app/app.jar
+COPY --from=build /tmp/app.jar /app/app.jar
 
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV TZ=Asia/Jakarta
