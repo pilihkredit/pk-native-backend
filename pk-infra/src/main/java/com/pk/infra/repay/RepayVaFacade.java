@@ -1,0 +1,108 @@
+package com.pk.infra.repay;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.api.ApiCode;
+import com.pk.core.api.ApiException;
+import com.pk.core.repay.LenderRepayVa;
+import com.pk.core.repay.port.LenderRepayVaPort;
+import com.pk.core.repay.port.RepayVaSnapshotRepository;
+import java.time.Instant;
+import java.util.List;
+
+public class RepayVaFacade {
+    private final LenderRepayVaPort lenderRepayVaPort;
+    private final RepayVaSnapshotRepository repayVaSnapshotRepository;
+    private final ObjectMapper objectMapper;
+
+    public RepayVaFacade(
+            LenderRepayVaPort lenderRepayVaPort,
+            RepayVaSnapshotRepository repayVaSnapshotRepository,
+            ObjectMapper objectMapper
+    ) {
+        this.lenderRepayVaPort = lenderRepayVaPort;
+        this.repayVaSnapshotRepository = repayVaSnapshotRepository;
+        this.objectMapper = objectMapper;
+    }
+
+    public VaListResult listVas(long profileId, String partnerUserId) {
+        LenderRepayVaPort.LenderRepayVaListResult lenderResult = lenderRepayVaPort.listVas(partnerUserId);
+        persistSnapshots(profileId, lenderResult.vas());
+        return new VaListResult(lenderResult.vas().stream().map(this::toVaInfo).toList());
+    }
+
+    public VaDefaultResult setDefaultVa(long profileId, String partnerUserId, VaDefaultCommand command) {
+        validateDefaultCommand(command);
+        lenderRepayVaPort.setDefaultVa(new LenderRepayVaPort.LenderRepayVaDefaultCommand(
+                partnerUserId,
+                command.vaNo(),
+                command.bankChannel()
+        ));
+        LenderRepayVaPort.LenderRepayVaListResult refreshed = lenderRepayVaPort.listVas(partnerUserId);
+        persistSnapshots(profileId, refreshed.vas());
+        return new VaDefaultResult(command.vaNo(), true);
+    }
+
+    private void persistSnapshots(long profileId, List<LenderRepayVa> vas) {
+        String snapshotNo = RepayNoGenerator.vaSnapshotNo();
+        Instant fetchedAt = Instant.now();
+        List<RepayVaSnapshotRepository.VaSnapshotInsert> inserts = vas.stream()
+                .map(va -> new RepayVaSnapshotRepository.VaSnapshotInsert(
+                        va.vaNo(),
+                        va.bankCode(),
+                        va.bankName(),
+                        va.defaultFlag(),
+                        va.disabled(),
+                        serializeChannels(va)
+                ))
+                .toList();
+        repayVaSnapshotRepository.replaceSnapshots(profileId, snapshotNo, inserts, fetchedAt);
+    }
+
+    private String serializeChannels(LenderRepayVa va) {
+        try {
+            return objectMapper.writeValueAsString(va.bankChannels());
+        } catch (Exception exception) {
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, exception);
+        }
+    }
+
+    private static void validateDefaultCommand(VaDefaultCommand command) {
+        if (command == null
+                || command.vaNo() == null
+                || command.vaNo().isBlank()
+                || command.vaNo().length() > 64
+                || command.bankChannel() == null
+                || command.bankChannel().isBlank()
+                || command.bankChannel().length() > 64) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+    }
+
+    private VaInfoResult toVaInfo(LenderRepayVa va) {
+        return new VaInfoResult(
+                va.vaNo(),
+                va.bankCode(),
+                va.bankName(),
+                va.defaultFlag(),
+                va.disabled() ? "DISABLED" : "ACTIVE"
+        );
+    }
+
+    public record VaDefaultCommand(String vaNo, String bankChannel) {
+    }
+
+    public record VaListResult(List<VaInfoResult> vaList) {
+    }
+
+    public record VaInfoResult(
+            String vaNo,
+            String bankChannel,
+            String bankName,
+            boolean defaultFlag,
+            String status
+    ) {
+    }
+
+    public record VaDefaultResult(String vaNo, boolean defaultFlag) {
+    }
+}

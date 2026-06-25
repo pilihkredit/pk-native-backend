@@ -294,6 +294,7 @@ CREATE TABLE credit_application (
     last_error_code VARCHAR(32) NULL COMMENT 'Last error code',
     submitted_at DATETIME(3) NULL COMMENT 'Submission time',
     finalized_at DATETIME(3) NULL COMMENT 'Final status time',
+    freeze_end_at DATETIME(3) NULL COMMENT 'User freeze end time from lender',
     next_poll_at DATETIME(3) NULL COMMENT 'Next polling time',
     version INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Optimistic lock version',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',

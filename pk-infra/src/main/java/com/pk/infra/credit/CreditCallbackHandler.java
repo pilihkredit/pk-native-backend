@@ -46,6 +46,7 @@ public class CreditCallbackHandler {
                 parsed.externalStatus(),
                 parsed.creditApplyNo(),
                 parsed.creditContractExpireTime(),
+                parsed.freezeEndTime(),
                 parsed.riskMinLimit(),
                 parsed.riskMaxLimit(),
                 parsed.psychologicalCreditLimit(),

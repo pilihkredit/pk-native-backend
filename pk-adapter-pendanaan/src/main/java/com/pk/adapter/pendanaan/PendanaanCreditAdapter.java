@@ -54,6 +54,7 @@ public class PendanaanCreditAdapter implements LenderCreditPort {
                 PendanaanHttpSupport.textOrEmpty(data.get("status")),
                 textOrNull(data.get("creditApplyNo")),
                 longOrNull(data.get("creditContractExpireTime")),
+                longOrNull(data.get("freezeEndTime")),
                 decimalOrNull(data.get("riskMinLimit")),
                 decimalOrNull(data.get("riskMaxLimit")),
                 decimalOrNull(data.get("psychologicalCreditLimit")),

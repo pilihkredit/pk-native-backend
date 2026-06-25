@@ -15,6 +15,7 @@ public class FakePendanaanCreditAdapter implements LenderCreditPort {
                 "SUCCESS",
                 "CA-FAKE-" + applyId,
                 null,
+                null,
                 new BigDecimal("500000"),
                 new BigDecimal("3000000"),
                 new BigDecimal("2500000"),

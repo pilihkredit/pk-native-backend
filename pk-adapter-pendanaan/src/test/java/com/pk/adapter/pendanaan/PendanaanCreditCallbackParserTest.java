@@ -45,6 +45,24 @@ class PendanaanCreditCallbackParserTest {
     }
 
     @Test
+    void parsesRefusedCallbackWithFreezeEndTime() {
+        String json = """
+                {
+                  "applyId": "AP-002",
+                  "creditApplyNo": "CA-002",
+                  "status": "REFUSED",
+                  "freezeEndTime": 1780300800000
+                }
+                """;
+
+        CreditCallbackParser.ParsedCreditCallback parsed = parser.parse(json);
+
+        assertThat(parsed.externalStatus()).isEqualTo("REFUSED");
+        assertThat(parsed.freezeEndTime()).isEqualTo(1780300800000L);
+        assertThat(parsed.creditContractExpireTime()).isNull();
+    }
+
+    @Test
     void rejectsMissingApplyId() {
         assertThatThrownBy(() -> parser.parse("{\"status\":\"SUCCESS\"}"))
                 .isInstanceOf(ApiException.class);

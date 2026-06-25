@@ -99,6 +99,7 @@ class CreditCallbackHandlerTest {
                 2L,
                 null,
                 CreditApplicationStatus.PROCESSING,
+                null,
                 null
         );
     }
@@ -109,6 +110,7 @@ class CreditCallbackHandlerTest {
                 "CA-001",
                 "SUCCESS",
                 1893456000000L,
+                null,
                 BigDecimal.ONE,
                 BigDecimal.TEN,
                 BigDecimal.TEN,

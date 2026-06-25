@@ -1,0 +1,56 @@
+package com.pk.adapter.pendanaan;
+
+import com.pk.core.loan.LenderLoanProduct;
+import com.pk.core.loan.LenderRepayMethod;
+import com.pk.core.loan.port.LenderLoanProductPort;
+import java.math.BigDecimal;
+import java.util.List;
+
+public class FakePendanaanLoanProductAdapter implements LenderLoanProductPort {
+    @Override
+    public LenderLoanProductListResult listProducts(String applyId) {
+        return new LenderLoanProductListResult(
+                "SUCCESS",
+                "READY",
+                List.of(
+                        new LenderLoanProduct(
+                                "PD001",
+                                "Cash Loan",
+                                new BigDecimal("500000"),
+                                new BigDecimal("3000000"),
+                                "M",
+                                new BigDecimal("0.18"),
+                                List.of(
+                                        new LenderRepayMethod(
+                                                "RP001",
+                                                "D",
+                                                30,
+                                                6,
+                                                180,
+                                                0,
+                                                List.of()
+                                        ),
+                                        new LenderRepayMethod(
+                                                "RP002",
+                                                "D",
+                                                30,
+                                                2,
+                                                60,
+                                                1,
+                                                List.of(
+                                                        new LenderRepayMethod.UnevenBillRate(
+                                                                1,
+                                                                new BigDecimal("0.6")
+                                                        ),
+                                                        new LenderRepayMethod.UnevenBillRate(
+                                                                2,
+                                                                new BigDecimal("0.4")
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+        );
+    }
+}

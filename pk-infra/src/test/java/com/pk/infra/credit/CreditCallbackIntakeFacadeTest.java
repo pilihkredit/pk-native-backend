@@ -90,6 +90,7 @@ class CreditCallbackIntakeFacadeTest {
                 "CA-001",
                 "SUCCESS",
                 1893456000000L,
+                null,
                 BigDecimal.ONE,
                 BigDecimal.TEN,
                 BigDecimal.TEN,

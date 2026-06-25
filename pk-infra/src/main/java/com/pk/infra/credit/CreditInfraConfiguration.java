@@ -8,6 +8,7 @@ import com.pk.core.credit.port.LenderCreditPort;
 import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.outbox.port.OutboxEventRepository;
 import com.pk.infra.profile.OnboardingProgressFacade;
+import com.pk.infra.loan.LoanProductFacade;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -65,6 +66,19 @@ public class CreditInfraConfiguration {
         return new CreditStatusPollHandler(
                 lenderCreditPort,
                 creditLenderStatusApplier
+        );
+    }
+
+    @Bean
+    CreditLimitDisplayFacade creditLimitDisplayFacade(
+            CreditApplicationRepository creditApplicationRepository,
+            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            LoanProductFacade loanProductFacade
+    ) {
+        return new CreditLimitDisplayFacade(
+                creditApplicationRepository,
+                creditLimitSnapshotRepository,
+                loanProductFacade
         );
     }
 }

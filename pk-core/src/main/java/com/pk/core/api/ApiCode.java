@@ -38,6 +38,8 @@ public enum ApiCode {
     INVALID_MOTHER_SURNAME_FORMAT("K000409", "Invalid mother surname format", ApiCodeLayer.PLATFORM_VALIDATION),
 
     UPSTREAM_APPLICATION_NOT_FOUND("L000010", "Application not found", ApiCodeLayer.UPSTREAM_BUSINESS),
+    CREDIT_LIMIT_NOT_AVAILABLE("L000124", "Credit limit not available", ApiCodeLayer.UPSTREAM_BUSINESS),
+    LENDER_LOAN_AMOUNT_REJECTED("L000145", "Loan amount rejected by lender", ApiCodeLayer.UPSTREAM_BUSINESS),
     BANK_CARD_VA_NOT_ALLOWED("L000104", "Virtual account card not allowed", ApiCodeLayer.UPSTREAM_BUSINESS),
     BANK_CARD_VERIFICATION_FAILED("L000321", "Bank card verification failed", ApiCodeLayer.UPSTREAM_BUSINESS),
     BANK_CARD_ALREADY_BOUND("L000339", "Bank card already bound", ApiCodeLayer.UPSTREAM_BUSINESS),

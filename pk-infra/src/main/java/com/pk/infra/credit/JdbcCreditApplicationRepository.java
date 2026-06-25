@@ -118,11 +118,20 @@ public class JdbcCreditApplicationRepository implements CreditApplicationReposit
     }
 
     @Override
+    public void updateFreezeEndAt(long id, Instant freezeEndAt) {
+        jdbcTemplate.update(
+                "UPDATE credit_application SET freeze_end_at = ? WHERE id = ?",
+                freezeEndAt == null ? null : Timestamp.from(freezeEndAt),
+                id
+        );
+    }
+
+    @Override
     public List<CreditApplicationRecord> findDueForPoll(int limit) {
         return jdbcTemplate.query(
                 """
                 SELECT id, apply_id, request_id, provider_code, profile_id, profile_version_id,
-                       external_credit_apply_no, status, external_status
+                       external_credit_apply_no, status, external_status, freeze_end_at
                 FROM credit_application
                 WHERE status = 'PROCESSING'
                   AND next_poll_at IS NOT NULL
@@ -140,7 +149,7 @@ public class JdbcCreditApplicationRepository implements CreditApplicationReposit
             return Optional.of(jdbcTemplate.queryForObject(
                     """
                     SELECT id, apply_id, request_id, provider_code, profile_id, profile_version_id,
-                           external_credit_apply_no, status, external_status
+                           external_credit_apply_no, status, external_status, freeze_end_at
                     FROM credit_application
                     WHERE %s
                     """.formatted(whereClause),
@@ -153,6 +162,7 @@ public class JdbcCreditApplicationRepository implements CreditApplicationReposit
     }
 
     private static CreditApplicationRecord mapRecord(ResultSet rs) throws SQLException {
+        Timestamp freezeEndAt = rs.getTimestamp("freeze_end_at");
         return new CreditApplicationRecord(
                 rs.getLong("id"),
                 rs.getString("apply_id"),
@@ -162,7 +172,8 @@ public class JdbcCreditApplicationRepository implements CreditApplicationReposit
                 rs.getLong("profile_version_id"),
                 rs.getString("external_credit_apply_no"),
                 rs.getString("status"),
-                rs.getString("external_status")
+                rs.getString("external_status"),
+                freezeEndAt == null ? null : freezeEndAt.toInstant()
         );
     }
 }

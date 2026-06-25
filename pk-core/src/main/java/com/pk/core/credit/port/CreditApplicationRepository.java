@@ -21,6 +21,8 @@ public interface CreditApplicationRepository {
 
     void scheduleNextPoll(long id, Instant nextPollAt);
 
+    void updateFreezeEndAt(long id, Instant freezeEndAt);
+
     List<CreditApplicationRecord> findDueForPoll(int limit);
 
     record CreditApplicationInsert(
@@ -42,7 +44,8 @@ public interface CreditApplicationRepository {
             long profileVersionId,
             String externalCreditApplyNo,
             String status,
-            String externalStatus
+            String externalStatus,
+            Instant freezeEndAt
     ) {
     }
 }

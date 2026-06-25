@@ -69,6 +69,12 @@ public class CreditLenderStatusApplier {
             ));
             return;
         }
+        if (CreditApplicationStatus.REJECTED.equals(nextStatus) && status.freezeEndTime() != null) {
+            creditApplicationRepository.updateFreezeEndAt(
+                    record.id(),
+                    Instant.ofEpochMilli(status.freezeEndTime())
+            );
+        }
         if (!CreditApplicationStatus.isTerminal(nextStatus)) {
             creditApplicationRepository.scheduleNextPoll(
                     record.id(),

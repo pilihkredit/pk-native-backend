@@ -29,6 +29,7 @@ public interface LenderCreditPort {
             String externalStatus,
             String creditApplyNo,
             Long creditContractExpireTime,
+            Long freezeEndTime,
             BigDecimal riskMinLimit,
             BigDecimal riskMaxLimit,
             BigDecimal psychologicalCreditLimit,

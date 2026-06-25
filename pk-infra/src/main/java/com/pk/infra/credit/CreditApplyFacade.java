@@ -136,11 +136,13 @@ public class CreditApplyFacade {
         Long contractExpireTime = limits == null || limits.contractExpireAt() == null
                 ? null
                 : limits.contractExpireAt().toEpochMilli();
+        Long freezeEndTime = record.freezeEndAt() == null ? null : record.freezeEndAt().toEpochMilli();
         return new StatusResult(
                 record.applyId(),
                 CreditExternalStatusMapper.publicStatusOf(record),
                 record.externalCreditApplyNo(),
                 contractExpireTime,
+                freezeEndTime,
                 limits == null ? null : limits.riskMinLimit(),
                 limits == null ? null : limits.riskMaxLimit(),
                 limits == null ? null : limits.psychologicalCreditLimit(),
@@ -168,6 +170,7 @@ public class CreditApplyFacade {
             String status,
             String creditApplyNo,
             Long creditContractExpireTime,
+            Long freezeEndTime,
             BigDecimal riskMinLimit,
             BigDecimal riskMaxLimit,
             BigDecimal psychologicalCreditLimit,

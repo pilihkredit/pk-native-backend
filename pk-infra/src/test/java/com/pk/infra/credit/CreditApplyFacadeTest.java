@@ -113,7 +113,8 @@ class CreditApplyFacadeTest {
                 9L,
                 "CA-1",
                 CreditApplicationStatus.PROCESSING,
-                "PROCESSING"
+                "PROCESSING",
+                null
         ));
     }
 

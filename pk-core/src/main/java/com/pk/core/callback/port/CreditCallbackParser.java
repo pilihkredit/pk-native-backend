@@ -10,6 +10,7 @@ public interface CreditCallbackParser {
             String creditApplyNo,
             String externalStatus,
             Long creditContractExpireTime,
+            Long freezeEndTime,
             BigDecimal riskMinLimit,
             BigDecimal riskMaxLimit,
             BigDecimal psychologicalCreditLimit,

@@ -47,6 +47,9 @@ final class PendanaanHttpSupport {
     }
 
     static ApiException mapFailureCode(String responseCode) {
+        if ("A000145".equals(responseCode)) {
+            return new ApiException(ApiCode.LENDER_LOAN_AMOUNT_REJECTED);
+        }
         if ("999998".equals(responseCode) || "999999".equals(responseCode)) {
             return new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }

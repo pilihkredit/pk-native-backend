@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.external.port.LenderInteractionLogRepository;
 import com.pk.core.credit.port.LenderCreditPort;
+import com.pk.core.loan.port.LenderLoanProductPort;
+import com.pk.core.loan.port.LenderLoanTrialPort;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.reference.port.LenderAreaPort;
 import com.pk.core.reference.port.LenderBankPort;
@@ -40,6 +42,18 @@ public class PendanaanAdapterConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(LenderLoanProductPort.class)
+    LenderLoanProductPort fakeLenderLoanProductPort() {
+        return new FakePendanaanLoanProductAdapter();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(LenderLoanTrialPort.class)
+    LenderLoanTrialPort fakeLenderLoanTrialPort(ObjectMapper objectMapper) {
+        return new FakePendanaanLoanTrialAdapter(objectMapper);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(CreditCallbackParser.class)
     CreditCallbackParser pendanaanCreditCallbackParser(ObjectMapper objectMapper) {
         return new PendanaanCreditCallbackParser(objectMapper);
@@ -49,6 +63,18 @@ public class PendanaanAdapterConfiguration {
     @ConditionalOnPendanaanHttpEnabled
     LenderCreditPort pendanaanCreditAdapter(PendanaanHttpClient httpClient) {
         return new PendanaanCreditAdapter(httpClient);
+    }
+
+    @Bean
+    @ConditionalOnPendanaanHttpEnabled
+    LenderLoanProductPort pendanaanLoanProductAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
+        return new PendanaanLoanProductAdapter(httpClient, objectMapper);
+    }
+
+    @Bean
+    @ConditionalOnPendanaanHttpEnabled
+    LenderLoanTrialPort pendanaanLoanTrialAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
+        return new PendanaanLoanTrialAdapter(httpClient, objectMapper);
     }
 
     @Bean

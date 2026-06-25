@@ -4,6 +4,7 @@ import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.credit.dto.request.CreditAppInfoRequest;
 import com.pk.app.credit.dto.request.CreditApplyRequest;
 import com.pk.app.credit.dto.response.CreditApplyResponse;
+import com.pk.app.credit.dto.response.CreditLimitDisplayResponse;
 import com.pk.app.credit.dto.response.CreditStatusResponse;
 import com.pk.app.profile.application.ProfileDeviceSupport;
 import com.pk.adapter.pendanaan.PendanaanProperties;
@@ -13,6 +14,7 @@ import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.credit.CreditApplyFacade;
+import com.pk.infra.credit.CreditLimitDisplayFacade;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -21,10 +23,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CreditApplicationService {
     private final CreditApplyFacade creditApplyFacade;
+    private final CreditLimitDisplayFacade creditLimitDisplayFacade;
     private final PendanaanProperties pendanaanProperties;
 
-    public CreditApplicationService(CreditApplyFacade creditApplyFacade, PendanaanProperties pendanaanProperties) {
+    public CreditApplicationService(
+            CreditApplyFacade creditApplyFacade,
+            CreditLimitDisplayFacade creditLimitDisplayFacade,
+            PendanaanProperties pendanaanProperties
+    ) {
         this.creditApplyFacade = creditApplyFacade;
+        this.creditLimitDisplayFacade = creditLimitDisplayFacade;
         this.pendanaanProperties = pendanaanProperties;
     }
 
@@ -68,11 +76,25 @@ public class CreditApplicationService {
                 result.status(),
                 result.creditApplyNo(),
                 result.creditContractExpireTime(),
+                result.freezeEndTime(),
                 result.riskMinLimit(),
                 result.riskMaxLimit(),
                 result.psychologicalCreditLimit(),
                 result.fakeCreditLimit(),
                 result.borrowAmtStepSize()
+        );
+    }
+
+    public CreditLimitDisplayResponse getLimitDisplay(
+            AuthenticatedPrincipal principal,
+            String applyId,
+            String repayMethod
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return CreditLimitDisplayResponse.from(
+                creditLimitDisplayFacade.getLimitDisplay(principal.profileId(), applyId, repayMethod)
         );
     }
 

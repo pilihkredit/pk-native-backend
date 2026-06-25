@@ -24,6 +24,7 @@ public class PendanaanCreditCallbackParser implements CreditCallbackParser {
                     textOrNull(root.get("creditApplyNo")),
                     requiredText(root, "status"),
                     longOrNull(root.get("creditContractExpireTime")),
+                    longOrNull(root.get("freezeEndTime")),
                     decimalOrNull(root.get("riskMinLimit")),
                     decimalOrNull(root.get("riskMaxLimit")),
                     decimalOrNull(root.get("psychologicalCreditLimit")),
