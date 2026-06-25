@@ -7,5 +7,7 @@ import java.util.Optional;
 public interface ProfileContactRepository {
     Optional<ProfileContactsModuleData> findModuleByProfileId(long profileId);
 
+    java.util.List<ProfileContactData> findContactsByProfileId(long profileId);
+
     void replaceContacts(long profileId, ProfileContactsModuleData module, java.util.List<ProfileContactData> contacts);
 }

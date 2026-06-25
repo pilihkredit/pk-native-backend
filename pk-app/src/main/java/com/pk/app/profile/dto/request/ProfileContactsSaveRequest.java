@@ -8,6 +8,7 @@ import java.util.List;
 
 public record ProfileContactsSaveRequest(
         @NotBlank @Size(max = 64) String requestId,
-        @NotNull @Size(min = 2) List<@Valid ProfileContactItemRequest> contacts
+        @NotNull @Size(min = 2) List<@Valid ProfileContactItemRequest> contacts,
+        @NotNull @Valid ProfileDeviceRequest device
 ) {
 }

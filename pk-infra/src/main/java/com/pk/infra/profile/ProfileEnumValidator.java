@@ -21,6 +21,24 @@ public final class ProfileEnumValidator {
         }
     }
 
+    public void validateIndustry(Integer industry) {
+        if (industry == null) {
+            throw new ApiException(ApiCode.INDUSTRY_REQUIRED);
+        }
+        if (!profileEnumCatalog.isValid(ProfileEnumFieldKey.INDUSTRY, industry)) {
+            throw new ApiException(ApiCode.INDUSTRY_REQUIRED);
+        }
+    }
+
+    public void validateProfessionDegree(Integer professionDegree) {
+        if (professionDegree == null) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (!profileEnumCatalog.isValid(ProfileEnumFieldKey.PROFESSION_DEGREE, professionDegree)) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+    }
+
     public void validateRelationship(Integer relationship) {
         if (relationship == null) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);

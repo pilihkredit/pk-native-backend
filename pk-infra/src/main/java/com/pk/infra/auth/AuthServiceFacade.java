@@ -5,6 +5,7 @@ import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthSession;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.auth.OtpChallenge;
+import com.pk.core.auth.PasswordFormatValidator;
 import com.pk.core.auth.SmsSendResult;
 import com.pk.core.auth.TokenPair;
 import com.pk.core.auth.UserProfileSummary;
@@ -15,6 +16,8 @@ import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSender;
 import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.UserAuthRepository;
+import com.pk.core.auth.port.PasswordHasher;
+import com.pk.core.auth.port.UserPasswordCredentialRepository;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -23,6 +26,7 @@ import java.util.Optional;
 
 public class AuthServiceFacade {
     private static final String LOGIN_CHANNEL_OTP = "OTP";
+    private static final String LOGIN_CHANNEL_PASSWORD = "PASSWORD";
     private static final String SMS_PURPOSE_OTP = "OTP";
 
     private final AuthProperties authProperties;
@@ -31,6 +35,8 @@ public class AuthServiceFacade {
     private final RefreshTokenStore refreshTokenStore;
     private final TokenIssuer tokenIssuer;
     private final UserAuthRepository userAuthRepository;
+    private final UserPasswordCredentialRepository userPasswordCredentialRepository;
+    private final PasswordHasher passwordHasher;
     private final SmsSendLogRepository smsSendLogRepository;
     private final SmsSender smsSender;
 
@@ -41,6 +47,8 @@ public class AuthServiceFacade {
             RefreshTokenStore refreshTokenStore,
             TokenIssuer tokenIssuer,
             UserAuthRepository userAuthRepository,
+            UserPasswordCredentialRepository userPasswordCredentialRepository,
+            PasswordHasher passwordHasher,
             SmsSendLogRepository smsSendLogRepository,
             SmsSender smsSender
     ) {
@@ -50,6 +58,8 @@ public class AuthServiceFacade {
         this.refreshTokenStore = refreshTokenStore;
         this.tokenIssuer = tokenIssuer;
         this.userAuthRepository = userAuthRepository;
+        this.userPasswordCredentialRepository = userPasswordCredentialRepository;
+        this.passwordHasher = passwordHasher;
         this.smsSendLogRepository = smsSendLogRepository;
         this.smsSender = smsSender;
     }
@@ -119,7 +129,69 @@ public class AuthServiceFacade {
         }
 
         boolean registered = userAuthRepository.findByMobileNo(mobileNo).isPresent();
-        return new MobileCheckResult(registered, registered ? "EXISTING" : "NEW");
+        boolean passwordSet = userAuthRepository.findByMobileNo(mobileNo)
+                .map(profile -> userPasswordCredentialRepository.isPasswordSet(profile.profileId()))
+                .orElse(false);
+        return new MobileCheckResult(registered, registered ? "EXISTING" : "NEW", passwordSet);
+    }
+
+    public void setPassword(long profileId, String password, String confirmPassword) {
+        if (password == null || password.isBlank() || confirmPassword == null || confirmPassword.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (!password.equals(confirmPassword)) {
+            throw new ApiException(ApiCode.PASSWORD_CONFIRM_MISMATCH);
+        }
+        if (!PasswordFormatValidator.isValid(password)) {
+            throw new ApiException(ApiCode.INVALID_PASSWORD_FORMAT);
+        }
+        if (userPasswordCredentialRepository.isPasswordSet(profileId)) {
+            throw new ApiException(ApiCode.PASSWORD_ALREADY_SET);
+        }
+        userPasswordCredentialRepository.insert(profileId, passwordHasher.hash(password));
+    }
+
+    public PasswordLoginResult loginByPassword(String mobileNo, String password, String deviceNo) {
+        validateMobile(mobileNo);
+        if (password == null || password.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (deviceNo == null || deviceNo.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+
+        UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
+                .orElseThrow(() -> new ApiException(ApiCode.INVALID_MOBILE_OR_PASSWORD));
+        UserPasswordCredentialRepository.PasswordCredential credential = userPasswordCredentialRepository
+                .findByProfileId(profile.profileId())
+                .orElseThrow(() -> new ApiException(ApiCode.PASSWORD_NOT_SET));
+
+        Instant now = Instant.now();
+        if (credential.lockedUntil() != null && credential.lockedUntil().isAfter(now)) {
+            throw new ApiException(ApiCode.PASSWORD_ACCOUNT_LOCKED);
+        }
+
+        if (!passwordHasher.matches(password, credential.passwordHash())) {
+            int nextAttempts = credential.failedAttempts() + 1;
+            if (nextAttempts >= authProperties.passwordMaxFailedAttempts()) {
+                userPasswordCredentialRepository.recordFailedAttempt(
+                        profile.profileId(),
+                        0,
+                        now.plus(authProperties.passwordLockDuration())
+                );
+            } else {
+                userPasswordCredentialRepository.recordFailedAttempt(profile.profileId(), nextAttempts, null);
+            }
+            throw new ApiException(ApiCode.INVALID_MOBILE_OR_PASSWORD);
+        }
+
+        userPasswordCredentialRepository.resetFailedAttempts(profile.profileId());
+        TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_PASSWORD);
+        return new PasswordLoginResult(profile, tokenPair, true);
+    }
+
+    public boolean isPasswordSet(long profileId) {
+        return userPasswordCredentialRepository.isPasswordSet(profileId);
     }
 
     public OtpVerifyResult verifyOtp(String mobileNo, String otpToken, String otpCode, String deviceNo) {
@@ -150,7 +222,8 @@ public class AuthServiceFacade {
         UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
                 .orElseGet(() -> userAuthRepository.createByMobileNo(mobileNo));
         TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_OTP);
-        return new OtpVerifyResult(profile, tokenPair);
+        boolean passwordSet = userPasswordCredentialRepository.isPasswordSet(profile.profileId());
+        return new OtpVerifyResult(profile, tokenPair, passwordSet);
     }
 
     public TokenPair refresh(String refreshToken) {
@@ -227,9 +300,12 @@ public class AuthServiceFacade {
     public record OtpSendResult(String otpToken, long expireIn, long resendAfter, String otpCodeForLocalDev) {
     }
 
-    public record MobileCheckResult(boolean registered, String accountStatus) {
+    public record MobileCheckResult(boolean registered, String accountStatus, boolean passwordSet) {
     }
 
-    public record OtpVerifyResult(UserProfileSummary profile, TokenPair tokenPair) {
+    public record OtpVerifyResult(UserProfileSummary profile, TokenPair tokenPair, boolean passwordSet) {
+    }
+
+    public record PasswordLoginResult(UserProfileSummary profile, TokenPair tokenPair, boolean passwordSet) {
     }
 }

@@ -1,4 +1,3 @@
-# Production
 spring:
   datasource:
     url: ${PK_DB_URL}
@@ -13,8 +12,19 @@ logging:
     root: WARN
     com.pk: INFO
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
 pk:
+  lender:
+    pendanaan:
+      mode: http
+      base-url: ${PK_PENDANAAN_BASE_URL:}
+      client-id: ${PK_PENDANAAN_CLIENT_ID:}
+      client-secret: ${PK_PENDANAAN_CLIENT_SECRET:}
   worker:
-    outbox:
+    reference:
       enabled: true
-      poll-interval-ms: 3000

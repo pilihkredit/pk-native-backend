@@ -165,6 +165,24 @@ CREATE TABLE user_bank_card (
     KEY idx_user_bank_card_profile_default (profile_id, default_flag)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User bank card verification records';
 
+CREATE TABLE user_profile_bank_card (
+    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',
+    card_no_hash CHAR(64) NOT NULL COMMENT 'SHA-256 hash of normalized card number',
+    card_no_ciphertext TEXT NOT NULL COMMENT 'AES-256-GCM encrypted card number ciphertext',
+    card_no_nonce VARBINARY(12) NOT NULL COMMENT 'AES-GCM nonce for card number',
+    card_no_tag VARBINARY(16) NOT NULL COMMENT 'AES-GCM authentication tag for card number',
+    verify_status VARCHAR(32) NOT NULL COMMENT 'Verification status',
+    verify_error_code VARCHAR(32) NULL COMMENT 'Verification error code when failed',
+    default_flag TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Default bank card flag',
+    module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
+    last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
+    PRIMARY KEY (profile_id),
+    UNIQUE KEY uk_user_profile_bank_card_hash (card_no_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User bank card onboarding module';
+
 CREATE TABLE user_device_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
@@ -691,6 +709,22 @@ CREATE TABLE operator_audit_log (
     KEY idx_operator_audit_log_operator_created (operator_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Operator audit log records';
 
+CREATE TABLE user_profile_device (
+    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    device_no VARCHAR(128) NOT NULL COMMENT 'Device identifier',
+    system_platform VARCHAR(16) NOT NULL COMMENT 'System platform',
+    client_app_name VARCHAR(64) NOT NULL COMMENT 'Client-reported application name',
+    app_version VARCHAR(32) NOT NULL COMMENT 'Application version',
+    package_name VARCHAR(128) NOT NULL COMMENT 'Application package name',
+    ad_id VARCHAR(128) NULL COMMENT 'Advertising identifier',
+    device_other_json JSON NULL COMMENT 'Extended device collection JSON',
+    last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
+    PRIMARY KEY (profile_id),
+    KEY idx_user_profile_device_device_no (device_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Latest user device snapshot for onboarding';
+
 CREATE TABLE user_profile_personal (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
     province_code VARCHAR(32) NOT NULL COMMENT 'Residential province code',
@@ -708,3 +742,34 @@ CREATE TABLE user_profile_personal (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User personal basic information module';
+
+CREATE TABLE user_profile_work (
+    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    industry INT NOT NULL COMMENT 'Industry code',
+    company_name VARCHAR(128) NOT NULL COMMENT 'Company name',
+    work_province_code VARCHAR(32) NOT NULL COMMENT 'Work location province code',
+    work_city_code VARCHAR(32) NOT NULL COMMENT 'Work location city code',
+    work_district_code VARCHAR(32) NOT NULL COMMENT 'Work location district code',
+    work_address VARCHAR(512) NOT NULL COMMENT 'Work street address',
+    income VARCHAR(16) NOT NULL COMMENT 'Monthly income as numeric string',
+    payday INT NOT NULL COMMENT 'Payday 1-31',
+    profession_degree INT NOT NULL COMMENT 'Profession type code',
+    module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
+    last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
+    PRIMARY KEY (profile_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User work information module';
+
+CREATE TABLE user_password_credential (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    password_hash VARCHAR(128) NOT NULL COMMENT 'BCrypt password hash',
+    password_set_at DATETIME(3) NOT NULL COMMENT 'Password set time',
+    failed_attempts INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Consecutive failed password login attempts',
+    locked_until DATETIME(3) NULL COMMENT 'Password login lock expiry time',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_user_password_profile (profile_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User login password credential';

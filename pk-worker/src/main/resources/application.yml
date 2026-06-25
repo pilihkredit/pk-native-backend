@@ -15,6 +15,28 @@ server:
 
 pk:
   environment: ${SPRING_PROFILES_ACTIVE:local}
+  lender:
+    pendanaan:
+      mode: ${PK_LENDER_PENDANAAN_MODE:http}
+      base-url: ${PK_PENDANAAN_BASE_URL:}
+      client-id: ${PK_PENDANAAN_CLIENT_ID:}
+      client-secret: ${PK_PENDANAAN_CLIENT_SECRET:}
+      app-name: ${PK_PENDANAAN_APP_NAME:}
+  reference:
+    bank-cache-ttl: ${PK_REFERENCE_BANK_CACHE_TTL:24h}
+    area-cache-ttl: ${PK_REFERENCE_AREA_CACHE_TTL:24h}
+  profile:
+    sync:
+      mode: ${PK_PROFILE_SYNC_MODE:inline}
+      max-retries: ${PK_PROFILE_SYNC_MAX_RETRIES:5}
+      retry-backoff-seconds: ${PK_PROFILE_SYNC_RETRY_BACKOFF_SECONDS:60}
   worker:
     outbox:
-      poll-interval-ms: 5000
+      enabled: ${PK_WORKER_OUTBOX_ENABLED:true}
+      poll-interval-ms: ${PK_WORKER_OUTBOX_POLL_INTERVAL_MS:5000}
+      batch-size: ${PK_WORKER_OUTBOX_BATCH_SIZE:20}
+    reference:
+      enabled: ${PK_WORKER_REFERENCE_REFRESH_ENABLED:true}
+      bank-refresh-cron: ${PK_WORKER_BANK_REFRESH_CRON:0 0 3 * * *}
+      area-refresh-cron: ${PK_WORKER_AREA_REFRESH_CRON:0 30 3 * * *}
+      refresh-zone: ${PK_WORKER_REFERENCE_REFRESH_ZONE:Asia/Jakarta}
