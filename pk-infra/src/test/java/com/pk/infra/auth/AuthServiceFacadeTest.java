@@ -19,7 +19,9 @@ import com.pk.core.auth.port.SessionStore;
 import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSender;
 import com.pk.core.auth.port.TokenIssuer;
+import com.pk.core.auth.port.PasswordHasher;
 import com.pk.core.auth.port.UserAuthRepository;
+import com.pk.core.auth.port.UserPasswordCredentialRepository;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -30,6 +32,8 @@ import org.junit.jupiter.api.Test;
 class AuthServiceFacadeTest {
     private OtpChallengeStore otpChallengeStore;
     private UserAuthRepository userAuthRepository;
+    private UserPasswordCredentialRepository userPasswordCredentialRepository;
+    private PasswordHasher passwordHasher;
     private SmsSendLogRepository smsSendLogRepository;
     private SmsSender smsSender;
     private AuthServiceFacade facade;
@@ -38,6 +42,8 @@ class AuthServiceFacadeTest {
     void setUp() {
         otpChallengeStore = mock(OtpChallengeStore.class);
         userAuthRepository = mock(UserAuthRepository.class);
+        userPasswordCredentialRepository = mock(UserPasswordCredentialRepository.class);
+        passwordHasher = mock(PasswordHasher.class);
         smsSendLogRepository = mock(SmsSendLogRepository.class);
         smsSender = mock(SmsSender.class);
         AuthProperties properties = new AuthProperties();
@@ -52,6 +58,8 @@ class AuthServiceFacadeTest {
                 mock(RefreshTokenStore.class),
                 mock(TokenIssuer.class),
                 userAuthRepository,
+                userPasswordCredentialRepository,
+                passwordHasher,
                 smsSendLogRepository,
                 smsSender
         );
@@ -122,11 +130,13 @@ class AuthServiceFacadeTest {
     void returnsExistingWhenMobileIsRegistered() {
         when(userAuthRepository.findByMobileNo("8123456789"))
                 .thenReturn(Optional.of(new UserProfileSummary(1L, "UABC", "8123456789", false)));
+        when(userPasswordCredentialRepository.isPasswordSet(1L)).thenReturn(true);
 
         var result = facade.checkMobileRegistration("8123456789", "device-1");
 
         assertThat(result.registered()).isTrue();
         assertThat(result.accountStatus()).isEqualTo("EXISTING");
+        assertThat(result.passwordSet()).isTrue();
     }
 
     @Test
@@ -137,6 +147,33 @@ class AuthServiceFacadeTest {
 
         assertThat(result.registered()).isFalse();
         assertThat(result.accountStatus()).isEqualTo("NEW");
+        assertThat(result.passwordSet()).isFalse();
+    }
+
+    @Test
+    void setsPasswordWhenFormatIsValid() {
+        when(userPasswordCredentialRepository.isPasswordSet(1L)).thenReturn(false);
+        when(passwordHasher.hash("abc123")).thenReturn("hashed");
+
+        facade.setPassword(1L, "abc123", "abc123");
+
+        verify(userPasswordCredentialRepository).insert(1L, "hashed");
+    }
+
+    @Test
+    void rejectsPasswordWhenConfirmationDoesNotMatch() {
+        assertThatThrownBy(() -> facade.setPassword(1L, "abc123", "abc124"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.PASSWORD_CONFIRM_MISMATCH);
+    }
+
+    @Test
+    void rejectsPasswordWhenFormatIsInvalid() {
+        assertThatThrownBy(() -> facade.setPassword(1L, "abcdef", "abcdef"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.INVALID_PASSWORD_FORMAT);
     }
 
     @Test

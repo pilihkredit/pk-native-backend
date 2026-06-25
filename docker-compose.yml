@@ -16,7 +16,7 @@ services:
       - ./sql/create_pk_schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
     command:
       - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_0900_ai_ci
+      - --collation-server=utf8mb4_unicode_ci
       - --default-time-zone=+07:00
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-upk", "-ppk"]

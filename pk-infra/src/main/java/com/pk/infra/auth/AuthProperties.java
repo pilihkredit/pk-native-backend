@@ -13,6 +13,8 @@ public class AuthProperties {
     private int otpDailyLimit = 10;
     private ZoneId otpDailyLimitZone = ZoneId.of("Asia/Jakarta");
     private String jwtSecret = "local-dev-secret-change-in-prod-min-32-chars";
+    private int passwordMaxFailedAttempts = 5;
+    private Duration passwordLockDuration = Duration.ofMinutes(15);
 
     public Duration accessTokenTtl() {
         return accessTokenTtl;
@@ -68,5 +70,21 @@ public class AuthProperties {
 
     public void setJwtSecret(String jwtSecret) {
         this.jwtSecret = jwtSecret;
+    }
+
+    public int passwordMaxFailedAttempts() {
+        return passwordMaxFailedAttempts;
+    }
+
+    public void setPasswordMaxFailedAttempts(int passwordMaxFailedAttempts) {
+        this.passwordMaxFailedAttempts = passwordMaxFailedAttempts;
+    }
+
+    public Duration passwordLockDuration() {
+        return passwordLockDuration;
+    }
+
+    public void setPasswordLockDuration(Duration passwordLockDuration) {
+        this.passwordLockDuration = passwordLockDuration;
     }
 }

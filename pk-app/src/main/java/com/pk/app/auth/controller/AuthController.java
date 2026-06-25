@@ -2,10 +2,13 @@ package com.pk.app.auth.controller;
 
 import com.pk.app.auth.application.AuthApplicationService;
 import com.pk.app.auth.dto.request.MobileCheckRequest;
+import com.pk.app.auth.dto.request.PasswordLoginRequest;
+import com.pk.app.auth.dto.request.PasswordSetRequest;
 import com.pk.app.auth.dto.request.OtpSendRequest;
 import com.pk.app.auth.dto.request.OtpVerifyRequest;
 import com.pk.app.auth.dto.request.RefreshTokenRequest;
 import com.pk.app.auth.dto.response.MobileCheckResponse;
+import com.pk.app.auth.dto.response.PasswordSetResponse;
 import com.pk.app.auth.dto.response.OtpSendResponse;
 import com.pk.app.auth.dto.response.OtpVerifyResponse;
 import com.pk.app.auth.dto.response.RefreshTokenResponse;
@@ -36,18 +39,7 @@ public class AuthController {
         this.authApplicationService = authApplicationService;
     }
 
-    /**
-     * Check mobile registration status
-     *
-     * Called before OTP send to route UI for returning vs new users. Public endpoint.
-     * Does not issue tokens; authoritative register/login remains {@link #verifyOtp}.
-     *
-     * @param request              mobile number and device id
-     * @param ignoredAuthorization optional Authorization header, ignored
-     * @param deviceNoHeader       optional X-Device-No header; when present must equal request.deviceNo
-     * @param httpRequest          servlet request for trace id
-     * @return registered flag and accountStatus (EXISTING or NEW)
-     */
+    /** Check mobile registration. */
     @PublicApi
     @PostMapping("/mobile/check")
     public ApiResponse<MobileCheckResponse> checkMobile(
@@ -62,18 +54,7 @@ public class AuthController {
         );
     }
 
-    /**
-     * Send OTP
-     *
-     * Sends OTP to a mobile number. Public endpoint; Authorization header is ignored.
-     * Same device cannot resend within resendAfter seconds (default 60s).
-     *
-     * @param request              mobile number and device id
-     * @param ignoredAuthorization optional Authorization header, ignored
-     * @param deviceNoHeader       optional X-Device-No header; when present must equal request.deviceNo
-     * @param httpRequest          servlet request for trace id
-     * @return otpToken, expireIn, resendAfter
-     */
+    /** Send OTP. */
     @PublicApi
     @PostMapping("/otp/send")
     public ApiResponse<OtpSendResponse> sendOtp(
@@ -88,17 +69,7 @@ public class AuthController {
         );
     }
 
-    /**
-     * Verify OTP
-     *
-     * Verifies OTP and opens a session. Public endpoint.
-     * New mobiles are auto-registered. Login on a new device invalidates previous sessions.
-     *
-     * @param request        OTP verify payload
-     * @param deviceNoHeader optional X-Device-No header; when present must equal request.deviceNo
-     * @param httpRequest    servlet request for trace id
-     * @return tokens and user summary
-     */
+    /** Verify OTP. */
     @PublicApi
     @PostMapping("/otp/verify")
     public ApiResponse<OtpVerifyResponse> verifyOtp(
@@ -112,16 +83,7 @@ public class AuthController {
         );
     }
 
-    /**
-     * Refresh Token
-     *
-     * Exchanges refresh token for a new access token. Public endpoint.
-     * Call on HTTP 401 or before access token expiry. Refresh token is not rotated.
-     *
-     * @param request     refresh token body
-     * @param httpRequest servlet request for trace id
-     * @return new access token and expiresIn
-     */
+    /** Refresh access token. */
     @PublicApi
     @PostMapping("/refresh")
     public ApiResponse<RefreshTokenResponse> refresh(
@@ -134,17 +96,36 @@ public class AuthController {
         );
     }
 
-    /**
-     * Logout
-     *
-     * Invalidates current session and all refresh tokens. Requires Bearer access token.
-     *
-     * @param httpRequest servlet request for trace id
-     * @return empty success payload
-     */
+    /** Logout. */
     @PostMapping("/logout")
     public ApiResponse<Void> logout(HttpServletRequest httpRequest) {
         authApplicationService.logout(SecurityContextSupport.requirePrincipal());
         return ApiResponse.success(null, RequestTrace.resolveTraceId(httpRequest));
+    }
+
+    /** Set login password for the first time. */
+    @PostMapping("/password/set")
+    public ApiResponse<PasswordSetResponse> setPassword(
+            @Valid @RequestBody PasswordSetRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return ApiResponse.success(
+                authApplicationService.setPassword(SecurityContextSupport.requirePrincipal(), request),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Login with mobile number and password. */
+    @PublicApi
+    @PostMapping("/password/login")
+    public ApiResponse<OtpVerifyResponse> loginByPassword(
+            @Valid @RequestBody PasswordLoginRequest request,
+            @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
+            HttpServletRequest httpRequest
+    ) {
+        return ApiResponse.success(
+                authApplicationService.loginByPassword(request, deviceNoHeader),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
     }
 }

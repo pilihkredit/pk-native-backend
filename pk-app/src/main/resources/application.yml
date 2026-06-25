@@ -28,5 +28,27 @@ pk:
     otp-daily-limit: ${PK_AUTH_OTP_DAILY_LIMIT:10}
     otp-daily-limit-zone: ${PK_AUTH_OTP_DAILY_LIMIT_ZONE:Asia/Jakarta}
     jwt-secret: ${PK_AUTH_JWT_SECRET:local-dev-secret-change-in-prod-min-32-chars}
+    password-max-failed-attempts: ${PK_AUTH_PASSWORD_MAX_FAILED_ATTEMPTS:5}
+    password-lock-duration: ${PK_AUTH_PASSWORD_LOCK_DURATION:15m}
   security:
     field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY:local-dev-field-encryption-key-32b}
+  reference:
+    bank-cache-ttl: ${PK_REFERENCE_BANK_CACHE_TTL:24h}
+    area-cache-ttl: ${PK_REFERENCE_AREA_CACHE_TTL:24h}
+  lender:
+    pendanaan:
+      mode: ${PK_LENDER_PENDANAAN_MODE:http}
+      base-url: ${PK_PENDANAAN_BASE_URL:}
+      client-id: ${PK_PENDANAAN_CLIENT_ID:}
+      client-secret: ${PK_PENDANAAN_CLIENT_SECRET:}
+      app-name: ${PK_PENDANAAN_APP_NAME:}
+  profile:
+    sync:
+      mode: ${PK_PROFILE_SYNC_MODE:inline}
+      max-retries: ${PK_PROFILE_SYNC_MAX_RETRIES:5}
+      retry-backoff-seconds: ${PK_PROFILE_SYNC_RETRY_BACKOFF_SECONDS:60}
+  credit:
+    apply:
+      max-retries: ${PK_CREDIT_APPLY_MAX_RETRIES:5}
+      retry-backoff-seconds: ${PK_CREDIT_APPLY_RETRY_BACKOFF_SECONDS:60}
+      poll-interval-seconds: ${PK_CREDIT_POLL_INTERVAL_SECONDS:30}
