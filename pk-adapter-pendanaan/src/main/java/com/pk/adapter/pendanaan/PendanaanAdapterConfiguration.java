@@ -6,7 +6,7 @@ import com.pk.core.credit.port.LenderCreditPort;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.reference.port.LenderAreaPort;
 import com.pk.core.reference.port.LenderBankPort;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,48 +15,47 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(PendanaanProperties.class)
 public class PendanaanAdapterConfiguration {
     @Bean
-    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_FAKE, matchIfMissing = true)
+    @ConditionalOnMissingBean(LenderBankPort.class)
     LenderBankPort fakeLenderBankPort() {
         return new FakePendanaanBankAdapter();
     }
 
     @Bean
-    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_FAKE, matchIfMissing = true)
+    @ConditionalOnMissingBean(LenderAreaPort.class)
     LenderAreaPort fakeLenderAreaPort() {
         return new FakePendanaanAreaAdapter();
     }
 
     @Bean
-    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_FAKE, matchIfMissing = true)
+    @ConditionalOnMissingBean(LenderProfileSyncPort.class)
     LenderProfileSyncPort fakeLenderProfileSyncPort() {
         return new FakePendanaanProfileSyncAdapter();
     }
 
     @Bean
-    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_FAKE, matchIfMissing = true)
+    @ConditionalOnMissingBean(LenderCreditPort.class)
     LenderCreditPort fakeLenderCreditPort() {
         return new FakePendanaanCreditAdapter();
     }
 
     @Bean
-    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_HTTP)
+    @ConditionalOnPendanaanHttpEnabled
     LenderCreditPort pendanaanCreditAdapter(PendanaanHttpClient httpClient) {
         return new PendanaanCreditAdapter(httpClient);
     }
 
     @Bean
-    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_HTTP)
+    @ConditionalOnPendanaanHttpEnabled
     PendanaanOAuthTokenProvider pendanaanOAuthTokenProvider(
             PendanaanProperties properties,
             LenderInteractionLogRepository interactionLogRepository,
             ObjectMapper objectMapper
     ) {
-        properties.validateHttpSettings();
         return new PendanaanOAuthTokenProvider(properties, interactionLogRepository, objectMapper);
     }
 
     @Bean
-    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_HTTP)
+    @ConditionalOnPendanaanHttpEnabled
     PendanaanHttpClient pendanaanHttpClient(
             PendanaanProperties properties,
             PendanaanOAuthTokenProvider tokenProvider,
@@ -67,19 +66,19 @@ public class PendanaanAdapterConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_HTTP)
+    @ConditionalOnPendanaanHttpEnabled
     LenderBankPort pendanaanBankAdapter(PendanaanHttpClient httpClient) {
         return new PendanaanBankAdapter(httpClient);
     }
 
     @Bean
-    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_HTTP)
+    @ConditionalOnPendanaanHttpEnabled
     LenderAreaPort pendanaanAreaAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
         return new PendanaanAreaAdapter(httpClient, objectMapper);
     }
 
     @Bean
-    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_HTTP)
+    @ConditionalOnPendanaanHttpEnabled
     LenderProfileSyncPort pendanaanProfileSyncAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
         return new PendanaanProfileSyncAdapter(httpClient, objectMapper);
     }

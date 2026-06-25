@@ -75,21 +75,25 @@ public class PendanaanProperties {
         return MODE_HTTP.equalsIgnoreCase(mode);
     }
 
+    public boolean httpCredentialsPresent() {
+        return isPresent(baseUrl)
+                && isPresent(clientId)
+                && isPresent(clientSecret)
+                && isPresent(appName);
+    }
+
     public void validateHttpSettings() {
         if (!httpEnabled()) {
             return;
         }
-        if (baseUrl == null || baseUrl.isBlank()) {
-            throw new IllegalStateException("pk.lender.pendanaan.base-url is required when mode=http");
+        if (!httpCredentialsPresent()) {
+            throw new IllegalStateException(
+                    "pk.lender.pendanaan.base-url, client-id, client-secret, and app-name are required when mode=http"
+            );
         }
-        if (clientId == null || clientId.isBlank()) {
-            throw new IllegalStateException("pk.lender.pendanaan.client-id is required when mode=http");
-        }
-        if (clientSecret == null || clientSecret.isBlank()) {
-            throw new IllegalStateException("pk.lender.pendanaan.client-secret is required when mode=http");
-        }
-        if (appName == null || appName.isBlank()) {
-            throw new IllegalStateException("pk.lender.pendanaan.app-name is required when mode=http");
-        }
+    }
+
+    private static boolean isPresent(String value) {
+        return value != null && !value.isBlank();
     }
 }
