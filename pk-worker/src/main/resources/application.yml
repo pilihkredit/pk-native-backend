@@ -17,7 +17,7 @@ pk:
   environment: ${SPRING_PROFILES_ACTIVE:local}
   lender:
     pendanaan:
-      mode: ${PK_LENDER_PENDANAAN_MODE:http}
+      mode: ${PK_LENDER_PENDANAAN_MODE:fake}
       base-url: ${PK_PENDANAAN_BASE_URL:}
       client-id: ${PK_PENDANAAN_CLIENT_ID:}
       client-secret: ${PK_PENDANAAN_CLIENT_SECRET:}
