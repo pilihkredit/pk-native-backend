@@ -1,13 +1,21 @@
 package com.pk.app.common.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import jakarta.validation.constraints.NotBlank;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -22,6 +30,21 @@ class GlobalApiExceptionHandlerTest {
             .standaloneSetup(new TestController())
             .setControllerAdvice(new GlobalApiExceptionHandler())
             .build();
+    private ListAppender<ILoggingEvent> logAppender;
+
+    @BeforeEach
+    void setUpLogging() {
+        Logger logger = (Logger) LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
+        logAppender = new ListAppender<>();
+        logAppender.start();
+        logger.addAppender(logAppender);
+    }
+
+    @AfterEach
+    void tearDownLogging() {
+        Logger logger = (Logger) LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
+        logger.detachAppender(logAppender);
+    }
 
     @Test
     void mapsApiExceptionToWrappedFailure() throws Exception {
@@ -67,6 +90,11 @@ class GlobalApiExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("999999"))
                 .andExpect(jsonPath("$.msg").value("Internal server error"))
                 .andExpect(jsonPath("$.traceId").value("trace-unknown"));
+
+        assertThat(logAppender.list)
+                .anyMatch(event -> event.getLevel() == Level.ERROR
+                        && event.getFormattedMessage().contains("trace-unknown")
+                        && event.getThrowableProxy() != null);
     }
 
     @Validated

@@ -5,6 +5,8 @@ import com.pk.core.api.ApiException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +21,27 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class GlobalApiExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
+
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiResponse<Void>> handleApiException(ApiException exception, HttpServletRequest request) {
+        if (shouldLogApiException(exception)) {
+            log.error(
+                    "API failure traceId={} code={} method={} path={}",
+                    RequestTrace.resolveTraceId(request),
+                    exception.apiCode().code(),
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    exception
+            );
+        }
         HttpStatus status = resolveApiExceptionStatus(exception);
         return failure(exception.apiCode(), status, request);
+    }
+
+    private static boolean shouldLogApiException(ApiException exception) {
+        return exception.apiCode() == ApiCode.INTERNAL_SERVER_ERROR
+                || exception.apiCode() == ApiCode.SERVICE_UNAVAILABLE;
     }
 
     private HttpStatus resolveApiExceptionStatus(ApiException exception) {
@@ -56,6 +75,13 @@ public class GlobalApiExceptionHandler {
         if (isValidationCause(exception)) {
             return failure(ApiCode.INVALID_REQUEST_PARAMETERS, HttpStatus.BAD_REQUEST, request);
         }
+        log.error(
+                "Unhandled API exception traceId={} method={} path={}",
+                RequestTrace.resolveTraceId(request),
+                request.getMethod(),
+                request.getRequestURI(),
+                exception
+        );
         return failure(ApiCode.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
 

@@ -59,18 +59,12 @@ public class CreditInfraConfiguration {
 
     @Bean
     CreditStatusPollHandler creditStatusPollHandler(
-            CreditApplicationRepository creditApplicationRepository,
-            CreditStatusHistoryRepository creditStatusHistoryRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
             LenderCreditPort lenderCreditPort,
-            CreditApplyProperties creditApplyProperties
+            CreditLenderStatusApplier creditLenderStatusApplier
     ) {
         return new CreditStatusPollHandler(
-                creditApplicationRepository,
-                creditStatusHistoryRepository,
-                creditLimitSnapshotRepository,
                 lenderCreditPort,
-                creditApplyProperties
+                creditLenderStatusApplier
         );
     }
 }

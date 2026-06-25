@@ -35,6 +35,11 @@ public class JdbcCreditApplicationRepository implements CreditApplicationReposit
     }
 
     @Override
+    public Optional<CreditApplicationRecord> findByApplyId(String applyId) {
+        return findOne("apply_id = ?", applyId);
+    }
+
+    @Override
     public long insert(CreditApplicationInsert insert) {
         jdbcTemplate.update(
                 """

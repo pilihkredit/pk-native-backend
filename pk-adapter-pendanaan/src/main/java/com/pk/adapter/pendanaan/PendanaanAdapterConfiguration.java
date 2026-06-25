@@ -1,6 +1,7 @@
 package com.pk.adapter.pendanaan;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.external.port.LenderInteractionLogRepository;
 import com.pk.core.credit.port.LenderCreditPort;
 import com.pk.core.profile.port.LenderProfileSyncPort;
@@ -36,6 +37,12 @@ public class PendanaanAdapterConfiguration {
     @ConditionalOnMissingBean(LenderCreditPort.class)
     LenderCreditPort fakeLenderCreditPort() {
         return new FakePendanaanCreditAdapter();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(CreditCallbackParser.class)
+    CreditCallbackParser pendanaanCreditCallbackParser(ObjectMapper objectMapper) {
+        return new PendanaanCreditCallbackParser(objectMapper);
     }
 
     @Bean
