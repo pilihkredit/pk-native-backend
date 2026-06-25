@@ -10,7 +10,7 @@ CREATE TABLE pk_provider (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_pk_provider_code (provider_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='External PK provider configuration';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='External PK provider configuration';
 
 CREATE TABLE pk_api_credential (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -26,7 +26,7 @@ CREATE TABLE pk_api_credential (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     KEY idx_pk_api_credential_provider_status (provider_code, status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='External PK API credential references';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='External PK API credential references';
 
 CREATE TABLE ref_bank (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -40,7 +40,7 @@ CREATE TABLE ref_bank (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_ref_bank_code (bank_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Cached bank reference data';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Cached bank reference data';
 
 CREATE TABLE ref_area (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -55,7 +55,7 @@ CREATE TABLE ref_area (
     PRIMARY KEY (id),
     UNIQUE KEY uk_ref_area_code (area_code),
     KEY idx_ref_area_parent (parent_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Cached administrative area reference data';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Cached administrative area reference data';
 
 CREATE TABLE user_profile (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -81,7 +81,7 @@ CREATE TABLE user_profile (
     KEY idx_user_profile_external_user_id (external_user_id),
     KEY idx_user_profile_mobile_no (mobile_no),
     KEY idx_user_profile_lifecycle_retention (data_lifecycle_status, retention_until)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Current user profile master data';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Current user profile master data';
 
 CREATE TABLE sms_send_log (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -100,7 +100,7 @@ CREATE TABLE sms_send_log (
     KEY idx_sms_send_log_mobile_created (mobile_no, created_at),
     KEY idx_sms_send_log_device_created (device_no, created_at),
     KEY idx_sms_send_log_profile_created (profile_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='SMS OTP send audit log';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SMS OTP send audit log';
 
 CREATE TABLE user_profile_version (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -118,7 +118,7 @@ CREATE TABLE user_profile_version (
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_profile_version_no (profile_id, version_no),
     KEY idx_user_profile_version_hash (profile_id, snapshot_hash)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Immutable user profile snapshot versions';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Immutable user profile snapshot versions';
 
 CREATE TABLE user_identity_asset (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -148,7 +148,7 @@ CREATE TABLE user_identity_asset (
     KEY idx_user_identity_asset_id_card_hash (id_card_hash),
     KEY idx_user_identity_asset_identity_retention (identity_data_retention_until),
     KEY idx_user_identity_asset_biometric_retention (biometric_image_retention_until)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User identity assets and OCR results';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User identity assets and OCR results';
 
 CREATE TABLE user_bank_card (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -163,7 +163,7 @@ CREATE TABLE user_bank_card (
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_bank_card_no (card_no),
     KEY idx_user_bank_card_profile_default (profile_id, default_flag)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User bank card verification records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bank card verification records';
 
 CREATE TABLE user_profile_bank_card (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
@@ -181,7 +181,7 @@ CREATE TABLE user_profile_bank_card (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id),
     UNIQUE KEY uk_user_profile_bank_card_hash (card_no_hash)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User bank card onboarding module';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bank card onboarding module';
 
 CREATE TABLE user_device_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -201,7 +201,7 @@ CREATE TABLE user_device_snapshot (
     PRIMARY KEY (id),
     KEY idx_user_device_snapshot_profile_version (profile_version_id),
     KEY idx_user_device_snapshot_device_no (device_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User device snapshot records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User device snapshot records';
 
 CREATE TABLE user_contact_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -217,7 +217,7 @@ CREATE TABLE user_contact_snapshot (
     PRIMARY KEY (id),
     KEY idx_user_contact_snapshot_profile_version (profile_version_id),
     KEY idx_user_contact_snapshot_mobile (contact_mobile)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User contact snapshot records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User contact snapshot records';
 
 CREATE TABLE data_retention_policy (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -233,7 +233,7 @@ CREATE TABLE data_retention_policy (
     PRIMARY KEY (id),
     UNIQUE KEY uk_data_retention_policy_code (policy_code),
     KEY idx_data_retention_policy_domain_category (business_domain, data_category)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Data retention policy definitions';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Data retention policy definitions';
 
 CREATE TABLE user_consent_record (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -256,7 +256,7 @@ CREATE TABLE user_consent_record (
     UNIQUE KEY uk_user_consent_record_no (consent_no),
     KEY idx_user_consent_record_profile_type (profile_id, consent_type, consent_status),
     KEY idx_user_consent_record_purpose (processing_purpose, granted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User consent and withdrawal records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User consent and withdrawal records';
 
 CREATE TABLE data_subject_request (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -279,11 +279,12 @@ CREATE TABLE data_subject_request (
     UNIQUE KEY uk_data_subject_request_no (request_no),
     KEY idx_data_subject_request_profile (profile_id, requested_at),
     KEY idx_data_subject_request_status_due (request_status, due_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Data subject access, correction, portability, objection, and erasure requests';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Data subject access, correction, portability, objection, and erasure requests';
 
 CREATE TABLE credit_application (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    apply_id VARCHAR(64) NOT NULL COMMENT 'Credit application identifier',
+    apply_id VARCHAR(64) NOT NULL COMMENT 'Server-generated credit application identifier',
+    request_id VARCHAR(64) NOT NULL COMMENT 'Idempotency request identifier',
     provider_code VARCHAR(32) NOT NULL COMMENT 'External provider code',
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
     profile_version_id BIGINT UNSIGNED NOT NULL COMMENT 'Profile version identifier',
@@ -299,10 +300,11 @@ CREATE TABLE credit_application (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_credit_application_apply_id (apply_id),
+    UNIQUE KEY uk_credit_application_request_id (request_id),
     KEY idx_credit_application_profile_status (profile_id, status),
     KEY idx_credit_application_poll (status, next_poll_at),
     KEY idx_credit_application_external_no (external_credit_apply_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Credit application records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Credit application records';
 
 CREATE TABLE credit_limit_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -318,7 +320,7 @@ CREATE TABLE credit_limit_snapshot (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     KEY idx_credit_limit_snapshot_credit_application (credit_application_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Credit limit snapshot records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Credit limit snapshot records';
 
 CREATE TABLE credit_status_history (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -332,7 +334,7 @@ CREATE TABLE credit_status_history (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     KEY idx_credit_status_history_credit_created (credit_application_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Credit status transition history';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Credit status transition history';
 
 CREATE TABLE pk_product_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -348,7 +350,7 @@ CREATE TABLE pk_product_snapshot (
     PRIMARY KEY (id),
     UNIQUE KEY uk_pk_product_snapshot_no (snapshot_no),
     KEY idx_pk_product_snapshot_credit_fetched (credit_application_id, fetched_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='PK product list snapshots';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='PK product list snapshots';
 
 CREATE TABLE loan_quote (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -371,7 +373,7 @@ CREATE TABLE loan_quote (
     PRIMARY KEY (id),
     UNIQUE KEY uk_loan_quote_no (quote_no),
     KEY idx_loan_quote_credit_quoted (credit_application_id, quoted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Loan quote snapshots';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loan quote snapshots';
 
 CREATE TABLE loan_quote_term (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -386,7 +388,7 @@ CREATE TABLE loan_quote_term (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_loan_quote_term (quote_id, term_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Loan quote repayment term details';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loan quote repayment term details';
 
 CREATE TABLE loan_application (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -414,7 +416,7 @@ CREATE TABLE loan_application (
     KEY idx_loan_application_profile_status (profile_id, status),
     KEY idx_loan_application_bill_no (bill_no),
     KEY idx_loan_application_poll (status, next_poll_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Loan application records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loan application records';
 
 CREATE TABLE loan_status_history (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -428,7 +430,7 @@ CREATE TABLE loan_status_history (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     KEY idx_loan_status_history_loan_created (loan_application_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Loan status transition history';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loan status transition history';
 
 CREATE TABLE contract_file (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -443,7 +445,7 @@ CREATE TABLE contract_file (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_contract_file_loan_type (loan_application_id, contract_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Loan contract file references';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loan contract file references';
 
 CREATE TABLE repayment_plan_term (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -467,7 +469,7 @@ CREATE TABLE repayment_plan_term (
     PRIMARY KEY (id),
     UNIQUE KEY uk_repayment_plan_term_loan_term (loan_application_id, term_no),
     KEY idx_repayment_plan_term_due_status (due_date, term_status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Repayment plan term records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Repayment plan term records';
 
 CREATE TABLE repay_va_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -485,7 +487,7 @@ CREATE TABLE repay_va_snapshot (
     PRIMARY KEY (id),
     KEY idx_repay_va_snapshot_profile_fetched (profile_id, fetched_at),
     KEY idx_repay_va_snapshot_va_no (va_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Repayment virtual account snapshots';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Repayment virtual account snapshots';
 
 CREATE TABLE repayment_trial_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -502,7 +504,7 @@ CREATE TABLE repayment_trial_snapshot (
     PRIMARY KEY (id),
     UNIQUE KEY uk_repayment_trial_snapshot_no (trial_no),
     KEY idx_repayment_trial_snapshot_profile_created (profile_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Repayment trial snapshots';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Repayment trial snapshots';
 
 CREATE TABLE repayment_trial_order (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -519,7 +521,7 @@ CREATE TABLE repayment_trial_order (
     PRIMARY KEY (id),
     KEY idx_repayment_trial_order_trial (trial_id),
     KEY idx_repayment_trial_order_loan_apply (loan_apply_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Repayment trial order details';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Repayment trial order details';
 
 CREATE TABLE repay_current_order (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -535,7 +537,7 @@ CREATE TABLE repay_current_order (
     PRIMARY KEY (id),
     UNIQUE KEY uk_repay_current_order_no (current_order_no),
     KEY idx_repay_current_order_profile_status (profile_id, status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Current repayment order selections';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Current repayment order selections';
 
 CREATE TABLE external_interaction (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -560,7 +562,7 @@ CREATE TABLE external_interaction (
     KEY idx_external_interaction_business (business_type, business_id),
     KEY idx_external_interaction_request_id (request_id),
     KEY idx_external_interaction_endpoint_created (endpoint, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='External API interaction audit records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='External API interaction audit records';
 
 CREATE TABLE callback_event (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -581,7 +583,7 @@ CREATE TABLE callback_event (
     UNIQUE KEY uk_callback_event_idempotency (idempotency_key),
     KEY idx_callback_event_business (callback_type, business_id),
     KEY idx_callback_event_process_status (process_status, received_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='External callback event records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='External callback event records';
 
 CREATE TABLE outbox_event (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -599,7 +601,7 @@ CREATE TABLE outbox_event (
     UNIQUE KEY uk_outbox_event_no (event_no),
     KEY idx_outbox_event_ready (status, next_retry_at),
     KEY idx_outbox_event_aggregate (aggregate_type, aggregate_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Reliable outbox event records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Reliable outbox event records';
 
 CREATE TABLE job_execution (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -619,7 +621,7 @@ CREATE TABLE job_execution (
     UNIQUE KEY uk_job_execution_no (job_no),
     KEY idx_job_execution_business (job_type, business_id),
     KEY idx_job_execution_status_created (status, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Background job execution records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Background job execution records';
 
 CREATE TABLE dead_letter_task (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -636,7 +638,7 @@ CREATE TABLE dead_letter_task (
     PRIMARY KEY (id),
     UNIQUE KEY uk_dead_letter_task_no (task_no),
     KEY idx_dead_letter_task_status_created (status, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Dead letter task records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Dead letter task records';
 
 CREATE TABLE tracking_event (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -656,7 +658,7 @@ CREATE TABLE tracking_event (
     KEY idx_tracking_event_trace (trace_id, event_time),
     KEY idx_tracking_event_user (partner_user_id, event_time),
     KEY idx_tracking_event_type (event_type, event_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Client and server tracking events';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Client and server tracking events';
 
 CREATE TABLE recon_job (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -674,7 +676,7 @@ CREATE TABLE recon_job (
     PRIMARY KEY (id),
     UNIQUE KEY uk_recon_job_no (job_no),
     UNIQUE KEY uk_recon_job_provider_type_date (provider_code, recon_type, business_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Reconciliation job records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Reconciliation job records';
 
 CREATE TABLE recon_diff (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -691,7 +693,7 @@ CREATE TABLE recon_diff (
     PRIMARY KEY (id),
     KEY idx_recon_diff_status_created (status, created_at),
     KEY idx_recon_diff_business (business_type, business_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Reconciliation difference records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Reconciliation difference records';
 
 CREATE TABLE operator_audit_log (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -707,7 +709,7 @@ CREATE TABLE operator_audit_log (
     PRIMARY KEY (id),
     KEY idx_operator_audit_log_target (target_type, target_id),
     KEY idx_operator_audit_log_operator_created (operator_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Operator audit log records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Operator audit log records';
 
 CREATE TABLE user_profile_device (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
@@ -723,7 +725,7 @@ CREATE TABLE user_profile_device (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id),
     KEY idx_user_profile_device_device_no (device_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Latest user device snapshot for onboarding';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest user device snapshot for onboarding';
 
 CREATE TABLE user_profile_personal (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
@@ -741,7 +743,7 @@ CREATE TABLE user_profile_personal (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User personal basic information module';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User personal basic information module';
 
 CREATE TABLE user_profile_work (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
@@ -759,7 +761,7 @@ CREATE TABLE user_profile_work (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User work information module';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User work information module';
 
 CREATE TABLE user_password_credential (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -772,4 +774,4 @@ CREATE TABLE user_password_credential (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_password_profile (profile_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User login password credential';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User login password credential';

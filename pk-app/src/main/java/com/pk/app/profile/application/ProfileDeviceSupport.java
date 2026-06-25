@@ -7,11 +7,11 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.profile.sync.LenderDeviceContext;
 
-final class ProfileDeviceSupport {
+public final class ProfileDeviceSupport {
     private ProfileDeviceSupport() {
     }
 
-    static LenderDeviceContext resolveLenderDevice(
+    public static LenderDeviceContext resolveLenderDevice(
             ProfileDeviceRequest deviceRequest,
             ClientRequestHeaders.ResolvedClientHeaders headers,
             PendanaanProperties pendanaanProperties

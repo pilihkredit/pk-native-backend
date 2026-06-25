@@ -2,6 +2,7 @@ package com.pk.adapter.pendanaan;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.external.port.LenderInteractionLogRepository;
+import com.pk.core.credit.port.LenderCreditPort;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.reference.port.LenderAreaPort;
 import com.pk.core.reference.port.LenderBankPort;
@@ -29,6 +30,18 @@ public class PendanaanAdapterConfiguration {
     @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_FAKE, matchIfMissing = true)
     LenderProfileSyncPort fakeLenderProfileSyncPort() {
         return new FakePendanaanProfileSyncAdapter();
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_FAKE, matchIfMissing = true)
+    LenderCreditPort fakeLenderCreditPort() {
+        return new FakePendanaanCreditAdapter();
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "pk.lender.pendanaan.mode", havingValue = PendanaanProperties.MODE_HTTP)
+    LenderCreditPort pendanaanCreditAdapter(PendanaanHttpClient httpClient) {
+        return new PendanaanCreditAdapter(httpClient);
     }
 
     @Bean

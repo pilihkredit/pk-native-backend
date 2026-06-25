@@ -47,3 +47,8 @@ pk:
       mode: ${PK_PROFILE_SYNC_MODE:inline}
       max-retries: ${PK_PROFILE_SYNC_MAX_RETRIES:5}
       retry-backoff-seconds: ${PK_PROFILE_SYNC_RETRY_BACKOFF_SECONDS:60}
+  credit:
+    apply:
+      max-retries: ${PK_CREDIT_APPLY_MAX_RETRIES:5}
+      retry-backoff-seconds: ${PK_CREDIT_APPLY_RETRY_BACKOFF_SECONDS:60}
+      poll-interval-seconds: ${PK_CREDIT_POLL_INTERVAL_SECONDS:30}

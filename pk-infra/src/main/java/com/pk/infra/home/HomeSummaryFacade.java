@@ -1,5 +1,6 @@
 package com.pk.infra.home;
 
+import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.home.HomeNextAction;
 import com.pk.core.home.HomeUserStage;
 import com.pk.core.home.port.HomeLifecycleReadRepository;
@@ -9,8 +10,7 @@ import com.pk.infra.profile.OnboardingProgressFacade;
 import java.util.Optional;
 
 public class HomeSummaryFacade {
-    private static final String CREDIT_APPROVED = "APPROVED";
-    private static final String CREDIT_PROCESSING = "PROCESSING";
+    private static final String CREDIT_APPROVED = CreditApplicationStatus.APPROVED;
 
     private final OnboardingProgressFacade onboardingProgressFacade;
     private final HomeLifecycleReadRepository homeLifecycleReadRepository;
@@ -74,7 +74,7 @@ public class HomeSummaryFacade {
             String userStage = hasDisbursedLoan ? HomeUserStage.RELOAN : HomeUserStage.CREDIT_APPROVED;
             return new StageDecision(userStage, HomeNextAction.GO_LOAN);
         }
-        if (latestCredit != null && CREDIT_PROCESSING.equals(latestCredit.status())) {
+        if (latestCredit != null && CreditApplicationStatus.isInFlight(latestCredit.status())) {
             return new StageDecision(HomeUserStage.CREDIT_PENDING, HomeNextAction.WAIT);
         }
         return new StageDecision(HomeUserStage.CREDIT_PENDING, HomeNextAction.APPLY_CREDIT);
