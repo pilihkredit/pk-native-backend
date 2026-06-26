@@ -35,7 +35,8 @@ class RepayBillsOverviewFacadeTest {
                 loanBillReadRepository,
                 repaymentPlanTermRepository,
                 repayCurrentOrderRepository,
-                new ObjectMapper()
+                new ObjectMapper(),
+                Optional.empty()
         );
     }
 

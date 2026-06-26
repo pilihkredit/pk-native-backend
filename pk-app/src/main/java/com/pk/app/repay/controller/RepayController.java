@@ -7,7 +7,6 @@ import com.pk.app.repay.dto.request.RepayCurrentOrderRequest;
 import com.pk.app.repay.dto.request.RepayTrialBatchRequest;
 import com.pk.app.repay.dto.request.RepayTrialRequest;
 import com.pk.app.repay.dto.request.RepayVaDefaultRequest;
-import com.pk.app.repay.dto.response.RepayBillsOverviewResponse;
 import com.pk.app.repay.dto.response.RepayCurrentOrderResponse;
 import com.pk.app.repay.dto.response.RepayPlanListResponse;
 import com.pk.app.repay.dto.response.RepayTrialBatchResponse;
@@ -34,15 +33,6 @@ public class RepayController {
 
     public RepayController(RepayApplicationService repayApplicationService) {
         this.repayApplicationService = repayApplicationService;
-    }
-
-    @GetMapping("/bills-overview")
-    public ApiResponse<RepayBillsOverviewResponse> billsOverview(HttpServletRequest httpRequest) {
-        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
-        return ApiResponse.success(
-                repayApplicationService.billsOverview(principal),
-                RequestTrace.resolveTraceId(httpRequest)
-        );
     }
 
     @GetMapping("/plan")

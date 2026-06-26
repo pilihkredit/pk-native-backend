@@ -9,10 +9,10 @@ import com.pk.core.repay.port.RepayCurrentOrderRepository;
 import com.pk.core.repay.port.RepaymentPlanTermRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public class RepayBillsOverviewFacade {
@@ -20,39 +20,34 @@ public class RepayBillsOverviewFacade {
     private final RepaymentPlanTermRepository repaymentPlanTermRepository;
     private final RepayCurrentOrderRepository repayCurrentOrderRepository;
     private final ObjectMapper objectMapper;
+    private final Optional<RepayPlanFacade> repayPlanFacade;
 
     public RepayBillsOverviewFacade(
             LoanBillReadRepository loanBillReadRepository,
             RepaymentPlanTermRepository repaymentPlanTermRepository,
             RepayCurrentOrderRepository repayCurrentOrderRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            Optional<RepayPlanFacade> repayPlanFacade
     ) {
         this.loanBillReadRepository = loanBillReadRepository;
         this.repaymentPlanTermRepository = repaymentPlanTermRepository;
         this.repayCurrentOrderRepository = repayCurrentOrderRepository;
         this.objectMapper = objectMapper;
+        this.repayPlanFacade = repayPlanFacade;
     }
 
     public OverviewResult getOverview(long profileId) {
         List<LoanBillReadRepository.LoanBillRecord> pendingLoans =
                 loanBillReadRepository.findPendingByProfileId(profileId);
         Set<String> selectedLoanApplyIds = loadSelectedLoanApplyIds(profileId);
-        Map<Long, List<RepaymentPlanTermRepository.TermRecord>> termsByLoan = new HashMap<>();
-        for (LoanBillReadRepository.LoanBillRecord loan : pendingLoans) {
-            termsByLoan.put(
-                    loan.loanApplicationId(),
-                    repaymentPlanTermRepository.findByLoanApplicationId(loan.loanApplicationId())
-            );
-        }
 
         BigDecimal totalDueAmount = BigDecimal.ZERO;
         boolean hasOverdue = false;
         List<BillSummaryResult> summaries = new ArrayList<>();
         for (LoanBillReadRepository.LoanBillRecord loan : pendingLoans) {
-            List<RepaymentPlanTermRepository.TermRecord> terms = termsByLoan.getOrDefault(
-                    loan.loanApplicationId(),
-                    List.of()
-            );
+            repayPlanFacade.ifPresent(facade -> facade.syncPlan(profileId, loan.loanApplyId()));
+            List<RepaymentPlanTermRepository.TermRecord> terms =
+                    repaymentPlanTermRepository.findByLoanApplicationId(loan.loanApplicationId());
             BigDecimal currentDueAmount = BigDecimal.ZERO;
             int maxOverdueDays = 0;
             for (RepaymentPlanTermRepository.TermRecord term : terms) {

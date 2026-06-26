@@ -41,13 +41,15 @@ public class RepayInfraConfiguration {
             LoanBillReadRepository loanBillReadRepository,
             RepaymentPlanTermRepository repaymentPlanTermRepository,
             RepayCurrentOrderRepository repayCurrentOrderRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            java.util.Optional<RepayPlanFacade> repayPlanFacade
     ) {
         return new RepayBillsOverviewFacade(
                 loanBillReadRepository,
                 repaymentPlanTermRepository,
                 repayCurrentOrderRepository,
-                objectMapper
+                objectMapper,
+                repayPlanFacade
         );
     }
 

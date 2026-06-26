@@ -5,7 +5,6 @@ import com.pk.app.repay.dto.request.RepayCurrentOrderRequest;
 import com.pk.app.repay.dto.request.RepayTrialBatchRequest;
 import com.pk.app.repay.dto.request.RepayTrialRequest;
 import com.pk.app.repay.dto.request.RepayVaDefaultRequest;
-import com.pk.app.repay.dto.response.RepayBillsOverviewResponse;
 import com.pk.app.repay.dto.response.RepayCurrentOrderResponse;
 import com.pk.app.repay.dto.response.RepayPlanListResponse;
 import com.pk.app.repay.dto.response.RepayPlanResponse;
@@ -16,7 +15,6 @@ import com.pk.app.repay.dto.response.RepayVaListResponse;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
-import com.pk.infra.repay.RepayBillsOverviewFacade;
 import com.pk.infra.repay.RepayCurrentOrderFacade;
 import com.pk.infra.repay.RepayPlanFacade;
 import com.pk.infra.repay.RepayTrialFacade;
@@ -29,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @ConditionalOnBean(RepayPlanFacade.class)
 public class RepayApplicationService {
-    private final RepayBillsOverviewFacade repayBillsOverviewFacade;
     private final RepayPlanFacade repayPlanFacade;
     private final RepayVaFacade repayVaFacade;
     private final RepayTrialFacade repayTrialFacade;
@@ -37,24 +34,17 @@ public class RepayApplicationService {
     private final PendanaanProperties pendanaanProperties;
 
     public RepayApplicationService(
-            RepayBillsOverviewFacade repayBillsOverviewFacade,
             RepayPlanFacade repayPlanFacade,
             RepayVaFacade repayVaFacade,
             RepayTrialFacade repayTrialFacade,
             RepayCurrentOrderFacade repayCurrentOrderFacade,
             PendanaanProperties pendanaanProperties
     ) {
-        this.repayBillsOverviewFacade = repayBillsOverviewFacade;
         this.repayPlanFacade = repayPlanFacade;
         this.repayVaFacade = repayVaFacade;
         this.repayTrialFacade = repayTrialFacade;
         this.repayCurrentOrderFacade = repayCurrentOrderFacade;
         this.pendanaanProperties = pendanaanProperties;
-    }
-
-    public RepayBillsOverviewResponse billsOverview(AuthenticatedPrincipal principal) {
-        requirePrincipal(principal);
-        return RepayBillsOverviewResponse.from(repayBillsOverviewFacade.getOverview(principal.profileId()));
     }
 
     @Transactional

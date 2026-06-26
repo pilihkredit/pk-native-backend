@@ -91,6 +91,39 @@ class RepayCurrentOrderFacadeTest {
         verify(repayCurrentOrderRepository).upsertActive(any());
     }
 
+    @Test
+    void setCurrentOrderWithoutBatchTrialNoUsesZeroTrialId() {
+        when(loanBillReadRepository.findByProfileIdAndLoanApplyId(1L, "LOAN-1"))
+                .thenReturn(Optional.of(loanRecord()));
+        when(repayCurrentOrderRepository.upsertActive(any())).thenAnswer(invocation -> {
+            RepayCurrentOrderRepository.CurrentOrderUpsert upsert = invocation.getArgument(0);
+            assertThat(upsert.trialId()).isZero();
+            return new RepayCurrentOrderRepository.CurrentOrderRecord(
+                    99L,
+                    upsert.profileId(),
+                    upsert.currentOrderNo(),
+                    upsert.trialId(),
+                    upsert.repayOrdersJson(),
+                    upsert.couponId(),
+                    "ACTIVE",
+                    upsert.submittedAt()
+            );
+        });
+
+        RepayCurrentOrderFacade.CurrentOrderResult result = facade.setCurrentOrder(
+                1L,
+                "U10001",
+                new RepayCurrentOrderFacade.CurrentOrderCommand(
+                        "REQ-2",
+                        null,
+                        List.of(new RepayCurrentOrderFacade.RepayOrderCommand("LOAN-1", List.of(1)))
+                )
+        );
+
+        assertThat(result.status()).isEqualTo("ACTIVE");
+        verify(lenderRepayCurrentOrderPort).setCurrentOrder(any());
+    }
+
     private static LoanBillReadRepository.LoanBillRecord loanRecord() {
         return new LoanBillReadRepository.LoanBillRecord(
                 100L,

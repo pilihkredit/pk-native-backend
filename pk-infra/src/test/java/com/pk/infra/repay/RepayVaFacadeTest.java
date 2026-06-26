@@ -2,6 +2,8 @@ package com.pk.infra.repay;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +48,29 @@ class RepayVaFacadeTest {
         assertThat(result.vaList()).hasSize(1);
         assertThat(result.vaList().getFirst().status()).isEqualTo("ACTIVE");
         assertThat(result.vaList().getFirst().bankChannel()).isEqualTo("BCA");
-        verify(repayVaSnapshotRepository).replaceSnapshots(any(), any(), any(), any(Instant.class));
+        verify(repayVaSnapshotRepository).replaceSnapshots(anyLong(), anyString(), any(), any(Instant.class));
+    }
+
+    @Test
+    void setDefaultVaCallsLenderAndRefreshesSnapshots() {
+        when(lenderRepayVaPort.listVas("U10001")).thenReturn(new LenderRepayVaPort.LenderRepayVaListResult(
+                "U10001",
+                "USR-1",
+                va(true, false),
+                List.of(va(true, false)),
+                "{}"
+        ));
+
+        RepayVaFacade.VaDefaultResult result = facade.setDefaultVa(
+                1L,
+                "U10001",
+                new RepayVaFacade.VaDefaultCommand("8801234567890", "BCA")
+        );
+
+        assertThat(result.vaNo()).isEqualTo("8801234567890");
+        assertThat(result.defaultFlag()).isTrue();
+        verify(lenderRepayVaPort).setDefaultVa(any());
+        verify(repayVaSnapshotRepository).replaceSnapshots(anyLong(), anyString(), any(), any(Instant.class));
     }
 
     private static LenderRepayVa va(boolean defaultFlag, boolean disabled) {
