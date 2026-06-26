@@ -1,5 +1,6 @@
 package com.pk.app.repay.application;
 
+import com.pk.adapter.pendanaan.PendanaanProperties;
 import com.pk.app.repay.dto.request.RepayCurrentOrderRequest;
 import com.pk.app.repay.dto.request.RepayTrialBatchRequest;
 import com.pk.app.repay.dto.request.RepayTrialRequest;
@@ -21,29 +22,34 @@ import com.pk.infra.repay.RepayPlanFacade;
 import com.pk.infra.repay.RepayTrialFacade;
 import com.pk.infra.repay.RepayVaFacade;
 import java.util.List;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@ConditionalOnBean(RepayPlanFacade.class)
 public class RepayApplicationService {
     private final RepayBillsOverviewFacade repayBillsOverviewFacade;
     private final RepayPlanFacade repayPlanFacade;
     private final RepayVaFacade repayVaFacade;
     private final RepayTrialFacade repayTrialFacade;
     private final RepayCurrentOrderFacade repayCurrentOrderFacade;
+    private final PendanaanProperties pendanaanProperties;
 
     public RepayApplicationService(
             RepayBillsOverviewFacade repayBillsOverviewFacade,
             RepayPlanFacade repayPlanFacade,
             RepayVaFacade repayVaFacade,
             RepayTrialFacade repayTrialFacade,
-            RepayCurrentOrderFacade repayCurrentOrderFacade
+            RepayCurrentOrderFacade repayCurrentOrderFacade,
+            PendanaanProperties pendanaanProperties
     ) {
         this.repayBillsOverviewFacade = repayBillsOverviewFacade;
         this.repayPlanFacade = repayPlanFacade;
         this.repayVaFacade = repayVaFacade;
         this.repayTrialFacade = repayTrialFacade;
         this.repayCurrentOrderFacade = repayCurrentOrderFacade;
+        this.pendanaanProperties = pendanaanProperties;
     }
 
     public RepayBillsOverviewResponse billsOverview(AuthenticatedPrincipal principal) {
@@ -54,6 +60,7 @@ public class RepayApplicationService {
     @Transactional
     public RepayPlanListResponse getPlan(AuthenticatedPrincipal principal, String loanApplyId) {
         requirePrincipal(principal);
+        requireLenderHttp();
         List<RepayPlanFacade.PlanResult> plans = repayPlanFacade.getPlan(principal.profileId(), loanApplyId);
         if (loanApplyId != null && !loanApplyId.isBlank() && plans.size() == 1) {
             return RepayPlanListResponse.single(RepayPlanResponse.from(plans.getFirst()));
@@ -64,6 +71,7 @@ public class RepayApplicationService {
     @Transactional
     public RepayVaListResponse listVas(AuthenticatedPrincipal principal) {
         requirePrincipal(principal);
+        requireLenderHttp();
         return RepayVaListResponse.from(repayVaFacade.listVas(
                 principal.profileId(),
                 principal.partnerUserId()
@@ -73,6 +81,7 @@ public class RepayApplicationService {
     @Transactional
     public RepayVaDefaultResponse setDefaultVa(AuthenticatedPrincipal principal, RepayVaDefaultRequest request) {
         requirePrincipal(principal);
+        requireLenderHttp();
         return RepayVaDefaultResponse.from(repayVaFacade.setDefaultVa(
                 principal.profileId(),
                 principal.partnerUserId(),
@@ -83,6 +92,7 @@ public class RepayApplicationService {
     @Transactional
     public RepayTrialResponse trial(AuthenticatedPrincipal principal, RepayTrialRequest request) {
         requirePrincipal(principal);
+        requireLenderHttp();
         return RepayTrialResponse.from(repayTrialFacade.trial(
                 principal.profileId(),
                 new RepayTrialFacade.TrialCommand(
@@ -97,6 +107,7 @@ public class RepayApplicationService {
     @Transactional
     public RepayTrialBatchResponse trialBatch(AuthenticatedPrincipal principal, RepayTrialBatchRequest request) {
         requirePrincipal(principal);
+        requireLenderHttp();
         return RepayTrialBatchResponse.from(repayTrialFacade.trialBatch(
                 principal.profileId(),
                 new RepayTrialFacade.BatchTrialCommand(
@@ -118,6 +129,7 @@ public class RepayApplicationService {
             RepayCurrentOrderRequest request
     ) {
         requirePrincipal(principal);
+        requireLenderHttp();
         return RepayCurrentOrderResponse.from(repayCurrentOrderFacade.setCurrentOrder(
                 principal.profileId(),
                 principal.partnerUserId(),
@@ -137,6 +149,12 @@ public class RepayApplicationService {
     private static void requirePrincipal(AuthenticatedPrincipal principal) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+    }
+
+    private void requireLenderHttp() {
+        if (!pendanaanProperties.httpEnabled() || !pendanaanProperties.httpCredentialsPresent()) {
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
     }
 }

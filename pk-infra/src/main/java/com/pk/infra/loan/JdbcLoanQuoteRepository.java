@@ -116,6 +116,16 @@ public class JdbcLoanQuoteRepository implements LoanQuoteRepository {
     }
 
     @Override
+    public int countTermsByQuoteId(long quoteId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM loan_quote_term WHERE quote_id = ?",
+                Integer.class,
+                quoteId
+        );
+        return count == null ? 0 : count;
+    }
+
+    @Override
     public Optional<LoanQuoteRecord> findByQuoteNo(String quoteNo) {
         return jdbcTemplate.query(
                 """

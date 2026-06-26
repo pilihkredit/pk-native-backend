@@ -7,6 +7,7 @@ import com.pk.core.api.ApiException;
 import com.pk.infra.callback.CallbackProperties;
 import com.pk.infra.callback.CallbackTokenIssuer;
 import com.pk.infra.credit.CreditCallbackIntakeFacade;
+import com.pk.infra.loan.LoanCallbackIntakeFacade;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,15 +16,18 @@ public class CallbackApplicationService {
     private final CallbackProperties callbackProperties;
     private final CallbackTokenIssuer callbackTokenIssuer;
     private final CreditCallbackIntakeFacade creditCallbackIntakeFacade;
+    private final LoanCallbackIntakeFacade loanCallbackIntakeFacade;
 
     public CallbackApplicationService(
             CallbackProperties callbackProperties,
             CallbackTokenIssuer callbackTokenIssuer,
-            CreditCallbackIntakeFacade creditCallbackIntakeFacade
+            CreditCallbackIntakeFacade creditCallbackIntakeFacade,
+            LoanCallbackIntakeFacade loanCallbackIntakeFacade
     ) {
         this.callbackProperties = callbackProperties;
         this.callbackTokenIssuer = callbackTokenIssuer;
         this.creditCallbackIntakeFacade = creditCallbackIntakeFacade;
+        this.loanCallbackIntakeFacade = loanCallbackIntakeFacade;
     }
 
     public CallbackOAuthTokenResponse issueToken(CallbackOAuthTokenRequest request) {
@@ -47,6 +51,13 @@ public class CallbackApplicationService {
         ensureEnabled();
         callbackTokenIssuer.validateToken(accessToken);
         creditCallbackIntakeFacade.intake(rawPayloadJson);
+    }
+
+    @Transactional
+    public void receiveLoanResult(String accessToken, String rawPayloadJson) {
+        ensureEnabled();
+        callbackTokenIssuer.validateToken(accessToken);
+        loanCallbackIntakeFacade.intake(rawPayloadJson);
     }
 
     private void ensureEnabled() {

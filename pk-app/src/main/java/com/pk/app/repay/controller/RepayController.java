@@ -18,6 +18,7 @@ import com.pk.app.security.SecurityContextSupport;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/repay")
+@ConditionalOnBean(RepayApplicationService.class)
 public class RepayController {
     private final RepayApplicationService repayApplicationService;
 

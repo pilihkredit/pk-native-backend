@@ -10,6 +10,7 @@ import com.pk.core.repay.port.RepayCurrentOrderRepository;
 import com.pk.core.repay.port.RepayVaSnapshotRepository;
 import com.pk.core.repay.port.RepaymentPlanTermRepository;
 import com.pk.core.repay.port.RepaymentTrialSnapshotRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,12 +20,14 @@ public class RepayInfraConfiguration {
     @Bean
     LoanBillsFacade loanBillsFacade(
             LoanBillReadRepository loanBillReadRepository,
-            RepaymentPlanTermRepository repaymentPlanTermRepository
+            RepaymentPlanTermRepository repaymentPlanTermRepository,
+            java.util.Optional<RepayPlanFacade> repayPlanFacade
     ) {
-        return new LoanBillsFacade(loanBillReadRepository, repaymentPlanTermRepository);
+        return new LoanBillsFacade(loanBillReadRepository, repaymentPlanTermRepository, repayPlanFacade);
     }
 
     @Bean
+    @ConditionalOnBean(LenderRepayPlanPort.class)
     RepayPlanFacade repayPlanFacade(
             LoanBillReadRepository loanBillReadRepository,
             RepaymentPlanTermRepository repaymentPlanTermRepository,
@@ -49,6 +52,7 @@ public class RepayInfraConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(LenderRepayVaPort.class)
     RepayVaFacade repayVaFacade(
             LenderRepayVaPort lenderRepayVaPort,
             RepayVaSnapshotRepository repayVaSnapshotRepository,
@@ -58,6 +62,7 @@ public class RepayInfraConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(LenderRepayTrialPort.class)
     RepayTrialFacade repayTrialFacade(
             LoanBillReadRepository loanBillReadRepository,
             LenderRepayTrialPort lenderRepayTrialPort,
@@ -75,6 +80,7 @@ public class RepayInfraConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(LenderRepayCurrentOrderPort.class)
     RepayCurrentOrderFacade repayCurrentOrderFacade(
             LoanBillReadRepository loanBillReadRepository,
             RepaymentTrialSnapshotRepository repaymentTrialSnapshotRepository,

@@ -10,6 +10,8 @@ public interface LoanQuoteRepository {
 
     Optional<LoanQuoteRecord> findByQuoteNo(String quoteNo);
 
+    int countTermsByQuoteId(long quoteId);
+
     record LoanQuoteInsert(
             String quoteNo,
             long creditApplicationId,

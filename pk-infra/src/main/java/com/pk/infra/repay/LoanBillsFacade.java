@@ -6,20 +6,22 @@ import com.pk.core.repay.port.LoanBillReadRepository;
 import com.pk.core.repay.port.RepaymentPlanTermRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 public class LoanBillsFacade {
     private final LoanBillReadRepository loanBillReadRepository;
     private final RepaymentPlanTermRepository repaymentPlanTermRepository;
+    private final Optional<RepayPlanFacade> repayPlanFacade;
 
     public LoanBillsFacade(
             LoanBillReadRepository loanBillReadRepository,
-            RepaymentPlanTermRepository repaymentPlanTermRepository
+            RepaymentPlanTermRepository repaymentPlanTermRepository,
+            Optional<RepayPlanFacade> repayPlanFacade
     ) {
         this.loanBillReadRepository = loanBillReadRepository;
         this.repaymentPlanTermRepository = repaymentPlanTermRepository;
+        this.repayPlanFacade = repayPlanFacade;
     }
 
     public BillsResult listBills(long profileId, String status) {
@@ -30,6 +32,7 @@ public class LoanBillsFacade {
                 loanBillReadRepository.findByProfileIdAndBillFilter(profileId, filter);
         List<BillResult> bills = new ArrayList<>();
         for (LoanBillReadRepository.LoanBillRecord loan : loans) {
+            repayPlanFacade.ifPresent(facade -> facade.syncPlan(profileId, loan.loanApplyId()));
             List<RepaymentPlanTermRepository.TermRecord> terms =
                     repaymentPlanTermRepository.findByLoanApplicationId(loan.loanApplicationId());
             RepaymentPlanTermRepository.TermRecord nextDue = RepayPlanFacade.findNextDueTerm(terms);

@@ -35,6 +35,11 @@ pk:
       max-retries: ${PK_CREDIT_APPLY_MAX_RETRIES:5}
       retry-backoff-seconds: ${PK_CREDIT_APPLY_RETRY_BACKOFF_SECONDS:60}
       poll-interval-seconds: ${PK_CREDIT_POLL_INTERVAL_SECONDS:30}
+  loan:
+    apply:
+      max-retries: ${PK_LOAN_APPLY_MAX_RETRIES:5}
+      retry-backoff-seconds: ${PK_LOAN_APPLY_RETRY_BACKOFF_SECONDS:60}
+      poll-interval-seconds: ${PK_LOAN_POLL_INTERVAL_SECONDS:30}
   worker:
     outbox:
       enabled: ${PK_WORKER_OUTBOX_ENABLED:true}
@@ -42,6 +47,8 @@ pk:
       batch-size: ${PK_WORKER_OUTBOX_BATCH_SIZE:20}
     credit:
       poll-interval-ms: ${PK_WORKER_CREDIT_POLL_INTERVAL_MS:30000}
+    loan:
+      poll-interval-ms: ${PK_WORKER_LOAN_POLL_INTERVAL_MS:30000}
     reference:
       enabled: ${PK_WORKER_REFERENCE_REFRESH_ENABLED:true}
       bank-refresh-cron: ${PK_WORKER_BANK_REFRESH_CRON:0 0 3 * * *}

@@ -57,6 +57,10 @@ pk:
       cache-ttl: ${PK_LOAN_PRODUCT_CACHE_TTL:30s}
     quote:
       ttl: ${PK_LOAN_QUOTE_TTL:15m}
+    apply:
+      max-retries: ${PK_LOAN_APPLY_MAX_RETRIES:5}
+      retry-backoff-seconds: ${PK_LOAN_APPLY_RETRY_BACKOFF_SECONDS:60}
+      poll-interval-seconds: ${PK_LOAN_POLL_INTERVAL_SECONDS:30}
   callback:
     enabled: ${PK_CALLBACK_ENABLED:true}
     oauth:

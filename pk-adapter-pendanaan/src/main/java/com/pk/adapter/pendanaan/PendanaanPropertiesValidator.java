@@ -13,6 +13,6 @@ public class PendanaanPropertiesValidator {
 
     @PostConstruct
     void validate() {
-        properties.validateRealLenderRequired();
+        properties.validateHttpSettings();
     }
 }

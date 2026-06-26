@@ -10,6 +10,7 @@ import com.pk.core.repay.port.RepaymentPlanTermRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +28,7 @@ class LoanBillsFacadeTest {
 
     @BeforeEach
     void setUp() {
-        facade = new LoanBillsFacade(loanBillReadRepository, repaymentPlanTermRepository);
+        facade = new LoanBillsFacade(loanBillReadRepository, repaymentPlanTermRepository, Optional.empty());
     }
 
     @Test

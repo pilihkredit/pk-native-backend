@@ -186,6 +186,9 @@ public class LoanApplyFacade {
         if (command.appList() == null) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
+        if (command.loanPurpose() != null && command.loanPurpose().length() > 256) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
     }
 
     private static ApplyResult toApplyResult(LoanApplicationRepository.LoanApplicationRecord record) {
