@@ -23,14 +23,7 @@ public class DatabaseStatusController {
         this.databaseConnectionChecker = databaseConnectionChecker;
     }
 
-    /**
-     * Database Status
-     *
-     * Runs SELECT 1 against the configured datasource. Requires Bearer access token.
-     *
-     * @param request servlet request for trace id
-     * @return database product info and validation result
-     */
+    /** Database status. */
     @GetMapping("/database")
     public ApiResponse<DatabaseStatus> database(HttpServletRequest request) {
         var result = databaseConnectionChecker.check();

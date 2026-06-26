@@ -15,4 +15,4 @@ CREATE TABLE sms_send_log (
     KEY idx_sms_send_log_mobile_created (mobile_no, created_at),
     KEY idx_sms_send_log_device_created (device_no, created_at),
     KEY idx_sms_send_log_profile_created (profile_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='SMS OTP send audit log';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SMS OTP send audit log';

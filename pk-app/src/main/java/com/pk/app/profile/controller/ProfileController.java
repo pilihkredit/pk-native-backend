@@ -4,11 +4,15 @@ import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
 import com.pk.app.profile.application.ProfileEnumApplicationService;
 import com.pk.app.profile.application.ProfileApplicationService;
+import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
+import com.pk.app.profile.dto.request.ProfileWorkSaveRequest;
+import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileEnumsResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
+import com.pk.app.profile.dto.response.ProfileWorkSaveResponse;
 import com.pk.app.security.SecurityContextSupport;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -39,16 +43,7 @@ public class ProfileController {
         this.profileEnumApplicationService = profileEnumApplicationService;
     }
 
-    /**
-     * List profile enum options for onboarding forms.
-     *
-     * Returns canonical integer values for request bodies plus Indonesian display labels.
-     * {@code lenderField} documents the Pendanaan OpenAPI field name for future sync mapping.
-     *
-     * @param module optional filter: personal, work, or contact
-     * @param httpRequest servlet request for trace id
-     * @return enum field metadata and options
-     */
+    /** List profile enums. */
     @GetMapping("/enums")
     public ApiResponse<ProfileEnumsResponse> listEnums(
             @RequestParam(value = "module", required = false) String module,
@@ -64,16 +59,7 @@ public class ProfileController {
         );
     }
 
-    /**
-     * Save personal basic information
-     *
-     * Persists residential address, education, and mother surname during onboarding.
-     * Mother surname is encrypted at rest. Idempotent by requestId.
-     *
-     * @param request     personal module payload
-     * @param httpRequest servlet request for trace id
-     * @return requestId and moduleStatus COMPLETED
-     */
+    /** Save personal info. */
     @PostMapping("/personal")
     public ApiResponse<ProfilePersonalSaveResponse> savePersonal(
             @Valid @RequestBody ProfilePersonalSaveRequest request,
@@ -84,21 +70,28 @@ public class ProfileController {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                profileApplicationService.savePersonal(principal, request),
+                profileApplicationService.savePersonal(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }
 
-    /**
-     * Save emergency contacts during onboarding.
-     *
-     * Requires at least two contacts. Contact mobiles must differ from the user's own number
-     * and from each other. Idempotent by requestId.
-     *
-     * @param request     contacts module payload
-     * @param httpRequest servlet request for trace id
-     * @return requestId and moduleStatus COMPLETED
-     */
+    /** Save work info. */
+    @PostMapping("/work")
+    public ApiResponse<ProfileWorkSaveResponse> saveWork(
+            @Valid @RequestBody ProfileWorkSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.saveWork(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Save emergency contacts. */
     @PostMapping("/contacts")
     public ApiResponse<ProfileContactsSaveResponse> saveContacts(
             @Valid @RequestBody ProfileContactsSaveRequest request,
@@ -109,7 +102,23 @@ public class ProfileController {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                profileApplicationService.saveContacts(principal, request),
+                profileApplicationService.saveContacts(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Save bank card. */
+    @PostMapping("/bank-card")
+    public ApiResponse<ProfileBankCardSaveResponse> saveBankCard(
+            @Valid @RequestBody ProfileBankCardSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.saveBankCard(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

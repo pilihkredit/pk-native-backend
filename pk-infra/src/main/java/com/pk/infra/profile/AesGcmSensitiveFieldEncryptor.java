@@ -44,6 +44,22 @@ public class AesGcmSensitiveFieldEncryptor implements SensitiveFieldEncryptor {
         }
     }
 
+    @Override
+    public String decrypt(EncryptedField encryptedField) {
+        try {
+            byte[] body = Base64.getDecoder().decode(encryptedField.ciphertextBase64());
+            byte[] combined = new byte[body.length + encryptedField.tag().length];
+            System.arraycopy(body, 0, combined, 0, body.length);
+            System.arraycopy(encryptedField.tag(), 0, combined, body.length, encryptedField.tag().length);
+            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(GCM_TAG_BITS, encryptedField.nonce()));
+            byte[] plaintext = cipher.doFinal(combined);
+            return new String(plaintext, StandardCharsets.UTF_8);
+        } catch (GeneralSecurityException exception) {
+            throw new IllegalStateException("Failed to decrypt sensitive field", exception);
+        }
+    }
+
     private static byte[] deriveKey(String secret) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

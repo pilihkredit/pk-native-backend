@@ -1,34 +1,49 @@
 package com.pk.app.profile.application;
 
+import com.pk.app.common.web.ClientRequestHeaders;
+import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
+import com.pk.app.profile.dto.request.ProfileWorkSaveRequest;
+import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
+import com.pk.app.profile.dto.response.ProfileWorkSaveResponse;
+import com.pk.adapter.pendanaan.PendanaanProperties;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
+import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.profile.ProfileServiceFacade;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ProfileApplicationService {
     private final ProfileServiceFacade profileServiceFacade;
+    private final PendanaanProperties pendanaanProperties;
 
-    public ProfileApplicationService(ProfileServiceFacade profileServiceFacade) {
+    public ProfileApplicationService(
+            ProfileServiceFacade profileServiceFacade,
+            PendanaanProperties pendanaanProperties
+    ) {
         this.profileServiceFacade = profileServiceFacade;
+        this.pendanaanProperties = pendanaanProperties;
     }
 
     @Transactional
     public ProfilePersonalSaveResponse savePersonal(
             AuthenticatedPrincipal principal,
-            ProfilePersonalSaveRequest request
+            ProfilePersonalSaveRequest request,
+            HttpServletRequest httpRequest
     ) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         ProfileServiceFacade.PersonalSaveResult result = profileServiceFacade.savePersonal(
                 principal.profileId(),
+                principal.partnerUserId(),
                 new ProfileServiceFacade.PersonalSaveCommand(
                         request.requestId(),
                         request.provinceCode(),
@@ -37,22 +52,54 @@ public class ProfileApplicationService {
                         request.address(),
                         request.educationDegree(),
                         request.motherSurname(),
-                        request.userEmail()
+                        request.userEmail(),
+                        resolveDevice(request.device(), httpRequest)
                 )
         );
         return new ProfilePersonalSaveResponse(result.requestId(), result.moduleStatus());
     }
 
     @Transactional
+    public ProfileWorkSaveResponse saveWork(
+            AuthenticatedPrincipal principal,
+            ProfileWorkSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        ProfileServiceFacade.WorkSaveResult result = profileServiceFacade.saveWork(
+                principal.profileId(),
+                principal.partnerUserId(),
+                new ProfileServiceFacade.WorkSaveCommand(
+                        request.requestId(),
+                        request.industry(),
+                        request.companyName(),
+                        request.workProvinceCode(),
+                        request.workCityCode(),
+                        request.workDistrictCode(),
+                        request.workAddress(),
+                        request.income(),
+                        request.payday(),
+                        request.professionDegree(),
+                        resolveDevice(request.device(), httpRequest)
+                )
+        );
+        return new ProfileWorkSaveResponse(result.requestId(), result.moduleStatus());
+    }
+
+    @Transactional
     public ProfileContactsSaveResponse saveContacts(
             AuthenticatedPrincipal principal,
-            ProfileContactsSaveRequest request
+            ProfileContactsSaveRequest request,
+            HttpServletRequest httpRequest
     ) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         ProfileServiceFacade.ContactsSaveResult result = profileServiceFacade.saveContacts(
                 principal.profileId(),
+                principal.partnerUserId(),
                 principal.mobileNo(),
                 new ProfileServiceFacade.ContactsSaveCommand(
                         request.requestId(),
@@ -62,9 +109,44 @@ public class ProfileApplicationService {
                                         contact.contactName(),
                                         contact.contactMobile()
                                 ))
-                                .toList()
+                                .toList(),
+                        resolveDevice(request.device(), httpRequest)
                 )
         );
         return new ProfileContactsSaveResponse(result.requestId(), result.moduleStatus());
+    }
+
+    @Transactional
+    public ProfileBankCardSaveResponse saveBankCard(
+            AuthenticatedPrincipal principal,
+            ProfileBankCardSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        ProfileServiceFacade.BankCardSaveResult result = profileServiceFacade.saveBankCard(
+                principal.profileId(),
+                principal.partnerUserId(),
+                new ProfileServiceFacade.BankCardSaveCommand(
+                        request.requestId(),
+                        request.bankCode(),
+                        request.cardNumber(),
+                        resolveDevice(request.device(), httpRequest)
+                )
+        );
+        return new ProfileBankCardSaveResponse(
+                result.requestId(),
+                result.verifyStatus(),
+                result.cardNoMasked()
+        );
+    }
+
+    private LenderDeviceContext resolveDevice(
+            com.pk.app.profile.dto.request.ProfileDeviceRequest deviceRequest,
+            HttpServletRequest httpRequest
+    ) {
+        ClientRequestHeaders.ResolvedClientHeaders headers = ClientRequestHeaders.require(httpRequest);
+        return ProfileDeviceSupport.resolveLenderDevice(deviceRequest, headers, pendanaanProperties);
     }
 }

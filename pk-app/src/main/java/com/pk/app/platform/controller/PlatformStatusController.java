@@ -18,14 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/platform")
 public class PlatformStatusController {
 
-    /**
-     * Status
-     *
-     * Returns UP when the API process is running. Requires Bearer access token.
-     *
-     * @param request servlet request for trace id
-     * @return UP status and server time
-     */
+    /** Platform status. */
     @GetMapping("/status")
     public ApiResponse<PlatformStatus> status(HttpServletRequest request) {
         return ApiResponse.success(

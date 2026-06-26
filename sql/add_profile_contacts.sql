@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS user_profile_contacts (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User emergency contacts module state';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User emergency contacts module state';
 
 CREATE TABLE IF NOT EXISTS user_profile_contact (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -19,4 +19,4 @@ CREATE TABLE IF NOT EXISTS user_profile_contact (
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_profile_contact_sort (profile_id, sort_no),
     KEY idx_user_profile_contact_profile (profile_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User emergency contact entries';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User emergency contact entries';

@@ -39,6 +39,25 @@ public class JdbcProfileContactRepository implements ProfileContactRepository {
     }
 
     @Override
+    public List<ProfileContactData> findContactsByProfileId(long profileId) {
+        return jdbcTemplate.query(
+                """
+                SELECT sort_no, relationship, contact_name, contact_mobile
+                FROM user_profile_contact
+                WHERE profile_id = ?
+                ORDER BY sort_no
+                """,
+                (rs, rowNum) -> new ProfileContactData(
+                        rs.getInt("sort_no"),
+                        rs.getInt("relationship"),
+                        rs.getString("contact_name"),
+                        rs.getString("contact_mobile")
+                ),
+                profileId
+        );
+    }
+
+    @Override
     public void replaceContacts(
             long profileId,
             ProfileContactsModuleData module,
