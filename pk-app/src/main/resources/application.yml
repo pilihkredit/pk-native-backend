@@ -2,7 +2,7 @@ spring:
   application:
     name: pk-app
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:test}
+    active: ${SPRING_PROFILES_ACTIVE:local}
 
 management:
   endpoints:
@@ -36,6 +36,9 @@ pk:
     bank-cache-ttl: ${PK_REFERENCE_BANK_CACHE_TTL:24h}
     area-cache-ttl: ${PK_REFERENCE_AREA_CACHE_TTL:24h}
   lender:
+    config:
+      source: ${PK_LENDER_CONFIG_SOURCE:db}
+      provider-code: ${PK_LENDER_CONFIG_PROVIDER_CODE:pendanaan}
     pendanaan:
       mode: ${PK_LENDER_PENDANAAN_MODE:fake}
       base-url: ${PK_PENDANAAN_BASE_URL:}

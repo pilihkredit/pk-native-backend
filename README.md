@@ -34,8 +34,11 @@ External write path: Controller -> ApplicationService -> business table + `outbo
 
 ```bash
 ./mvnw clean verify
-./mvnw -pl pk-app spring-boot:run
-./mvnw -pl pk-worker spring-boot:run
+
+# Local real lender (profile local + seeded pk_provider in Docker MySQL)
+docker compose up -d mysql redis
+SPRING_PROFILES_ACTIVE=local ./mvnw -pl pk-app spring-boot:run
+SPRING_PROFILES_ACTIVE=local ./mvnw -pl pk-worker spring-boot:run
 ```
 
 ## Database
@@ -43,12 +46,19 @@ External write path: Controller -> ApplicationService -> business table + `outbo
 Schema is managed **manually** (no Flyway). With Docker MySQL for local dev:
 
 ```bash
-docker compose up -d mysql
+docker compose up -d mysql redis
 docker compose ps          # wait until healthy
 ```
 
 Local credentials match `application-local.yml`: database `pk`, user `pk`, password `pk`, port `3306`.  
-On first start, `sql/create_pk_schema.sql` is applied automatically.
+On **first** MySQL volume init, `create_pk_schema.sql` and `seed_pendanaan_provider.sql` run automatically (Pendanaan test gateway credentials).  
+If the volume already exists, apply the lender seed manually:
+
+```bash
+mysql -u pk -ppk pk < sql/seed_pendanaan_provider.sql
+```
+
+Local outbound calls to the real Pendanaan test API use `pk.lender.config.source=db` (default); no `PK_PENDANAAN_*` env vars are required after seeding. Lender **callbacks** still need a public HTTPS URL (deployed test API or ngrok); `callback_base_url` in the seed points at `https://api-test.pilihkredit.id/api/v1`.
 
 Without Docker:
 
@@ -94,6 +104,51 @@ SPRING_PROFILES_ACTIVE=prod PK_DB_URL=... PK_DB_USERNAME=... PK_DB_PASSWORD=... 
 | `PK_WORKER_PORT` | `8081` | optional |
 
 Config files: `pk-app` and `pk-worker` each have `application.yml` + `application-{local,test,prod}.yml`.
+
+### Lender (Pendanaan) configuration
+
+By default (`pk.lender.config.source=db`), Pendanaan credentials are loaded at startup from:
+
+| Table | Fields used |
+|-------|-------------|
+| `pk_provider` | `base_url`, `callback_base_url`, `config_json` (`mode`, `appName`) |
+| `pk_api_credential` | `client_id`, `client_secret_ref`, `callback_client_id`, `callback_secret_ref` |
+
+Seed the test environment:
+
+```bash
+mysql -u pk -p pk < sql/seed_pendanaan_provider.sql
+```
+
+Production seed template (replace placeholders, then apply to prod DB only):
+
+```bash
+mysql -u ... -p ... < sql/seed_pendanaan_provider_prod.sql
+```
+
+### Partner callback URLs (register with Pendanaan)
+
+`pk_provider.callback_base_url` must match the public API prefix (no trailing slash). Pendanaan calls:
+
+| Environment | `callback_base_url` | Server |
+|-------------|---------------------|--------|
+| Test | `https://api-test.pilihkredit.id/api/v1` | 147.139.188.108 |
+| Prod | `https://api.pilihkredit.id/api/v1` | 8.215.70.226 |
+
+| Purpose | Test URL | Prod URL |
+|---------|----------|----------|
+| OAuth token | `https://api-test.pilihkredit.id/api/v1/oauth/token` | `https://api.pilihkredit.id/api/v1/oauth/token` |
+| Credit callback | `https://api-test.pilihkredit.id/api/v1/callback/credit/result` | `https://api.pilihkredit.id/api/v1/callback/credit/result` |
+| Loan callback | `https://api-test.pilihkredit.id/api/v1/callback/loan/result` | `https://api.pilihkredit.id/api/v1/callback/loan/result` |
+
+Set `pk_api_credential.callback_client_id` and `callback_secret_ref` to the values you give Pendanaan (same pair as `PK_CALLBACK_*` when using env override). Restart `pk-app` after updating credentials.
+
+Set `pk.lender.config.source=env` to fall back to YAML / environment variables only (e.g. local `fake` mode without DB rows).
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `PK_LENDER_CONFIG_SOURCE` | `db` | `db` = load from MySQL; `env` = YAML/env only |
+| `PK_LENDER_CONFIG_PROVIDER_CODE` | `pendanaan` | `pk_provider.provider_code` row to load |
 
 ## API prefix
 

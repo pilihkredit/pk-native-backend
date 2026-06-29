@@ -72,6 +72,9 @@ CREATE TABLE user_profile (
     retention_until DATETIME(3) NULL COMMENT 'Planned retention end time',
     anonymized_at DATETIME(3) NULL COMMENT 'Anonymization completion time',
     last_synced_at DATETIME(3) NULL COMMENT 'Last profile sync success time',
+    access_token VARCHAR(2048) NULL COMMENT 'Latest issued JWT access token',
+    refresh_token VARCHAR(128) NULL COMMENT 'Latest issued refresh token',
+    access_token_expires_at DATETIME(3) NULL COMMENT 'Access token expiry time',
     version INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Optimistic lock version',
     deleted_at DATETIME(3) NULL COMMENT 'Soft deletion time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
@@ -88,6 +91,7 @@ CREATE TABLE sms_send_log (
     profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier when already registered',
     mobile_no VARCHAR(32) NOT NULL COMMENT 'Recipient mobile number',
     device_no VARCHAR(128) NOT NULL COMMENT 'Client device identifier at send time',
+    otp_token VARCHAR(128) NULL COMMENT 'OTP challenge token returned to client',
     otp_code VARCHAR(16) NOT NULL COMMENT 'OTP verification code sent to the provider',
     purpose VARCHAR(32) NOT NULL DEFAULT 'OTP' COMMENT 'SMS purpose code',
     provider_code VARCHAR(32) NULL COMMENT 'SMS gateway provider code',
@@ -99,7 +103,8 @@ CREATE TABLE sms_send_log (
     PRIMARY KEY (id),
     KEY idx_sms_send_log_mobile_created (mobile_no, created_at),
     KEY idx_sms_send_log_device_created (device_no, created_at),
-    KEY idx_sms_send_log_profile_created (profile_id, created_at)
+    KEY idx_sms_send_log_profile_created (profile_id, created_at),
+    KEY idx_sms_send_log_otp_token (otp_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SMS OTP send audit log';
 
 CREATE TABLE user_profile_version (

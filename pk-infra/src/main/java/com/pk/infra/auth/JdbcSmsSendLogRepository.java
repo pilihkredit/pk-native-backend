@@ -40,10 +40,11 @@ public class JdbcSmsSendLogRepository implements SmsSendLogRepository {
                         profile_id,
                         mobile_no,
                         device_no,
+                        otp_token,
                         otp_code,
                         purpose,
                         provider_success
-                    ) VALUES (?, ?, ?, ?, ?, 0)
+                    ) VALUES (?, ?, ?, ?, ?, ?, 0)
                     """,
                     Statement.RETURN_GENERATED_KEYS
             );
@@ -54,8 +55,9 @@ public class JdbcSmsSendLogRepository implements SmsSendLogRepository {
             }
             statement.setString(2, entry.mobileNo());
             statement.setString(3, entry.deviceNo());
-            statement.setString(4, entry.otpCode());
-            statement.setString(5, entry.purpose());
+            statement.setString(4, entry.otpToken());
+            statement.setString(5, entry.otpCode());
+            statement.setString(6, entry.purpose());
             return statement;
         }, keyHolder);
         Number key = keyHolder.getKey();

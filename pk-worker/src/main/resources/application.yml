@@ -16,6 +16,9 @@ server:
 pk:
   environment: ${SPRING_PROFILES_ACTIVE:local}
   lender:
+    config:
+      source: ${PK_LENDER_CONFIG_SOURCE:db}
+      provider-code: ${PK_LENDER_CONFIG_PROVIDER_CODE:pendanaan}
     pendanaan:
       mode: ${PK_LENDER_PENDANAAN_MODE:fake}
       base-url: ${PK_PENDANAAN_BASE_URL:}

@@ -90,6 +90,7 @@ public class AuthServiceFacade {
                 profileId,
                 mobileNo,
                 deviceNo,
+                otpToken,
                 otpCode,
                 SMS_PURPOSE_OTP
         ));
@@ -246,6 +247,7 @@ public class AuthServiceFacade {
     public void logout(AuthenticatedPrincipal principal) {
         sessionStore.delete(principal.profileId());
         refreshTokenStore.deleteAllForProfile(principal.profileId());
+        userAuthRepository.clearSessionTokens(principal.profileId());
     }
 
     public AuthenticatedPrincipal validateAccessToken(String accessToken) {
@@ -278,17 +280,29 @@ public class AuthServiceFacade {
                 new RefreshTokenStore.RefreshTokenRecord(profile.profileId(), nextVersion, deviceId),
                 authProperties.refreshTokenTtl()
         );
+        userAuthRepository.saveSessionTokens(
+                profile.profileId(),
+                tokenPair.accessToken(),
+                tokenPair.refreshToken(),
+                Instant.now().plusSeconds(tokenPair.accessTokenExpiresInSeconds())
+        );
         return tokenPair;
     }
 
     private TokenPair issueAccessToken(UserProfileSummary profile, long sessionVersion, String deviceId) {
-        return tokenIssuer.issue(
+        TokenPair tokenPair = tokenIssuer.issue(
                 profile.profileId(),
                 profile.partnerUserId(),
                 profile.mobileNo(),
                 sessionVersion,
                 deviceId
         );
+        userAuthRepository.saveAccessToken(
+                profile.profileId(),
+                tokenPair.accessToken(),
+                Instant.now().plusSeconds(tokenPair.accessTokenExpiresInSeconds())
+        );
+        return tokenPair;
     }
 
     private void validateMobile(String mobileNo) {

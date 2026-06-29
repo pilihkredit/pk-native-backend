@@ -2,6 +2,8 @@ package com.pk.infra.auth;
 
 import com.pk.core.auth.UserProfileSummary;
 import com.pk.core.auth.port.UserAuthRepository;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -63,5 +65,56 @@ public class JdbcUserAuthRepository implements UserAuthRepository {
         return findByMobileNo(mobileNo)
                 .map(profile -> new UserProfileSummary(profile.profileId(), profile.partnerUserId(), profile.mobileNo(), true))
                 .orElseThrow(() -> new IllegalStateException("Failed to load created user profile"));
+    }
+
+    @Override
+    public void saveSessionTokens(
+            long profileId,
+            String accessToken,
+            String refreshToken,
+            Instant accessTokenExpiresAt
+    ) {
+        jdbcTemplate.update(
+                """
+                UPDATE user_profile
+                SET access_token = ?,
+                    refresh_token = ?,
+                    access_token_expires_at = ?
+                WHERE id = ? AND deleted_at IS NULL
+                """,
+                accessToken,
+                refreshToken,
+                Timestamp.from(accessTokenExpiresAt),
+                profileId
+        );
+    }
+
+    @Override
+    public void saveAccessToken(long profileId, String accessToken, Instant accessTokenExpiresAt) {
+        jdbcTemplate.update(
+                """
+                UPDATE user_profile
+                SET access_token = ?,
+                    access_token_expires_at = ?
+                WHERE id = ? AND deleted_at IS NULL
+                """,
+                accessToken,
+                Timestamp.from(accessTokenExpiresAt),
+                profileId
+        );
+    }
+
+    @Override
+    public void clearSessionTokens(long profileId) {
+        jdbcTemplate.update(
+                """
+                UPDATE user_profile
+                SET access_token = NULL,
+                    refresh_token = NULL,
+                    access_token_expires_at = NULL
+                WHERE id = ? AND deleted_at IS NULL
+                """,
+                profileId
+        );
     }
 }

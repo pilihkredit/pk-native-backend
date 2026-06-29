@@ -11,12 +11,14 @@ import static org.mockito.Mockito.when;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.auth.OtpChallenge;
 import com.pk.core.auth.SmsSendResult;
 import com.pk.core.auth.UserProfileSummary;
 import com.pk.core.auth.port.OtpChallengeStore;
 import com.pk.core.auth.port.RefreshTokenStore;
 import com.pk.core.auth.port.SessionStore;
 import com.pk.core.auth.port.SmsSendLogRepository;
+import com.pk.core.auth.port.SmsSendLogRepository.SmsSendLogEntry;
 import com.pk.core.auth.port.SmsSender;
 import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.PasswordHasher;
@@ -28,6 +30,7 @@ import java.time.ZoneId;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class AuthServiceFacadeTest {
     private OtpChallengeStore otpChallengeStore;
@@ -93,8 +96,62 @@ class AuthServiceFacadeTest {
 
         assertThat(result.otpToken()).isNotBlank();
         verify(otpChallengeStore).markSent(eq("device-2"), eq(Duration.ofSeconds(60)));
-        verify(smsSendLogRepository).insert(any());
+        ArgumentCaptor<SmsSendLogEntry> logCaptor = ArgumentCaptor.forClass(SmsSendLogEntry.class);
+        verify(smsSendLogRepository).insert(logCaptor.capture());
+        assertThat(logCaptor.getValue().otpToken()).isEqualTo(result.otpToken());
         verify(smsSender).send(eq("8123456789"), any());
+    }
+
+    @Test
+    void persistsSessionTokensAfterSuccessfulOtpVerify() {
+        when(otpChallengeStore.timeUntilResendAllowed("device-1")).thenReturn(Optional.empty());
+        when(otpChallengeStore.findByToken("token-1")).thenReturn(Optional.of(
+                new OtpChallenge("8123456789", "device-1", "123456", Instant.now().plusSeconds(300))
+        ));
+        when(userAuthRepository.findByMobileNo("8123456789"))
+                .thenReturn(Optional.of(new UserProfileSummary(7L, "UABC", "8123456789", false)));
+        when(userPasswordCredentialRepository.isPasswordSet(7L)).thenReturn(false);
+
+        AuthProperties properties = new AuthProperties();
+        properties.setAccessTokenTtl(Duration.ofMinutes(15));
+        properties.setRefreshTokenTtl(Duration.ofDays(30));
+        properties.setJwtSecret("local-dev-secret-change-in-prod-min-32-chars");
+        TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
+        SessionStore sessionStore = mock(SessionStore.class);
+        RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
+        when(sessionStore.findByProfileId(7L)).thenReturn(Optional.empty());
+
+        AuthServiceFacade verifyFacade = new AuthServiceFacade(
+                properties,
+                sessionStore,
+                otpChallengeStore,
+                refreshTokenStore,
+                tokenIssuer,
+                userAuthRepository,
+                userPasswordCredentialRepository,
+                passwordHasher,
+                smsSendLogRepository,
+                smsSender
+        );
+
+        AuthServiceFacade.OtpVerifyResult result = verifyFacade.verifyOtp(
+                "8123456789",
+                "token-1",
+                "123456",
+                "device-1"
+        );
+
+        assertThat(result.tokenPair().accessToken()).isNotBlank();
+        ArgumentCaptor<Instant> expiresAtCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(userAuthRepository).saveSessionTokens(
+                eq(7L),
+                eq(result.tokenPair().accessToken()),
+                eq(result.tokenPair().refreshToken()),
+                expiresAtCaptor.capture()
+        );
+        assertThat(expiresAtCaptor.getValue())
+                .isAfter(Instant.now().plusSeconds(890))
+                .isBefore(Instant.now().plusSeconds(910));
     }
 
     @Test

@@ -15,6 +15,7 @@ public interface SmsSendLogRepository {
             Optional<Long> profileId,
             String mobileNo,
             String deviceNo,
+            String otpToken,
             String otpCode,
             String purpose
     ) {

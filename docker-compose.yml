@@ -14,6 +14,7 @@ services:
     volumes:
       - pk-mysql-data:/var/lib/mysql
       - ./sql/create_pk_schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
+      - ./sql/seed_pendanaan_provider.sql:/docker-entrypoint-initdb.d/03-seed-pendanaan.sql:ro
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
