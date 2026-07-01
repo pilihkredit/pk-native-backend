@@ -17,6 +17,7 @@ import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
+import com.pk.infra.ocr.AdvanceAiRawOcrDetailBuilder;
 import com.pk.infra.ocr.OcrFieldParser;
 import com.pk.infra.ocr.OcrImageSupport;
 import com.pk.infra.ocr.OcrProperties;
@@ -302,7 +303,7 @@ public class IdentityOcrFacade {
                 List.of("identity"),
                 "IDENTITY_DEV_LENDER_SYNC"
         );
-        String ocrResultJson = buildDevRawOcrDetail(command);
+        String ocrResultJson = buildOcrResultJson(toDevParsedFields(command), buildDevRawOcrDetail(command));
         jdbcTemplate.update(
                 """
                 INSERT INTO user_identity_asset (
@@ -376,28 +377,30 @@ public class IdentityOcrFacade {
     }
 
     private String buildDevRawOcrDetail(DevLenderSyncCommand command) {
-        try {
-            ObjectNode node = objectMapper.createObjectNode();
-            putIfPresent(node, "ocrName", command.ocrName());
-            putIfPresent(node, "ocrIdNo", command.ocrIdNo());
-            putIfPresent(node, "gender", command.gender());
-            putIfPresent(node, "religion", command.religion());
-            putIfPresent(node, "maritalStatus", command.maritalStatus());
-            putIfPresent(node, "birthday", command.birthday());
-            putIfPresent(node, "birthPlace", command.birthPlace());
-            putIfPresent(node, "address", command.address());
-            putIfPresent(node, "occupation", command.occupation());
-            putIfPresent(node, "nationality", command.nationality());
-            putIfPresent(node, "bloodType", command.bloodType());
-            putIfPresent(node, "expiryDate", command.expiryDate());
-            putIfPresent(node, "province", command.province());
-            putIfPresent(node, "city", command.city());
-            putIfPresent(node, "district", command.district());
-            putIfPresent(node, "ocrChannel", OCR_CHANNEL);
-            return objectMapper.writeValueAsString(node);
-        } catch (Exception exception) {
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+        if (command.rawOcrDetail() != null && !command.rawOcrDetail().isBlank()) {
+            return command.rawOcrDetail().trim();
         }
+        return AdvanceAiRawOcrDetailBuilder.build(objectMapper, toDevParsedFields(command));
+    }
+
+    private static OcrSessionState.OcrParsedFields toDevParsedFields(DevLenderSyncCommand command) {
+        return new OcrSessionState.OcrParsedFields(
+                command.ocrName(),
+                command.ocrIdNo(),
+                command.gender(),
+                command.religion(),
+                command.maritalStatus(),
+                command.birthday(),
+                command.birthPlace(),
+                command.address(),
+                command.occupation(),
+                command.nationality(),
+                command.bloodType(),
+                command.expiryDate(),
+                command.province(),
+                command.city(),
+                command.district()
+        );
     }
 
     private static String requireText(String value, String field) {
@@ -613,6 +616,7 @@ public class IdentityOcrFacade {
             String requestId,
             String faceBase64,
             String idCardBase64,
+            String rawOcrDetail,
             String ocrName,
             String ocrIdNo,
             String gender,

@@ -8,6 +8,20 @@ import org.junit.jupiter.api.Test;
 
 class ApiResponseTest {
     @Test
+    void createsFailureResponseWithCustomMessage() {
+        ApiResponse<Object> response = ApiResponse.failure(
+                ApiCode.INVALID_REQUEST_PARAMETERS,
+                "requestId: must not be blank",
+                "trace-789"
+        );
+
+        assertThat(response.code()).isEqualTo("K000001");
+        assertThat(response.msg()).isEqualTo("requestId: must not be blank");
+        assertThat(response.data()).isNull();
+        assertThat(response.traceId()).isEqualTo("trace-789");
+    }
+
+    @Test
     void createsFailureResponseFromApiCode() {
         ApiResponse<Object> response = ApiResponse.failure(ApiCode.INVALID_REQUEST_PARAMETERS, "trace-789");
 

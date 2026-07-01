@@ -12,6 +12,7 @@ public record IdentityOcrDevLenderSyncRequest(
         @NotBlank @Size(max = 64) String requestId,
         String faceBase64,
         String idCardBase64,
+        String rawOcrDetail,
         String ocrName,
         String ocrIdNo,
         String gender,

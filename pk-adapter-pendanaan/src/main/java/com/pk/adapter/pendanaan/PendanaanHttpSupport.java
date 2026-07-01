@@ -26,6 +26,7 @@ final class PendanaanHttpSupport {
             "faceImageBase64",
             "idCardImageBase64"
     );
+    private static final Set<String> REDACTED_LOG_FIELDS = Set.of("msg");
 
     private PendanaanHttpSupport() {
     }
@@ -88,7 +89,9 @@ final class PendanaanHttpSupport {
             ObjectNode objectNode = (ObjectNode) node;
             objectNode.fieldNames().forEachRemaining(field -> {
                 JsonNode child = objectNode.get(field);
-                if (child != null && child.isTextual() && SENSITIVE_LOG_FIELDS.contains(field)) {
+                if (child != null && child.isTextual() && REDACTED_LOG_FIELDS.contains(field)) {
+                    objectNode.put(field, "[redacted]");
+                } else if (child != null && child.isTextual() && SENSITIVE_LOG_FIELDS.contains(field)) {
                     objectNode.put(field, previewSensitiveValue(child.asText()));
                 } else {
                     redactSensitiveNode(child);

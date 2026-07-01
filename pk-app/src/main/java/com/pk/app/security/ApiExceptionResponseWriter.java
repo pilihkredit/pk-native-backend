@@ -3,6 +3,7 @@ package com.pk.app.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
+import com.pk.app.common.web.ValidationFailureMessages;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +27,11 @@ public class ApiExceptionResponseWriter {
         response.setStatus(status.value());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        ApiResponse<Void> body = ApiResponse.failure(exception.apiCode(), RequestTrace.resolveTraceId(request));
+        ApiResponse<Void> body = ApiResponse.failure(
+                exception.apiCode(),
+                ValidationFailureMessages.forApiException(exception),
+                RequestTrace.resolveTraceId(request)
+        );
         objectMapper.writeValue(response.getOutputStream(), body);
     }
 

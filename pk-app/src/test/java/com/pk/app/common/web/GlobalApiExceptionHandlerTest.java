@@ -47,6 +47,15 @@ class GlobalApiExceptionHandlerTest {
     }
 
     @Test
+    void mapsApiExceptionDetailToClientMessage() throws Exception {
+        mockMvc.perform(get("/test/api-exception-with-detail").header("X-Trace-Id", "trace-detail"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("K000001"))
+                .andExpect(jsonPath("$.msg").value("device.deviceNo does not match header X-Device-No"))
+                .andExpect(jsonPath("$.traceId").value("trace-detail"));
+    }
+
+    @Test
     void mapsApiExceptionToWrappedFailure() throws Exception {
         mockMvc.perform(get("/test/api-exception").header("X-Trace-Id", "trace-api"))
                 .andExpect(status().isBadRequest())
@@ -75,7 +84,7 @@ class GlobalApiExceptionHandlerTest {
         mockMvc.perform(get("/test/validated").header("X-Trace-Id", "trace-validation"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("K000001"))
-                .andExpect(jsonPath("$.msg").value("Invalid request parameters"))
+                .andExpect(jsonPath("$.msg").value("name: is required"))
                 .andExpect(jsonPath("$.traceId").value("trace-validation"));
 
         assertThat(logAppender.list)
@@ -110,6 +119,14 @@ class GlobalApiExceptionHandlerTest {
     @Validated
     @RestController
     private static class TestController {
+        @GetMapping("/test/api-exception-with-detail")
+        ApiResponse<Void> apiExceptionWithDetail() {
+            throw new ApiException(
+                    ApiCode.INVALID_REQUEST_PARAMETERS,
+                    "device.deviceNo does not match header X-Device-No"
+            );
+        }
+
         @GetMapping("/test/api-exception")
         ApiResponse<Void> apiException() {
             throw new ApiException(ApiCode.INVALID_LOAN_AMOUNT);

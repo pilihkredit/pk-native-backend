@@ -38,7 +38,12 @@ public class GlobalApiExceptionHandler {
             );
         }
         HttpStatus status = resolveApiExceptionStatus(exception);
-        return failure(exception.apiCode(), status, request);
+        return failure(
+                exception.apiCode(),
+                ValidationFailureMessages.forApiException(exception),
+                status,
+                request
+        );
     }
 
     private static boolean shouldLogApiException(ApiException exception) {
@@ -71,14 +76,25 @@ public class GlobalApiExceptionHandler {
     })
     public ResponseEntity<ApiResponse<Void>> handleValidationException(Exception exception, HttpServletRequest request) {
         ValidationFailureLogger.logValidationException(log, exception, request);
-        return failure(ApiCode.INVALID_REQUEST_PARAMETERS, HttpStatus.BAD_REQUEST, request);
+        return failure(
+                ApiCode.INVALID_REQUEST_PARAMETERS,
+                ValidationFailureMessages.forValidationException(exception),
+                HttpStatus.BAD_REQUEST,
+                request
+        );
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnknownException(Exception exception, HttpServletRequest request) {
         if (isValidationCause(exception)) {
-            ValidationFailureLogger.logValidationException(log, exception, request);
-            return failure(ApiCode.INVALID_REQUEST_PARAMETERS, HttpStatus.BAD_REQUEST, request);
+            Exception validationException = (Exception) exception.getCause();
+            ValidationFailureLogger.logValidationException(log, validationException, request);
+            return failure(
+                    ApiCode.INVALID_REQUEST_PARAMETERS,
+                    ValidationFailureMessages.forValidationException(validationException),
+                    HttpStatus.BAD_REQUEST,
+                    request
+            );
         }
         log.error(
                 "Unhandled API exception traceId={} method={} path={}",
@@ -87,13 +103,23 @@ public class GlobalApiExceptionHandler {
                 request.getRequestURI(),
                 exception
         );
-        return failure(ApiCode.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR, request);
+        return failure(
+                ApiCode.INTERNAL_SERVER_ERROR,
+                ApiCode.INTERNAL_SERVER_ERROR.message(),
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                request
+        );
     }
 
-    private ResponseEntity<ApiResponse<Void>> failure(ApiCode apiCode, HttpStatus status, HttpServletRequest request) {
+    private ResponseEntity<ApiResponse<Void>> failure(
+            ApiCode apiCode,
+            String message,
+            HttpStatus status,
+            HttpServletRequest request
+    ) {
         return ResponseEntity
                 .status(status)
-                .body(ApiResponse.failure(apiCode, RequestTrace.resolveTraceId(request)));
+                .body(ApiResponse.failure(apiCode, message, RequestTrace.resolveTraceId(request)));
     }
 
     private boolean isValidationCause(Exception exception) {

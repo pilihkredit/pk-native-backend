@@ -27,10 +27,15 @@ public record ApiResponse<T>(
     }
 
     public static <T> ApiResponse<T> failure(ApiCode apiCode, String traceId) {
+        return failure(apiCode, apiCode.message(), traceId);
+    }
+
+    public static <T> ApiResponse<T> failure(ApiCode apiCode, String message, String traceId) {
         if (apiCode.success()) {
             throw new IllegalArgumentException("Success code cannot be used for failure responses");
         }
-        return of(apiCode, null, traceId);
+        String resolvedMessage = message == null || message.isBlank() ? apiCode.message() : message.trim();
+        return new ApiResponse<>(apiCode.code(), resolvedMessage, null, traceId);
     }
 
     public static <T> ApiResponse<T> of(ApiCode apiCode, T data, String traceId) {

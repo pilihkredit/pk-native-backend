@@ -45,6 +45,7 @@ public class IdentityOcrDevApplicationService {
                         request.requestId(),
                         request.faceBase64(),
                         request.idCardBase64(),
+                        request.rawOcrDetail(),
                         DevIdentityOcrDefaults.orDefault(request.ocrName(), DevIdentityOcrDefaults.OCR_NAME),
                         DevIdentityOcrDefaults.orDefault(request.ocrIdNo(), DevIdentityOcrDefaults.OCR_ID_NO),
                         DevIdentityOcrDefaults.orDefault(request.gender(), DevIdentityOcrDefaults.GENDER),

@@ -23,6 +23,18 @@ class PendanaanHttpSupportTest {
     }
 
     @Test
+    void redactsLenderResponseMsgField() {
+        String payload = """
+                {"code":"A000445","msg":"advanceAi OCR原始报文格式错误","data":null,"success":false}
+                """;
+
+        String redacted = PendanaanHttpSupport.redactSensitiveJson(payload);
+
+        assertThat(redacted).contains("\"msg\":\"[redacted]\"");
+        assertThat(redacted).doesNotContain("原始报文");
+    }
+
+    @Test
     void formatsTransportFailureMessage() {
         assertThat(PendanaanHttpSupport.formatTransportFailure(new java.net.http.HttpTimeoutException("request timed out")))
                 .isEqualTo("HttpTimeoutException: request timed out");
