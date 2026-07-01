@@ -48,6 +48,16 @@ pk:
       mode: ${PK_PROFILE_SYNC_MODE:inline}
       max-retries: ${PK_PROFILE_SYNC_MAX_RETRIES:5}
       retry-backoff-seconds: ${PK_PROFILE_SYNC_RETRY_BACKOFF_SECONDS:60}
+  ocr:
+    enabled: ${PK_OCR_ENABLED:false}
+    access-key: ${PK_OCR_ACCESS_KEY:}
+    secret-key: ${PK_OCR_SECRET_KEY:}
+    access-token-url: ${PK_OCR_ACCESS_TOKEN_URL:https://api.advance.ai/openapi/auth/ticket/v1/generate-token}
+    base-url: ${PK_OCR_BASE_URL:https://api.advance.ai/openapi}
+    session-ttl: ${PK_OCR_SESSION_TTL:30m}
+    liveness-threshold: ${PK_OCR_LIVENESS_THRESHOLD:60}
+    face-threshold: ${PK_OCR_FACE_THRESHOLD:60}
+    license-effective-seconds: ${PK_OCR_LICENSE_EFFECTIVE_SECONDS:86400}
   credit:
     apply:
       max-retries: ${PK_CREDIT_APPLY_MAX_RETRIES:5}

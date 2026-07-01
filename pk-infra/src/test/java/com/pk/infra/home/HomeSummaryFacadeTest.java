@@ -12,9 +12,11 @@ import com.pk.core.home.port.HomeLifecycleReadRepository.LoanApplySnapshot;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileBankCardData;
 import com.pk.core.profile.ProfileContactsModuleData;
+import com.pk.core.profile.ProfileIdentityData;
 import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileDeviceRepository;
+import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import com.pk.infra.profile.OnboardingProgressFacade;
@@ -27,6 +29,7 @@ class HomeSummaryFacadeTest {
     private ProfileBankCardRepository profileBankCardRepository;
     private ProfileContactRepository profileContactRepository;
     private ProfileDeviceRepository profileDeviceRepository;
+    private ProfileIdentityRepository profileIdentityRepository;
     private HomeLifecycleReadRepository homeLifecycleReadRepository;
     private HomeSummaryFacade facade;
 
@@ -36,13 +39,15 @@ class HomeSummaryFacadeTest {
         profileBankCardRepository = mock(ProfileBankCardRepository.class);
         profileContactRepository = mock(ProfileContactRepository.class);
         profileDeviceRepository = mock(ProfileDeviceRepository.class);
+        profileIdentityRepository = mock(ProfileIdentityRepository.class);
         homeLifecycleReadRepository = mock(HomeLifecycleReadRepository.class);
         facade = new HomeSummaryFacade(
                 new OnboardingProgressFacade(
                         profilePersonalRepository,
                         profileBankCardRepository,
                         profileContactRepository,
-                        profileDeviceRepository
+                        profileDeviceRepository,
+                        profileIdentityRepository
                 ),
                 homeLifecycleReadRepository
         );
@@ -164,5 +169,17 @@ class HomeSummaryFacadeTest {
                 new ProfileContactsModuleData(1L, "COMPLETED", "req-1", null, null)
         ));
         when(profileDeviceRepository.existsByProfileId(1L)).thenReturn(true);
+        when(profileIdentityRepository.findByProfileId(1L)).thenReturn(Optional.of(
+                new ProfileIdentityData(
+                        1L,
+                        "JOHN DOE",
+                        encryptedField,
+                        "hash",
+                        "COMPLETED",
+                        "req-identity",
+                        null,
+                        null
+                )
+        ));
     }
 }

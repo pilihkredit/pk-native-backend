@@ -4,6 +4,7 @@ import com.pk.core.onboarding.OnboardingModuleCode;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileDeviceRepository;
+import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,17 +17,20 @@ public class OnboardingProgressFacade {
     private final ProfileBankCardRepository profileBankCardRepository;
     private final ProfileContactRepository profileContactRepository;
     private final ProfileDeviceRepository profileDeviceRepository;
+    private final ProfileIdentityRepository profileIdentityRepository;
 
     public OnboardingProgressFacade(
             ProfilePersonalRepository profilePersonalRepository,
             ProfileBankCardRepository profileBankCardRepository,
             ProfileContactRepository profileContactRepository,
-            ProfileDeviceRepository profileDeviceRepository
+            ProfileDeviceRepository profileDeviceRepository,
+            ProfileIdentityRepository profileIdentityRepository
     ) {
         this.profilePersonalRepository = profilePersonalRepository;
         this.profileBankCardRepository = profileBankCardRepository;
         this.profileContactRepository = profileContactRepository;
         this.profileDeviceRepository = profileDeviceRepository;
+        this.profileIdentityRepository = profileIdentityRepository;
     }
 
     public OnboardingProgressResult getProgress(long profileId, String partnerUserId) {
@@ -57,7 +61,12 @@ public class OnboardingProgressFacade {
                 completedModules,
                 missingModules
         );
-        missingModules.add(OnboardingModuleCode.IDENTITY);
+        trackModule(
+                OnboardingModuleCode.IDENTITY,
+                profileIdentityRepository.findByProfileId(profileId).isPresent(),
+                completedModules,
+                missingModules
+        );
 
         boolean allRequiredComplete = missingModules.stream()
                 .noneMatch(module -> isRequiredForSync(module));
@@ -88,7 +97,8 @@ public class OnboardingProgressFacade {
         return OnboardingModuleCode.PERSONAL.equals(moduleCode)
                 || OnboardingModuleCode.BANK_CARD.equals(moduleCode)
                 || OnboardingModuleCode.CONTACT.equals(moduleCode)
-                || OnboardingModuleCode.DEVICE.equals(moduleCode);
+                || OnboardingModuleCode.DEVICE.equals(moduleCode)
+                || OnboardingModuleCode.IDENTITY.equals(moduleCode);
     }
 
     public record OnboardingProgressResult(

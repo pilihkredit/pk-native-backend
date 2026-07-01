@@ -20,6 +20,7 @@ final class PendanaanProfileUpsertMapper {
             case PERSONAL -> applyPersonal(userInfo, (ProfileSyncPayload.PersonalProfilePayload) payload);
             case CONTACT -> applyContact(userInfo, (ProfileSyncPayload.ContactProfilePayload) payload);
             case BANK_CARD -> applyBankCard(userInfo, (ProfileSyncPayload.BankCardProfilePayload) payload);
+            case IDENTITY -> applyIdentity(userInfo, (ProfileSyncPayload.IdentityProfilePayload) payload);
         }
     }
 
@@ -49,6 +50,35 @@ final class PendanaanProfileUpsertMapper {
         ObjectNode bankCard = userInfo.putObject("bankCard");
         bankCard.put("bankCode", payload.bankCode());
         bankCard.put("cardNumber", payload.cardNumber());
+    }
+
+    private static void applyIdentity(ObjectNode userInfo, ProfileSyncPayload.IdentityProfilePayload payload) {
+        ObjectNode identity = userInfo.putObject("identity");
+        identity.put("name", payload.name());
+        identity.put("idNo", payload.idNo());
+        identity.put("faceBase64", payload.faceBase64());
+        identity.put("idCardBase64", payload.idCardBase64());
+        ObjectNode ocrResult = identity.putObject("ocrResult");
+        putIfPresent(ocrResult, "ocrName", payload.ocrName());
+        putIfPresent(ocrResult, "ocrIdNo", payload.ocrIdNo());
+        putIfPresent(ocrResult, "gender", payload.gender());
+        putIfPresent(ocrResult, "religion", payload.religion());
+        putIfPresent(ocrResult, "maritalStatus", payload.maritalStatus());
+        putIfPresent(ocrResult, "birthday", payload.birthday());
+        putIfPresent(ocrResult, "birthPlace", payload.birthPlace());
+        putIfPresent(ocrResult, "address", payload.address());
+        putIfPresent(ocrResult, "occupation", payload.occupation());
+        putIfPresent(ocrResult, "nationality", payload.nationality());
+        putIfPresent(ocrResult, "bloodType", payload.bloodType());
+        putIfPresent(ocrResult, "expiryDate", payload.expiryDate());
+        ocrResult.put("rawOcrDetail", payload.rawOcrDetail());
+        ocrResult.put("ocrChannel", payload.ocrChannel());
+    }
+
+    private static void putIfPresent(ObjectNode node, String field, String value) {
+        if (value != null && !value.isBlank()) {
+            node.put(field, value.trim());
+        }
     }
 
     static void applyDevice(ObjectNode userInfo, com.pk.core.profile.sync.LenderDeviceContext device) {

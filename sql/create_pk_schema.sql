@@ -155,6 +155,23 @@ CREATE TABLE user_identity_asset (
     KEY idx_user_identity_asset_biometric_retention (biometric_image_retention_until)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User identity assets and OCR results';
 
+CREATE TABLE user_profile_identity (
+    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
+    last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
+    full_name VARCHAR(128) NOT NULL COMMENT 'Legal name from OCR',
+    id_no_ciphertext TEXT NOT NULL COMMENT 'AES-256-GCM encrypted EKTP number ciphertext',
+    id_no_nonce VARBINARY(12) NOT NULL COMMENT 'AES-GCM nonce for EKTP number',
+    id_no_tag VARBINARY(16) NOT NULL COMMENT 'AES-GCM authentication tag for EKTP number',
+    id_no_hash CHAR(64) NOT NULL COMMENT 'SHA-256 hash of EKTP number',
+    last_lender_request_json JSON NULL COMMENT 'Last lender user/info/upsert request audit JSON',
+    last_lender_response_json JSON NULL COMMENT 'Last lender user/info/upsert response data JSON',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
+    PRIMARY KEY (profile_id),
+    KEY idx_user_profile_identity_id_no_hash (id_no_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User identity module state';
+
 CREATE TABLE user_profile_contacts (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
     module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',

@@ -5,9 +5,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.pk.core.onboarding.OnboardingModuleCode;
+import com.pk.core.profile.EncryptedField;
+import com.pk.core.profile.ProfileBankCardData;
+import com.pk.core.profile.ProfileContactsModuleData;
+import com.pk.core.profile.ProfileIdentityData;
+import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileDeviceRepository;
+import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +24,7 @@ class OnboardingProgressFacadeTest {
     private ProfileBankCardRepository profileBankCardRepository;
     private ProfileContactRepository profileContactRepository;
     private ProfileDeviceRepository profileDeviceRepository;
+    private ProfileIdentityRepository profileIdentityRepository;
     private OnboardingProgressFacade facade;
 
     @BeforeEach
@@ -26,11 +33,13 @@ class OnboardingProgressFacadeTest {
         profileBankCardRepository = mock(ProfileBankCardRepository.class);
         profileContactRepository = mock(ProfileContactRepository.class);
         profileDeviceRepository = mock(ProfileDeviceRepository.class);
+        profileIdentityRepository = mock(ProfileIdentityRepository.class);
         facade = new OnboardingProgressFacade(
                 profilePersonalRepository,
                 profileBankCardRepository,
                 profileContactRepository,
-                profileDeviceRepository
+                profileDeviceRepository,
+                profileIdentityRepository
         );
     }
 
@@ -54,15 +63,12 @@ class OnboardingProgressFacadeTest {
     }
 
     @Test
-    void returnsSyncedWhenRequiredModulesCompleteEvenIfIdentityMissing() {
-        when(profilePersonalRepository.findByProfileId(1L)).thenReturn(Optional.of(mock()));
-        when(profileBankCardRepository.findByProfileId(1L)).thenReturn(Optional.of(mock()));
-        when(profileContactRepository.findModuleByProfileId(1L)).thenReturn(Optional.of(mock()));
-        when(profileDeviceRepository.existsByProfileId(1L)).thenReturn(true);
+    void returnsIncompleteWhenIdentityMissing() {
+        stubCompletedModulesExceptIdentity();
 
         var result = facade.getProgress(1L, "U10001");
 
-        assertThat(result.kycStatus()).isEqualTo(OnboardingProgressFacade.KYC_SYNCED);
+        assertThat(result.kycStatus()).isEqualTo(OnboardingProgressFacade.KYC_INCOMPLETE);
         assertThat(result.completedModules()).containsExactlyInAnyOrder(
                 OnboardingModuleCode.PERSONAL,
                 OnboardingModuleCode.BANK_CARD,
@@ -70,5 +76,34 @@ class OnboardingProgressFacadeTest {
                 OnboardingModuleCode.DEVICE
         );
         assertThat(result.missingModules()).containsExactly(OnboardingModuleCode.IDENTITY);
+    }
+
+    @Test
+    void returnsSyncedWhenAllRequiredModulesComplete() {
+        stubCompletedModulesExceptIdentity();
+        EncryptedField encryptedField = new EncryptedField("cipher", new byte[12], new byte[16]);
+        when(profileIdentityRepository.findByProfileId(1L)).thenReturn(Optional.of(
+                new ProfileIdentityData(1L, "JOHN DOE", encryptedField, "hash", "COMPLETED", "req-1", null, null)
+        ));
+
+        var result = facade.getProgress(1L, "U10001");
+
+        assertThat(result.kycStatus()).isEqualTo(OnboardingProgressFacade.KYC_SYNCED);
+        assertThat(result.missingModules()).isEmpty();
+    }
+
+    private void stubCompletedModulesExceptIdentity() {
+        EncryptedField encryptedField = new EncryptedField("cipher", new byte[12], new byte[16]);
+        when(profilePersonalRepository.findByProfileId(1L)).thenReturn(Optional.of(
+                new ProfilePersonalData(1L, 1, 16, "5000000", encryptedField, null, "COMPLETED", "req-1", null, null)
+        ));
+        when(profileBankCardRepository.findByProfileId(1L)).thenReturn(Optional.of(
+                new ProfileBankCardData(1L, "BCA", encryptedField, "hash", "VERIFIED", null, "COMPLETED", "req-1", null, null)
+        ));
+        when(profileContactRepository.findModuleByProfileId(1L)).thenReturn(Optional.of(
+                new ProfileContactsModuleData(1L, "COMPLETED", "req-1", null, null)
+        ));
+        when(profileDeviceRepository.existsByProfileId(1L)).thenReturn(true);
+        when(profileIdentityRepository.findByProfileId(1L)).thenReturn(Optional.empty());
     }
 }

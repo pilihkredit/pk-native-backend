@@ -74,6 +74,7 @@ public class LenderSyncAuditRequestBuilder {
             case PERSONAL -> applyPersonalAudit(userInfo, profileId);
             case CONTACT -> applyContactAudit(userInfo, profileId);
             case BANK_CARD -> applyBankCardAudit(userInfo, profileId);
+            case IDENTITY -> applyIdentityAudit(userInfo, (ProfileSyncPayload.IdentityProfilePayload) payload);
         }
     }
 
@@ -108,6 +109,35 @@ public class LenderSyncAuditRequestBuilder {
         ObjectNode bankCard = userInfo.putObject("bankCard");
         bankCard.put("bankCode", data.bankCode());
         bankCard.set("cardNumber", toEncryptedJsonNode(data.cardNumber()));
+    }
+
+    private void applyIdentityAudit(ObjectNode userInfo, ProfileSyncPayload.IdentityProfilePayload payload) {
+        ObjectNode identity = userInfo.putObject("identity");
+        identity.put("name", payload.name());
+        identity.put("idNo", payload.idNo());
+        identity.put("faceBase64", "[redacted]");
+        identity.put("idCardBase64", "[redacted]");
+        ObjectNode ocrResult = identity.putObject("ocrResult");
+        putIfPresent(ocrResult, "ocrName", payload.ocrName());
+        putIfPresent(ocrResult, "ocrIdNo", payload.ocrIdNo());
+        putIfPresent(ocrResult, "gender", payload.gender());
+        putIfPresent(ocrResult, "religion", payload.religion());
+        putIfPresent(ocrResult, "maritalStatus", payload.maritalStatus());
+        putIfPresent(ocrResult, "birthday", payload.birthday());
+        putIfPresent(ocrResult, "birthPlace", payload.birthPlace());
+        putIfPresent(ocrResult, "address", payload.address());
+        putIfPresent(ocrResult, "occupation", payload.occupation());
+        putIfPresent(ocrResult, "nationality", payload.nationality());
+        putIfPresent(ocrResult, "bloodType", payload.bloodType());
+        putIfPresent(ocrResult, "expiryDate", payload.expiryDate());
+        ocrResult.put("rawOcrDetail", "[redacted]");
+        ocrResult.put("ocrChannel", payload.ocrChannel());
+    }
+
+    private static void putIfPresent(ObjectNode node, String field, String value) {
+        if (value != null && !value.isBlank()) {
+            node.put(field, value.trim());
+        }
     }
 
     private ObjectNode toEncryptedJsonNode(EncryptedField field) {

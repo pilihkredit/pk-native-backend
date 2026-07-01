@@ -5,12 +5,14 @@ import com.pk.core.profile.port.LenderEnumMapper;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileEnumCatalog;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties({ProfileProperties.class, ProfileSyncProperties.class})
+@org.springframework.context.annotation.Import(com.pk.infra.ocr.OcrInfraConfiguration.class)
 public class ProfileInfraConfiguration {
     @Bean
     ProfileEnumCatalog profileEnumCatalog() {
@@ -69,6 +71,7 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
             LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder
     ) {
         return new ProfileSyncHandler(
@@ -79,6 +82,7 @@ public class ProfileInfraConfiguration {
                 profilePersonalRepository,
                 profileContactRepository,
                 profileBankCardRepository,
+                profileIdentityRepository,
                 lenderSyncAuditRequestBuilder
         );
     }
@@ -101,13 +105,47 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
             com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
-            com.pk.core.profile.port.ProfileDeviceRepository profileDeviceRepository
+            com.pk.core.profile.port.ProfileDeviceRepository profileDeviceRepository,
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository
     ) {
         return new OnboardingProgressFacade(
                 profilePersonalRepository,
                 profileBankCardRepository,
                 profileContactRepository,
-                profileDeviceRepository
+                profileDeviceRepository,
+                profileIdentityRepository
+        );
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "pk.ocr", name = "enabled", havingValue = "true")
+    IdentityOcrFacade identityOcrFacade(
+            com.pk.core.profile.port.AdvanceAiOcrPort advanceAiOcrPort,
+            com.pk.core.profile.port.OcrSessionStore ocrSessionStore,
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
+            ProfileSyncOrchestrator profileSyncOrchestrator,
+            UserDeviceWriter userDeviceWriter,
+            com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
+            com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
+            OnboardingProgressFacade onboardingProgressFacade,
+            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate,
+            com.pk.infra.ocr.OcrProperties ocrProperties,
+            ObjectMapper objectMapper
+    ) {
+        return new IdentityOcrFacade(
+                advanceAiOcrPort,
+                ocrSessionStore,
+                profileIdentityRepository,
+                sensitiveFieldEncryptor,
+                profileSyncOrchestrator,
+                userDeviceWriter,
+                profileVersionRepository,
+                userProfileBindingRepository,
+                onboardingProgressFacade,
+                jdbcTemplate,
+                ocrProperties,
+                objectMapper
         );
     }
 

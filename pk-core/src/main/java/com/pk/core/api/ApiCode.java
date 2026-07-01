@@ -36,6 +36,12 @@ public enum ApiCode {
     PASSWORD_ACCOUNT_LOCKED("K000215", "Password account locked", ApiCodeLayer.PLATFORM_VALIDATION),
     MOTHER_SURNAME_REQUIRED("K000408", "Mother surname is required", ApiCodeLayer.PLATFORM_VALIDATION),
     INVALID_MOTHER_SURNAME_FORMAT("K000409", "Invalid mother surname format", ApiCodeLayer.PLATFORM_VALIDATION),
+    OCR_SERVICE_ERROR("K000120", "OCR service error", ApiCodeLayer.PLATFORM_VALIDATION),
+    OCR_IMAGE_INVALID("K000121", "OCR image invalid", ApiCodeLayer.PLATFORM_VALIDATION),
+    OCR_NO_RESULT("K000122", "OCR no result", ApiCodeLayer.PLATFORM_VALIDATION),
+    OCR_LIVENESS_FAILED("K000123", "OCR liveness detection failed", ApiCodeLayer.PLATFORM_VALIDATION),
+    OCR_SESSION_INVALID("K000124", "OCR session invalid or expired", ApiCodeLayer.PLATFORM_VALIDATION),
+    OCR_FACE_RECOGNITION_FAILED("K000125", "OCR face recognition failed", ApiCodeLayer.PLATFORM_VALIDATION),
 
     UPSTREAM_APPLICATION_NOT_FOUND("L000010", "Application not found", ApiCodeLayer.UPSTREAM_BUSINESS),
     LENDER_INVALID_REQUEST_PARAMETERS("L000001", "Invalid request parameters rejected by lender", ApiCodeLayer.UPSTREAM_BUSINESS),

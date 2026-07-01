@@ -28,4 +28,26 @@ public sealed interface ProfileSyncPayload {
             String cardNumber
     ) implements ProfileSyncPayload {
     }
+
+    record IdentityProfilePayload(
+            String name,
+            String idNo,
+            String faceBase64,
+            String idCardBase64,
+            String rawOcrDetail,
+            String ocrChannel,
+            String ocrName,
+            String ocrIdNo,
+            String gender,
+            String religion,
+            String maritalStatus,
+            String birthday,
+            String birthPlace,
+            String address,
+            String occupation,
+            String nationality,
+            String bloodType,
+            String expiryDate
+    ) implements ProfileSyncPayload {
+    }
 }

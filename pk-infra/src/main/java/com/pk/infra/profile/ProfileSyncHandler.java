@@ -6,6 +6,7 @@ import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
+import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.ProfileSyncModule;
@@ -20,6 +21,7 @@ public class ProfileSyncHandler {
     private final ProfilePersonalRepository profilePersonalRepository;
     private final ProfileContactRepository profileContactRepository;
     private final ProfileBankCardRepository profileBankCardRepository;
+    private final ProfileIdentityRepository profileIdentityRepository;
     private final LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder;
 
     public ProfileSyncHandler(
@@ -30,6 +32,7 @@ public class ProfileSyncHandler {
             ProfilePersonalRepository profilePersonalRepository,
             ProfileContactRepository profileContactRepository,
             ProfileBankCardRepository profileBankCardRepository,
+            ProfileIdentityRepository profileIdentityRepository,
             LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder
     ) {
         this.lenderProfileSyncPort = lenderProfileSyncPort;
@@ -39,6 +42,7 @@ public class ProfileSyncHandler {
         this.profilePersonalRepository = profilePersonalRepository;
         this.profileContactRepository = profileContactRepository;
         this.profileBankCardRepository = profileBankCardRepository;
+        this.profileIdentityRepository = profileIdentityRepository;
         this.lenderSyncAuditRequestBuilder = lenderSyncAuditRequestBuilder;
     }
 
@@ -113,6 +117,11 @@ public class ProfileSyncHandler {
                     responseDataJson
             );
             case BANK_CARD -> profileBankCardRepository.updateLastLenderAudit(
+                    profileId,
+                    requestDataJson,
+                    responseDataJson
+            );
+            case IDENTITY -> profileIdentityRepository.updateLastLenderAudit(
                     profileId,
                     requestDataJson,
                     responseDataJson

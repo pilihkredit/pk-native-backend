@@ -14,6 +14,7 @@ import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
+import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.DeviceExtendedAttributes;
@@ -34,6 +35,7 @@ class ProfileSyncHandlerTest {
         ProfilePersonalRepository profilePersonalRepository = mock(ProfilePersonalRepository.class);
         ProfileContactRepository profileContactRepository = mock(ProfileContactRepository.class);
         ProfileBankCardRepository profileBankCardRepository = mock(ProfileBankCardRepository.class);
+        ProfileIdentityRepository profileIdentityRepository = mock(ProfileIdentityRepository.class);
         LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder = new LenderSyncAuditRequestBuilder(
                 profilePersonalRepository,
                 profileContactRepository,
@@ -71,6 +73,7 @@ class ProfileSyncHandlerTest {
                 profilePersonalRepository,
                 profileContactRepository,
                 profileBankCardRepository,
+                profileIdentityRepository,
                 lenderSyncAuditRequestBuilder
         );
 
