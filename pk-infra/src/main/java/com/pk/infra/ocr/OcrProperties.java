@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "pk.ocr")
 public class OcrProperties {
     private boolean enabled = false;
+    private boolean devLenderSyncEnabled = false;
     private String accessKey = "";
     private String secretKey = "";
     /** Full URL, e.g. https://api.advance.ai/openapi/auth/ticket/v1/generate-token */
@@ -32,6 +33,14 @@ public class OcrProperties {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean devLenderSyncEnabled() {
+        return devLenderSyncEnabled;
+    }
+
+    public void setDevLenderSyncEnabled(boolean devLenderSyncEnabled) {
+        this.devLenderSyncEnabled = devLenderSyncEnabled;
     }
 
     public String baseUrl() {

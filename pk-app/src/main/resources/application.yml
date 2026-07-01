@@ -58,6 +58,7 @@ pk:
     ocr-check-url: ${PK_OCR_CHECK_URL:/face-recognition/v3/ocr-ktp-check}
     liveness-detection-url: ${PK_OCR_LIVENESS_DETECTION_URL:/liveness/v3/detection-result}
     face-recognition-url: ${PK_OCR_FACE_RECOGNITION_URL:/face-recognition/v4/check}
+    dev-lender-sync-enabled: ${PK_OCR_DEV_LENDER_SYNC_ENABLED:false}
     session-ttl: ${PK_OCR_SESSION_TTL:30m}
     liveness-threshold: ${PK_OCR_LIVENESS_THRESHOLD:60}
     face-threshold: ${PK_OCR_FACE_THRESHOLD:60}

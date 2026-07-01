@@ -226,6 +226,96 @@ public class IdentityOcrFacade {
         );
     }
 
+    /**
+     * Local/dev only: push identity to lender without Advance.ai OCR flow.
+     */
+    public DevLenderSyncResult devSyncIdentityToLender(
+            long profileId,
+            String partnerUserId,
+            DevLenderSyncCommand command
+    ) {
+        if (!ocrProperties.devLenderSyncEnabled()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "dev lender sync is disabled");
+        }
+        if (isBlank(command.requestId())) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "requestId is required");
+        }
+        ProfileSyncPayloadLoader.validateDevice(command.device());
+        ProfileSyncPayload.IdentityProfilePayload payload = buildDevIdentityPayload(command);
+        var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
+                profileId,
+                partnerUserId,
+                command.requestId().trim(),
+                ProfileSyncModule.IDENTITY,
+                command.device(),
+                payload
+        ));
+        return new DevLenderSyncResult(
+                command.requestId().trim(),
+                parseLenderResponse(syncResult.responseDataJson())
+        );
+    }
+
+    private ProfileSyncPayload.IdentityProfilePayload buildDevIdentityPayload(DevLenderSyncCommand command) {
+        String ocrName = requireText(command.ocrName(), "ocrName");
+        String ocrIdNo = requireText(command.ocrIdNo(), "ocrIdNo");
+        String faceBase64 = command.faceBase64() == null ? "" : command.faceBase64().trim();
+        String idCardBase64 = command.idCardBase64() == null ? "" : command.idCardBase64().trim();
+        String rawOcrDetail = buildDevRawOcrDetail(command);
+        return new ProfileSyncPayload.IdentityProfilePayload(
+                ocrName,
+                ocrIdNo,
+                faceBase64,
+                idCardBase64,
+                rawOcrDetail,
+                OCR_CHANNEL,
+                ocrName,
+                ocrIdNo,
+                command.gender(),
+                command.religion(),
+                command.maritalStatus(),
+                command.birthday(),
+                command.birthPlace(),
+                command.address(),
+                command.occupation(),
+                command.nationality(),
+                command.bloodType(),
+                command.expiryDate()
+        );
+    }
+
+    private String buildDevRawOcrDetail(DevLenderSyncCommand command) {
+        try {
+            ObjectNode node = objectMapper.createObjectNode();
+            putIfPresent(node, "ocrName", command.ocrName());
+            putIfPresent(node, "ocrIdNo", command.ocrIdNo());
+            putIfPresent(node, "gender", command.gender());
+            putIfPresent(node, "religion", command.religion());
+            putIfPresent(node, "maritalStatus", command.maritalStatus());
+            putIfPresent(node, "birthday", command.birthday());
+            putIfPresent(node, "birthPlace", command.birthPlace());
+            putIfPresent(node, "address", command.address());
+            putIfPresent(node, "occupation", command.occupation());
+            putIfPresent(node, "nationality", command.nationality());
+            putIfPresent(node, "bloodType", command.bloodType());
+            putIfPresent(node, "expiryDate", command.expiryDate());
+            putIfPresent(node, "province", command.province());
+            putIfPresent(node, "city", command.city());
+            putIfPresent(node, "district", command.district());
+            putIfPresent(node, "ocrChannel", OCR_CHANNEL);
+            return objectMapper.writeValueAsString(node);
+        } catch (Exception exception) {
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+        }
+    }
+
+    private static String requireText(String value, String field) {
+        if (isBlank(value)) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, field + " is required");
+        }
+        return value.trim();
+    }
+
     private void refreshKycStatus(long profileId, String partnerUserId) {
         OnboardingProgressFacade.OnboardingProgressResult progress = onboardingProgressFacade.getProgress(
                 profileId,
@@ -426,5 +516,31 @@ public class IdentityOcrFacade {
             String moduleStatus,
             JsonNode lenderResponse
     ) {
+    }
+
+    public record DevLenderSyncCommand(
+            String requestId,
+            String faceBase64,
+            String idCardBase64,
+            String ocrName,
+            String ocrIdNo,
+            String gender,
+            String religion,
+            String maritalStatus,
+            String birthday,
+            String birthPlace,
+            String address,
+            String occupation,
+            String nationality,
+            String bloodType,
+            String expiryDate,
+            String province,
+            String city,
+            String district,
+            LenderDeviceContext device
+    ) {
+    }
+
+    public record DevLenderSyncResult(String requestId, JsonNode lenderResponse) {
     }
 }
