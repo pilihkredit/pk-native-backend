@@ -176,7 +176,10 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
             builder.POST(HttpRequest.BodyPublishers.ofString(requestJson));
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             responseText = response.body() == null ? "" : response.body();
-            JsonNode result = objectMapper.readTree(responseText.isBlank() ? "{}" : responseText);
+            if (response.statusCode() >= 400) {
+                throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+            }
+            JsonNode result = parseResponseBody(responseText);
             success = "SUCCESS".equals(text(result, "code"));
             return result;
         } catch (ApiException exception) {
@@ -212,7 +215,10 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             responseText = response.body() == null ? "" : response.body();
-            JsonNode result = objectMapper.readTree(responseText.isBlank() ? "{}" : responseText);
+            if (response.statusCode() >= 400) {
+                throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+            }
+            JsonNode result = parseResponseBody(responseText);
             success = "SUCCESS".equals(text(result, "code"));
             return result;
         } catch (ApiException exception) {
@@ -228,6 +234,25 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                     success,
                     OcrLogSupport.redactPayload(responseText)
             );
+        }
+    }
+
+    private JsonNode parseResponseBody(String responseText) {
+        if (responseText == null || responseText.isBlank()) {
+            try {
+                return objectMapper.readTree("{}");
+            } catch (Exception exception) {
+                throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+            }
+        }
+        String trimmed = responseText.trim();
+        if (trimmed.startsWith("<")) {
+            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+        }
+        try {
+            return objectMapper.readTree(trimmed);
+        } catch (Exception exception) {
+            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
         }
     }
 

@@ -53,7 +53,9 @@ pk:
     access-key: ${PK_OCR_ACCESS_KEY:}
     secret-key: ${PK_OCR_SECRET_KEY:}
     access-token-url: ${PK_OCR_ACCESS_TOKEN_URL:https://api.advance.ai/openapi/auth/ticket/v1/generate-token}
+    database-id-validation-url: ${PK_OCR_DATABASE_ID_VALIDATION_URL:https://api.advance.ai/openapi/face-identity/v6/database-id-validation}
     base-url: ${PK_OCR_BASE_URL:https://api.advance.ai/openapi}
+    ocr-check-url: ${PK_OCR_CHECK_URL:/face-recognition/v3/ocr-ktp-check}
     session-ttl: ${PK_OCR_SESSION_TTL:30m}
     liveness-threshold: ${PK_OCR_LIVENESS_THRESHOLD:60}
     face-threshold: ${PK_OCR_FACE_THRESHOLD:60}

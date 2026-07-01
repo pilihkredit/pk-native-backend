@@ -29,4 +29,6 @@ pk:
     access-key: ${PK_OCR_ACCESS_KEY:de40a837df9c2f66}
     secret-key: ${PK_OCR_SECRET_KEY:2f4250cb52fe879c}
     access-token-url: https://api.advance.ai/openapi/auth/ticket/v1/generate-token
+    database-id-validation-url: https://api.advance.ai/openapi/face-identity/v6/database-id-validation
     base-url: https://api.advance.ai/openapi
+    ocr-check-url: /face-recognition/v3/ocr-ktp-check

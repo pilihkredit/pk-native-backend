@@ -10,9 +10,10 @@ public class OcrProperties {
     private String secretKey = "";
     /** Full URL, e.g. https://api.advance.ai/openapi/auth/ticket/v1/generate-token */
     private String accessTokenUrl = "https://api.advance.ai/openapi/auth/ticket/v1/generate-token";
+    private String databaseIdValidationUrl = "https://api.advance.ai/openapi/face-identity/v6/database-id-validation";
     private String baseUrl = "https://api.advance.ai/openapi";
     private String licenseUrl = "/liveness/v1/auth-license";
-    private String ocrCheckUrl = "/ocr/v1/check";
+    private String ocrCheckUrl = "/face-recognition/v3/ocr-ktp-check";
     private String livenessDetectionUrl = "/liveness/v1/detect";
     private String faceRecognitionUrl = "/face/v1/compare";
     private String tokenKeyPrefix = "pk:ocr:token";
@@ -63,6 +64,14 @@ public class OcrProperties {
 
     public void setAccessTokenUrl(String accessTokenUrl) {
         this.accessTokenUrl = accessTokenUrl;
+    }
+
+    public String databaseIdValidationUrl() {
+        return databaseIdValidationUrl;
+    }
+
+    public void setDatabaseIdValidationUrl(String databaseIdValidationUrl) {
+        this.databaseIdValidationUrl = databaseIdValidationUrl;
     }
 
     public String licenseUrl() {

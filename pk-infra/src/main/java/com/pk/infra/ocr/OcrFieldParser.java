@@ -20,6 +20,7 @@ public final class OcrFieldParser {
         String ocrName = text(data, "name");
         String ocrIdNo = firstText(data, "ktpIdNumber", "idNumber");
         String birthday = parseBirthday(data, ocrIdNo);
+        String birthPlace = parseBirthPlace(data);
         return new OcrSessionState.OcrParsedFields(
                 ocrName,
                 ocrIdNo,
@@ -27,7 +28,7 @@ public final class OcrFieldParser {
                 text(data, "religion"),
                 text(data, "maritalStatus"),
                 birthday,
-                text(data, "birthPlace"),
+                birthPlace,
                 text(data, "address"),
                 text(data, "occupation"),
                 text(data, "nationality"),
@@ -53,9 +54,32 @@ public final class OcrFieldParser {
         }
         String textBirthday = text(data, "birthday");
         if (textBirthday != null && !textBirthday.isBlank()) {
-            return textBirthday.trim();
+            return normalizeBirthday(textBirthday.trim());
         }
         return parseBirthdayFromIdNo(ocrIdNo);
+    }
+
+    private static String parseBirthPlace(JsonNode data) {
+        String birthPlace = firstText(data, "birthPlace", "placeOfBirth");
+        if (birthPlace != null) {
+            return birthPlace;
+        }
+        String birthPlaceBirthday = text(data, "birthPlaceBirthday");
+        if (birthPlaceBirthday == null || !birthPlaceBirthday.contains(",")) {
+            return null;
+        }
+        return birthPlaceBirthday.substring(0, birthPlaceBirthday.indexOf(',')).trim();
+    }
+
+    private static String normalizeBirthday(String birthday) {
+        if (birthday.contains("/")) {
+            return birthday.replace('/', '-');
+        }
+        if (birthday.matches("\\d{2}-\\d{2}-\\d{4}")) {
+            String[] parts = birthday.split("-");
+            return String.format("%s-%s-%s", parts[2], parts[1], parts[0]);
+        }
+        return birthday;
     }
 
     private static String parseBirthdayFromIdNo(String ocrIdNo) {
