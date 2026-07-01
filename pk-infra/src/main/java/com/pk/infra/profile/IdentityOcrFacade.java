@@ -350,7 +350,10 @@ public class IdentityOcrFacade {
                 List.of("identity"),
                 "IDENTITY_DEV_LENDER_SYNC"
         );
-        String ocrResultJson = buildOcrResultJson(toDevParsedFields(command), buildDevRawOcrDetail(command));
+        String ocrResultJson = buildOcrResultJson(
+                toDevParsedFields(command),
+                lenderRawOcrDetail(buildDevRawOcrDetail(command))
+        );
         jdbcTemplate.update(
                 """
                 INSERT INTO user_identity_asset (
@@ -480,7 +483,7 @@ public class IdentityOcrFacade {
                 List.of("identity"),
                 "IDENTITY_OCR"
         );
-        String ocrResultJson = buildOcrResultJson(parsed, session.ocrRawJson());
+        String ocrResultJson = buildOcrResultJson(parsed, lenderRawOcrDetail(session.ocrRawJson()));
         jdbcTemplate.update(
                 """
                 INSERT INTO user_identity_asset (
@@ -542,6 +545,7 @@ public class IdentityOcrFacade {
             String faceBase64,
             String idCardBase64
     ) {
+        // §17 session stores Advance.ai full OCR response; normalize before lender upsert.
         return new ProfileSyncPayload.IdentityProfilePayload(
                 parsed.ocrName().trim(),
                 parsed.ocrIdNo().trim(),
