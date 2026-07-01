@@ -228,6 +228,7 @@ public class IdentityOcrFacade {
 
     /**
      * Local/dev only: push identity to lender without Advance.ai OCR flow.
+     * Local identity tables are always upserted; lender sync failures do not roll back MySQL state.
      */
     public DevLenderSyncResult devSyncIdentityToLender(
             long profileId,
@@ -241,19 +242,109 @@ public class IdentityOcrFacade {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "requestId is required");
         }
         ProfileSyncPayloadLoader.validateDevice(command.device());
+        String ocrName = requireText(command.ocrName(), "ocrName");
+        String ocrIdNo = requireText(command.ocrIdNo(), "ocrIdNo");
         ProfileSyncPayload.IdentityProfilePayload payload = buildDevIdentityPayload(command);
-        var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
+        persistDevIdentityLocalState(profileId, partnerUserId, command, ocrName, ocrIdNo);
+
+        JsonNode lenderResponse;
+        try {
+            var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
+                    profileId,
+                    partnerUserId,
+                    command.requestId().trim(),
+                    ProfileSyncModule.IDENTITY,
+                    command.device(),
+                    payload
+            ));
+            lenderResponse = parseLenderResponse(syncResult.responseDataJson());
+        } catch (ApiException exception) {
+            lenderResponse = buildLenderSyncFailureNode(exception);
+        } catch (RuntimeException exception) {
+            lenderResponse = buildLenderSyncFailureNode(
+                    new ApiException(ApiCode.SERVICE_UNAVAILABLE, exception.getMessage())
+            );
+        }
+        return new DevLenderSyncResult(command.requestId().trim(), lenderResponse);
+    }
+
+    private void persistDevIdentityLocalState(
+            long profileId,
+            String partnerUserId,
+            DevLenderSyncCommand command,
+            String ocrName,
+            String ocrIdNo
+    ) {
+        EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(ocrIdNo);
+        profileIdentityRepository.upsert(new ProfileIdentityData(
                 profileId,
-                partnerUserId,
+                ocrName,
+                encryptedIdNo,
+                EktpValidator.hash(ocrIdNo),
+                MODULE_COMPLETED,
                 command.requestId().trim(),
-                ProfileSyncModule.IDENTITY,
-                command.device(),
-                payload
+                null,
+                null
         ));
-        return new DevLenderSyncResult(
-                command.requestId().trim(),
-                parseLenderResponse(syncResult.responseDataJson())
+        persistDevIdentityAsset(profileId, command, encryptedIdNo, ocrName);
+        userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
+        refreshKycStatus(profileId, partnerUserId);
+    }
+
+    private void persistDevIdentityAsset(
+            long profileId,
+            DevLenderSyncCommand command,
+            EncryptedField encryptedIdNo,
+            String ocrName
+    ) {
+        long profileVersionId = profileVersionRepository.createSnapshot(
+                profileId,
+                List.of("identity"),
+                "IDENTITY_DEV_LENDER_SYNC"
         );
+        String ocrResultJson = buildDevRawOcrDetail(command);
+        jdbcTemplate.update(
+                """
+                INSERT INTO user_identity_asset (
+                    profile_id,
+                    profile_version_id,
+                    id_card_hash,
+                    id_card_ciphertext,
+                    id_card_nonce,
+                    id_card_tag,
+                    full_name,
+                    id_card_image_encrypted_ref,
+                    face_photo_image_encrypted_ref,
+                    encryption_key_ref,
+                    ocr_channel,
+                    ocr_result_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                profileId,
+                profileVersionId,
+                EktpValidator.hash(requireText(command.ocrIdNo(), "ocrIdNo")),
+                encryptedIdNo.ciphertextBase64(),
+                encryptedIdNo.nonce(),
+                encryptedIdNo.tag(),
+                ocrName,
+                "dev://id-card/" + profileId,
+                "dev://face/" + profileId,
+                "pk-field-encryption-key",
+                OCR_CHANNEL,
+                ocrResultJson
+        );
+    }
+
+    private JsonNode buildLenderSyncFailureNode(ApiException exception) {
+        try {
+            ObjectNode node = objectMapper.createObjectNode();
+            node.put("syncFailed", true);
+            node.put("code", exception.apiCode().code());
+            node.put("msg", exception.detail() == null ? exception.apiCode().message() : exception.detail());
+            return node;
+        } catch (Exception mappingException) {
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+        }
     }
 
     private ProfileSyncPayload.IdentityProfilePayload buildDevIdentityPayload(DevLenderSyncCommand command) {
