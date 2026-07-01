@@ -24,9 +24,9 @@ public final class OcrFieldParser {
         return new OcrSessionState.OcrParsedFields(
                 ocrName,
                 ocrIdNo,
-                text(data, "gender"),
-                text(data, "religion"),
-                text(data, "maritalStatus"),
+                readTextOrNumber(data, "gender"),
+                readTextOrNumber(data, "religion"),
+                readMaritalStatus(data),
                 birthday,
                 birthPlace,
                 text(data, "address"),
@@ -100,6 +100,25 @@ public final class OcrFieldParser {
         } catch (Exception exception) {
             return null;
         }
+    }
+
+    private static String readMaritalStatus(JsonNode data) {
+        String maritalStatus = text(data, "maritalStatus");
+        if (maritalStatus != null) {
+            return maritalStatus;
+        }
+        return readTextOrNumber(data, "marital");
+    }
+
+    private static String readTextOrNumber(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        if (value.isNumber()) {
+            return value.asText();
+        }
+        return text(node, field);
     }
 
     private static String text(JsonNode node, String field) {

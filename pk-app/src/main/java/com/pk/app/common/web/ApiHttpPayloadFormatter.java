@@ -26,10 +26,17 @@ final class ApiHttpPayloadFormatter {
         if (body.length > maxBodyBytes) {
             text = text + "...[truncated " + (body.length - maxBodyBytes) + " bytes]";
         }
+        if (isJson(contentType)) {
+            text = ApiLogPayloadSupport.redactForLog(text);
+        }
         if (redactOcrFields) {
             return OcrLogSupport.redactPayload(text);
         }
         return text;
+    }
+
+    private static boolean isJson(String contentType) {
+        return contentType != null && contentType.toLowerCase().contains("json");
     }
 
     static String formatQueryString(HttpServletRequest request) {

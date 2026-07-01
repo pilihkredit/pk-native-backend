@@ -6,7 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * Local/dev only: direct lender identity upsert without Advance.ai OCR flow.
+ * Local/dev only: direct lender identity upsert. When {@code idCardBase64} is provided and
+ * {@code rawOcrDetail} is omitted, the server calls Advance.ai OCR to obtain lender-ready raw JSON.
  */
 public record IdentityOcrDevLenderSyncRequest(
         @NotBlank @Size(max = 64) String requestId,

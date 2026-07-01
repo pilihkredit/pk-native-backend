@@ -228,8 +228,8 @@ public class IdentityOcrFacade {
     }
 
     /**
-     * Local/dev only: push identity to lender without Advance.ai OCR flow.
-     * Local identity tables are always upserted; lender sync failures do not roll back MySQL state.
+     * Local/dev only: push identity to lender. When {@code idCardBase64} is provided and
+     * {@code rawOcrDetail} is absent, Advance.ai OCR is invoked to capture lender-ready raw JSON.
      */
     public DevLenderSyncResult devSyncIdentityToLender(
             long profileId,
@@ -243,19 +243,20 @@ public class IdentityOcrFacade {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "requestId is required");
         }
         ProfileSyncPayloadLoader.validateDevice(command.device());
-        String ocrName = requireText(command.ocrName(), "ocrName");
-        String ocrIdNo = requireText(command.ocrIdNo(), "ocrIdNo");
-        ProfileSyncPayload.IdentityProfilePayload payload = buildDevIdentityPayload(command);
-        persistDevIdentityLocalState(profileId, partnerUserId, command, ocrName, ocrIdNo);
+        DevLenderSyncCommand resolvedCommand = resolveDevLenderSyncCommand(command);
+        String ocrName = requireText(resolvedCommand.ocrName(), "ocrName");
+        String ocrIdNo = requireText(resolvedCommand.ocrIdNo(), "ocrIdNo");
+        ProfileSyncPayload.IdentityProfilePayload payload = buildDevIdentityPayload(resolvedCommand);
+        persistDevIdentityLocalState(profileId, partnerUserId, resolvedCommand, ocrName, ocrIdNo);
 
         JsonNode lenderResponse;
         try {
             var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
                     profileId,
                     partnerUserId,
-                    command.requestId().trim(),
+                    resolvedCommand.requestId().trim(),
                     ProfileSyncModule.IDENTITY,
-                    command.device(),
+                    resolvedCommand.device(),
                     payload
             ));
             lenderResponse = parseLenderResponse(syncResult.responseDataJson());
@@ -266,7 +267,61 @@ public class IdentityOcrFacade {
                     new ApiException(ApiCode.SERVICE_UNAVAILABLE, exception.getMessage())
             );
         }
-        return new DevLenderSyncResult(command.requestId().trim(), lenderResponse);
+        return new DevLenderSyncResult(resolvedCommand.requestId().trim(), lenderResponse);
+    }
+
+    private DevLenderSyncCommand resolveDevLenderSyncCommand(DevLenderSyncCommand command) {
+        if (!isBlank(command.rawOcrDetail())) {
+            return command;
+        }
+        if (isBlank(command.idCardBase64())) {
+            return command;
+        }
+        byte[] imageBytes = OcrImageSupport.decodeBase64Image(command.idCardBase64(), ocrProperties.maxImageBytes());
+        String ocrDataJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
+        JsonNode ocrData;
+        try {
+            ocrData = objectMapper.readTree(ocrDataJson);
+        } catch (Exception exception) {
+            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+        }
+        OcrSessionState.OcrParsedFields parsed = OcrFieldParser.parse(ocrData);
+        if (parsed == null || isBlank(parsed.ocrName()) || isBlank(parsed.ocrIdNo())) {
+            throw new ApiException(ApiCode.OCR_NO_RESULT);
+        }
+        if (!EktpValidator.isValid(parsed.ocrIdNo())) {
+            throw new ApiException(ApiCode.INVALID_EKTP_FORMAT);
+        }
+        String idCardBase64 = OcrImageSupport.stripDataUriPrefix(command.idCardBase64());
+        return new DevLenderSyncCommand(
+                command.requestId(),
+                command.faceBase64(),
+                idCardBase64,
+                ocrDataJson,
+                firstNonBlank(command.ocrName(), parsed.ocrName()),
+                firstNonBlank(command.ocrIdNo(), parsed.ocrIdNo()),
+                firstNonBlank(command.gender(), parsed.gender()),
+                firstNonBlank(command.religion(), parsed.religion()),
+                firstNonBlank(command.maritalStatus(), parsed.maritalStatus()),
+                firstNonBlank(command.birthday(), parsed.birthday()),
+                firstNonBlank(command.birthPlace(), parsed.birthPlace()),
+                firstNonBlank(command.address(), parsed.address()),
+                firstNonBlank(command.occupation(), parsed.occupation()),
+                firstNonBlank(command.nationality(), parsed.nationality()),
+                firstNonBlank(command.bloodType(), parsed.bloodType()),
+                firstNonBlank(command.expiryDate(), parsed.expiryDate()),
+                firstNonBlank(command.province(), parsed.province()),
+                firstNonBlank(command.city(), parsed.city()),
+                firstNonBlank(command.district(), parsed.district()),
+                command.device()
+        );
+    }
+
+    private static String firstNonBlank(String preferred, String fallback) {
+        if (!isBlank(preferred)) {
+            return preferred.trim();
+        }
+        return fallback;
     }
 
     private void persistDevIdentityLocalState(
