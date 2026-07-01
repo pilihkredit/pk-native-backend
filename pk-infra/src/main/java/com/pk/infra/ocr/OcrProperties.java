@@ -14,8 +14,8 @@ public class OcrProperties {
     private String baseUrl = "https://api.advance.ai/openapi";
     private String licenseUrl = "/liveness/v1/auth-license";
     private String ocrCheckUrl = "/face-recognition/v3/ocr-ktp-check";
-    private String livenessDetectionUrl = "/liveness/v1/detect";
-    private String faceRecognitionUrl = "/face/v1/compare";
+    private String livenessDetectionUrl = "/liveness/v3/detection-result";
+    private String faceRecognitionUrl = "/face-recognition/v4/check";
     private String tokenKeyPrefix = "pk:ocr:token";
     private long tokenCacheSeconds = 3600L;
     private long licenseEffectiveSeconds = 86400L;

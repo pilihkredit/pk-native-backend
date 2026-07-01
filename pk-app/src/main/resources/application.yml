@@ -56,6 +56,8 @@ pk:
     database-id-validation-url: ${PK_OCR_DATABASE_ID_VALIDATION_URL:https://api.advance.ai/openapi/face-identity/v6/database-id-validation}
     base-url: ${PK_OCR_BASE_URL:https://api.advance.ai/openapi}
     ocr-check-url: ${PK_OCR_CHECK_URL:/face-recognition/v3/ocr-ktp-check}
+    liveness-detection-url: ${PK_OCR_LIVENESS_DETECTION_URL:/liveness/v3/detection-result}
+    face-recognition-url: ${PK_OCR_FACE_RECOGNITION_URL:/face-recognition/v4/check}
     session-ttl: ${PK_OCR_SESSION_TTL:30m}
     liveness-threshold: ${PK_OCR_LIVENESS_THRESHOLD:60}
     face-threshold: ${PK_OCR_FACE_THRESHOLD:60}

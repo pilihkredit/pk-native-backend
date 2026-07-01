@@ -32,3 +32,5 @@ pk:
     database-id-validation-url: https://api.advance.ai/openapi/face-identity/v6/database-id-validation
     base-url: https://api.advance.ai/openapi
     ocr-check-url: /face-recognition/v3/ocr-ktp-check
+    liveness-detection-url: /liveness/v3/detection-result
+    face-recognition-url: /face-recognition/v4/check

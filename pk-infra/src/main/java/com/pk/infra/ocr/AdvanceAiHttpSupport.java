@@ -65,8 +65,8 @@ final class AdvanceAiHttpSupport {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         for (Map.Entry<String, byte[]> entry : fileFields.entrySet()) {
             appendLine(output, "--" + boundary);
-            appendLine(output, "Content-Disposition: form-data; name=\"" + entry.getKey() + "\"; filename=\"" + entry.getKey() + ".bin\"");
-            appendLine(output, "Content-Type: application/octet-stream");
+            appendLine(output, "Content-Disposition: form-data; name=\"" + entry.getKey() + "\"; filename=\"image.jpg\"");
+            appendLine(output, "Content-Type: image/jpeg");
             appendLine(output, "");
             output.writeBytes(entry.getValue());
             appendLine(output, "");
