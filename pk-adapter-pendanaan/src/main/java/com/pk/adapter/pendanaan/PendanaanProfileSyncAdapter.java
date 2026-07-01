@@ -42,7 +42,7 @@ public class PendanaanProfileSyncAdapter implements LenderProfileSyncPort {
         throw PendanaanProfileCodeMapper.toApiException(
                 responseCode,
                 responseMsg,
-                command.module() == ProfileSyncModule.BANK_CARD
+                command.module()
         );
     }
 

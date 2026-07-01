@@ -44,12 +44,12 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         JsonNode response = postJson(properties.licenseUrl(), requestData, token);
         String code = text(response, "code");
         if (!"SUCCESS".equals(code)) {
-            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+            throw new ApiException(ApiCode.OCR_SERVICE_ERROR, "OCR license token failed");
         }
         JsonNode data = response.get("data");
         String license = text(data, "license");
         if (license == null || license.isBlank()) {
-            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+            throw new ApiException(ApiCode.OCR_SERVICE_ERROR, "OCR license token failed");
         }
         return new LicenseTokenResult(license, effectiveSeconds);
     }
@@ -104,6 +104,10 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         JsonNode response = postMultipart(properties.faceRecognitionUrl(), form, token);
         String code = text(response, "code");
         if (!"SUCCESS".equals(code)) {
+            String message = text(response, "message");
+            if (isFaceAngleFailure(code, message)) {
+                throw new ApiException(ApiCode.FACE_RECOGNITION_FAILED);
+            }
             throw new ApiException(ApiCode.OCR_FACE_RECOGNITION_FAILED);
         }
         JsonNode data = response.get("data");
@@ -186,6 +190,22 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         } catch (Exception exception) {
             throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
         }
+    }
+
+    private static boolean isFaceAngleFailure(String code, String message) {
+        if (code != null) {
+            String normalized = code.toUpperCase();
+            if (normalized.contains("FACE_ANGLE") || normalized.contains("FACE_QUALITY")) {
+                return true;
+            }
+        }
+        if (message == null || message.isBlank()) {
+            return false;
+        }
+        String normalizedMessage = message.toLowerCase();
+        return normalizedMessage.contains("face angle")
+                || normalizedMessage.contains("face quality")
+                || normalizedMessage.contains("front-facing");
     }
 
     private static String text(JsonNode node, String field) {

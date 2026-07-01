@@ -2,6 +2,7 @@ package com.pk.adapter.pendanaan;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.profile.sync.ProfileSyncModule;
 
 /**
  * Maps Pendanaan raw {@code A000xxx} codes to public {@code L000xxx} API codes.
@@ -11,12 +12,12 @@ final class PendanaanLenderCodeMapper {
     private PendanaanLenderCodeMapper() {
     }
 
-    static ApiException toApiException(String lenderCode, String lenderMessage, boolean bankCardModule) {
-        return new ApiException(mapApiCode(lenderCode, bankCardModule), buildDetail(lenderCode, lenderMessage));
+    static ApiException toApiException(String lenderCode, String lenderMessage, ProfileSyncModule module) {
+        return new ApiException(mapApiCode(lenderCode, module), buildDetail(lenderCode, lenderMessage));
     }
 
-    static ApiCode mapApiCode(String lenderCode, boolean bankCardModule) {
-        if (bankCardModule) {
+    static ApiCode mapApiCode(String lenderCode, ProfileSyncModule module) {
+        if (module == ProfileSyncModule.BANK_CARD) {
             if ("A000104".equals(lenderCode)) {
                 return ApiCode.BANK_CARD_VA_NOT_ALLOWED;
             }
@@ -27,6 +28,12 @@ final class PendanaanLenderCodeMapper {
                 return ApiCode.BANK_CARD_VERIFICATION_FAILED;
             }
         }
+        if (module == ProfileSyncModule.IDENTITY) {
+            ApiCode identityCode = mapIdentityCode(lenderCode);
+            if (identityCode != null) {
+                return identityCode;
+            }
+        }
         if ("999998".equals(lenderCode) || "999999".equals(lenderCode)) {
             return ApiCode.SERVICE_UNAVAILABLE;
         }
@@ -34,10 +41,24 @@ final class PendanaanLenderCodeMapper {
         if (mapped != null) {
             return mapped;
         }
-        if (bankCardModule) {
+        if (module == ProfileSyncModule.BANK_CARD) {
             return ApiCode.BANK_CARD_VERIFICATION_FAILED;
         }
+        if (module == ProfileSyncModule.IDENTITY) {
+            return ApiCode.LENDER_INVALID_REQUEST_PARAMETERS;
+        }
         return ApiCode.LENDER_INVALID_REQUEST_PARAMETERS;
+    }
+
+    private static ApiCode mapIdentityCode(String lenderCode) {
+        return switch (lenderCode) {
+            case "A000052" -> ApiCode.LENDER_FACE_RECOGNITION_FAILED;
+            case "A000053" -> ApiCode.LENDER_INVALID_EKTP_FORMAT;
+            case "A000445" -> ApiCode.LENDER_INVALID_OCR_RAW_DETAIL;
+            case "A000455" -> ApiCode.LENDER_IDENTITY_NAME_REQUIRED;
+            case "A000456" -> ApiCode.LENDER_IDENTITY_NAME_TOO_LONG;
+            default -> null;
+        };
     }
 
     private static ApiCode mapProfileOrBusinessCode(String lenderCode) {

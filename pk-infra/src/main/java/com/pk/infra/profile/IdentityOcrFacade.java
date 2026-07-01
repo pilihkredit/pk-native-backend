@@ -122,7 +122,11 @@ public class IdentityOcrFacade {
         if (!passed) {
             throw new ApiException(ApiCode.OCR_LIVENESS_FAILED);
         }
-        OcrSessionState current = ocrSessionStore.find(profileId).orElseThrow(() -> new ApiException(ApiCode.OCR_SESSION_INVALID));
+        OcrSessionState current = ocrSessionStore.find(profileId)
+                .orElseThrow(() -> new ApiException(ApiCode.OCR_SESSION_INVALID));
+        if (!current.ocrCheckCompleted()) {
+            throw new ApiException(ApiCode.OCR_SESSION_INVALID);
+        }
         ocrSessionStore.save(profileId, new OcrSessionState(
                 current.licenseObtained(),
                 current.ocrCheckCompleted(),
@@ -147,8 +151,14 @@ public class IdentityOcrFacade {
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
         var existing = profileIdentityRepository.findByProfileId(profileId);
-        if (existing.isPresent() && command.requestId().equals(existing.get().lastRequestId())) {
-            return buildIdempotentResult(command.requestId(), existing.get());
+        if (existing.isPresent()) {
+            ProfileIdentityData identity = existing.get();
+            if (command.requestId().equals(identity.lastRequestId())) {
+                return buildIdempotentResult(command.requestId(), identity);
+            }
+            if (MODULE_COMPLETED.equals(identity.moduleStatus())) {
+                throw new ApiException(ApiCode.DUPLICATE_SUBMISSION_IN_PROGRESS);
+            }
         }
 
         OcrSessionState session = ocrSessionStore.find(profileId)

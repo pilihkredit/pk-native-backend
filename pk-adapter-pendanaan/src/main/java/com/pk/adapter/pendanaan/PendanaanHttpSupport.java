@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.profile.sync.ProfileSyncModule;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -77,7 +78,7 @@ final class PendanaanHttpSupport {
         if ("999998".equals(responseCode) || "999999".equals(responseCode)) {
             return new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
-        return PendanaanLenderCodeMapper.toApiException(responseCode, null, false);
+        return PendanaanLenderCodeMapper.toApiException(responseCode, null, ProfileSyncModule.PERSONAL);
     }
 
     static void ensureSuccess(JsonNode envelope) {

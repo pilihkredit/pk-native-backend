@@ -24,3 +24,9 @@ pk:
     config:
       source: db
       provider-code: pendanaan
+  ocr:
+    enabled: true
+    access-key: ${PK_OCR_ACCESS_KEY:de40a837df9c2f66}
+    secret-key: ${PK_OCR_SECRET_KEY:2f4250cb52fe879c}
+    access-token-url: https://api.advance.ai/openapi/auth/ticket/v1/generate-token
+    base-url: https://api.advance.ai/openapi
