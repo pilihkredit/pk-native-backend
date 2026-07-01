@@ -66,7 +66,7 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                 throw new ApiException(ApiCode.OCR_NO_RESULT);
             }
             try {
-                return objectMapper.writeValueAsString(data);
+                return objectMapper.writeValueAsString(response);
             } catch (Exception exception) {
                 throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
             }

@@ -17,6 +17,7 @@ import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
+import com.pk.infra.ocr.AdvanceAiLenderRawOcrDetailSupport;
 import com.pk.infra.ocr.AdvanceAiRawOcrDetailBuilder;
 import com.pk.infra.ocr.OcrFieldParser;
 import com.pk.infra.ocr.OcrImageSupport;
@@ -88,18 +89,13 @@ public class IdentityOcrFacade {
 
     public OcrCheckResult ocrCheck(long profileId, String imageBase64) {
         byte[] imageBytes = OcrImageSupport.decodeBase64Image(imageBase64, ocrProperties.maxImageBytes());
-        String ocrDataJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
-        JsonNode ocrData;
-        try {
-            ocrData = objectMapper.readTree(ocrDataJson);
-        } catch (Exception exception) {
-            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
-        }
+        String ocrResponseJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
+        JsonNode ocrData = AdvanceAiLenderRawOcrDetailSupport.extractDataNode(objectMapper, ocrResponseJson);
         OcrSessionState.OcrParsedFields parsed = OcrFieldParser.parse(ocrData);
         if (parsed == null || isBlank(parsed.ocrName()) || isBlank(parsed.ocrIdNo())) {
             throw new ApiException(ApiCode.OCR_NO_RESULT);
         }
-        String rawJson = ocrDataJson;
+        String rawJson = ocrResponseJson;
         OcrSessionState current = ocrSessionStore.find(profileId).orElse(emptySession());
         ocrSessionStore.save(profileId, new OcrSessionState(
                 current.licenseObtained(),
@@ -278,13 +274,8 @@ public class IdentityOcrFacade {
             return command;
         }
         byte[] imageBytes = OcrImageSupport.decodeBase64Image(command.idCardBase64(), ocrProperties.maxImageBytes());
-        String ocrDataJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
-        JsonNode ocrData;
-        try {
-            ocrData = objectMapper.readTree(ocrDataJson);
-        } catch (Exception exception) {
-            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
-        }
+        String ocrResponseJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
+        JsonNode ocrData = AdvanceAiLenderRawOcrDetailSupport.extractDataNode(objectMapper, ocrResponseJson);
         OcrSessionState.OcrParsedFields parsed = OcrFieldParser.parse(ocrData);
         if (parsed == null || isBlank(parsed.ocrName()) || isBlank(parsed.ocrIdNo())) {
             throw new ApiException(ApiCode.OCR_NO_RESULT);
@@ -292,12 +283,13 @@ public class IdentityOcrFacade {
         if (!EktpValidator.isValid(parsed.ocrIdNo())) {
             throw new ApiException(ApiCode.INVALID_EKTP_FORMAT);
         }
+        String lenderRawOcrDetail = AdvanceAiLenderRawOcrDetailSupport.prepareForLender(objectMapper, ocrResponseJson);
         String idCardBase64 = OcrImageSupport.stripDataUriPrefix(command.idCardBase64());
         return new DevLenderSyncCommand(
                 command.requestId(),
                 command.faceBase64(),
                 idCardBase64,
-                ocrDataJson,
+                lenderRawOcrDetail,
                 firstNonBlank(command.ocrName(), parsed.ocrName()),
                 firstNonBlank(command.ocrIdNo(), parsed.ocrIdNo()),
                 firstNonBlank(command.gender(), parsed.gender()),
@@ -408,7 +400,7 @@ public class IdentityOcrFacade {
         String ocrIdNo = requireText(command.ocrIdNo(), "ocrIdNo");
         String faceBase64 = command.faceBase64() == null ? "" : command.faceBase64().trim();
         String idCardBase64 = command.idCardBase64() == null ? "" : command.idCardBase64().trim();
-        String rawOcrDetail = buildDevRawOcrDetail(command);
+        String rawOcrDetail = lenderRawOcrDetail(buildDevRawOcrDetail(command));
         return new ProfileSyncPayload.IdentityProfilePayload(
                 ocrName,
                 ocrIdNo,
@@ -436,6 +428,10 @@ public class IdentityOcrFacade {
             return command.rawOcrDetail().trim();
         }
         return AdvanceAiRawOcrDetailBuilder.build(objectMapper, toDevParsedFields(command));
+    }
+
+    private String lenderRawOcrDetail(String advanceAiJson) {
+        return AdvanceAiLenderRawOcrDetailSupport.prepareForLender(objectMapper, advanceAiJson);
     }
 
     private static OcrSessionState.OcrParsedFields toDevParsedFields(DevLenderSyncCommand command) {
@@ -551,7 +547,7 @@ public class IdentityOcrFacade {
                 parsed.ocrIdNo().trim(),
                 faceBase64,
                 idCardBase64,
-                session.ocrRawJson(),
+                lenderRawOcrDetail(session.ocrRawJson()),
                 OCR_CHANNEL,
                 parsed.ocrName(),
                 parsed.ocrIdNo(),
