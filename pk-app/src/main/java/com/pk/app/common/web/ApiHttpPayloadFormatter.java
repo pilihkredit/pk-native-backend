@@ -1,5 +1,6 @@
 package com.pk.app.common.web;
 
+import com.pk.infra.ocr.OcrLogSupport;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +11,10 @@ final class ApiHttpPayloadFormatter {
     }
 
     static String formatBody(byte[] body, String contentType, int maxBodyBytes) {
+        return formatBody(body, contentType, maxBodyBytes, false);
+    }
+
+    static String formatBody(byte[] body, String contentType, int maxBodyBytes, boolean redactOcrFields) {
         if (body == null || body.length == 0) {
             return "";
         }
@@ -19,7 +24,10 @@ final class ApiHttpPayloadFormatter {
         int length = Math.min(body.length, maxBodyBytes);
         String text = new String(body, 0, length, resolveCharset(contentType));
         if (body.length > maxBodyBytes) {
-            return text + "...[truncated " + (body.length - maxBodyBytes) + " bytes]";
+            text = text + "...[truncated " + (body.length - maxBodyBytes) + " bytes]";
+        }
+        if (redactOcrFields) {
+            return OcrLogSupport.redactPayload(text);
         }
         return text;
     }

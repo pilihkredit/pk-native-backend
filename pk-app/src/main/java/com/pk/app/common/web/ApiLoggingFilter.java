@@ -49,6 +49,7 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
             filterChain.doFilter(requestWrapper, responseWrapper);
         } finally {
             long durationMs = System.currentTimeMillis() - startedAt;
+            boolean redactOcrFields = isOcrPath(path);
             log.info(
                     "API request method={} path={} traceId={} query={} body={}",
                     method,
@@ -58,7 +59,8 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
                     ApiHttpPayloadFormatter.formatBody(
                             requestWrapper.getContentAsByteArray(),
                             request.getContentType(),
-                            loggingProperties.maxBodyBytes()
+                            loggingProperties.maxBodyBytes(),
+                            redactOcrFields
                     )
             );
             log.info(
@@ -71,7 +73,8 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
                     ApiHttpPayloadFormatter.formatBody(
                             responseWrapper.getContentAsByteArray(),
                             responseWrapper.getContentType(),
-                            loggingProperties.maxBodyBytes()
+                            loggingProperties.maxBodyBytes(),
+                            redactOcrFields
                     )
             );
             responseWrapper.copyBodyToResponse();
@@ -89,5 +92,9 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
             return ApiPaths.V1_PREFIX;
         }
         return prefix.endsWith("/") ? prefix.substring(0, prefix.length() - 1) : prefix;
+    }
+
+    private static boolean isOcrPath(String path) {
+        return path != null && path.contains("/profile/identity/ocr");
     }
 }

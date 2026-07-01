@@ -41,7 +41,7 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                 : licenseEffectiveSeconds;
         String token = requireAccessToken();
         Map<String, Object> requestData = Map.of("licenseEffectiveSeconds", effectiveSeconds);
-        JsonNode response = postJson(properties.licenseUrl(), requestData, token);
+        JsonNode response = postJson("license-token", properties.licenseUrl(), requestData, token);
         String code = text(response, "code");
         if (!"SUCCESS".equals(code)) {
             throw new ApiException(ApiCode.OCR_SERVICE_ERROR, "OCR license token failed");
@@ -58,7 +58,7 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
     public String ocrCheckIdCard(byte[] imageBytes) {
         String token = requireAccessToken();
         Map<String, byte[]> form = Map.of("ocrImage", imageBytes);
-        JsonNode response = postMultipart(properties.ocrCheckUrl(), form, token);
+        JsonNode response = postMultipart("ocr-check", properties.ocrCheckUrl(), form, token);
         String code = text(response, "code");
         if ("SUCCESS".equals(code)) {
             JsonNode data = response.get("data");
@@ -84,7 +84,7 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                 "livenessId", livenessId,
                 "resultType", "IMAGE_BASE64"
         );
-        JsonNode response = postJson(properties.livenessDetectionUrl(), requestData, token);
+        JsonNode response = postJson("liveness-check", properties.livenessDetectionUrl(), requestData, token);
         String code = text(response, "code");
         if (!"SUCCESS".equals(code)) {
             throw new ApiException(ApiCode.OCR_LIVENESS_FAILED);
@@ -101,7 +101,7 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         Map<String, byte[]> form = new HashMap<>();
         form.put("firstImage", idCardImage);
         form.put("secondImage", faceImage);
-        JsonNode response = postMultipart(properties.faceRecognitionUrl(), form, token);
+        JsonNode response = postMultipart("face-compare", properties.faceRecognitionUrl(), form, token);
         String code = text(response, "code");
         if (!"SUCCESS".equals(code)) {
             String message = text(response, "message");
@@ -140,7 +140,7 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                     "signature", signature,
                     "timestamp", String.valueOf(timestamp)
             );
-            JsonNode response = postJson(properties.accessTokenUrl(), requestData, null);
+            JsonNode response = postJson("access-token", properties.accessTokenUrl(), requestData, null);
             if (!"SUCCESS".equals(text(response, "code"))) {
                 return null;
             }
@@ -152,9 +152,20 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         }
     }
 
-    private JsonNode postJson(String pathOrUrl, Map<String, Object> requestData, String accessToken) {
+    private JsonNode postJson(String operation, String pathOrUrl, Map<String, Object> requestData, String accessToken) {
+        String endpoint = AdvanceAiHttpSupport.resolveEndpoint(properties, pathOrUrl);
+        String requestJson;
         try {
-            String endpoint = AdvanceAiHttpSupport.resolveEndpoint(properties, pathOrUrl);
+            requestJson = objectMapper.writeValueAsString(requestData);
+        } catch (Exception exception) {
+            requestJson = String.valueOf(requestData);
+        }
+        String sanitizedRequest = OcrLogSupport.redactPayload(requestJson);
+        long startedAt = System.currentTimeMillis();
+        String responseText = "";
+        boolean success = false;
+        try {
+            OcrHttpLogger.logRequest(operation, "POST", endpoint, sanitizedRequest);
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
                     .timeout(Duration.ofMillis(properties.readTimeoutMs()))
@@ -162,20 +173,36 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
             if (accessToken != null) {
                 builder.header("X-ACCESS-TOKEN", accessToken);
             }
-            builder.POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestData)));
+            builder.POST(HttpRequest.BodyPublishers.ofString(requestJson));
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            return objectMapper.readTree(response.body() == null ? "{}" : response.body());
+            responseText = response.body() == null ? "" : response.body();
+            JsonNode result = objectMapper.readTree(responseText.isBlank() ? "{}" : responseText);
+            success = "SUCCESS".equals(text(result, "code"));
+            return result;
         } catch (ApiException exception) {
             throw exception;
         } catch (Exception exception) {
             throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+        } finally {
+            long durationMs = System.currentTimeMillis() - startedAt;
+            OcrHttpLogger.logResponse(
+                    operation,
+                    endpoint,
+                    durationMs,
+                    success,
+                    OcrLogSupport.redactPayload(responseText)
+            );
         }
     }
 
-    private JsonNode postMultipart(String pathOrUrl, Map<String, byte[]> form, String accessToken) {
+    private JsonNode postMultipart(String operation, String pathOrUrl, Map<String, byte[]> form, String accessToken) {
+        String endpoint = AdvanceAiHttpSupport.resolveEndpoint(properties, pathOrUrl);
+        long startedAt = System.currentTimeMillis();
+        String responseText = "";
+        boolean success = false;
         try {
+            OcrHttpLogger.logRequest(operation, "POST", endpoint, OcrLogSupport.describeMultipart(form));
             AdvanceAiHttpSupport.MultipartBody multipart = AdvanceAiHttpSupport.buildMultipartBody(form);
-            String endpoint = AdvanceAiHttpSupport.resolveEndpoint(properties, pathOrUrl);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
                     .timeout(Duration.ofMillis(properties.readTimeoutMs()))
@@ -184,11 +211,23 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                     .POST(HttpRequest.BodyPublishers.ofByteArray(multipart.body()))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            return objectMapper.readTree(response.body() == null ? "{}" : response.body());
+            responseText = response.body() == null ? "" : response.body();
+            JsonNode result = objectMapper.readTree(responseText.isBlank() ? "{}" : responseText);
+            success = "SUCCESS".equals(text(result, "code"));
+            return result;
         } catch (ApiException exception) {
             throw exception;
         } catch (Exception exception) {
             throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+        } finally {
+            long durationMs = System.currentTimeMillis() - startedAt;
+            OcrHttpLogger.logResponse(
+                    operation,
+                    endpoint,
+                    durationMs,
+                    success,
+                    OcrLogSupport.redactPayload(responseText)
+            );
         }
     }
 
