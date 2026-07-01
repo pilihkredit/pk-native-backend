@@ -9,4 +9,6 @@ public interface ProfileBankCardRepository {
     Optional<ProfileBankCardData> findByCardNoHash(String cardNoHash);
 
     void upsert(ProfileBankCardData data);
+
+    void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson);
 }

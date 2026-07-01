@@ -3,8 +3,8 @@ package com.pk.adapter.pendanaan;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.callback.port.LoanCallbackParser;
-import com.pk.core.external.port.LenderInteractionLogRepository;
 import com.pk.core.credit.port.LenderCreditPort;
+import com.pk.core.external.port.LenderInteractionLogRepository;
 import com.pk.core.loan.port.LenderLoanApplyPort;
 import com.pk.core.loan.port.LenderLoanContractPort;
 import com.pk.core.loan.port.LenderLoanProductPort;
@@ -21,46 +21,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.Nullable;
 
 @Configuration
 @EnableConfigurationProperties(PendanaanProperties.class)
 public class PendanaanAdapterConfiguration {
-    @Bean
-    @ConditionalOnMissingBean(LenderBankPort.class)
-    LenderBankPort fakeLenderBankPort() {
-        return new FakePendanaanBankAdapter();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(LenderAreaPort.class)
-    LenderAreaPort fakeLenderAreaPort() {
-        return new FakePendanaanAreaAdapter();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(LenderProfileSyncPort.class)
-    LenderProfileSyncPort fakeLenderProfileSyncPort() {
-        return new FakePendanaanProfileSyncAdapter();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(LenderCreditPort.class)
-    LenderCreditPort fakeLenderCreditPort() {
-        return new FakePendanaanCreditAdapter();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(LenderLoanProductPort.class)
-    LenderLoanProductPort fakeLenderLoanProductPort() {
-        return new FakePendanaanLoanProductAdapter();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(LenderLoanTrialPort.class)
-    LenderLoanTrialPort fakeLenderLoanTrialPort(ObjectMapper objectMapper) {
-        return new FakePendanaanLoanTrialAdapter(objectMapper);
-    }
-
     @Bean
     @ConditionalOnMissingBean(CreditCallbackParser.class)
     CreditCallbackParser pendanaanCreditCallbackParser(ObjectMapper objectMapper) {
@@ -74,104 +39,122 @@ public class PendanaanAdapterConfiguration {
     }
 
     @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderCreditPort pendanaanCreditAdapter(PendanaanHttpClient httpClient) {
-        return new PendanaanCreditAdapter(httpClient);
-    }
-
-    @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderLoanProductPort pendanaanLoanProductAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
-        return new PendanaanLoanProductAdapter(httpClient, objectMapper);
-    }
-
-    @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderLoanTrialPort pendanaanLoanTrialAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
-        return new PendanaanLoanTrialAdapter(httpClient, objectMapper);
-    }
-
-    @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderLoanApplyPort pendanaanLoanApplyAdapter(PendanaanHttpClient httpClient) {
-        return new PendanaanLoanApplyAdapter(httpClient);
-    }
-
-    @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderLoanStatusPort pendanaanLoanStatusAdapter(PendanaanHttpClient httpClient) {
-        return new PendanaanLoanStatusAdapter(httpClient);
-    }
-
-    @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderLoanContractPort pendanaanLoanContractAdapter(PendanaanHttpClient httpClient) {
-        return new PendanaanLoanContractAdapter(httpClient);
-    }
-
-    @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderRepayPlanPort pendanaanRepayPlanAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
-        return new PendanaanRepayPlanAdapter(httpClient, objectMapper);
-    }
-
-    @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderRepayVaPort pendanaanRepayVaAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
-        return new PendanaanRepayVaAdapter(httpClient, objectMapper);
-    }
-
-    @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderRepayTrialPort pendanaanRepayTrialAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
-        return new PendanaanRepayTrialAdapter(httpClient, objectMapper);
-    }
-
-    @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderRepayCurrentOrderPort pendanaanRepayCurrentOrderAdapter(
-            PendanaanHttpClient httpClient,
-            ObjectMapper objectMapper
-    ) {
-        return new PendanaanRepayCurrentOrderAdapter(httpClient, objectMapper);
-    }
-
-    @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    PendanaanOAuthTokenProvider pendanaanOAuthTokenProvider(
+    PendanaanHttpStack pendanaanHttpStack(
             PendanaanProperties properties,
             LenderInteractionLogRepository interactionLogRepository,
             ObjectMapper objectMapper
     ) {
-        return new PendanaanOAuthTokenProvider(properties, interactionLogRepository, objectMapper);
+        return PendanaanHttpStack.create(properties, interactionLogRepository, objectMapper);
     }
 
     @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    PendanaanHttpClient pendanaanHttpClient(
-            PendanaanProperties properties,
-            PendanaanOAuthTokenProvider tokenProvider,
-            LenderInteractionLogRepository interactionLogRepository,
-            ObjectMapper objectMapper
-    ) {
-        return new PendanaanHttpClient(properties, tokenProvider, interactionLogRepository, objectMapper);
+    LenderBankPort lenderBankPort(PendanaanHttpStack httpStack) {
+        if (httpStack.enabled()) {
+            return new PendanaanBankAdapter(httpStack.requireHttpClient());
+        }
+        return new FakePendanaanBankAdapter();
     }
 
     @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderBankPort pendanaanBankAdapter(PendanaanHttpClient httpClient) {
-        return new PendanaanBankAdapter(httpClient);
+    LenderAreaPort lenderAreaPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanAreaAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanAreaAdapter();
     }
 
     @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderAreaPort pendanaanAreaAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
-        return new PendanaanAreaAdapter(httpClient, objectMapper);
+    LenderProfileSyncPort lenderProfileSyncPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanProfileSyncAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanProfileSyncAdapter();
     }
 
     @Bean
-    @ConditionalOnPendanaanHttpEnabled
-    LenderProfileSyncPort pendanaanProfileSyncAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
-        return new PendanaanProfileSyncAdapter(httpClient, objectMapper);
+    LenderCreditPort lenderCreditPort(PendanaanHttpStack httpStack) {
+        if (httpStack.enabled()) {
+            return new PendanaanCreditAdapter(httpStack.requireHttpClient());
+        }
+        return new FakePendanaanCreditAdapter();
+    }
+
+    @Bean
+    LenderLoanProductPort lenderLoanProductPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanProductAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanLoanProductAdapter();
+    }
+
+    @Bean
+    LenderLoanTrialPort lenderLoanTrialPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanTrialAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanLoanTrialAdapter(objectMapper);
+    }
+
+    @Bean
+    @Nullable
+    LenderLoanApplyPort lenderLoanApplyPort(PendanaanHttpStack httpStack) {
+        if (!httpStack.enabled()) {
+            return null;
+        }
+        return new PendanaanLoanApplyAdapter(httpStack.requireHttpClient());
+    }
+
+    @Bean
+    @Nullable
+    LenderLoanStatusPort lenderLoanStatusPort(PendanaanHttpStack httpStack) {
+        if (!httpStack.enabled()) {
+            return null;
+        }
+        return new PendanaanLoanStatusAdapter(httpStack.requireHttpClient());
+    }
+
+    @Bean
+    @Nullable
+    LenderLoanContractPort lenderLoanContractPort(PendanaanHttpStack httpStack) {
+        if (!httpStack.enabled()) {
+            return null;
+        }
+        return new PendanaanLoanContractAdapter(httpStack.requireHttpClient());
+    }
+
+    @Bean
+    @Nullable
+    LenderRepayPlanPort lenderRepayPlanPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (!httpStack.enabled()) {
+            return null;
+        }
+        return new PendanaanRepayPlanAdapter(httpStack.requireHttpClient(), objectMapper);
+    }
+
+    @Bean
+    @Nullable
+    LenderRepayVaPort lenderRepayVaPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (!httpStack.enabled()) {
+            return null;
+        }
+        return new PendanaanRepayVaAdapter(httpStack.requireHttpClient(), objectMapper);
+    }
+
+    @Bean
+    @Nullable
+    LenderRepayTrialPort lenderRepayTrialPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (!httpStack.enabled()) {
+            return null;
+        }
+        return new PendanaanRepayTrialAdapter(httpStack.requireHttpClient(), objectMapper);
+    }
+
+    @Bean
+    @Nullable
+    LenderRepayCurrentOrderPort lenderRepayCurrentOrderPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (!httpStack.enabled()) {
+            return null;
+        }
+        return new PendanaanRepayCurrentOrderAdapter(httpStack.requireHttpClient(), objectMapper);
     }
 }

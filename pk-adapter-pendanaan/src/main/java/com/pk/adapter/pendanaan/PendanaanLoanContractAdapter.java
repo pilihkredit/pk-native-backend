@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PendanaanLoanContractAdapter implements LenderLoanContractPort {
-    static final String CONTRACT_LIST_PATH = "/api/open/v1/loan/contract/list";
+    static final String CONTRACT_LIST_PATH = PendanaanOpenApiPaths.LOAN_CONTRACT_LIST;
     static final String BUSINESS_TYPE = "LOAN_CONTRACT_LIST";
 
     private final PendanaanHttpClient httpClient;

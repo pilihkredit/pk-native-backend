@@ -7,7 +7,7 @@ import com.pk.core.loan.port.LenderLoanStatusPort;
 import java.math.BigDecimal;
 
 public class PendanaanLoanStatusAdapter implements LenderLoanStatusPort {
-    static final String APPLY_STATUS_PATH = "/api/open/v1/loan/applyStatus";
+    static final String APPLY_STATUS_PATH = PendanaanOpenApiPaths.LOAN_APPLY_STATUS;
     static final String BUSINESS_TYPE = "LOAN_APPLY_STATUS";
 
     private final PendanaanHttpClient httpClient;

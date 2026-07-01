@@ -2,7 +2,6 @@ package com.pk.core.profile.catalog;
 
 public enum ProfileOnboardingModule {
     PERSONAL("personal"),
-    WORK("work"),
     CONTACT("contact");
 
     private final String apiValue;

@@ -4,25 +4,11 @@ import java.util.List;
 
 public sealed interface ProfileSyncPayload {
     record PersonalProfilePayload(
-            String provinceCode,
-            String cityCode,
-            String districtCode,
-            String address,
             int educationDegree,
-            String motherSurname
-    ) implements ProfileSyncPayload {
-    }
-
-    record WorkProfilePayload(
             int industry,
-            String companyName,
-            String workProvinceCode,
-            String workCityCode,
-            String workDistrictCode,
-            String workAddress,
             String income,
-            int payday,
-            int professionDegree
+            String motherSurname,
+            String userEmail
     ) implements ProfileSyncPayload {
     }
 

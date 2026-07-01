@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.loan.port.LenderLoanApplyPort;
-import com.pk.core.profile.sync.LenderDeviceContext;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -46,7 +45,7 @@ final class PendanaanLoanRequestMapper {
                 root.put("adId", adId.trim());
             }
             ObjectNode riskDataInfo = root.putObject("riskDataInfo");
-            riskDataInfo.set("openUserDevice", buildDeviceNode(command.device()));
+            riskDataInfo.set("openUserDevice", PendanaanDeviceNodeBuilder.buildRiskApplyDevice(command.device()));
             riskDataInfo.set("appList", buildAppList(command.appList()));
             return OBJECT_MAPPER.writeValueAsString(root);
         } catch (Exception exception) {
@@ -72,24 +71,6 @@ final class PendanaanLoanRequestMapper {
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to build loan contract list request", exception);
         }
-    }
-
-    private static ObjectNode buildDeviceNode(LenderDeviceContext device) {
-        ObjectNode deviceNode = OBJECT_MAPPER.createObjectNode();
-        deviceNode.put("appName", device.appName());
-        deviceNode.put("appVersion", device.appVersion());
-        deviceNode.put("packageName", device.packageName());
-        deviceNode.put("deviceNo", device.deviceNo());
-        deviceNode.put("systemPlatform", device.systemPlatform());
-        if (device.adId() != null && !device.adId().isBlank()) {
-            deviceNode.put("adId", device.adId());
-        }
-        if (device.deviceOtherInfo() == null || device.deviceOtherInfo().isEmpty()) {
-            deviceNode.putObject("deviceOtherInfo");
-        } else {
-            deviceNode.set("deviceOtherInfo", OBJECT_MAPPER.valueToTree(device.deviceOtherInfo()));
-        }
-        return deviceNode;
     }
 
     private static ArrayNode buildAppList(List<CreditRiskAppInfo> appList) {

@@ -14,6 +14,36 @@ public class PendanaanProperties {
     private String appName = "";
     private int connectTimeoutMs = 10_000;
     private int readTimeoutMs = 30_000;
+    private Logging logging = new Logging();
+
+    public Logging logging() {
+        return logging;
+    }
+
+    public void setLogging(Logging logging) {
+        this.logging = logging;
+    }
+
+    public static class Logging {
+        private boolean enabled = true;
+        private int maxBodyBytes = 65_536;
+
+        public boolean enabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int maxBodyBytes() {
+            return maxBodyBytes;
+        }
+
+        public void setMaxBodyBytes(int maxBodyBytes) {
+            this.maxBodyBytes = maxBodyBytes;
+        }
+    }
 
     public String mode() {
         return mode;

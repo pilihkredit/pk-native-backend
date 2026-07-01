@@ -9,4 +9,6 @@ public interface ProfilePersonalRepository {
     void upsert(ProfilePersonalData data);
 
     void updateEmail(long profileId, String userEmail);
+
+    void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson);
 }

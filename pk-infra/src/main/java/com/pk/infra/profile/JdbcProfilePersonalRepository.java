@@ -21,19 +21,18 @@ public class JdbcProfilePersonalRepository implements ProfilePersonalRepository 
         try {
             return Optional.of(jdbcTemplate.queryForObject(
                     """
-                    SELECT profile_id, province_code, city_code, district_code, address, education_degree,
+                    SELECT profile_id, education_degree, industry, income,
                            mother_surname_ciphertext, mother_surname_nonce, mother_surname_tag,
-                           user_email, module_status, last_request_id
+                           user_email, module_status, last_request_id,
+                           last_lender_request_json, last_lender_response_json
                     FROM user_profile_personal
                     WHERE profile_id = ?
                     """,
                     (rs, rowNum) -> new ProfilePersonalData(
                             rs.getLong("profile_id"),
-                            rs.getString("province_code"),
-                            rs.getString("city_code"),
-                            rs.getString("district_code"),
-                            rs.getString("address"),
                             rs.getInt("education_degree"),
+                            rs.getInt("industry"),
+                            rs.getString("income"),
                             new EncryptedField(
                                     rs.getString("mother_surname_ciphertext"),
                                     rs.getBytes("mother_surname_nonce"),
@@ -41,7 +40,9 @@ public class JdbcProfilePersonalRepository implements ProfilePersonalRepository 
                             ),
                             rs.getString("user_email"),
                             rs.getString("module_status"),
-                            rs.getString("last_request_id")
+                            rs.getString("last_request_id"),
+                            rs.getString("last_lender_request_json"),
+                            rs.getString("last_lender_response_json")
                     ),
                     profileId
             ));
@@ -56,24 +57,20 @@ public class JdbcProfilePersonalRepository implements ProfilePersonalRepository 
                 """
                 INSERT INTO user_profile_personal (
                     profile_id,
-                    province_code,
-                    city_code,
-                    district_code,
-                    address,
                     education_degree,
+                    industry,
+                    income,
                     mother_surname_ciphertext,
                     mother_surname_nonce,
                     mother_surname_tag,
                     user_email,
                     module_status,
                     last_request_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
-                    province_code = VALUES(province_code),
-                    city_code = VALUES(city_code),
-                    district_code = VALUES(district_code),
-                    address = VALUES(address),
                     education_degree = VALUES(education_degree),
+                    industry = VALUES(industry),
+                    income = VALUES(income),
                     mother_surname_ciphertext = VALUES(mother_surname_ciphertext),
                     mother_surname_nonce = VALUES(mother_surname_nonce),
                     mother_surname_tag = VALUES(mother_surname_tag),
@@ -82,11 +79,9 @@ public class JdbcProfilePersonalRepository implements ProfilePersonalRepository 
                     last_request_id = VALUES(last_request_id)
                 """,
                 data.profileId(),
-                data.provinceCode(),
-                data.cityCode(),
-                data.districtCode(),
-                data.address(),
                 data.educationDegree(),
+                data.industry(),
+                data.income(),
                 data.motherSurname().ciphertextBase64(),
                 data.motherSurname().nonce(),
                 data.motherSurname().tag(),
@@ -101,6 +96,21 @@ public class JdbcProfilePersonalRepository implements ProfilePersonalRepository 
         jdbcTemplate.update(
                 "UPDATE user_profile SET email = ? WHERE id = ? AND deleted_at IS NULL",
                 userEmail,
+                profileId
+        );
+    }
+
+    @Override
+    public void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson) {
+        jdbcTemplate.update(
+                """
+                UPDATE user_profile_personal
+                SET last_lender_request_json = ?,
+                    last_lender_response_json = ?
+                WHERE profile_id = ?
+                """,
+                requestDataJson,
+                responseDataJson,
                 profileId
         );
     }

@@ -21,8 +21,6 @@ management:
 
 pk:
   lender:
-    pendanaan:
-      mode: http
-      base-url: ${PK_PENDANAAN_BASE_URL:}
-      client-id: ${PK_PENDANAAN_CLIENT_ID:}
-      client-secret: ${PK_PENDANAAN_CLIENT_SECRET:}
+    config:
+      source: db
+      provider-code: pendanaan

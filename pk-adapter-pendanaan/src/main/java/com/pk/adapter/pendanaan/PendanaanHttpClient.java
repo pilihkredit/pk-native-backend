@@ -92,6 +92,7 @@ public class PendanaanHttpClient {
             int durationMs = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - startedAt);
             PendanaanInteractionSupport.log(
                     interactionLogRepository,
+                    properties.logging(),
                     interactionNo,
                     businessType,
                     businessId,
@@ -152,6 +153,7 @@ public class PendanaanHttpClient {
             int durationMs = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - startedAt);
             PendanaanInteractionSupport.log(
                     interactionLogRepository,
+                    properties.logging(),
                     interactionNo,
                     businessType,
                     businessId,

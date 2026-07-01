@@ -3,13 +3,13 @@ package com.pk.app.common.web;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalApiExceptionHandler {
@@ -25,6 +26,7 @@ public class GlobalApiExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiResponse<Void>> handleApiException(ApiException exception, HttpServletRequest request) {
+        ValidationFailureLogger.logApiException(log, exception, request);
         if (shouldLogApiException(exception)) {
             log.error(
                     "API failure traceId={} code={} method={} path={}",
@@ -64,15 +66,18 @@ public class GlobalApiExceptionHandler {
             HandlerMethodValidationException.class,
             MethodArgumentNotValidException.class,
             MethodArgumentTypeMismatchException.class,
-            MissingServletRequestParameterException.class
+            MissingServletRequestParameterException.class,
+            HttpMessageNotReadableException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleValidationException(Exception exception, HttpServletRequest request) {
+        ValidationFailureLogger.logValidationException(log, exception, request);
         return failure(ApiCode.INVALID_REQUEST_PARAMETERS, HttpStatus.BAD_REQUEST, request);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnknownException(Exception exception, HttpServletRequest request) {
         if (isValidationCause(exception)) {
+            ValidationFailureLogger.logValidationException(log, exception, request);
             return failure(ApiCode.INVALID_REQUEST_PARAMETERS, HttpStatus.BAD_REQUEST, request);
         }
         log.error(
@@ -98,6 +103,7 @@ public class GlobalApiExceptionHandler {
                 || cause instanceof MethodArgumentNotValidException
                 || cause instanceof HandlerMethodValidationException
                 || cause instanceof MethodArgumentTypeMismatchException
-                || cause instanceof MissingServletRequestParameterException;
+                || cause instanceof MissingServletRequestParameterException
+                || cause instanceof HttpMessageNotReadableException;
     }
 }

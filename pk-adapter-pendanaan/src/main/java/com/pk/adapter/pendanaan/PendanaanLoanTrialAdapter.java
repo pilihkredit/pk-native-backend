@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PendanaanLoanTrialAdapter implements LenderLoanTrialPort {
-    static final String LOAN_TRIAL_PATH = "/api/open/v1/loan/trial";
+    static final String LOAN_TRIAL_PATH = PendanaanOpenApiPaths.LOAN_TRIAL;
     static final String BUSINESS_TYPE = "LOAN_TRIAL";
 
     private final PendanaanHttpClient httpClient;

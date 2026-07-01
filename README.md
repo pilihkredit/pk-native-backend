@@ -51,14 +51,7 @@ docker compose ps          # wait until healthy
 ```
 
 Local credentials match `application-local.yml`: database `pk`, user `pk`, password `pk`, port `3306`.  
-On **first** MySQL volume init, `create_pk_schema.sql` and `seed_pendanaan_provider.sql` run automatically (Pendanaan test gateway credentials).  
-If the volume already exists, apply the lender seed manually:
-
-```bash
-mysql -u pk -ppk pk < sql/seed_pendanaan_provider.sql
-```
-
-Local outbound calls to the real Pendanaan test API use `pk.lender.config.source=db` (default); no `PK_PENDANAAN_*` env vars are required after seeding. Lender **callbacks** still need a public HTTPS URL (deployed test API or ngrok); `callback_base_url` in the seed points at `https://api-test.pilihkredit.id/api/v1`.
+On **first** MySQL volume init, `sql/create_pk_schema.sql` runs automatically (all tables plus Pendanaan test gateway seed data).
 
 Without Docker:
 
@@ -67,7 +60,7 @@ mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS pk DEFAULT CHARSET utf8mb4"
 mysql -u root -p pk < sql/create_pk_schema.sql
 ```
 
-Add new tables or columns via reviewed SQL scripts under `sql/`; apply in test/prod through your release process.
+Schema changes are made by editing `sql/create_pk_schema.sql` and applying the full script in test/prod through your release process.
 
 ## Configuration
 
@@ -107,24 +100,7 @@ Config files: `pk-app` and `pk-worker` each have `application.yml` + `applicatio
 
 ### Lender (Pendanaan) configuration
 
-By default (`pk.lender.config.source=db`), Pendanaan credentials are loaded at startup from:
-
-| Table | Fields used |
-|-------|-------------|
-| `pk_provider` | `base_url`, `callback_base_url`, `config_json` (`mode`, `appName`) |
-| `pk_api_credential` | `client_id`, `client_secret_ref`, `callback_client_id`, `callback_secret_ref` |
-
-Seed the test environment:
-
-```bash
-mysql -u pk -p pk < sql/seed_pendanaan_provider.sql
-```
-
-Production seed template (replace placeholders, then apply to prod DB only):
-
-```bash
-mysql -u ... -p ... < sql/seed_pendanaan_provider_prod.sql
-```
+By default (`pk.lender.config.source=db`), Pendanaan credentials are loaded at startup from `pk_provider` and `pk_api_credential`. Local Docker init applies the test seed at the end of `sql/create_pk_schema.sql`. Production values must be inserted manually in the database.
 
 ### Partner callback URLs (register with Pendanaan)
 

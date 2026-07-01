@@ -22,14 +22,17 @@ public class JdbcProfileContactRepository implements ProfileContactRepository {
         try {
             return Optional.of(jdbcTemplate.queryForObject(
                     """
-                    SELECT profile_id, module_status, last_request_id
+                    SELECT profile_id, module_status, last_request_id,
+                           last_lender_request_json, last_lender_response_json
                     FROM user_profile_contacts
                     WHERE profile_id = ?
                     """,
                     (rs, rowNum) -> new ProfileContactsModuleData(
                             rs.getLong("profile_id"),
                             rs.getString("module_status"),
-                            rs.getString("last_request_id")
+                            rs.getString("last_request_id"),
+                            rs.getString("last_lender_request_json"),
+                            rs.getString("last_lender_response_json")
                     ),
                     profileId
             ));
@@ -96,5 +99,20 @@ public class JdbcProfileContactRepository implements ProfileContactRepository {
                     contact.contactMobile()
             );
         }
+    }
+
+    @Override
+    public void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson) {
+        jdbcTemplate.update(
+                """
+                UPDATE user_profile_contacts
+                SET last_lender_request_json = ?,
+                    last_lender_response_json = ?
+                WHERE profile_id = ?
+                """,
+                requestDataJson,
+                responseDataJson,
+                profileId
+        );
     }
 }

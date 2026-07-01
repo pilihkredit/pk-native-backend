@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PendanaanBankAdapter implements LenderBankPort {
-    static final String BANK_LIST_PATH = "/bank/list";
+    static final String BANK_LIST_PATH = PendanaanOpenApiPaths.BANK_LIST;
     static final String BUSINESS_TYPE = "REFERENCE_BANK_LIST";
 
     private final PendanaanHttpClient httpClient;

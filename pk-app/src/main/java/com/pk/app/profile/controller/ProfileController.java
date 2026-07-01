@@ -7,12 +7,10 @@ import com.pk.app.profile.application.ProfileApplicationService;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
-import com.pk.app.profile.dto.request.ProfileWorkSaveRequest;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileEnumsResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
-import com.pk.app.profile.dto.response.ProfileWorkSaveResponse;
 import com.pk.app.security.SecurityContextSupport;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -71,22 +69,6 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileApplicationService.savePersonal(principal, request, httpRequest),
-                RequestTrace.resolveTraceId(httpRequest)
-        );
-    }
-
-    /** Save work info. */
-    @PostMapping("/work")
-    public ApiResponse<ProfileWorkSaveResponse> saveWork(
-            @Valid @RequestBody ProfileWorkSaveRequest request,
-            HttpServletRequest httpRequest
-    ) {
-        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
-        if (principal == null) {
-            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
-        }
-        return ApiResponse.success(
-                profileApplicationService.saveWork(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

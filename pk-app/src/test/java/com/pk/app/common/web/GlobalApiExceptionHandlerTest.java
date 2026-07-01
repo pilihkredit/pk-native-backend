@@ -54,6 +54,11 @@ class GlobalApiExceptionHandlerTest {
                 .andExpect(jsonPath("$.msg").value("Invalid loan amount"))
                 .andExpect(jsonPath("$.data").doesNotExist())
                 .andExpect(jsonPath("$.traceId").value("trace-api"));
+
+        assertThat(logAppender.list)
+                .anyMatch(event -> event.getLevel() == Level.WARN
+                        && event.getFormattedMessage().contains("trace-api")
+                        && event.getFormattedMessage().contains("K000145"));
     }
 
     @Test
@@ -66,12 +71,17 @@ class GlobalApiExceptionHandlerTest {
     }
 
     @Test
-    void mapsValidationExceptionToInvalidRequestParameters() throws Exception {
+    void logsValidationExceptionDetails() throws Exception {
         mockMvc.perform(get("/test/validated").header("X-Trace-Id", "trace-validation"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("K000001"))
                 .andExpect(jsonPath("$.msg").value("Invalid request parameters"))
                 .andExpect(jsonPath("$.traceId").value("trace-validation"));
+
+        assertThat(logAppender.list)
+                .anyMatch(event -> event.getLevel() == Level.WARN
+                        && event.getFormattedMessage().contains("trace-validation")
+                        && event.getFormattedMessage().contains("name"));
     }
 
     @Test

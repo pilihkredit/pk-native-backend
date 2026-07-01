@@ -10,12 +10,13 @@ public interface LenderProfileSyncPort {
     record LenderProfileSyncCommand(
             String requestId,
             String partnerUserId,
+            String mobileNo,
             ProfileSyncModule module,
             ProfileSyncPayload payload,
             LenderDeviceContext device
     ) {
     }
 
-    record LenderProfileSyncResult(boolean success) {
+    record LenderProfileSyncResult(String externalUserId, String responseDataJson) {
     }
 }

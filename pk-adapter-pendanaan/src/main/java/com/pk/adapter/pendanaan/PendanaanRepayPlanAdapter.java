@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PendanaanRepayPlanAdapter implements LenderRepayPlanPort {
-    static final String REPAY_PLAN_PATH = "/api/open/v1/repay/plan";
+    static final String REPAY_PLAN_PATH = PendanaanOpenApiPaths.REPAY_PLAN;
     static final String BUSINESS_TYPE = "REPAY_PLAN";
 
     private final PendanaanHttpClient httpClient;

@@ -5,7 +5,6 @@ import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileDeviceRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
-import com.pk.core.profile.port.ProfileWorkRepository;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,20 +13,17 @@ public class OnboardingProgressFacade {
     public static final String KYC_SYNCED = "SYNCED";
 
     private final ProfilePersonalRepository profilePersonalRepository;
-    private final ProfileWorkRepository profileWorkRepository;
     private final ProfileBankCardRepository profileBankCardRepository;
     private final ProfileContactRepository profileContactRepository;
     private final ProfileDeviceRepository profileDeviceRepository;
 
     public OnboardingProgressFacade(
             ProfilePersonalRepository profilePersonalRepository,
-            ProfileWorkRepository profileWorkRepository,
             ProfileBankCardRepository profileBankCardRepository,
             ProfileContactRepository profileContactRepository,
             ProfileDeviceRepository profileDeviceRepository
     ) {
         this.profilePersonalRepository = profilePersonalRepository;
-        this.profileWorkRepository = profileWorkRepository;
         this.profileBankCardRepository = profileBankCardRepository;
         this.profileContactRepository = profileContactRepository;
         this.profileDeviceRepository = profileDeviceRepository;
@@ -40,12 +36,6 @@ public class OnboardingProgressFacade {
         trackModule(
                 OnboardingModuleCode.PERSONAL,
                 profilePersonalRepository.findByProfileId(profileId).isPresent(),
-                completedModules,
-                missingModules
-        );
-        trackModule(
-                OnboardingModuleCode.WORK,
-                profileWorkRepository.findByProfileId(profileId).isPresent(),
                 completedModules,
                 missingModules
         );
@@ -63,7 +53,7 @@ public class OnboardingProgressFacade {
         );
         trackModule(
                 OnboardingModuleCode.DEVICE,
-                profileDeviceRepository.findByProfileId(profileId).isPresent(),
+                profileDeviceRepository.existsByProfileId(profileId),
                 completedModules,
                 missingModules
         );
@@ -96,7 +86,6 @@ public class OnboardingProgressFacade {
 
     private static boolean isRequiredForSync(String moduleCode) {
         return OnboardingModuleCode.PERSONAL.equals(moduleCode)
-                || OnboardingModuleCode.WORK.equals(moduleCode)
                 || OnboardingModuleCode.BANK_CARD.equals(moduleCode)
                 || OnboardingModuleCode.CONTACT.equals(moduleCode)
                 || OnboardingModuleCode.DEVICE.equals(moduleCode);

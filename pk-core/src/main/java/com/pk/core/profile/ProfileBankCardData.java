@@ -8,6 +8,8 @@ public record ProfileBankCardData(
         String verifyStatus,
         String verifyErrorCode,
         String moduleStatus,
-        String lastRequestId
+        String lastRequestId,
+        String lastLenderRequestJson,
+        String lastLenderResponseJson
 ) {
 }

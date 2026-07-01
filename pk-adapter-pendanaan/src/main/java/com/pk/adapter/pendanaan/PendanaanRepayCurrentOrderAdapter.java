@@ -6,7 +6,7 @@ import com.pk.core.repay.port.LenderRepayCurrentOrderPort;
 import java.util.List;
 
 public class PendanaanRepayCurrentOrderAdapter implements LenderRepayCurrentOrderPort {
-    static final String REPAY_CURRENT_ORDER_PATH = "/api/open/v1/repay/current/order";
+    static final String REPAY_CURRENT_ORDER_PATH = PendanaanOpenApiPaths.REPAY_CURRENT_ORDER;
     static final String BUSINESS_TYPE = "REPAY_CURRENT_ORDER";
 
     private final PendanaanHttpClient httpClient;

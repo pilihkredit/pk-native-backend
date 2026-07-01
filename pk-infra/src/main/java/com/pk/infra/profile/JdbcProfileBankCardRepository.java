@@ -76,11 +76,27 @@ public class JdbcProfileBankCardRepository implements ProfileBankCardRepository 
         );
     }
 
+    @Override
+    public void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson) {
+        jdbcTemplate.update(
+                """
+                UPDATE user_profile_bank_card
+                SET last_lender_request_json = ?,
+                    last_lender_response_json = ?
+                WHERE profile_id = ?
+                """,
+                requestDataJson,
+                responseDataJson,
+                profileId
+        );
+    }
+
     private ProfileBankCardData queryOne(String predicate, Object arg) {
         return jdbcTemplate.queryForObject(
                 """
                 SELECT profile_id, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
-                       verify_status, verify_error_code, module_status, last_request_id
+                       verify_status, verify_error_code, module_status, last_request_id,
+                       last_lender_request_json, last_lender_response_json
                 FROM user_profile_bank_card
                 """ + predicate,
                 (rs, rowNum) -> new ProfileBankCardData(
@@ -95,7 +111,9 @@ public class JdbcProfileBankCardRepository implements ProfileBankCardRepository 
                         rs.getString("verify_status"),
                         rs.getString("verify_error_code"),
                         rs.getString("module_status"),
-                        rs.getString("last_request_id")
+                        rs.getString("last_request_id"),
+                        rs.getString("last_lender_request_json"),
+                        rs.getString("last_lender_response_json")
                 ),
                 arg
         );

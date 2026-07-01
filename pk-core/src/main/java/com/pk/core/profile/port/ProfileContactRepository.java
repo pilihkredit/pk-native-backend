@@ -10,4 +10,6 @@ public interface ProfileContactRepository {
     java.util.List<ProfileContactData> findContactsByProfileId(long profileId);
 
     void replaceContacts(long profileId, ProfileContactsModuleData module, java.util.List<ProfileContactData> contacts);
+
+    void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson);
 }

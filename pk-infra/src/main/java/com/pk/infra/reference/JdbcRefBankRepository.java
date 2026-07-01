@@ -27,7 +27,7 @@ public class JdbcRefBankRepository implements RefBankRepository {
                 SELECT bank_code, bank_name, bank_type, icon_url
                 FROM ref_bank
                 WHERE status = ?
-                ORDER BY bank_name
+                ORDER BY bank_code
                 """,
                 (rs, rowNum) -> new BankReference(
                         rs.getString("bank_code"),

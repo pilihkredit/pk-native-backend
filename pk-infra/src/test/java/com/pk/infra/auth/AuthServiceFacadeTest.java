@@ -238,8 +238,19 @@ class AuthServiceFacadeTest {
         assertThatThrownBy(() -> facade.checkMobileRegistration("+8613812345678", "device-1"))
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
-                .isEqualTo(ApiCode.INVALID_REQUEST_PARAMETERS);
+                .isEqualTo(ApiCode.INVALID_MOBILE_NUMBER);
 
         verify(userAuthRepository, never()).findByMobileNo(any());
+    }
+
+    @Test
+    void rejectsMobileNotStartingWithEight() {
+        assertThatThrownBy(() -> facade.sendOtp("123456783", "device-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.INVALID_MOBILE_NUMBER);
+
+        verify(otpChallengeStore, never()).save(any(), any(), any());
+        verify(smsSendLogRepository, never()).insert(any());
     }
 }

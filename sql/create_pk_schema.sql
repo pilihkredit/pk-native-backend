@@ -155,20 +155,30 @@ CREATE TABLE user_identity_asset (
     KEY idx_user_identity_asset_biometric_retention (biometric_image_retention_until)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User identity assets and OCR results';
 
-CREATE TABLE user_bank_card (
+CREATE TABLE user_profile_contacts (
+    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
+    last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
+    last_lender_request_json JSON NULL COMMENT 'Last lender user/info/upsert request audit JSON',
+    last_lender_response_json JSON NULL COMMENT 'Last lender user/info/upsert response data JSON',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
+    PRIMARY KEY (profile_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User emergency contacts module state';
+
+CREATE TABLE user_profile_contact (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',
-    card_no VARCHAR(64) NOT NULL COMMENT 'Bank card number',
-    verify_status VARCHAR(32) NOT NULL COMMENT 'Verification status',
-    verify_error_code VARCHAR(32) NULL COMMENT 'Verification error code',
-    default_flag TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Default flag',
+    sort_no INT UNSIGNED NOT NULL COMMENT 'Display and submission order',
+    relationship INT NOT NULL COMMENT 'Contact relationship code',
+    contact_name VARCHAR(128) NOT NULL COMMENT 'Contact name',
+    contact_mobile VARCHAR(32) NOT NULL COMMENT 'Contact mobile number',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_user_bank_card_no (card_no),
-    KEY idx_user_bank_card_profile_default (profile_id, default_flag)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bank card verification records';
+    UNIQUE KEY uk_user_profile_contact_sort (profile_id, sort_no),
+    KEY idx_user_profile_contact_profile (profile_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User emergency contact entries';
 
 CREATE TABLE user_profile_bank_card (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
@@ -182,31 +192,33 @@ CREATE TABLE user_profile_bank_card (
     default_flag TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Default bank card flag',
     module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
     last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
+    last_lender_request_json JSON NULL COMMENT 'Last lender user/info/upsert request audit JSON',
+    last_lender_response_json JSON NULL COMMENT 'Last lender user/info/upsert response data JSON',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id),
     UNIQUE KEY uk_user_profile_bank_card_hash (card_no_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bank card onboarding module';
 
-CREATE TABLE user_device_snapshot (
+CREATE TABLE user_device (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    profile_version_id BIGINT UNSIGNED NOT NULL COMMENT 'Profile version identifier',
-    device_no VARCHAR(128) NOT NULL COMMENT 'Device identifier',
-    system_platform VARCHAR(16) NOT NULL COMMENT 'System platform',
-    app_name VARCHAR(64) NOT NULL COMMENT 'Application name',
+    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier (FK user_profile.id)',
+    partner_user_id VARCHAR(64) NOT NULL COMMENT 'Partner user identifier',
+    device_no VARCHAR(128) NOT NULL COMMENT 'Device identifier (upsert key)',
+    system_platform VARCHAR(16) NOT NULL COMMENT 'System platform: ios|android',
+    client_app_name VARCHAR(64) NOT NULL COMMENT 'Client-reported application name',
     app_version VARCHAR(32) NOT NULL COMMENT 'Application version',
+    package_name VARCHAR(128) NOT NULL COMMENT 'Application package name',
     ad_id VARCHAR(128) NULL COMMENT 'Advertising identifier',
-    device_json JSON NOT NULL COMMENT 'Device data JSON',
-    device_other_json JSON NULL COMMENT 'Extended device data JSON',
-    consent_no VARCHAR(64) NULL COMMENT 'Related consent record number',
-    retention_until DATETIME(3) NULL COMMENT 'Planned retention end time',
+    device_json JSON NOT NULL COMMENT 'Full client device payload JSON',
+    last_request_id VARCHAR(64) NOT NULL COMMENT 'Last request id that updated this device',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    KEY idx_user_device_snapshot_profile_version (profile_version_id),
-    KEY idx_user_device_snapshot_device_no (device_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User device snapshot records';
+    UNIQUE KEY uk_user_device_device_no (device_no),
+    KEY idx_user_device_profile_id (profile_id),
+    KEY idx_user_device_partner_user_id (partner_user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User device records; upserted by device_no';
 
 CREATE TABLE user_contact_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -717,57 +729,23 @@ CREATE TABLE operator_audit_log (
     KEY idx_operator_audit_log_operator_created (operator_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Operator audit log records';
 
-CREATE TABLE user_profile_device (
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    device_no VARCHAR(128) NOT NULL COMMENT 'Device identifier',
-    system_platform VARCHAR(16) NOT NULL COMMENT 'System platform',
-    client_app_name VARCHAR(64) NOT NULL COMMENT 'Client-reported application name',
-    app_version VARCHAR(32) NOT NULL COMMENT 'Application version',
-    package_name VARCHAR(128) NOT NULL COMMENT 'Application package name',
-    ad_id VARCHAR(128) NULL COMMENT 'Advertising identifier',
-    device_other_json JSON NULL COMMENT 'Extended device collection JSON',
-    last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
-    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
-    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (profile_id),
-    KEY idx_user_profile_device_device_no (device_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest user device snapshot for onboarding';
-
 CREATE TABLE user_profile_personal (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    province_code VARCHAR(32) NOT NULL COMMENT 'Residential province code',
-    city_code VARCHAR(32) NOT NULL COMMENT 'Residential city code',
-    district_code VARCHAR(32) NOT NULL COMMENT 'Residential district code',
-    address VARCHAR(512) NOT NULL COMMENT 'Residential street address',
     education_degree INT NOT NULL COMMENT 'Education degree code',
+    industry INT NOT NULL COMMENT 'Industry code',
+    income VARCHAR(16) NOT NULL COMMENT 'Monthly income as numeric string',
     mother_surname_ciphertext TEXT NOT NULL COMMENT 'AES-256-GCM encrypted mother surname ciphertext',
     mother_surname_nonce VARBINARY(12) NOT NULL COMMENT 'AES-GCM nonce for mother surname',
     mother_surname_tag VARBINARY(16) NOT NULL COMMENT 'AES-GCM authentication tag for mother surname',
     user_email VARCHAR(128) NULL COMMENT 'Optional user email',
     module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
     last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
+    last_lender_request_json JSON NULL COMMENT 'Last lender user/info/upsert request audit JSON',
+    last_lender_response_json JSON NULL COMMENT 'Last lender user/info/upsert response data JSON',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User personal basic information module';
-
-CREATE TABLE user_profile_work (
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    industry INT NOT NULL COMMENT 'Industry code',
-    company_name VARCHAR(128) NOT NULL COMMENT 'Company name',
-    work_province_code VARCHAR(32) NOT NULL COMMENT 'Work location province code',
-    work_city_code VARCHAR(32) NOT NULL COMMENT 'Work location city code',
-    work_district_code VARCHAR(32) NOT NULL COMMENT 'Work location district code',
-    work_address VARCHAR(512) NOT NULL COMMENT 'Work street address',
-    income VARCHAR(16) NOT NULL COMMENT 'Monthly income as numeric string',
-    payday INT NOT NULL COMMENT 'Payday 1-31',
-    profession_degree INT NOT NULL COMMENT 'Profession type code',
-    module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
-    last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
-    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
-    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (profile_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User work information module';
 
 CREATE TABLE user_password_credential (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -781,3 +759,48 @@ CREATE TABLE user_password_credential (
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_password_profile (profile_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User login password credential';
+
+-- ---------------------------------------------------------------------------
+-- Seed data (local / test Pendanaan provider; idempotent)
+-- ---------------------------------------------------------------------------
+
+INSERT INTO pk_provider (
+    provider_code,
+    provider_name,
+    status,
+    base_url,
+    callback_base_url,
+    config_json
+) VALUES (
+    'pendanaan',
+    'Pendanaan Test',
+    'ACTIVE',
+    'http://gateway.test.ptnadmin.com/ktaid',
+    'https://api-test.pilihkredit.id/api/v1',
+    JSON_OBJECT('mode', 'http', 'appName', 'KtaKilatPlus')
+) ON DUPLICATE KEY UPDATE
+    provider_name = VALUES(provider_name),
+    status = VALUES(status),
+    base_url = VALUES(base_url),
+    callback_base_url = VALUES(callback_base_url),
+    config_json = VALUES(config_json);
+
+DELETE FROM pk_api_credential WHERE provider_code = 'pendanaan';
+
+INSERT INTO pk_api_credential (
+    provider_code,
+    client_id,
+    client_secret_ref,
+    callback_client_id,
+    callback_secret_ref,
+    effective_at,
+    status
+) VALUES (
+    'pendanaan',
+    'oc_ybmk9xvr8hockw5j1zexx3q5',
+    'vEgB3NcR5x9wx9ZBB4ufCcPbSKcF6i6P',
+    NULL,
+    NULL,
+    CURRENT_TIMESTAMP(3),
+    'ACTIVE'
+);

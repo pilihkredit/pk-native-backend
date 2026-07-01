@@ -12,14 +12,11 @@ import com.pk.core.home.port.HomeLifecycleReadRepository.LoanApplySnapshot;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileBankCardData;
 import com.pk.core.profile.ProfileContactsModuleData;
-import com.pk.core.profile.ProfileDeviceData;
 import com.pk.core.profile.ProfilePersonalData;
-import com.pk.core.profile.ProfileWorkData;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileDeviceRepository;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
-import com.pk.core.profile.port.ProfileWorkRepository;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 class HomeSummaryFacadeTest {
     private ProfilePersonalRepository profilePersonalRepository;
-    private ProfileWorkRepository profileWorkRepository;
     private ProfileBankCardRepository profileBankCardRepository;
     private ProfileContactRepository profileContactRepository;
     private ProfileDeviceRepository profileDeviceRepository;
@@ -37,7 +33,6 @@ class HomeSummaryFacadeTest {
     @BeforeEach
     void setUp() {
         profilePersonalRepository = mock(ProfilePersonalRepository.class);
-        profileWorkRepository = mock(ProfileWorkRepository.class);
         profileBankCardRepository = mock(ProfileBankCardRepository.class);
         profileContactRepository = mock(ProfileContactRepository.class);
         profileDeviceRepository = mock(ProfileDeviceRepository.class);
@@ -45,7 +40,6 @@ class HomeSummaryFacadeTest {
         facade = new HomeSummaryFacade(
                 new OnboardingProgressFacade(
                         profilePersonalRepository,
-                        profileWorkRepository,
                         profileBankCardRepository,
                         profileContactRepository,
                         profileDeviceRepository
@@ -153,28 +147,22 @@ class HomeSummaryFacadeTest {
 
     private void stubIncompleteOnboarding() {
         when(profilePersonalRepository.findByProfileId(1L)).thenReturn(Optional.empty());
-        when(profileWorkRepository.findByProfileId(1L)).thenReturn(Optional.empty());
         when(profileBankCardRepository.findByProfileId(1L)).thenReturn(Optional.empty());
         when(profileContactRepository.findModuleByProfileId(1L)).thenReturn(Optional.empty());
-        when(profileDeviceRepository.findByProfileId(1L)).thenReturn(Optional.empty());
+        when(profileDeviceRepository.existsByProfileId(1L)).thenReturn(false);
     }
 
     private void stubSyncedOnboarding() {
         EncryptedField encryptedField = new EncryptedField("cipher", new byte[12], new byte[16]);
         when(profilePersonalRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfilePersonalData(1L, "11", "1101", "110101", "addr", 1, encryptedField, null, "COMPLETED", "req-1")
-        ));
-        when(profileWorkRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileWorkData(1L, 1, "Co", "11", "1101", "110101", "addr", "5000000", 1, 1, "COMPLETED", "req-1")
+                new ProfilePersonalData(1L, 1, 16, "5000000", encryptedField, null, "COMPLETED", "req-1", null, null)
         ));
         when(profileBankCardRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileBankCardData(1L, "BCA", encryptedField, "hash", "VERIFIED", null, "COMPLETED", "req-1")
+                new ProfileBankCardData(1L, "BCA", encryptedField, "hash", "VERIFIED", null, "COMPLETED", "req-1", null, null)
         ));
         when(profileContactRepository.findModuleByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileContactsModuleData(1L, "COMPLETED", "req-1")
+                new ProfileContactsModuleData(1L, "COMPLETED", "req-1", null, null)
         ));
-        when(profileDeviceRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileDeviceData(1L, "device-1", "ANDROID", "app", "1.0", "com.pk", null, null, "req-1")
-        ));
+        when(profileDeviceRepository.existsByProfileId(1L)).thenReturn(true);
     }
 }

@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PendanaanLoanProductAdapter implements LenderLoanProductPort {
-    static final String PRODUCT_LIST_PATH = "/api/open/v1/product/list";
+    static final String PRODUCT_LIST_PATH = PendanaanOpenApiPaths.PRODUCT_LIST;
     static final String BUSINESS_TYPE = "LOAN_PRODUCT_LIST";
 
     private final PendanaanHttpClient httpClient;

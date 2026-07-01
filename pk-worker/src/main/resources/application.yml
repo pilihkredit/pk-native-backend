@@ -20,11 +20,9 @@ pk:
       source: ${PK_LENDER_CONFIG_SOURCE:db}
       provider-code: ${PK_LENDER_CONFIG_PROVIDER_CODE:pendanaan}
     pendanaan:
-      mode: ${PK_LENDER_PENDANAAN_MODE:fake}
-      base-url: ${PK_PENDANAAN_BASE_URL:}
-      client-id: ${PK_PENDANAAN_CLIENT_ID:}
-      client-secret: ${PK_PENDANAAN_CLIENT_SECRET:}
-      app-name: ${PK_PENDANAAN_APP_NAME:}
+      logging:
+        enabled: ${PK_LENDER_PENDANAAN_LOGGING_ENABLED:true}
+        max-body-bytes: ${PK_LENDER_PENDANAAN_LOGGING_MAX_BODY_BYTES:65536}
   reference:
     bank-cache-ttl: ${PK_REFERENCE_BANK_CACHE_TTL:24h}
     area-cache-ttl: ${PK_REFERENCE_AREA_CACHE_TTL:24h}

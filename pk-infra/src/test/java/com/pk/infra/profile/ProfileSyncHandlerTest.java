@@ -1,0 +1,107 @@
+package com.pk.infra.profile;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.auth.UserProfileSummary;
+import com.pk.core.auth.port.UserAuthRepository;
+import com.pk.core.profile.EncryptedField;
+import com.pk.core.profile.ProfilePersonalData;
+import com.pk.core.profile.port.LenderProfileSyncPort;
+import com.pk.core.profile.port.ProfileBankCardRepository;
+import com.pk.core.profile.port.ProfileContactRepository;
+import com.pk.core.profile.port.ProfilePersonalRepository;
+import com.pk.core.profile.port.UserProfileBindingRepository;
+import com.pk.core.profile.sync.DeviceExtendedAttributes;
+import com.pk.core.profile.sync.LenderDeviceContext;
+import com.pk.core.profile.sync.ProfileSyncModule;
+import com.pk.core.profile.sync.ProfileSyncPayload;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+
+class ProfileSyncHandlerTest {
+    @Test
+    void persistsLenderAuditAfterSuccessfulSync() {
+        LenderProfileSyncPort lenderProfileSyncPort = mock(LenderProfileSyncPort.class);
+        ProfileSyncPayloadLoader profileSyncPayloadLoader = mock(ProfileSyncPayloadLoader.class);
+        UserAuthRepository userAuthRepository = mock(UserAuthRepository.class);
+        UserProfileBindingRepository userProfileBindingRepository = mock(UserProfileBindingRepository.class);
+        ProfilePersonalRepository profilePersonalRepository = mock(ProfilePersonalRepository.class);
+        ProfileContactRepository profileContactRepository = mock(ProfileContactRepository.class);
+        ProfileBankCardRepository profileBankCardRepository = mock(ProfileBankCardRepository.class);
+        LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder = new LenderSyncAuditRequestBuilder(
+                profilePersonalRepository,
+                profileContactRepository,
+                profileBankCardRepository,
+                new ObjectMapper()
+        );
+
+        when(userAuthRepository.findByProfileId(7L))
+                .thenReturn(Optional.of(new UserProfileSummary(7L, "UABC", "81234567890", false)));
+        when(profilePersonalRepository.findByProfileId(7L)).thenReturn(Optional.of(
+                new ProfilePersonalData(
+                        7L,
+                        5,
+                        16,
+                        "5000000",
+                        new EncryptedField("cipher", new byte[12], new byte[16]),
+                        null,
+                        "COMPLETED",
+                        "REQ-1",
+                        null,
+                        null
+                )
+        ));
+        when(lenderProfileSyncPort.syncModule(any()))
+                .thenReturn(new LenderProfileSyncPort.LenderProfileSyncResult(
+                        "USR202506020001",
+                        "{\"userId\":\"USR202506020001\"}"
+                ));
+
+        ProfileSyncHandler handler = new ProfileSyncHandler(
+                lenderProfileSyncPort,
+                profileSyncPayloadLoader,
+                userAuthRepository,
+                userProfileBindingRepository,
+                profilePersonalRepository,
+                profileContactRepository,
+                profileBankCardRepository,
+                lenderSyncAuditRequestBuilder
+        );
+
+        handler.sync(new ProfileSyncJob(
+                7L,
+                "UABC",
+                "REQ-1",
+                ProfileSyncModule.PERSONAL,
+                sampleDevice(),
+                new ProfileSyncPayload.PersonalProfilePayload(5, 16, "5000000", "Siti", null)
+        ));
+
+        verify(userProfileBindingRepository).recordLenderProfileSync(7L, "USR202506020001");
+        verify(profilePersonalRepository).updateLastLenderAudit(
+                eq(7L),
+                any(),
+                eq("{\"userId\":\"USR202506020001\"}")
+        );
+    }
+
+    private static LenderDeviceContext sampleDevice() {
+        return new LenderDeviceContext(
+                "PKApp",
+                "1.0.0",
+                "com.example.pk",
+                "device-1",
+                "android",
+                "ad-1",
+                Map.of(),
+                "KEC",
+                DeviceExtendedAttributes.empty()
+        );
+    }
+}

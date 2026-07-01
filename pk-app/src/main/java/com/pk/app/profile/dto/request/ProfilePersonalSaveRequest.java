@@ -10,13 +10,7 @@ import jakarta.validation.constraints.Size;
  */
 public record ProfilePersonalSaveRequest(
         @NotBlank @Size(max = 64) String requestId,
-        @NotBlank @Size(max = 32) String provinceCode,
-        @NotBlank @Size(max = 32) String cityCode,
-        @NotBlank @Size(max = 32) String districtCode,
-        @NotBlank @Size(max = 512) String address,
-        @NotNull Integer educationDegree,
-        @NotBlank @Size(max = 128) String motherSurname,
-        @Size(max = 128) String userEmail,
+        @NotNull @Valid ProfilePersonalInfoRequest profile,
         @NotNull @Valid ProfileDeviceRequest device
 ) {
 }

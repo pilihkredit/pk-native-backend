@@ -7,8 +7,8 @@ import com.pk.core.credit.port.LenderCreditPort;
 import java.math.BigDecimal;
 
 public class PendanaanCreditAdapter implements LenderCreditPort {
-    static final String APPLY_PATH = "/api/open/v1/credit/apply";
-    static final String APPLY_STATUS_PATH = "/api/open/v1/credit/applyStatus";
+    static final String APPLY_PATH = PendanaanOpenApiPaths.CREDIT_APPLY;
+    static final String APPLY_STATUS_PATH = PendanaanOpenApiPaths.CREDIT_APPLY_STATUS;
     static final String BUSINESS_TYPE_APPLY = "CREDIT_APPLY";
     static final String BUSINESS_TYPE_STATUS = "CREDIT_APPLY_STATUS";
 

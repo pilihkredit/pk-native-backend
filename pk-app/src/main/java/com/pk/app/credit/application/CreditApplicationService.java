@@ -15,6 +15,7 @@ import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.credit.CreditApplyFacade;
 import com.pk.infra.credit.CreditLimitDisplayFacade;
+import com.pk.infra.profile.UserDeviceWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -25,15 +26,18 @@ public class CreditApplicationService {
     private final CreditApplyFacade creditApplyFacade;
     private final CreditLimitDisplayFacade creditLimitDisplayFacade;
     private final PendanaanProperties pendanaanProperties;
+    private final UserDeviceWriter userDeviceWriter;
 
     public CreditApplicationService(
             CreditApplyFacade creditApplyFacade,
             CreditLimitDisplayFacade creditLimitDisplayFacade,
-            PendanaanProperties pendanaanProperties
+            PendanaanProperties pendanaanProperties,
+            UserDeviceWriter userDeviceWriter
     ) {
         this.creditApplyFacade = creditApplyFacade;
         this.creditLimitDisplayFacade = creditLimitDisplayFacade;
         this.pendanaanProperties = pendanaanProperties;
+        this.userDeviceWriter = userDeviceWriter;
     }
 
     @Transactional
@@ -45,10 +49,16 @@ public class CreditApplicationService {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        LenderDeviceContext device = ProfileDeviceSupport.resolveLenderDevice(
+        LenderDeviceContext device = ProfileDeviceSupport.resolveRiskLenderDevice(
                 request.riskDataInfo().openUserDevice(),
                 ClientRequestHeaders.require(httpRequest),
                 pendanaanProperties
+        );
+        userDeviceWriter.upsertFromRequest(
+                principal.profileId(),
+                principal.partnerUserId(),
+                request.requestId(),
+                device
         );
         CreditApplyFacade.ApplyResult result = creditApplyFacade.apply(
                 principal.profileId(),

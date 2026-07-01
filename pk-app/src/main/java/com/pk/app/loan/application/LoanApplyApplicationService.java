@@ -13,6 +13,7 @@ import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.loan.LoanApplyFacade;
+import com.pk.infra.profile.UserDeviceWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -22,10 +23,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class LoanApplyApplicationService {
     private final LoanApplyFacade loanApplyFacade;
     private final PendanaanProperties pendanaanProperties;
+    private final UserDeviceWriter userDeviceWriter;
 
-    public LoanApplyApplicationService(LoanApplyFacade loanApplyFacade, PendanaanProperties pendanaanProperties) {
+    public LoanApplyApplicationService(
+            LoanApplyFacade loanApplyFacade,
+            PendanaanProperties pendanaanProperties,
+            UserDeviceWriter userDeviceWriter
+    ) {
         this.loanApplyFacade = loanApplyFacade;
         this.pendanaanProperties = pendanaanProperties;
+        this.userDeviceWriter = userDeviceWriter;
     }
 
     @Transactional
@@ -40,10 +47,16 @@ public class LoanApplyApplicationService {
         if (!pendanaanProperties.httpEnabled() || !pendanaanProperties.httpCredentialsPresent()) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
-        LenderDeviceContext device = ProfileDeviceSupport.resolveLenderDevice(
+        LenderDeviceContext device = ProfileDeviceSupport.resolveRiskLenderDevice(
                 request.riskDataInfo().openUserDevice(),
                 ClientRequestHeaders.require(httpRequest),
                 pendanaanProperties
+        );
+        userDeviceWriter.upsertFromRequest(
+                principal.profileId(),
+                principal.partnerUserId(),
+                request.loanApplyId(),
+                device
         );
         LoanApplyFacade.ApplyResult result = loanApplyFacade.apply(
                 principal.profileId(),

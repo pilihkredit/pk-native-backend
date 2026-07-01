@@ -25,7 +25,6 @@ public class PendanaanProfileEnumCatalog implements ProfileEnumCatalog {
         this.fields = List.of(
                 field(ProfileEnumFieldKey.EDUCATION_DEGREE, educationDegreeOptions()),
                 field(ProfileEnumFieldKey.INDUSTRY, industryOptions()),
-                field(ProfileEnumFieldKey.PROFESSION_DEGREE, professionDegreeOptions()),
                 field(ProfileEnumFieldKey.RELATIONSHIP, relationshipOptions())
         );
         this.validValuesByField = buildValidValues(fields);
@@ -110,24 +109,6 @@ public class PendanaanProfileEnumCatalog implements ProfileEnumCatalog {
                 option(15, "Information technology", "Teknologi informasi", false),
                 option(16, "Telecommunications", "Telekomunikasi", false),
                 option(99, "Other", "Lainnya", false)
-        );
-    }
-
-    private static List<ProfileEnumOptionDefinition> professionDegreeOptions() {
-        return List.of(
-                option(1, "Entrepreneur", "Pengusaha", false),
-                option(2, "Government official", "Pejabat pemerintah", false),
-                option(3, "Political party official", "Pejabat partai politik", false),
-                option(4, "Foundation member", "Anggota yayasan", false),
-                option(5, "Private sector employee", "Karyawan swasta", false),
-                option(6, "Bank employee", "Karyawan bank", false),
-                option(7, "Homemaker", "Ibu rumah tangga", false),
-                option(8, "Corporate employee", "Karyawan perusahaan", false),
-                option(9, "Civil servant", "Pegawai negeri sipil", false),
-                option(10, "Foreign exchange trader", "Pedagang valuta asing", false),
-                option(11, "State-owned enterprise employee", "Karyawan BUMN", false),
-                option(12, "Professional", "Profesional", false),
-                option(13, "Other", "Lainnya", false)
         );
     }
 

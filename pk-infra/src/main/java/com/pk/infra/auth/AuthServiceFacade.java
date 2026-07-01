@@ -307,7 +307,7 @@ public class AuthServiceFacade {
 
     private void validateMobile(String mobileNo) {
         if (!MobileNumberValidator.isValid(mobileNo)) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+            throw new ApiException(ApiCode.INVALID_MOBILE_NUMBER);
         }
     }
 

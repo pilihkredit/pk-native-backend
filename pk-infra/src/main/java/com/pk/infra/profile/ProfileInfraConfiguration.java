@@ -1,7 +1,6 @@
 package com.pk.infra.profile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pk.core.profile.port.AreaHierarchyValidator;
 import com.pk.core.profile.port.LenderEnumMapper;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileEnumCatalog;
@@ -36,24 +35,52 @@ public class ProfileInfraConfiguration {
     @Bean
     ProfileSyncPayloadLoader profileSyncPayloadLoader(
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
-            com.pk.core.profile.port.ProfileWorkRepository profileWorkRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             SensitiveFieldEncryptor sensitiveFieldEncryptor
     ) {
         return new ProfileSyncPayloadLoader(
                 profilePersonalRepository,
-                profileWorkRepository,
                 profileContactRepository,
                 sensitiveFieldEncryptor
         );
     }
 
     @Bean
+    LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder(
+            com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
+            com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
+            com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
+            ObjectMapper objectMapper
+    ) {
+        return new LenderSyncAuditRequestBuilder(
+                profilePersonalRepository,
+                profileContactRepository,
+                profileBankCardRepository,
+                objectMapper
+        );
+    }
+
+    @Bean
     ProfileSyncHandler profileSyncHandler(
             LenderProfileSyncPort lenderProfileSyncPort,
-            ProfileSyncPayloadLoader profileSyncPayloadLoader
+            ProfileSyncPayloadLoader profileSyncPayloadLoader,
+            com.pk.core.auth.port.UserAuthRepository userAuthRepository,
+            com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
+            com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
+            com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
+            com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
+            LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder
     ) {
-        return new ProfileSyncHandler(lenderProfileSyncPort, profileSyncPayloadLoader);
+        return new ProfileSyncHandler(
+                lenderProfileSyncPort,
+                profileSyncPayloadLoader,
+                userAuthRepository,
+                userProfileBindingRepository,
+                profilePersonalRepository,
+                profileContactRepository,
+                profileBankCardRepository,
+                lenderSyncAuditRequestBuilder
+        );
     }
 
     @Bean
@@ -72,14 +99,12 @@ public class ProfileInfraConfiguration {
     @Bean
     OnboardingProgressFacade onboardingProgressFacade(
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
-            com.pk.core.profile.port.ProfileWorkRepository profileWorkRepository,
             com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             com.pk.core.profile.port.ProfileDeviceRepository profileDeviceRepository
     ) {
         return new OnboardingProgressFacade(
                 profilePersonalRepository,
-                profileWorkRepository,
                 profileBankCardRepository,
                 profileContactRepository,
                 profileDeviceRepository
@@ -89,27 +114,27 @@ public class ProfileInfraConfiguration {
     @Bean
     ProfileServiceFacade profileServiceFacade(
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
-            com.pk.core.profile.port.ProfileWorkRepository profileWorkRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
-            com.pk.core.profile.port.ProfileDeviceRepository profileDeviceRepository,
-            AreaHierarchyValidator areaHierarchyValidator,
+            UserDeviceWriter userDeviceWriter,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             ProfileEnumValidator profileEnumValidator,
             com.pk.infra.reference.BankReferenceFacade bankReferenceFacade,
-            ProfileSyncOrchestrator profileSyncOrchestrator
+            ProfileSyncOrchestrator profileSyncOrchestrator,
+            OnboardingProgressFacade onboardingProgressFacade,
+            com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository
     ) {
         return new ProfileServiceFacade(
                 profilePersonalRepository,
-                profileWorkRepository,
                 profileContactRepository,
                 profileBankCardRepository,
-                profileDeviceRepository,
-                areaHierarchyValidator,
+                userDeviceWriter,
                 sensitiveFieldEncryptor,
                 profileEnumValidator,
                 bankReferenceFacade,
-                profileSyncOrchestrator
+                profileSyncOrchestrator,
+                onboardingProgressFacade,
+                userProfileBindingRepository
         );
     }
 }

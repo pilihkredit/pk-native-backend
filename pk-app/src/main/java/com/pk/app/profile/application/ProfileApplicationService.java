@@ -1,14 +1,14 @@
 package com.pk.app.profile.application;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
-import com.pk.app.profile.dto.request.ProfileWorkSaveRequest;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
-import com.pk.app.profile.dto.response.ProfileWorkSaveResponse;
 import com.pk.adapter.pendanaan.PendanaanProperties;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -23,13 +23,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProfileApplicationService {
     private final ProfileServiceFacade profileServiceFacade;
     private final PendanaanProperties pendanaanProperties;
+    private final ObjectMapper objectMapper;
 
     public ProfileApplicationService(
             ProfileServiceFacade profileServiceFacade,
-            PendanaanProperties pendanaanProperties
+            PendanaanProperties pendanaanProperties,
+            ObjectMapper objectMapper
     ) {
         this.profileServiceFacade = profileServiceFacade;
         this.pendanaanProperties = pendanaanProperties;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -46,46 +49,19 @@ public class ProfileApplicationService {
                 principal.partnerUserId(),
                 new ProfileServiceFacade.PersonalSaveCommand(
                         request.requestId(),
-                        request.provinceCode(),
-                        request.cityCode(),
-                        request.districtCode(),
-                        request.address(),
-                        request.educationDegree(),
-                        request.motherSurname(),
-                        request.userEmail(),
+                        request.profile().educationDegree(),
+                        request.profile().industry(),
+                        request.profile().income(),
+                        request.profile().motherSurname(),
+                        request.profile().userEmail(),
                         resolveDevice(request.device(), httpRequest)
                 )
         );
-        return new ProfilePersonalSaveResponse(result.requestId(), result.moduleStatus());
-    }
-
-    @Transactional
-    public ProfileWorkSaveResponse saveWork(
-            AuthenticatedPrincipal principal,
-            ProfileWorkSaveRequest request,
-            HttpServletRequest httpRequest
-    ) {
-        if (principal == null) {
-            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
-        }
-        ProfileServiceFacade.WorkSaveResult result = profileServiceFacade.saveWork(
-                principal.profileId(),
-                principal.partnerUserId(),
-                new ProfileServiceFacade.WorkSaveCommand(
-                        request.requestId(),
-                        request.industry(),
-                        request.companyName(),
-                        request.workProvinceCode(),
-                        request.workCityCode(),
-                        request.workDistrictCode(),
-                        request.workAddress(),
-                        request.income(),
-                        request.payday(),
-                        request.professionDegree(),
-                        resolveDevice(request.device(), httpRequest)
-                )
+        return new ProfilePersonalSaveResponse(
+                result.requestId(),
+                result.moduleStatus(),
+                parseLenderResponse(result.lenderResponseJson())
         );
-        return new ProfileWorkSaveResponse(result.requestId(), result.moduleStatus());
     }
 
     @Transactional
@@ -148,5 +124,16 @@ public class ProfileApplicationService {
     ) {
         ClientRequestHeaders.ResolvedClientHeaders headers = ClientRequestHeaders.require(httpRequest);
         return ProfileDeviceSupport.resolveLenderDevice(deviceRequest, headers, pendanaanProperties);
+    }
+
+    private JsonNode parseLenderResponse(String lenderResponseJson) {
+        if (lenderResponseJson == null || lenderResponseJson.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readTree(lenderResponseJson);
+        } catch (Exception exception) {
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+        }
     }
 }

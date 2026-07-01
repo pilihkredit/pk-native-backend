@@ -16,10 +16,10 @@ import com.pk.core.profile.ProfileContactsModuleData;
 import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
-import com.pk.core.profile.port.ProfileDeviceRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
-import com.pk.core.profile.port.ProfileWorkRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import com.pk.core.profile.port.LenderProfileSyncPort;
+import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.reference.BankReferenceFacade;
 import java.util.List;
@@ -29,23 +29,25 @@ import org.junit.jupiter.api.Test;
 
 class ProfileServiceFacadeTest {
     private ProfilePersonalRepository profilePersonalRepository;
-    private ProfileWorkRepository profileWorkRepository;
     private ProfileContactRepository profileContactRepository;
     private ProfileBankCardRepository profileBankCardRepository;
-    private ProfileDeviceRepository profileDeviceRepository;
+    private UserDeviceWriter userDeviceWriter;
     private BankReferenceFacade bankReferenceFacade;
     private ProfileSyncOrchestrator profileSyncOrchestrator;
+    private OnboardingProgressFacade onboardingProgressFacade;
+    private UserProfileBindingRepository userProfileBindingRepository;
     private ProfileServiceFacade facade;
 
     @BeforeEach
     void setUp() {
         profilePersonalRepository = mock(ProfilePersonalRepository.class);
-        profileWorkRepository = mock(ProfileWorkRepository.class);
         profileContactRepository = mock(ProfileContactRepository.class);
         profileBankCardRepository = mock(ProfileBankCardRepository.class);
-        profileDeviceRepository = mock(ProfileDeviceRepository.class);
+        userDeviceWriter = mock(UserDeviceWriter.class);
         bankReferenceFacade = mock(BankReferenceFacade.class);
         profileSyncOrchestrator = mock(ProfileSyncOrchestrator.class);
+        onboardingProgressFacade = mock(OnboardingProgressFacade.class);
+        userProfileBindingRepository = mock(UserProfileBindingRepository.class);
         SensitiveFieldEncryptor encryptor = new SensitiveFieldEncryptor() {
             @Override
             public EncryptedField encrypt(String plaintext) {
@@ -59,22 +61,34 @@ class ProfileServiceFacadeTest {
         };
         facade = new ProfileServiceFacade(
                 profilePersonalRepository,
-                profileWorkRepository,
                 profileContactRepository,
                 profileBankCardRepository,
-                profileDeviceRepository,
-                new BasicAreaHierarchyValidator(),
+                userDeviceWriter,
                 encryptor,
                 new ProfileEnumValidator(new PendanaanProfileEnumCatalog()),
                 bankReferenceFacade,
-                profileSyncOrchestrator
+                profileSyncOrchestrator,
+                onboardingProgressFacade,
+                userProfileBindingRepository
         );
+        when(onboardingProgressFacade.getProgress(anyLong(), any()))
+                .thenReturn(new OnboardingProgressFacade.OnboardingProgressResult(
+                        "U10001",
+                        OnboardingProgressFacade.KYC_INCOMPLETE,
+                        List.of(),
+                        List.of("personal")
+                ));
         when(profilePersonalRepository.findByProfileId(10L)).thenReturn(Optional.empty());
-        when(profileWorkRepository.findByProfileId(10L)).thenReturn(Optional.empty());
         when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.empty());
         when(profileBankCardRepository.findByProfileId(10L)).thenReturn(Optional.empty());
         when(profileBankCardRepository.findByCardNoHash(any())).thenReturn(Optional.empty());
         when(bankReferenceFacade.isValidBankCode("BCA")).thenReturn(true);
+        when(profileSyncOrchestrator.scheduleAfterSave(any())).thenReturn(
+                new LenderProfileSyncPort.LenderProfileSyncResult(
+                        "USR202506020001",
+                        "{\"userId\":\"USR202506020001\",\"newUser\":false,\"updatedModules\":[\"profile\",\"device\"]}"
+                )
+        );
     }
 
     @Test
@@ -83,8 +97,9 @@ class ProfileServiceFacadeTest {
 
         assertThat(result.requestId()).isEqualTo("req-1");
         assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
+        assertThat(result.lenderResponseJson()).contains("USR202506020001");
         verify(profilePersonalRepository).upsert(any());
-        verify(profileDeviceRepository).upsert(any());
+        verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
         verify(profileSyncOrchestrator).scheduleAfterSave(any());
     }
 
@@ -93,21 +108,22 @@ class ProfileServiceFacadeTest {
         when(profilePersonalRepository.findByProfileId(10L)).thenReturn(Optional.of(
                 new ProfilePersonalData(
                         10L,
-                        "31",
-                        "3171",
-                        "317101",
-                        "Jl. Example 1",
                         5,
+                        16,
+                        "5000000",
                         new EncryptedField("cipher", new byte[12], new byte[16]),
                         "user@example.com",
                         "COMPLETED",
-                        "req-1"
+                        "req-1",
+                        null,
+                        "{\"userId\":\"USR202506020001\"}"
                 )
         ));
 
         var result = facade.savePersonal(10L, "U10001", sampleCommand("req-1"));
 
         assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
+        assertThat(result.lenderResponseJson()).contains("USR202506020001");
         verify(profilePersonalRepository, never()).upsert(any());
         verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
     }
@@ -116,11 +132,9 @@ class ProfileServiceFacadeTest {
     void rejectsInvalidEducationDegree() {
         var command = new ProfileServiceFacade.PersonalSaveCommand(
                 "req-2",
-                "31",
-                "3171",
-                "317101",
-                "Jl. Example 1",
                 9,
+                16,
+                "5000000",
                 "Siti",
                 null,
                 sampleDevice()
@@ -139,14 +153,14 @@ class ProfileServiceFacadeTest {
         assertThat(result.requestId()).isEqualTo("req-contact-1");
         assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
         verify(profileContactRepository).replaceContacts(anyLong(), any(), any());
-        verify(profileDeviceRepository).upsert(any());
+        verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
         verify(profileSyncOrchestrator).scheduleAfterSave(any());
     }
 
     @Test
     void returnsCompletedWithoutRewriteForSameContactsRequestId() {
         when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.of(
-                new ProfileContactsModuleData(10L, "COMPLETED", "req-contact-1")
+                new ProfileContactsModuleData(10L, "COMPLETED", "req-contact-1", null, null)
         ));
 
         var result = facade.saveContacts(10L, "U10001", "81234567890", sampleContactsCommand("req-contact-1"));
@@ -239,61 +253,6 @@ class ProfileServiceFacadeTest {
     }
 
     @Test
-    void savesWorkModuleAndReturnsCompleted() {
-        var result = facade.saveWork(10L, "U10001", sampleWorkCommand("req-work-1"));
-
-        assertThat(result.requestId()).isEqualTo("req-work-1");
-        assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
-        verify(profileWorkRepository).upsert(any());
-        verify(profileDeviceRepository).upsert(any());
-        verify(profileSyncOrchestrator).scheduleAfterSave(any());
-    }
-
-    @Test
-    void rejectsInvalidIncomeFormat() {
-        var command = new ProfileServiceFacade.WorkSaveCommand(
-                "req-work-2",
-                1,
-                "PT Example",
-                "31",
-                "3171",
-                "317101",
-                "Jl. Thamrin",
-                "1234",
-                25,
-                2,
-                sampleDevice()
-        );
-
-        assertThatThrownBy(() -> facade.saveWork(10L, "U10001", command))
-                .isInstanceOf(ApiException.class)
-                .extracting("apiCode")
-                .isEqualTo(ApiCode.INVALID_INCOME_FORMAT);
-    }
-
-    @Test
-    void rejectsInvalidPayday() {
-        var command = new ProfileServiceFacade.WorkSaveCommand(
-                "req-work-3",
-                1,
-                "PT Example",
-                "31",
-                "3171",
-                "317101",
-                "Jl. Thamrin",
-                "5000000",
-                32,
-                2,
-                sampleDevice()
-        );
-
-        assertThatThrownBy(() -> facade.saveWork(10L, "U10001", command))
-                .isInstanceOf(ApiException.class)
-                .extracting("apiCode")
-                .isEqualTo(ApiCode.INVALID_PAYDAY);
-    }
-
-    @Test
     void savesBankCardAndReturnsPassedWithMaskedNumber() {
         var result = facade.saveBankCard(10L, "U10001", sampleBankCardCommand("req-bank-1"));
 
@@ -301,7 +260,7 @@ class ProfileServiceFacadeTest {
         assertThat(result.verifyStatus()).isEqualTo("PASSED");
         assertThat(result.cardNoMasked()).isEqualTo("****7890");
         verify(profileSyncOrchestrator).syncNow(any());
-        verify(profileDeviceRepository).upsert(any());
+        verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
         verify(profileBankCardRepository).upsert(any());
     }
 
@@ -335,7 +294,9 @@ class ProfileServiceFacadeTest {
                         "PASSED",
                         null,
                         "COMPLETED",
-                        "req-other"
+                        "req-other",
+                        null,
+                        null
                 )
         ));
 
@@ -373,30 +334,12 @@ class ProfileServiceFacadeTest {
         );
     }
 
-    private static ProfileServiceFacade.WorkSaveCommand sampleWorkCommand(String requestId) {
-        return new ProfileServiceFacade.WorkSaveCommand(
-                requestId,
-                1,
-                "PT Example",
-                "31",
-                "3171",
-                "317101",
-                "Jl. Thamrin",
-                "5000000",
-                25,
-                2,
-                sampleDevice()
-        );
-    }
-
     private static ProfileServiceFacade.PersonalSaveCommand sampleCommand(String requestId) {
         return new ProfileServiceFacade.PersonalSaveCommand(
                 requestId,
-                "31",
-                "3171",
-                "317101",
-                "Jl. Example 1",
                 5,
+                16,
+                "5000000",
                 "Siti",
                 "user@example.com",
                 sampleDevice()

@@ -36,6 +36,33 @@ final class PendanaanHttpSupport {
         return value.length() <= 512 ? value : value.substring(0, 512);
     }
 
+    static String formatLogBody(String value, int maxBodyBytes) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        String sanitized = sanitizeLineBreaks(value);
+        if (sanitized.length() <= maxBodyBytes) {
+            return sanitized;
+        }
+        return sanitized.substring(0, maxBodyBytes)
+                + "...[truncated "
+                + (sanitized.length() - maxBodyBytes)
+                + " bytes]";
+    }
+
+    static String redactSensitiveJson(String value) {
+        if (value == null || value.isBlank()) {
+            return value == null ? null : "";
+        }
+        return value
+                .replaceAll("\"clientSecret\"\\s*:\\s*\"[^\"]*\"", "\"clientSecret\":\"***\"")
+                .replaceAll("\"accessToken\"\\s*:\\s*\"[^\"]*\"", "\"accessToken\":\"***\"");
+    }
+
+    private static String sanitizeLineBreaks(String value) {
+        return value.replace('\n', ' ').replace('\r', ' ');
+    }
+
     static String sha256Hex(String value) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -47,13 +74,10 @@ final class PendanaanHttpSupport {
     }
 
     static ApiException mapFailureCode(String responseCode) {
-        if ("A000145".equals(responseCode)) {
-            return new ApiException(ApiCode.LENDER_LOAN_AMOUNT_REJECTED);
-        }
         if ("999998".equals(responseCode) || "999999".equals(responseCode)) {
             return new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
-        return new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        return PendanaanLenderCodeMapper.toApiException(responseCode, null, false);
     }
 
     static void ensureSuccess(JsonNode envelope) {

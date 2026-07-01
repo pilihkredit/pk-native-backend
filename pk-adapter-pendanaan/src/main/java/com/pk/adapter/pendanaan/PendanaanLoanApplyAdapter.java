@@ -6,7 +6,7 @@ import com.pk.core.api.ApiException;
 import com.pk.core.loan.port.LenderLoanApplyPort;
 
 public class PendanaanLoanApplyAdapter implements LenderLoanApplyPort {
-    static final String APPLY_PATH = "/api/open/v1/loan/apply";
+    static final String APPLY_PATH = PendanaanOpenApiPaths.LOAN_APPLY;
     static final String BUSINESS_TYPE = "LOAN_APPLY";
 
     private final PendanaanHttpClient httpClient;

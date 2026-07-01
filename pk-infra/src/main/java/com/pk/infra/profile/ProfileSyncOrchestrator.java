@@ -8,8 +8,8 @@ public class ProfileSyncOrchestrator {
     }
 
     /** Synchronously upserts the saved module to the lender before returning to the client. */
-    public void scheduleAfterSave(ProfileSyncJob job) {
-        profileSyncHandler.syncOrThrow(job);
+    public com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult scheduleAfterSave(ProfileSyncJob job) {
+        return profileSyncHandler.syncOrThrow(job);
     }
 
     /** Same synchronous path as {@link #scheduleAfterSave}; used when lender validation must precede persist. */

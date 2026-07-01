@@ -4,7 +4,9 @@ import com.pk.core.profile.ProfileDeviceData;
 import java.util.Optional;
 
 public interface ProfileDeviceRepository {
-    Optional<ProfileDeviceData> findByProfileId(long profileId);
+    boolean existsByProfileId(long profileId);
 
-    void upsert(ProfileDeviceData data);
+    Optional<ProfileDeviceData> findByDeviceNo(String deviceNo);
+
+    void upsertByDeviceNo(ProfileDeviceData data);
 }

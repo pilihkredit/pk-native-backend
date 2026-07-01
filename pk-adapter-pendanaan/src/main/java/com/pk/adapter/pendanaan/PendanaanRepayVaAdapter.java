@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PendanaanRepayVaAdapter implements LenderRepayVaPort {
-    static final String VA_LIST_PATH = "/api/open/v1/repay/va/list";
-    static final String VA_DEFAULT_PATH = "/api/open/v1/repay/va/default";
+    static final String VA_LIST_PATH = PendanaanOpenApiPaths.REPAY_VA_LIST;
+    static final String VA_DEFAULT_PATH = PendanaanOpenApiPaths.REPAY_VA_DEFAULT;
     static final String BUSINESS_TYPE_LIST = "REPAY_VA_LIST";
     static final String BUSINESS_TYPE_DEFAULT = "REPAY_VA_DEFAULT";
 

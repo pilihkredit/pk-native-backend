@@ -15,7 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class PendanaanOAuthTokenProvider {
-    private static final String TOKEN_PATH = "/oauth/token";
+    private static final String TOKEN_PATH = PendanaanOpenApiPaths.OAUTH_TOKEN;
     private static final long EXPIRY_SKEW_SECONDS = 60;
 
     private final PendanaanProperties properties;
@@ -99,6 +99,7 @@ public class PendanaanOAuthTokenProvider {
             int durationMs = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - startedAt);
             PendanaanInteractionSupport.log(
                     interactionLogRepository,
+                    properties.logging(),
                     interactionNo,
                     "OAUTH_TOKEN",
                     null,

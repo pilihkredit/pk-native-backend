@@ -6,16 +6,12 @@ import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileBankCardData;
 import com.pk.core.profile.ProfileContactData;
 import com.pk.core.profile.ProfileContactsModuleData;
-import com.pk.core.profile.ProfileDeviceData;
 import com.pk.core.profile.ProfilePersonalData;
-import com.pk.core.profile.ProfileWorkData;
-import com.pk.core.profile.port.AreaHierarchyValidator;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
-import com.pk.core.profile.port.ProfileDeviceRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
-import com.pk.core.profile.port.ProfileWorkRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
@@ -30,38 +26,38 @@ public class ProfileServiceFacade {
     private static final int MIN_CONTACT_COUNT = 2;
 
     private final ProfilePersonalRepository profilePersonalRepository;
-    private final ProfileWorkRepository profileWorkRepository;
     private final ProfileContactRepository profileContactRepository;
     private final ProfileBankCardRepository profileBankCardRepository;
-    private final ProfileDeviceRepository profileDeviceRepository;
-    private final AreaHierarchyValidator areaHierarchyValidator;
+    private final UserDeviceWriter userDeviceWriter;
     private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private final ProfileEnumValidator profileEnumValidator;
     private final BankReferenceFacade bankReferenceFacade;
     private final ProfileSyncOrchestrator profileSyncOrchestrator;
+    private final OnboardingProgressFacade onboardingProgressFacade;
+    private final UserProfileBindingRepository userProfileBindingRepository;
 
     public ProfileServiceFacade(
             ProfilePersonalRepository profilePersonalRepository,
-            ProfileWorkRepository profileWorkRepository,
             ProfileContactRepository profileContactRepository,
             ProfileBankCardRepository profileBankCardRepository,
-            ProfileDeviceRepository profileDeviceRepository,
-            AreaHierarchyValidator areaHierarchyValidator,
+            UserDeviceWriter userDeviceWriter,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             ProfileEnumValidator profileEnumValidator,
             BankReferenceFacade bankReferenceFacade,
-            ProfileSyncOrchestrator profileSyncOrchestrator
+            ProfileSyncOrchestrator profileSyncOrchestrator,
+            OnboardingProgressFacade onboardingProgressFacade,
+            UserProfileBindingRepository userProfileBindingRepository
     ) {
         this.profilePersonalRepository = profilePersonalRepository;
-        this.profileWorkRepository = profileWorkRepository;
         this.profileContactRepository = profileContactRepository;
         this.profileBankCardRepository = profileBankCardRepository;
-        this.profileDeviceRepository = profileDeviceRepository;
-        this.areaHierarchyValidator = areaHierarchyValidator;
+        this.userDeviceWriter = userDeviceWriter;
         this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
         this.profileEnumValidator = profileEnumValidator;
         this.bankReferenceFacade = bankReferenceFacade;
         this.profileSyncOrchestrator = profileSyncOrchestrator;
+        this.onboardingProgressFacade = onboardingProgressFacade;
+        this.userProfileBindingRepository = userProfileBindingRepository;
     }
 
     public PersonalSaveResult savePersonal(long profileId, String partnerUserId, PersonalSaveCommand command) {
@@ -70,7 +66,11 @@ public class ProfileServiceFacade {
 
         var existing = profilePersonalRepository.findByProfileId(profileId);
         if (existing.isPresent() && command.requestId().equals(existing.get().lastRequestId())) {
-            return new PersonalSaveResult(command.requestId(), MODULE_COMPLETED);
+            return new PersonalSaveResult(
+                    command.requestId(),
+                    MODULE_COMPLETED,
+                    existing.get().lastLenderResponseJson()
+            );
         }
 
         EncryptedField motherSurname = sensitiveFieldEncryptor.encrypt(command.motherSurname().trim());
@@ -78,24 +78,25 @@ public class ProfileServiceFacade {
 
         profilePersonalRepository.upsert(new ProfilePersonalData(
                 profileId,
-                command.provinceCode().trim(),
-                command.cityCode().trim(),
-                command.districtCode().trim(),
-                command.address().trim(),
                 command.educationDegree(),
+                command.industry(),
+                command.income().trim(),
                 motherSurname,
                 normalizedEmail,
                 MODULE_COMPLETED,
-                command.requestId()
+                command.requestId(),
+                null,
+                null
         ));
 
-        persistLatestDevice(profileId, command.requestId(), command.device());
+        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
 
         if (normalizedEmail != null) {
             profilePersonalRepository.updateEmail(profileId, normalizedEmail);
         }
 
-        profileSyncOrchestrator.scheduleAfterSave(ProfileSyncJob.fromStoredModule(
+        com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult syncResult =
+                profileSyncOrchestrator.scheduleAfterSave(ProfileSyncJob.fromStoredModule(
                 profileId,
                 partnerUserId,
                 command.requestId(),
@@ -103,44 +104,13 @@ public class ProfileServiceFacade {
                 command.device()
         ));
 
-        return new PersonalSaveResult(command.requestId(), MODULE_COMPLETED);
-    }
+        refreshUserProfileMaster(profileId, partnerUserId);
 
-    public WorkSaveResult saveWork(long profileId, String partnerUserId, WorkSaveCommand command) {
-        validateWork(command);
-        ProfileSyncPayloadLoader.validateDevice(command.device());
-
-        var existing = profileWorkRepository.findByProfileId(profileId);
-        if (existing.isPresent() && command.requestId().equals(existing.get().lastRequestId())) {
-            return new WorkSaveResult(command.requestId(), MODULE_COMPLETED);
-        }
-
-        profileWorkRepository.upsert(new ProfileWorkData(
-                profileId,
-                command.industry(),
-                command.companyName().trim(),
-                command.workProvinceCode().trim(),
-                command.workCityCode().trim(),
-                command.workDistrictCode().trim(),
-                command.workAddress().trim(),
-                command.income().trim(),
-                command.payday(),
-                command.professionDegree(),
-                MODULE_COMPLETED,
-                command.requestId()
-        ));
-
-        persistLatestDevice(profileId, command.requestId(), command.device());
-
-        profileSyncOrchestrator.scheduleAfterSave(ProfileSyncJob.fromStoredModule(
-                profileId,
-                partnerUserId,
+        return new PersonalSaveResult(
                 command.requestId(),
-                ProfileSyncModule.WORK,
-                command.device()
-        ));
-
-        return new WorkSaveResult(command.requestId(), MODULE_COMPLETED);
+                MODULE_COMPLETED,
+                syncResult.responseDataJson()
+        );
     }
 
     public ContactsSaveResult saveContacts(
@@ -160,11 +130,11 @@ public class ProfileServiceFacade {
         List<ProfileContactData> contacts = toContactData(command.contacts());
         profileContactRepository.replaceContacts(
                 profileId,
-                new ProfileContactsModuleData(profileId, MODULE_COMPLETED, command.requestId()),
+                new ProfileContactsModuleData(profileId, MODULE_COMPLETED, command.requestId(), null, null),
                 contacts
         );
 
-        persistLatestDevice(profileId, command.requestId(), command.device());
+        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
 
         profileSyncOrchestrator.scheduleAfterSave(ProfileSyncJob.fromStoredModule(
                 profileId,
@@ -173,6 +143,8 @@ public class ProfileServiceFacade {
                 ProfileSyncModule.CONTACT,
                 command.device()
         ));
+
+        refreshUserProfileMaster(profileId, partnerUserId);
 
         return new ContactsSaveResult(command.requestId(), MODULE_COMPLETED);
     }
@@ -192,17 +164,6 @@ public class ProfileServiceFacade {
             throw new ApiException(ApiCode.BANK_CARD_ALREADY_BOUND);
         }
 
-        profileSyncOrchestrator.syncNow(new ProfileSyncJob(
-                profileId,
-                partnerUserId,
-                command.requestId(),
-                ProfileSyncModule.BANK_CARD,
-                command.device(),
-                new ProfileSyncPayload.BankCardProfilePayload(command.bankCode().trim(), normalizedCardNumber)
-        ));
-
-        persistLatestDevice(profileId, command.requestId(), command.device());
-
         EncryptedField encryptedCardNumber = sensitiveFieldEncryptor.encrypt(normalizedCardNumber);
         profileBankCardRepository.upsert(new ProfileBankCardData(
                 profileId,
@@ -212,8 +173,23 @@ public class ProfileServiceFacade {
                 CardNumberSupport.VERIFY_PASSED,
                 null,
                 MODULE_COMPLETED,
-                command.requestId()
+                command.requestId(),
+                null,
+                null
         ));
+
+        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
+
+        profileSyncOrchestrator.syncNow(new ProfileSyncJob(
+                profileId,
+                partnerUserId,
+                command.requestId(),
+                ProfileSyncModule.BANK_CARD,
+                command.device(),
+                new ProfileSyncPayload.BankCardProfilePayload(command.bankCode().trim(), normalizedCardNumber)
+        ));
+
+        refreshUserProfileMaster(profileId, partnerUserId);
 
         return toBankCardSaveResult(command.requestId(), normalizedCardNumber);
     }
@@ -312,44 +288,11 @@ public class ProfileServiceFacade {
         if (command.requestId() == null || command.requestId().isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        if (command.address() == null || command.address().isBlank()) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        areaHierarchyValidator.validateResidentialHierarchy(
-                command.provinceCode(),
-                command.cityCode(),
-                command.districtCode()
-        );
         profileEnumValidator.validateEducationDegree(command.educationDegree());
+        profileEnumValidator.validateIndustry(command.industry());
+        IncomeValidator.validate(command.income());
         MotherSurnameValidator.validate(command.motherSurname());
         UserEmailValidator.validateOptional(command.userEmail());
-    }
-
-    private void validateWork(WorkSaveCommand command) {
-        if (command.requestId() == null || command.requestId().isBlank()) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        profileEnumValidator.validateIndustry(command.industry());
-        if (command.companyName() == null || command.companyName().isBlank()) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        if (command.companyName().trim().length() > 128) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        areaHierarchyValidator.validateResidentialHierarchy(
-                command.workProvinceCode(),
-                command.workCityCode(),
-                command.workDistrictCode()
-        );
-        if (command.workAddress() == null || command.workAddress().isBlank()) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        if (command.workAddress().trim().length() > 512) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        IncomeValidator.validate(command.income());
-        PaydayValidator.validate(command.payday());
-        profileEnumValidator.validateProfessionDegree(command.professionDegree());
     }
 
     private static String normalizeEmail(String userEmail) {
@@ -359,59 +302,35 @@ public class ProfileServiceFacade {
         return userEmail.trim();
     }
 
-    private void persistLatestDevice(long profileId, String requestId, LenderDeviceContext device) {
-        profileDeviceRepository.upsert(new ProfileDeviceData(
-                profileId,
-                device.deviceNo().trim(),
-                device.systemPlatform().trim().toLowerCase(),
-                device.resolvedClientAppName(),
-                device.appVersion().trim(),
-                device.packageName().trim(),
-                normalizeOptional(device.adId()),
-                device.deviceOtherInfo(),
-                requestId
-        ));
+    private void persistDevice(
+            long profileId,
+            String partnerUserId,
+            String requestId,
+            LenderDeviceContext device
+    ) {
+        userDeviceWriter.upsertFromRequest(profileId, partnerUserId, requestId, device);
     }
 
-    private static String normalizeOptional(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim();
+    private void refreshUserProfileMaster(long profileId, String partnerUserId) {
+        OnboardingProgressFacade.OnboardingProgressResult progress = onboardingProgressFacade.getProgress(
+                profileId,
+                partnerUserId
+        );
+        userProfileBindingRepository.updateKycStatus(profileId, progress.kycStatus());
     }
 
     public record PersonalSaveCommand(
             String requestId,
-            String provinceCode,
-            String cityCode,
-            String districtCode,
-            String address,
             Integer educationDegree,
+            Integer industry,
+            String income,
             String motherSurname,
             String userEmail,
             LenderDeviceContext device
     ) {
     }
 
-    public record PersonalSaveResult(String requestId, String moduleStatus) {
-    }
-
-    public record WorkSaveCommand(
-            String requestId,
-            Integer industry,
-            String companyName,
-            String workProvinceCode,
-            String workCityCode,
-            String workDistrictCode,
-            String workAddress,
-            String income,
-            Integer payday,
-            Integer professionDegree,
-            LenderDeviceContext device
-    ) {
-    }
-
-    public record WorkSaveResult(String requestId, String moduleStatus) {
+    public record PersonalSaveResult(String requestId, String moduleStatus, String lenderResponseJson) {
     }
 
     public record ContactItemCommand(

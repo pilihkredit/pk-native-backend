@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PendanaanRepayTrialAdapter implements LenderRepayTrialPort {
-    static final String REPAY_TRIAL_PATH = "/api/open/v1/repay/trial";
-    static final String REPAY_TRIAL_BATCH_PATH = "/api/open/v1/repay/trial/batch";
+    static final String REPAY_TRIAL_PATH = PendanaanOpenApiPaths.REPAY_TRIAL;
+    static final String REPAY_TRIAL_BATCH_PATH = PendanaanOpenApiPaths.REPAY_TRIAL_BATCH;
     static final String BUSINESS_TYPE_TRIAL = "REPAY_TRIAL";
     static final String BUSINESS_TYPE_TRIAL_BATCH = "REPAY_TRIAL_BATCH";
 
