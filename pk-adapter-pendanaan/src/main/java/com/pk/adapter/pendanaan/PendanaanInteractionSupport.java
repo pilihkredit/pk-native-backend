@@ -26,29 +26,33 @@ final class PendanaanInteractionSupport {
             String responseMsg,
             String responseText,
             boolean success,
-            int durationMs
+            int durationMs,
+            Integer httpStatus
     ) {
         String redactedRequest = PendanaanHttpSupport.redactSensitiveJson(requestBody);
         String redactedResponse = PendanaanHttpSupport.redactSensitiveJson(responseText);
+        int requestBytes = PendanaanHttpSupport.requestBodyBytes(requestBody);
         if (logging != null && logging.enabled()) {
             log.info(
-                    "Lender request provider={} interactionNo={} businessType={} businessId={} method={} endpoint={} body={}",
+                    "Lender request provider={} interactionNo={} businessType={} businessId={} method={} endpoint={} requestBytes={} body={}",
                     PROVIDER_CODE,
                     interactionNo,
                     businessType,
                     businessId,
                     method,
                     endpoint,
+                    requestBytes,
                     PendanaanHttpSupport.formatLogBody(redactedRequest, logging.maxBodyBytes())
             );
             log.info(
-                    "Lender response provider={} interactionNo={} businessType={} businessId={} method={} endpoint={} code={} msg={} success={} durationMs={} body={}",
+                    "Lender response provider={} interactionNo={} businessType={} businessId={} method={} endpoint={} httpStatus={} code={} msg={} success={} durationMs={} body={}",
                     PROVIDER_CODE,
                     interactionNo,
                     businessType,
                     businessId,
                     method,
                     endpoint,
+                    httpStatus == null ? "" : httpStatus,
                     responseCode,
                     responseMsg,
                     success,

@@ -116,6 +116,53 @@ final class PendanaanHttpSupport {
         return value.replace('\n', ' ').replace('\r', ' ');
     }
 
+    static String formatTransportFailure(Throwable throwable) {
+        if (throwable == null) {
+            return "";
+        }
+        Throwable root = throwable;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        String className = root.getClass().getSimpleName();
+        String message = root.getMessage();
+        if (message == null || message.isBlank()) {
+            return className;
+        }
+        return className + ": " + sanitizeLineBreaks(message);
+    }
+
+    static int requestBodyBytes(String requestBody) {
+        if (requestBody == null || requestBody.isEmpty()) {
+            return 0;
+        }
+        return requestBody.getBytes(StandardCharsets.UTF_8).length;
+    }
+
+    static void applyTransportFailureForLog(InteractionOutcome outcome) {
+        if (outcome.success || !outcome.responseText.isEmpty()) {
+            return;
+        }
+        if (outcome.transportFailure != null && !outcome.transportFailure.isBlank()) {
+            outcome.responseCode = "TRANSPORT_ERROR";
+            outcome.responseMsg = outcome.transportFailure;
+            return;
+        }
+        if (outcome.httpStatus != null) {
+            outcome.responseCode = "HTTP_" + outcome.httpStatus;
+            outcome.responseMsg = "HTTP status " + outcome.httpStatus + " with empty body";
+        }
+    }
+
+    static final class InteractionOutcome {
+        String responseText = "";
+        String responseCode = "";
+        String responseMsg = "";
+        boolean success = false;
+        String transportFailure = "";
+        Integer httpStatus;
+    }
+
     static String sha256Hex(String value) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

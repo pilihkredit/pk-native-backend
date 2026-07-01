@@ -58,52 +58,36 @@ public class PendanaanHttpClient {
         String requestBody = jsonBody == null ? "" : jsonBody;
         String interactionNo = UUID.randomUUID().toString();
         long startedAt = System.currentTimeMillis();
-        String responseText = "";
-        String responseCode = "";
-        String responseMsg = "";
-        boolean success = false;
+        PendanaanHttpSupport.InteractionOutcome outcome = new PendanaanHttpSupport.InteractionOutcome();
         try {
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .uri(URI.create(endpoint))
-                    .timeout(Duration.ofMillis(properties.readTimeoutMs()))
-                    .header("Authorization", "Bearer " + tokenProvider.getAccessToken());
-            if ("POST".equals(method)) {
-                builder.header("Content-Type", "application/json");
-                builder.POST(HttpRequest.BodyPublishers.ofString(requestBody));
-            } else {
-                builder.GET();
-            }
-            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            responseText = response.body() == null ? "" : response.body();
-            JsonNode envelope = objectMapper.readTree(responseText);
-            responseCode = PendanaanHttpSupport.textOrEmpty(envelope.get("code"));
-            responseMsg = PendanaanHttpSupport.textOrEmpty(envelope.get("msg"));
+            HttpResponse<String> response = send(method, endpoint, requestBody);
+            outcome.httpStatus = response.statusCode();
+            outcome.responseText = response.body() == null ? "" : response.body();
+            JsonNode envelope = objectMapper.readTree(outcome.responseText);
+            outcome.responseCode = PendanaanHttpSupport.textOrEmpty(envelope.get("code"));
+            outcome.responseMsg = PendanaanHttpSupport.textOrEmpty(envelope.get("msg"));
             PendanaanHttpSupport.ensureSuccess(envelope);
-            success = true;
+            outcome.success = true;
             return envelope.get("data");
         } catch (ApiException exception) {
             throw exception;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
+            outcome.transportFailure = PendanaanHttpSupport.formatTransportFailure(exception);
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         } catch (Exception exception) {
+            outcome.transportFailure = PendanaanHttpSupport.formatTransportFailure(exception);
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         } finally {
-            int durationMs = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - startedAt);
-            PendanaanInteractionSupport.log(
-                    interactionLogRepository,
-                    properties.logging(),
+            logInteraction(
                     interactionNo,
                     businessType,
                     businessId,
                     method,
                     endpoint,
                     requestBody,
-                    responseCode,
-                    responseMsg,
-                    responseText,
-                    success,
-                    durationMs
+                    outcome,
+                    startedAt
             );
         }
     }
@@ -120,52 +104,81 @@ public class PendanaanHttpClient {
         String requestBody = jsonBody == null ? "" : jsonBody;
         String interactionNo = UUID.randomUUID().toString();
         long startedAt = System.currentTimeMillis();
-        String responseText = "";
-        String responseCode = "";
-        String responseMsg = "";
-        boolean success = false;
+        PendanaanHttpSupport.InteractionOutcome outcome = new PendanaanHttpSupport.InteractionOutcome();
         try {
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .uri(URI.create(endpoint))
-                    .timeout(Duration.ofMillis(properties.readTimeoutMs()))
-                    .header("Authorization", "Bearer " + tokenProvider.getAccessToken());
-            if ("POST".equals(method)) {
-                builder.header("Content-Type", "application/json");
-                builder.POST(HttpRequest.BodyPublishers.ofString(requestBody));
-            } else {
-                builder.GET();
-            }
-            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            responseText = response.body() == null ? "" : response.body();
-            JsonNode envelope = objectMapper.readTree(responseText);
-            responseCode = PendanaanHttpSupport.textOrEmpty(envelope.get("code"));
-            responseMsg = PendanaanHttpSupport.textOrEmpty(envelope.get("msg"));
-            success = ApiCode.SUCCESS.code().equals(responseCode);
+            HttpResponse<String> response = send(method, endpoint, requestBody);
+            outcome.httpStatus = response.statusCode();
+            outcome.responseText = response.body() == null ? "" : response.body();
+            JsonNode envelope = objectMapper.readTree(outcome.responseText);
+            outcome.responseCode = PendanaanHttpSupport.textOrEmpty(envelope.get("code"));
+            outcome.responseMsg = PendanaanHttpSupport.textOrEmpty(envelope.get("msg"));
+            outcome.success = ApiCode.SUCCESS.code().equals(outcome.responseCode);
             return envelope;
         } catch (ApiException exception) {
             throw exception;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
+            outcome.transportFailure = PendanaanHttpSupport.formatTransportFailure(exception);
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         } catch (Exception exception) {
+            outcome.transportFailure = PendanaanHttpSupport.formatTransportFailure(exception);
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         } finally {
-            int durationMs = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - startedAt);
-            PendanaanInteractionSupport.log(
-                    interactionLogRepository,
-                    properties.logging(),
+            logInteraction(
                     interactionNo,
                     businessType,
                     businessId,
                     method,
                     endpoint,
                     requestBody,
-                    responseCode,
-                    responseMsg,
-                    responseText,
-                    success,
-                    durationMs
+                    outcome,
+                    startedAt
             );
         }
+    }
+
+    private HttpResponse<String> send(String method, String endpoint, String requestBody)
+            throws java.io.IOException, InterruptedException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(endpoint))
+                .timeout(Duration.ofMillis(properties.readTimeoutMs()))
+                .header("Authorization", "Bearer " + tokenProvider.getAccessToken());
+        if ("POST".equals(method)) {
+            builder.header("Content-Type", "application/json");
+            builder.POST(HttpRequest.BodyPublishers.ofString(requestBody));
+        } else {
+            builder.GET();
+        }
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private void logInteraction(
+            String interactionNo,
+            String businessType,
+            String businessId,
+            String method,
+            String endpoint,
+            String requestBody,
+            PendanaanHttpSupport.InteractionOutcome outcome,
+            long startedAt
+    ) {
+        PendanaanHttpSupport.applyTransportFailureForLog(outcome);
+        int durationMs = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - startedAt);
+        PendanaanInteractionSupport.log(
+                interactionLogRepository,
+                properties.logging(),
+                interactionNo,
+                businessType,
+                businessId,
+                method,
+                endpoint,
+                requestBody,
+                outcome.responseCode,
+                outcome.responseMsg,
+                outcome.responseText,
+                outcome.success,
+                durationMs,
+                outcome.httpStatus
+        );
     }
 }

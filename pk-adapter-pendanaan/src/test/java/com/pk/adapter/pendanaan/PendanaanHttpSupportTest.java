@@ -23,6 +23,23 @@ class PendanaanHttpSupportTest {
     }
 
     @Test
+    void formatsTransportFailureMessage() {
+        assertThat(PendanaanHttpSupport.formatTransportFailure(new java.net.http.HttpTimeoutException("request timed out")))
+                .isEqualTo("HttpTimeoutException: request timed out");
+    }
+
+    @Test
+    void appliesTransportFailureToEmptyResponseOutcome() {
+        PendanaanHttpSupport.InteractionOutcome outcome = new PendanaanHttpSupport.InteractionOutcome();
+        outcome.transportFailure = "HttpTimeoutException: request timed out";
+
+        PendanaanHttpSupport.applyTransportFailureForLog(outcome);
+
+        assertThat(outcome.responseCode).isEqualTo("TRANSPORT_ERROR");
+        assertThat(outcome.responseMsg).contains("HttpTimeoutException");
+    }
+
+    @Test
     void truncatesLogBodyWhenExceedingLimit() {
         String body = "x".repeat(20);
 
