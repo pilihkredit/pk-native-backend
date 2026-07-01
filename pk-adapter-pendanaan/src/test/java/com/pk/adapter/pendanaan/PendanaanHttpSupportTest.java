@@ -6,17 +6,20 @@ import org.junit.jupiter.api.Test;
 
 class PendanaanHttpSupportTest {
     @Test
-    void redactsClientSecretAndAccessToken() {
+    void previewsClientSecretAccessTokenAndImageFields() {
+        String longSecret = "s".repeat(120);
+        String longToken = "t".repeat(120);
+        String longImage = "i".repeat(120);
         String payload = """
-                {"clientId":"id","clientSecret":"secret","data":{"accessToken":"jwt-token"}}
-                """;
+                {"clientId":"id","clientSecret":"%s","data":{"accessToken":"%s"},"identity":{"faceBase64":"%s","name":"Alice"}}
+                """.formatted(longSecret, longToken, longImage);
 
         String redacted = PendanaanHttpSupport.redactSensitiveJson(payload);
 
-        assertThat(redacted).contains("\"clientSecret\":\"***\"");
-        assertThat(redacted).doesNotContain("secret");
-        assertThat(redacted).contains("\"accessToken\":\"***\"");
-        assertThat(redacted).doesNotContain("jwt-token");
+        assertThat(redacted).contains("\"clientSecret\":\"" + "s".repeat(100) + "...[truncated]\"");
+        assertThat(redacted).contains("\"accessToken\":\"" + "t".repeat(100) + "...[truncated]\"");
+        assertThat(redacted).contains("\"faceBase64\":\"" + "i".repeat(100) + "...[truncated]\"");
+        assertThat(redacted).contains("\"name\":\"Alice\"");
     }
 
     @Test

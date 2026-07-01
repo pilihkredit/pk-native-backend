@@ -2,6 +2,7 @@ package com.pk.adapter.pendanaan;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.profile.sync.ProfileSyncModule;
@@ -9,8 +10,23 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Set;
 
 final class PendanaanHttpSupport {
+    private static final int SENSITIVE_PREVIEW_LENGTH = 100;
+    private static final ObjectMapper LOG_MAPPER = new ObjectMapper();
+    private static final Set<String> SENSITIVE_LOG_FIELDS = Set.of(
+            "clientSecret",
+            "accessToken",
+            "token",
+            "refreshToken",
+            "faceBase64",
+            "idCardBase64",
+            "imageBase64",
+            "faceImageBase64",
+            "idCardImageBase64"
+    );
+
     private PendanaanHttpSupport() {
     }
 
@@ -55,9 +71,45 @@ final class PendanaanHttpSupport {
         if (value == null || value.isBlank()) {
             return value == null ? null : "";
         }
-        return value
-                .replaceAll("\"clientSecret\"\\s*:\\s*\"[^\"]*\"", "\"clientSecret\":\"***\"")
-                .replaceAll("\"accessToken\"\\s*:\\s*\"[^\"]*\"", "\"accessToken\":\"***\"");
+        try {
+            JsonNode root = LOG_MAPPER.readTree(value);
+            redactSensitiveNode(root);
+            return LOG_MAPPER.writeValueAsString(root);
+        } catch (Exception exception) {
+            return previewSensitiveValue(value);
+        }
+    }
+
+    private static void redactSensitiveNode(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node.isObject()) {
+            ObjectNode objectNode = (ObjectNode) node;
+            objectNode.fieldNames().forEachRemaining(field -> {
+                JsonNode child = objectNode.get(field);
+                if (child != null && child.isTextual() && SENSITIVE_LOG_FIELDS.contains(field)) {
+                    objectNode.put(field, previewSensitiveValue(child.asText()));
+                } else {
+                    redactSensitiveNode(child);
+                }
+            });
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(PendanaanHttpSupport::redactSensitiveNode);
+        }
+    }
+
+    private static String previewSensitiveValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = sanitizeLineBreaks(value);
+        if (normalized.length() <= SENSITIVE_PREVIEW_LENGTH) {
+            return normalized;
+        }
+        return normalized.substring(0, SENSITIVE_PREVIEW_LENGTH) + "...[truncated]";
     }
 
     private static String sanitizeLineBreaks(String value) {
