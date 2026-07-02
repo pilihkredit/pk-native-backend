@@ -113,6 +113,13 @@
         WHERE id = #{id}
     </update>
 
+    <update id="updateLastLenderAudit">
+        UPDATE credit_application
+        SET last_lender_request_json = #{requestJson},
+            last_lender_response_json = #{responseJson}
+        WHERE id = #{id}
+    </update>
+
     <select id="findDueForPoll" resultMap="creditApplicationRecordMap">
         SELECT <include refid="creditApplicationColumns"/>
         FROM credit_application

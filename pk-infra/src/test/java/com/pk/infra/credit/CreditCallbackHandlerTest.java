@@ -72,6 +72,7 @@ class CreditCallbackHandlerTest {
                 eq("CREDIT_CALLBACK"),
                 eq("LENDER_CALLBACK")
         );
+        verify(creditApplicationRepository).updateLastLenderAudit(10L, null, "{}");
         verify(callbackEventRepository).markProcessed(eq(1L), any(Instant.class));
     }
 

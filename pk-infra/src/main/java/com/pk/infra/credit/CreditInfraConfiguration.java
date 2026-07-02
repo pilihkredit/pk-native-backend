@@ -64,10 +64,12 @@ public class CreditInfraConfiguration {
 
     @Bean
     CreditStatusPollHandler creditStatusPollHandler(
+            CreditApplicationRepository creditApplicationRepository,
             LenderCreditPort lenderCreditPort,
             CreditLenderStatusApplier creditLenderStatusApplier
     ) {
         return new CreditStatusPollHandler(
+                creditApplicationRepository,
                 lenderCreditPort,
                 creditLenderStatusApplier
         );

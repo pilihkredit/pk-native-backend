@@ -40,5 +40,11 @@ public interface CreditApplicationMapper {
 
     int updateFreezeEndAt(@Param("id") long id, @Param("freezeEndAt") Instant freezeEndAt);
 
+    int updateLastLenderAudit(
+            @Param("id") long id,
+            @Param("requestJson") String requestJson,
+            @Param("responseJson") String responseJson
+    );
+
     List<CreditApplicationRecord> findDueForPoll(@Param("limit") int limit);
 }

@@ -22,7 +22,12 @@ public interface LenderCreditPort {
     ) {
     }
 
-    record LenderCreditApplyResult(String creditApplyNo, String externalUserId) {
+    record LenderCreditApplyResult(
+            String creditApplyNo,
+            String externalUserId,
+            String requestJson,
+            String responseDataJson
+    ) {
     }
 
     record LenderCreditStatusResult(
@@ -34,7 +39,9 @@ public interface LenderCreditPort {
             BigDecimal riskMaxLimit,
             BigDecimal psychologicalCreditLimit,
             BigDecimal fakeCreditLimit,
-            BigDecimal borrowAmtStepSize
+            BigDecimal borrowAmtStepSize,
+            String requestJson,
+            String responseDataJson
     ) {
     }
 }

@@ -47,6 +47,14 @@ public class CreditApplyHandler {
                 )
         );
 
+        if (result.responseDataJson() != null) {
+            creditApplicationRepository.updateLastLenderAudit(
+                    job.creditApplicationId(),
+                    result.requestJson(),
+                    result.responseDataJson()
+            );
+        }
+
         creditApplicationRepository.markSubmitted(
                 job.creditApplicationId(),
                 result.creditApplyNo(),

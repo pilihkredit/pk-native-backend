@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 public class FakePendanaanCreditAdapter implements LenderCreditPort {
     @Override
     public LenderCreditApplyResult apply(LenderCreditApplyCommand command) {
-        return new LenderCreditApplyResult("CA-FAKE-" + command.applyId(), "USR-FAKE");
+        return new LenderCreditApplyResult("CA-FAKE-" + command.applyId(), "USR-FAKE", null, null);
     }
 
     @Override
@@ -20,7 +20,9 @@ public class FakePendanaanCreditAdapter implements LenderCreditPort {
                 new BigDecimal("3000000"),
                 new BigDecimal("2500000"),
                 new BigDecimal("2800000"),
-                new BigDecimal("100000")
+                new BigDecimal("100000"),
+                null,
+                null
         );
     }
 }

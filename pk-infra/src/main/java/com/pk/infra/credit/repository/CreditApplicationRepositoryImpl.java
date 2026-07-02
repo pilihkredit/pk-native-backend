@@ -67,6 +67,11 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
     }
 
     @Override
+    public void updateLastLenderAudit(long id, String requestJson, String responseJson) {
+        creditApplicationMapper.updateLastLenderAudit(id, requestJson, responseJson);
+    }
+
+    @Override
     public List<CreditApplicationRecord> findDueForPoll(int limit) {
         return creditApplicationMapper.findDueForPoll(limit);
     }

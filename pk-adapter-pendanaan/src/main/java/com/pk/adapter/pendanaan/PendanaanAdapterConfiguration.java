@@ -72,9 +72,9 @@ public class PendanaanAdapterConfiguration {
     }
 
     @Bean
-    LenderCreditPort lenderCreditPort(PendanaanHttpStack httpStack) {
+    LenderCreditPort lenderCreditPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
         if (httpStack.enabled()) {
-            return new PendanaanCreditAdapter(httpStack.requireHttpClient());
+            return new PendanaanCreditAdapter(httpStack.requireHttpClient(), objectMapper);
         }
         return new FakePendanaanCreditAdapter();
     }

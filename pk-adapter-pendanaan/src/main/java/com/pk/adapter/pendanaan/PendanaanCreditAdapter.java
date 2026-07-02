@@ -1,6 +1,7 @@
 package com.pk.adapter.pendanaan;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.credit.port.LenderCreditPort;
@@ -13,9 +14,11 @@ public class PendanaanCreditAdapter implements LenderCreditPort {
     static final String BUSINESS_TYPE_STATUS = "CREDIT_APPLY_STATUS";
 
     private final PendanaanHttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
-    public PendanaanCreditAdapter(PendanaanHttpClient httpClient) {
+    public PendanaanCreditAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
         this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -37,7 +40,9 @@ public class PendanaanCreditAdapter implements LenderCreditPort {
         }
         return new LenderCreditApplyResult(
                 PendanaanHttpSupport.textOrEmpty(data.get("creditApplyNo")),
-                textOrNull(data.get("userId"))
+                textOrNull(data.get("userId")),
+                requestBody,
+                serializeResponseData(data)
         );
     }
 
@@ -59,8 +64,21 @@ public class PendanaanCreditAdapter implements LenderCreditPort {
                 decimalOrNull(data.get("riskMaxLimit")),
                 decimalOrNull(data.get("psychologicalCreditLimit")),
                 decimalOrNull(data.get("fakeCreditLimit")),
-                decimalOrNull(data.get("borrowAmtStepSize"))
+                decimalOrNull(data.get("borrowAmtStepSize")),
+                requestBody,
+                serializeResponseData(data)
         );
+    }
+
+    private String serializeResponseData(JsonNode data) {
+        if (data == null || data.isNull()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(data);
+        } catch (Exception exception) {
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+        }
     }
 
     private static String textOrNull(JsonNode node) {

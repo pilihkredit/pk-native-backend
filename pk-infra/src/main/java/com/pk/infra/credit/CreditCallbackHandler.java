@@ -51,8 +51,17 @@ public class CreditCallbackHandler {
                 parsed.riskMaxLimit(),
                 parsed.psychologicalCreditLimit(),
                 parsed.fakeCreditLimit(),
-                parsed.borrowAmtStepSize()
+                parsed.borrowAmtStepSize(),
+                null,
+                null
         );
+        if (callbackEvent.payloadJson() != null && !callbackEvent.payloadJson().isBlank()) {
+            creditApplicationRepository.updateLastLenderAudit(
+                    application.get().id(),
+                    null,
+                    callbackEvent.payloadJson()
+            );
+        }
         creditLenderStatusApplier.apply(application.get(), status, SOURCE, LIMIT_SOURCE);
         callbackEventRepository.markProcessed(callbackEvent.id(), now);
     }

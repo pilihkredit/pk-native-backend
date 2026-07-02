@@ -23,6 +23,8 @@ public interface CreditApplicationRepository {
 
     void updateFreezeEndAt(long id, Instant freezeEndAt);
 
+    void updateLastLenderAudit(long id, String requestJson, String responseJson);
+
     List<CreditApplicationRecord> findDueForPoll(int limit);
 
     record CreditApplicationInsert(
