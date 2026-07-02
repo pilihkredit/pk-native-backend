@@ -157,4 +157,32 @@ Never commit `target/`, IDE folders (`.idea/`, `.vscode/`, `.cursor/`), logs, or
 - Java 21
 - Spring Boot 3.3.5
 - Maven multi-module + Maven Wrapper
+- **MyBatis 3** (pure, SQL in XML) — migrating from Spring `JdbcTemplate`
 - Aliyun RDS MySQL 8.0 (target)
+
+## Persistence (MyBatis)
+
+Data access lives in `pk-infra`. Domain ports stay in `pk-core`; implementations use MyBatis.
+
+```
+pk-infra/
+  src/main/java/com/pk/infra/
+    {domain}/
+      mapper/          # MyBatis @Mapper interfaces (no SQL here)
+        XxxMapper.java
+      repository/      # Port implementations (@Repository)
+        XxxRepositoryImpl.java
+    mybatis/
+      config/MybatisInfraConfiguration.java   # @MapperScan("com.pk.infra.**.mapper")
+      typehandler/InstantTypeHandler.java
+      typehandler/BooleanTinyintTypeHandler.java
+  src/main/resources/
+    application.yml    # mybatis.mapper-locations, type-handlers-package
+    mapper/
+      {domain}/
+        XxxMapper.xml  # All SQL statements
+```
+
+**Call chain (unchanged):** `Facade` → `pk-core` Port → `{domain}.repository.*RepositoryImpl` → `{domain}.mapper.*Mapper` → XML
+
+**Migration status:** All `pk-infra` database repositories use MyBatis. `DatabaseConnectionChecker` still uses `JdbcTemplate` for health `SELECT 1` only.

@@ -127,7 +127,7 @@ public class ProfileInfraConfiguration {
             com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
             com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
             OnboardingProgressFacade onboardingProgressFacade,
-            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate,
+            com.pk.infra.profile.mapper.UserIdentityAssetMapper userIdentityAssetMapper,
             com.pk.infra.ocr.OcrProperties ocrProperties,
             ObjectMapper objectMapper
     ) {
@@ -141,7 +141,7 @@ public class ProfileInfraConfiguration {
                 profileVersionRepository,
                 userProfileBindingRepository,
                 onboardingProgressFacade,
-                jdbcTemplate,
+                userIdentityAssetMapper,
                 ocrProperties,
                 objectMapper
         );

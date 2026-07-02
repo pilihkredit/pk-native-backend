@@ -28,6 +28,7 @@
         <spring.boot.version>3.3.5</spring.boot.version>
         <junit.version>5.10.5</junit.version>
         <nimbus.jose.jwt.version>9.40</nimbus.jose.jwt.version>
+        <mybatis-spring-boot.version>3.0.4</mybatis-spring-boot.version>
     </properties>
 
     <dependencyManagement>
@@ -50,6 +51,11 @@
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
                 <version>${nimbus.jose.jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis-spring-boot.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
