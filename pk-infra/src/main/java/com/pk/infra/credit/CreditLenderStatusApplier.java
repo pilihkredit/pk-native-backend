@@ -31,7 +31,6 @@ public class CreditLenderStatusApplier {
             String source,
             String limitSource
     ) {
-        String nextStatus = CreditExternalStatusMapper.mapLenderStatus(status.externalStatus());
         if (CreditApplicationStatus.isTerminal(record.status())) {
             return;
         }
@@ -54,6 +53,14 @@ public class CreditLenderStatusApplier {
                 status.responseDataJson(),
                 Instant.now()
         ));
+        if (!hasExternalStatus(status.externalStatus())) {
+            creditApplicationRepository.scheduleNextPoll(
+                    record.id(),
+                    Instant.now().plusSeconds(creditApplyProperties.pollIntervalSeconds())
+            );
+            return;
+        }
+        String nextStatus = CreditExternalStatusMapper.mapLenderStatus(status.externalStatus());
         if (!nextStatus.equals(record.status())) {
             creditApplicationRepository.updateStatus(
                     record.id(),
@@ -85,5 +92,9 @@ public class CreditLenderStatusApplier {
                     Instant.now().plusSeconds(creditApplyProperties.pollIntervalSeconds())
             );
         }
+    }
+
+    private static boolean hasExternalStatus(String externalStatus) {
+        return externalStatus != null && !externalStatus.isBlank();
     }
 }
