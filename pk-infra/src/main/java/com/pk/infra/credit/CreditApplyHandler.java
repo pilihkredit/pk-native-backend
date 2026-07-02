@@ -2,7 +2,6 @@ package com.pk.infra.credit;
 
 import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
 import com.pk.core.credit.port.CreditStatusHistoryRepository;
 import com.pk.core.credit.port.LenderCreditPort;
 import java.time.Instant;

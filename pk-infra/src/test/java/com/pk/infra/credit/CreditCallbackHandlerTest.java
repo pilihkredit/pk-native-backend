@@ -97,6 +97,7 @@ class CreditCallbackHandlerTest {
                 "req-1",
                 CreditProviderCode.PENDANAAN,
                 1L,
+                "partner-1",
                 "81234567890",
                 2L,
                 null,

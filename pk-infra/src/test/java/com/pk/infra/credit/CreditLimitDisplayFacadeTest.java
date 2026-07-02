@@ -8,7 +8,7 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.loan.LenderRepayMethod;
 import com.pk.infra.loan.LoanProductFacade;
 import java.math.BigDecimal;
@@ -26,7 +26,7 @@ class CreditLimitDisplayFacadeTest {
     @Mock
     private CreditApplicationRepository creditApplicationRepository;
     @Mock
-    private CreditLimitSnapshotRepository creditLimitSnapshotRepository;
+    private CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
     @Mock
     private LoanProductFacade loanProductFacade;
 
@@ -36,7 +36,7 @@ class CreditLimitDisplayFacadeTest {
     void setUp() {
         facade = new CreditLimitDisplayFacade(
                 creditApplicationRepository,
-                creditLimitSnapshotRepository,
+                creditLenderStatusQueryRepository,
                 loanProductFacade
         );
     }
@@ -45,8 +45,8 @@ class CreditLimitDisplayFacadeTest {
     void usesFakeLimitAsDefaultForUniformRepayMethod() {
         when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(Optional.of(approvedRecord()));
-        when(creditLimitSnapshotRepository.findByCreditApplicationId(100L))
-                .thenReturn(Optional.of(limitSnapshot()));
+        when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+                .thenReturn(Optional.of(statusQuery()));
         when(loanProductFacade.findRepayMethod(1L, "APPLY-1", "RP001"))
                 .thenReturn(new LenderRepayMethod("RP001", "D", 30, 6, 180, 0, List.of()));
 
@@ -60,8 +60,8 @@ class CreditLimitDisplayFacadeTest {
     void usesMaxLimitAsDefaultForUnevenRepayMethod() {
         when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(Optional.of(approvedRecord()));
-        when(creditLimitSnapshotRepository.findByCreditApplicationId(100L))
-                .thenReturn(Optional.of(limitSnapshot()));
+        when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+                .thenReturn(Optional.of(statusQuery()));
         when(loanProductFacade.findRepayMethod(1L, "APPLY-1", "RP002"))
                 .thenReturn(new LenderRepayMethod(
                         "RP002",
@@ -83,7 +83,7 @@ class CreditLimitDisplayFacadeTest {
     void rejectsWhenLimitSnapshotMissing() {
         when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(Optional.of(approvedRecord()));
-        when(creditLimitSnapshotRepository.findByCreditApplicationId(100L)).thenReturn(Optional.empty());
+        when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> facade.getLimitDisplay(1L, "APPLY-1", null))
                 .isInstanceOf(ApiException.class)
@@ -98,6 +98,7 @@ class CreditLimitDisplayFacadeTest {
                 "req-1",
                 "pendanaan",
                 1L,
+                "partner-1",
                 "81234567890",
                 9L,
                 "CA-1",
@@ -107,17 +108,25 @@ class CreditLimitDisplayFacadeTest {
         );
     }
 
-    private static CreditLimitSnapshotRepository.CreditLimitSnapshotData limitSnapshot() {
-        return new CreditLimitSnapshotRepository.CreditLimitSnapshotData(
-                100L,
+    private static CreditLenderStatusQueryRepository.CreditLenderStatusQueryData statusQuery() {
+        return new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
+                "APPLY-1",
+                1L,
                 "81234567890",
+                "partner-1",
+                "USR-1",
+                "CA-1",
+                "SUCCESS",
+                Instant.parse("2026-06-30T00:00:00Z").toEpochMilli(),
+                null,
                 new BigDecimal("500000"),
                 new BigDecimal("3000000"),
                 new BigDecimal("2500000"),
                 new BigDecimal("2800000"),
                 new BigDecimal("100000"),
-                Instant.parse("2026-06-30T00:00:00Z"),
-                "CREDIT_CALLBACK"
+                "{}",
+                "{}",
+                Instant.parse("2026-06-01T00:00:00Z")
         );
     }
 }

@@ -2,7 +2,7 @@ package com.pk.infra.credit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.CreditStatusHistoryRepository;
 import com.pk.core.credit.port.LenderCreditPort;
 import com.pk.core.credit.port.ProfileVersionRepository;
@@ -29,21 +29,23 @@ public class CreditInfraConfiguration {
             OnboardingProgressFacade onboardingProgressFacade,
             CreditApplicationRepository creditApplicationRepository,
             ProfileVersionRepository profileVersionRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             CreditApplyProperties creditApplyProperties,
             CreditApplyHandler creditApplyHandler,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
-            CreditStatusHistoryRepository creditStatusHistoryRepository
+            CreditStatusHistoryRepository creditStatusHistoryRepository,
+            CreditStatusPollHandler creditStatusPollHandler
     ) {
         return new CreditApplyFacade(
                 onboardingProgressFacade,
                 creditApplicationRepository,
                 profileVersionRepository,
-                creditLimitSnapshotRepository,
+                creditLenderStatusQueryRepository,
                 creditApplyProperties,
                 creditApplyHandler,
                 creditApplyOutboxPublisher,
-                creditStatusHistoryRepository
+                creditStatusHistoryRepository,
+                creditStatusPollHandler
         );
     }
 
@@ -64,12 +66,10 @@ public class CreditInfraConfiguration {
 
     @Bean
     CreditStatusPollHandler creditStatusPollHandler(
-            CreditApplicationRepository creditApplicationRepository,
             LenderCreditPort lenderCreditPort,
             CreditLenderStatusApplier creditLenderStatusApplier
     ) {
         return new CreditStatusPollHandler(
-                creditApplicationRepository,
                 lenderCreditPort,
                 creditLenderStatusApplier
         );
@@ -78,12 +78,12 @@ public class CreditInfraConfiguration {
     @Bean
     CreditLimitDisplayFacade creditLimitDisplayFacade(
             CreditApplicationRepository creditApplicationRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             LoanProductFacade loanProductFacade
     ) {
         return new CreditLimitDisplayFacade(
                 creditApplicationRepository,
-                creditLimitSnapshotRepository,
+                creditLenderStatusQueryRepository,
                 loanProductFacade
         );
     }

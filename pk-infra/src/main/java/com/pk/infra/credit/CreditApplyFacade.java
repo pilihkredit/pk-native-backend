@@ -6,7 +6,7 @@ import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.CreditProviderCode;
 import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.CreditStatusHistoryRepository;
 import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
@@ -23,30 +23,33 @@ public class CreditApplyFacade {
     private final OnboardingProgressFacade onboardingProgressFacade;
     private final CreditApplicationRepository creditApplicationRepository;
     private final ProfileVersionRepository profileVersionRepository;
-    private final CreditLimitSnapshotRepository creditLimitSnapshotRepository;
+    private final CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
     private final CreditApplyProperties creditApplyProperties;
     private final CreditApplyHandler creditApplyHandler;
     private final CreditApplyOutboxPublisher creditApplyOutboxPublisher;
     private final CreditStatusHistoryRepository creditStatusHistoryRepository;
+    private final CreditStatusPollHandler creditStatusPollHandler;
 
     public CreditApplyFacade(
             OnboardingProgressFacade onboardingProgressFacade,
             CreditApplicationRepository creditApplicationRepository,
             ProfileVersionRepository profileVersionRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             CreditApplyProperties creditApplyProperties,
             CreditApplyHandler creditApplyHandler,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
-            CreditStatusHistoryRepository creditStatusHistoryRepository
+            CreditStatusHistoryRepository creditStatusHistoryRepository,
+            CreditStatusPollHandler creditStatusPollHandler
     ) {
         this.onboardingProgressFacade = onboardingProgressFacade;
         this.creditApplicationRepository = creditApplicationRepository;
         this.profileVersionRepository = profileVersionRepository;
-        this.creditLimitSnapshotRepository = creditLimitSnapshotRepository;
+        this.creditLenderStatusQueryRepository = creditLenderStatusQueryRepository;
         this.creditApplyProperties = creditApplyProperties;
         this.creditApplyHandler = creditApplyHandler;
         this.creditApplyOutboxPublisher = creditApplyOutboxPublisher;
         this.creditStatusHistoryRepository = creditStatusHistoryRepository;
+        this.creditStatusPollHandler = creditStatusPollHandler;
     }
 
     public ApplyResult apply(long profileId, String partnerUserId, String mobileNo, ApplyCommand command) {
@@ -120,8 +123,14 @@ public class CreditApplyFacade {
         CreditApplicationRepository.CreditApplicationRecord record = creditApplicationRepository
                 .findByApplyIdAndProfileId(applyId, profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
-        var limits = creditLimitSnapshotRepository.findByCreditApplicationId(record.id()).orElse(null);
-        return toStatusResult(record, limits);
+        if (!CreditApplicationStatus.isTerminal(record.status())) {
+            creditStatusPollHandler.syncFromLenderForApi(record);
+            record = creditApplicationRepository
+                    .findByApplyIdAndProfileId(applyId, profileId)
+                    .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
+        }
+        var query = creditLenderStatusQueryRepository.findByApplyIdAndProfileId(applyId, profileId).orElse(null);
+        return toStatusResult(record, query);
     }
 
     private String enqueueOutbox(CreditApplyJob job) {
@@ -148,23 +157,20 @@ public class CreditApplyFacade {
 
     private static StatusResult toStatusResult(
             CreditApplicationRepository.CreditApplicationRecord record,
-            CreditLimitSnapshotRepository.CreditLimitSnapshotData limits
+            CreditLenderStatusQueryRepository.CreditLenderStatusQueryData query
     ) {
-        Long contractExpireTime = limits == null || limits.contractExpireAt() == null
-                ? null
-                : limits.contractExpireAt().toEpochMilli();
         Long freezeEndTime = record.freezeEndAt() == null ? null : record.freezeEndAt().toEpochMilli();
         return new StatusResult(
                 record.applyId(),
                 CreditExternalStatusMapper.publicStatusOf(record),
-                record.externalCreditApplyNo(),
-                contractExpireTime,
-                freezeEndTime,
-                limits == null ? null : limits.riskMinLimit(),
-                limits == null ? null : limits.riskMaxLimit(),
-                limits == null ? null : limits.psychologicalCreditLimit(),
-                limits == null ? null : limits.fakeCreditLimit(),
-                limits == null ? null : limits.borrowAmtStepSize()
+                query == null || query.creditApplyNo() == null ? record.externalCreditApplyNo() : query.creditApplyNo(),
+                query == null ? null : query.creditContractExpireTime(),
+                query == null || query.freezeEndTime() == null ? freezeEndTime : query.freezeEndTime(),
+                query == null ? null : query.riskMinLimit(),
+                query == null ? null : query.riskMaxLimit(),
+                query == null ? null : query.psychologicalCreditLimit(),
+                query == null ? null : query.fakeCreditLimit(),
+                query == null ? null : query.borrowAmtStepSize()
         );
     }
 

@@ -5,7 +5,7 @@ import com.pk.core.api.ApiException;
 import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.loan.LoanAmountValidator;
 import com.pk.core.loan.LoanApplicationStatus;
@@ -27,7 +27,7 @@ public class LoanApplyFacade {
 
     private final OnboardingProgressFacade onboardingProgressFacade;
     private final CreditApplicationRepository creditApplicationRepository;
-    private final CreditLimitSnapshotRepository creditLimitSnapshotRepository;
+    private final CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
     private final LoanQuoteRepository loanQuoteRepository;
     private final LoanQuoteProperties loanQuoteProperties;
     private final LoanProductFacade loanProductFacade;
@@ -39,7 +39,7 @@ public class LoanApplyFacade {
     public LoanApplyFacade(
             OnboardingProgressFacade onboardingProgressFacade,
             CreditApplicationRepository creditApplicationRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             LoanQuoteRepository loanQuoteRepository,
             LoanQuoteProperties loanQuoteProperties,
             LoanProductFacade loanProductFacade,
@@ -50,7 +50,7 @@ public class LoanApplyFacade {
     ) {
         this.onboardingProgressFacade = onboardingProgressFacade;
         this.creditApplicationRepository = creditApplicationRepository;
-        this.creditLimitSnapshotRepository = creditLimitSnapshotRepository;
+        this.creditLenderStatusQueryRepository = creditLenderStatusQueryRepository;
         this.loanQuoteRepository = loanQuoteRepository;
         this.loanQuoteProperties = loanQuoteProperties;
         this.loanProductFacade = loanProductFacade;
@@ -86,10 +86,11 @@ public class LoanApplyFacade {
             throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
         }
 
-        CreditLimitSnapshotRepository.CreditLimitSnapshotData limits = creditLimitSnapshotRepository
-                .findByCreditApplicationId(creditRecord.id())
+        CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits = creditLenderStatusQueryRepository
+                .findByApplyIdAndProfileId(creditRecord.applyId(), profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.CREDIT_LIMIT_NOT_AVAILABLE));
-        if (limits.contractExpireAt() != null && limits.contractExpireAt().isBefore(Instant.now())) {
+        if (limits.creditContractExpireTime() != null
+                && Instant.ofEpochMilli(limits.creditContractExpireTime()).isBefore(Instant.now())) {
             throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
         }
 

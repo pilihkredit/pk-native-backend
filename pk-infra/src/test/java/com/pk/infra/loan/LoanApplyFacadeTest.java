@@ -11,7 +11,7 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.loan.LoanApplicationStatus;
 import com.pk.core.loan.port.LoanApplicationRepository;
@@ -37,7 +37,7 @@ class LoanApplyFacadeTest {
     @Mock
     private CreditApplicationRepository creditApplicationRepository;
     @Mock
-    private CreditLimitSnapshotRepository creditLimitSnapshotRepository;
+    private CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
     @Mock
     private LoanQuoteRepository loanQuoteRepository;
     @Mock
@@ -61,7 +61,7 @@ class LoanApplyFacadeTest {
         facade = new LoanApplyFacade(
                 onboardingProgressFacade,
                 creditApplicationRepository,
-                creditLimitSnapshotRepository,
+                creditLenderStatusQueryRepository,
                 loanQuoteRepository,
                 loanQuoteProperties,
                 loanProductFacade,
@@ -101,7 +101,7 @@ class LoanApplyFacadeTest {
         when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.of(freshQuote()));
         when(loanQuoteRepository.countTermsByQuoteId(10L)).thenReturn(2);
         when(creditApplicationRepository.findById(100L)).thenReturn(Optional.of(approvedCredit()));
-        when(creditLimitSnapshotRepository.findByCreditApplicationId(100L)).thenReturn(Optional.of(limits()));
+        when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L)).thenReturn(Optional.of(limits()));
         when(loanProductFacade.resolveProductList(1L, "APPLY-1", true)).thenReturn(productSnapshot());
         when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
                 new OnboardingProgressFacade.OnboardingProgressResult(
@@ -187,6 +187,7 @@ class LoanApplyFacadeTest {
                 "req-1",
                 "pendanaan",
                 1L,
+                "partner-1",
                 "81234567890",
                 9L,
                 "CA-1",
@@ -196,17 +197,25 @@ class LoanApplyFacadeTest {
         );
     }
 
-    private static CreditLimitSnapshotRepository.CreditLimitSnapshotData limits() {
-        return new CreditLimitSnapshotRepository.CreditLimitSnapshotData(
-                100L,
+    private static CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits() {
+        return new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
+                "APPLY-1",
+                1L,
                 "81234567890",
+                "partner-1",
+                "USR-1",
+                "CA-1",
+                "SUCCESS",
+                Instant.now().plusSeconds(3600).toEpochMilli(),
+                null,
                 new BigDecimal("500000"),
                 new BigDecimal("5000000"),
                 new BigDecimal("3000000"),
                 new BigDecimal("2000000"),
                 new BigDecimal("100000"),
-                Instant.now().plusSeconds(3600),
-                "LENDER"
+                "{}",
+                "{}",
+                Instant.now()
         );
     }
 

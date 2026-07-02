@@ -11,7 +11,7 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.CreditStatusHistoryRepository;
 import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
@@ -32,7 +32,7 @@ class CreditApplyFacadeTest {
     @Mock
     private ProfileVersionRepository profileVersionRepository;
     @Mock
-    private CreditLimitSnapshotRepository creditLimitSnapshotRepository;
+    private CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
     @Mock
     private CreditApplyProperties creditApplyProperties;
     @Mock
@@ -41,6 +41,8 @@ class CreditApplyFacadeTest {
     private CreditApplyOutboxPublisher creditApplyOutboxPublisher;
     @Mock
     private CreditStatusHistoryRepository creditStatusHistoryRepository;
+    @Mock
+    private CreditStatusPollHandler creditStatusPollHandler;
 
     private CreditApplyFacade facade;
 
@@ -50,11 +52,12 @@ class CreditApplyFacadeTest {
                 onboardingProgressFacade,
                 creditApplicationRepository,
                 profileVersionRepository,
-                creditLimitSnapshotRepository,
+                creditLenderStatusQueryRepository,
                 creditApplyProperties,
                 creditApplyHandler,
                 creditApplyOutboxPublisher,
-                creditStatusHistoryRepository
+                creditStatusHistoryRepository,
+                creditStatusPollHandler
         );
     }
 
@@ -116,6 +119,46 @@ class CreditApplyFacadeTest {
     }
 
     @Test
+    void syncsFromLenderWhenStatusIsNotTerminal() {
+        CreditApplicationRepository.CreditApplicationRecord record = OptionalRecord().get();
+        when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+                .thenReturn(java.util.Optional.of(record));
+
+        CreditApplyFacade.StatusResult result = facade.getStatus(1L, "APPLY-1");
+
+        assertThat(result.applyId()).isEqualTo("APPLY-1");
+        assertThat(result.status()).isEqualTo(CreditApplicationStatus.PROCESSING);
+        verify(creditStatusPollHandler).syncFromLenderForApi(record);
+    }
+
+    @Test
+    void skipsLenderSyncWhenStatusIsTerminal() {
+        CreditApplicationRepository.CreditApplicationRecord record = new CreditApplicationRepository.CreditApplicationRecord(
+                1L,
+                "APPLY-1",
+                "req-1",
+                "pendanaan",
+                1L,
+                "partner-1",
+                "81234567890",
+                9L,
+                "CA-1",
+                CreditApplicationStatus.APPROVED,
+                "SUCCESS",
+                null
+        );
+        when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+                .thenReturn(java.util.Optional.of(record));
+        when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+                .thenReturn(java.util.Optional.empty());
+
+        CreditApplyFacade.StatusResult result = facade.getStatus(1L, "APPLY-1");
+
+        assertThat(result.status()).isEqualTo(CreditApplicationStatus.APPROVED);
+        verify(creditStatusPollHandler, never()).syncFromLenderForApi(any());
+    }
+
+    @Test
     void enqueuesOutboxWhenNotInline() {
         when(creditApplicationRepository.findByRequestId("req-1")).thenReturn(java.util.Optional.empty());
         when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
@@ -146,6 +189,7 @@ class CreditApplyFacadeTest {
                 "req-1",
                 "pendanaan",
                 1L,
+                "partner-1",
                 "81234567890",
                 9L,
                 "CA-1",

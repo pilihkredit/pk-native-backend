@@ -2,7 +2,7 @@ package com.pk.infra.loan;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.loan.port.LenderLoanApplyPort;
 import com.pk.core.loan.port.LenderLoanContractPort;
@@ -70,7 +70,7 @@ public class LoanInfraConfiguration {
     @Bean
     LoanTrialFacade loanTrialFacade(
             CreditApplicationRepository creditApplicationRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             LoanProductFacade loanProductFacade,
             LenderLoanTrialPort lenderLoanTrialPort,
             LoanQuoteRepository loanQuoteRepository,
@@ -78,7 +78,7 @@ public class LoanInfraConfiguration {
     ) {
         return new LoanTrialFacade(
                 creditApplicationRepository,
-                creditLimitSnapshotRepository,
+                creditLenderStatusQueryRepository,
                 loanProductFacade,
                 lenderLoanTrialPort,
                 loanQuoteRepository,
@@ -98,7 +98,7 @@ public class LoanInfraConfiguration {
     LoanApplyFacade loanApplyFacade(
             OnboardingProgressFacade onboardingProgressFacade,
             CreditApplicationRepository creditApplicationRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             LoanQuoteRepository loanQuoteRepository,
             LoanQuoteProperties loanQuoteProperties,
             LoanProductFacade loanProductFacade,
@@ -110,7 +110,7 @@ public class LoanInfraConfiguration {
         return new LoanApplyFacade(
                 onboardingProgressFacade,
                 creditApplicationRepository,
-                creditLimitSnapshotRepository,
+                creditLenderStatusQueryRepository,
                 loanQuoteRepository,
                 loanQuoteProperties,
                 loanProductFacade,

@@ -32,6 +32,7 @@ public interface LenderCreditPort {
 
     record LenderCreditStatusResult(
             String externalStatus,
+            String lenderUserId,
             String creditApplyNo,
             Long creditContractExpireTime,
             Long freezeEndTime,

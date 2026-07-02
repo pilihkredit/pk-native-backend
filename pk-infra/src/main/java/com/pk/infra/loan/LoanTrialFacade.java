@@ -4,7 +4,7 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.display.DisplayFormatters;
 import com.pk.core.loan.LenderTrialTerm;
 import com.pk.core.loan.LoanAmountValidator;
@@ -16,7 +16,7 @@ import java.util.List;
 
 public class LoanTrialFacade {
     private final CreditApplicationRepository creditApplicationRepository;
-    private final CreditLimitSnapshotRepository creditLimitSnapshotRepository;
+    private final CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
     private final LoanProductFacade loanProductFacade;
     private final LenderLoanTrialPort lenderLoanTrialPort;
     private final LoanQuoteRepository loanQuoteRepository;
@@ -24,14 +24,14 @@ public class LoanTrialFacade {
 
     public LoanTrialFacade(
             CreditApplicationRepository creditApplicationRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             LoanProductFacade loanProductFacade,
             LenderLoanTrialPort lenderLoanTrialPort,
             LoanQuoteRepository loanQuoteRepository,
             LoanQuoteProperties loanQuoteProperties
     ) {
         this.creditApplicationRepository = creditApplicationRepository;
-        this.creditLimitSnapshotRepository = creditLimitSnapshotRepository;
+        this.creditLenderStatusQueryRepository = creditLenderStatusQueryRepository;
         this.loanProductFacade = loanProductFacade;
         this.lenderLoanTrialPort = lenderLoanTrialPort;
         this.loanQuoteRepository = loanQuoteRepository;
@@ -47,8 +47,8 @@ public class LoanTrialFacade {
             throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
         }
 
-        CreditLimitSnapshotRepository.CreditLimitSnapshotData limits = creditLimitSnapshotRepository
-                .findByCreditApplicationId(creditRecord.id())
+        CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits = creditLenderStatusQueryRepository
+                .findByApplyIdAndProfileId(command.applyId(), profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.CREDIT_LIMIT_NOT_AVAILABLE));
 
         BigDecimal applyAmt = LoanAmountValidator.normalize(command.applyAmt());

@@ -44,6 +44,7 @@ public class CreditCallbackHandler {
         CreditCallbackParser.ParsedCreditCallback parsed = callbackParser.parse(callbackEvent.payloadJson());
         LenderCreditPort.LenderCreditStatusResult status = new LenderCreditPort.LenderCreditStatusResult(
                 parsed.externalStatus(),
+                null,
                 parsed.creditApplyNo(),
                 parsed.creditContractExpireTime(),
                 parsed.freezeEndTime(),
@@ -53,7 +54,7 @@ public class CreditCallbackHandler {
                 parsed.fakeCreditLimit(),
                 parsed.borrowAmtStepSize(),
                 null,
-                null
+                callbackEvent.payloadJson()
         );
         if (callbackEvent.payloadJson() != null && !callbackEvent.payloadJson().isBlank()) {
             creditApplicationRepository.updateLastLenderAudit(

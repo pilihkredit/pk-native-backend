@@ -13,6 +13,7 @@ public class FakePendanaanCreditAdapter implements LenderCreditPort {
     public LenderCreditStatusResult queryStatus(String applyId) {
         return new LenderCreditStatusResult(
                 "SUCCESS",
+                "USR-FAKE",
                 "CA-FAKE-" + applyId,
                 null,
                 null,

@@ -4,7 +4,7 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.display.DisplayFormatters;
 import com.pk.core.loan.LenderRepayMethod;
 import com.pk.core.loan.RepaymentUniformity;
@@ -17,16 +17,16 @@ import java.util.Map;
 
 public class CreditLimitDisplayFacade {
     private final CreditApplicationRepository creditApplicationRepository;
-    private final CreditLimitSnapshotRepository creditLimitSnapshotRepository;
+    private final CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
     private final LoanProductFacade loanProductFacade;
 
     public CreditLimitDisplayFacade(
             CreditApplicationRepository creditApplicationRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             LoanProductFacade loanProductFacade
     ) {
         this.creditApplicationRepository = creditApplicationRepository;
-        this.creditLimitSnapshotRepository = creditLimitSnapshotRepository;
+        this.creditLenderStatusQueryRepository = creditLenderStatusQueryRepository;
         this.loanProductFacade = loanProductFacade;
     }
 
@@ -41,8 +41,8 @@ public class CreditLimitDisplayFacade {
             throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
         }
 
-        CreditLimitSnapshotRepository.CreditLimitSnapshotData limits = creditLimitSnapshotRepository
-                .findByCreditApplicationId(record.id())
+        CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits = creditLenderStatusQueryRepository
+                .findByApplyIdAndProfileId(applyId, profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.CREDIT_LIMIT_NOT_AVAILABLE));
 
         Boolean repaymentUniform = null;
@@ -73,7 +73,7 @@ public class CreditLimitDisplayFacade {
         );
     }
 
-    private static List<SliderSegment> buildSliderSegments(CreditLimitSnapshotRepository.CreditLimitSnapshotData limits) {
+    private static List<SliderSegment> buildSliderSegments(CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits) {
         Map<String, SliderSegment> segments = new LinkedHashMap<>();
         addSegment(segments, "MIN", limits.riskMinLimit());
         addSegment(segments, "PSYCHOLOGICAL", limits.psychologicalCreditLimit());

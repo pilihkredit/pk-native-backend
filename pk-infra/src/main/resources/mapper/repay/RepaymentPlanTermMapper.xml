@@ -9,7 +9,7 @@
 <arg column="due_date" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
 <arg column="grace_date" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
 <arg column="schd_amount" javaType="java.math.BigDecimal"/><arg column="should_amount" javaType="java.math.BigDecimal"/>
-<arg column="paid_amount" javaType="java.math.BigDecimal"/><arg column="overdue_days" javaType="_int"/>
+<arg column="paid_amount" javaType="java.math.BigDecimal"/><arg column="overdue_days" javaType="java.lang.Integer"/>
 <arg column="amount_detail_json" javaType="string"/>
 <arg column="last_repay_time" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
 <arg column="synced_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>

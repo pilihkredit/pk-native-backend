@@ -130,6 +130,7 @@ class ProductListResolverTest {
                 "req-1",
                 "pendanaan",
                 1L,
+                "partner-1",
                 "81234567890",
                 9L,
                 "CA-1",

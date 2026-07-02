@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.loan.LenderTrialTerm;
 import com.pk.core.loan.port.LenderLoanTrialPort;
 import com.pk.core.loan.port.LoanQuoteRepository;
@@ -29,7 +29,7 @@ class LoanTrialFacadeTest {
     @Mock
     private CreditApplicationRepository creditApplicationRepository;
     @Mock
-    private CreditLimitSnapshotRepository creditLimitSnapshotRepository;
+    private CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
     @Mock
     private LoanProductFacade loanProductFacade;
     @Mock
@@ -45,7 +45,7 @@ class LoanTrialFacadeTest {
         properties.setTtl(Duration.ofMinutes(15));
         facade = new LoanTrialFacade(
                 creditApplicationRepository,
-                creditLimitSnapshotRepository,
+                creditLenderStatusQueryRepository,
                 loanProductFacade,
                 lenderLoanTrialPort,
                 loanQuoteRepository,
@@ -57,8 +57,8 @@ class LoanTrialFacadeTest {
     void trialForceRefreshesProductsPersistsQuoteAndReturnsDisplayFields() {
         when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(Optional.of(approvedRecord()));
-        when(creditLimitSnapshotRepository.findByCreditApplicationId(100L))
-                .thenReturn(Optional.of(limitSnapshot()));
+        when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+                .thenReturn(Optional.of(statusQuery()));
         ProductListResolver.ResolvedProductList resolved = new ProductListResolver.ResolvedProductList(
                 501L,
                 "PSNAP-1",
@@ -123,6 +123,7 @@ class LoanTrialFacadeTest {
                 "req-1",
                 "pendanaan",
                 1L,
+                "partner-1",
                 "81234567890",
                 9L,
                 "CA-1",
@@ -132,17 +133,25 @@ class LoanTrialFacadeTest {
         );
     }
 
-    private static CreditLimitSnapshotRepository.CreditLimitSnapshotData limitSnapshot() {
-        return new CreditLimitSnapshotRepository.CreditLimitSnapshotData(
-                100L,
+    private static CreditLenderStatusQueryRepository.CreditLenderStatusQueryData statusQuery() {
+        return new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
+                "APPLY-1",
+                1L,
                 "81234567890",
+                "partner-1",
+                "USR-1",
+                "CA-1",
+                "SUCCESS",
+                Instant.parse("2026-06-30T00:00:00Z").toEpochMilli(),
+                null,
                 new BigDecimal("500000"),
                 new BigDecimal("3000000"),
                 new BigDecimal("2500000"),
                 new BigDecimal("2800000"),
                 new BigDecimal("100000"),
-                Instant.parse("2026-06-30T00:00:00Z"),
-                "CREDIT_CALLBACK"
+                "{}",
+                "{}",
+                Instant.parse("2026-06-01T00:00:00Z")
         );
     }
 

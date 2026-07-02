@@ -11,6 +11,7 @@
             <arg column="request_id" javaType="string"/>
             <arg column="provider_code" javaType="string"/>
             <arg column="profile_id" javaType="_long"/>
+            <arg column="partner_user_id" javaType="string"/>
             <arg column="mobile_no" javaType="string"/>
             <arg column="profile_version_id" javaType="_long"/>
             <arg column="external_credit_apply_no" javaType="string"/>
@@ -23,6 +24,7 @@
 
     <sql id="creditApplicationColumns">
         id, apply_id, request_id, provider_code, profile_id, mobile_no, profile_version_id,
+        (SELECT up.partner_user_id FROM user_profile up WHERE up.id = profile_id) AS partner_user_id,
         external_credit_apply_no, status, external_status, freeze_end_at
     </sql>
 

@@ -357,23 +357,33 @@ CREATE TABLE credit_application (
     KEY idx_credit_application_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Credit application records';
 
-CREATE TABLE credit_limit_snapshot (
+CREATE TABLE credit_lender_status_query (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    credit_application_id BIGINT UNSIGNED NOT NULL COMMENT 'Credit application identifier',
+    apply_id VARCHAR(64) NOT NULL COMMENT 'PK credit application identifier used for lender status query',
+    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
     mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    partner_user_id VARCHAR(64) NULL COMMENT 'PK partner user identifier',
+    lender_user_id VARCHAR(64) NULL COMMENT 'Lender user identifier',
+    credit_apply_no VARCHAR(64) NULL COMMENT 'External credit application number',
+    external_status VARCHAR(32) NULL COMMENT 'Lender credit status',
+    credit_contract_expire_time BIGINT NULL COMMENT 'Lender credit contract expiration time in epoch milliseconds',
+    freeze_end_time BIGINT NULL COMMENT 'Lender freeze end time in epoch milliseconds',
     risk_min_limit DECIMAL(18,2) NULL COMMENT 'Minimum available credit limit',
     risk_max_limit DECIMAL(18,2) NULL COMMENT 'Maximum available credit limit',
     psychological_credit_limit DECIMAL(18,2) NULL COMMENT 'Psychological credit limit',
     fake_credit_limit DECIMAL(18,2) NULL COMMENT 'Displayed fake credit limit',
     borrow_amt_step_size DECIMAL(18,2) NULL COMMENT 'Borrow amount step size',
-    contract_expire_at DATETIME(3) NULL COMMENT 'Credit contract expiration time',
-    source VARCHAR(32) NOT NULL COMMENT 'Record source',
+    last_lender_request_json JSON NULL COMMENT 'Last lender credit status request JSON',
+    last_lender_response_json JSON NULL COMMENT 'Last lender credit status response JSON',
+    queried_at DATETIME(3) NOT NULL COMMENT 'Last lender status query time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    KEY idx_credit_limit_snapshot_credit_application (credit_application_id),
-    KEY idx_credit_limit_snapshot_mobile_no (mobile_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Credit limit snapshot records';
+    UNIQUE KEY uk_credit_lender_status_query_apply_id (apply_id),
+    KEY idx_credit_lender_status_query_profile (profile_id),
+    KEY idx_credit_lender_status_query_mobile_no (mobile_no),
+    KEY idx_credit_lender_status_query_external_no (credit_apply_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest lender credit status query results';
 
 CREATE TABLE credit_status_history (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',

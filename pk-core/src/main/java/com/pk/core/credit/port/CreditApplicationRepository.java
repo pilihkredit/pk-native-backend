@@ -44,6 +44,7 @@ public interface CreditApplicationRepository {
             String requestId,
             String providerCode,
             long profileId,
+            String partnerUserId,
             String mobileNo,
             long profileVersionId,
             String externalCreditApplyNo,
