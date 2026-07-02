@@ -67,6 +67,7 @@ pk:
     license-effective-seconds: ${PK_OCR_LICENSE_EFFECTIVE_SECONDS:86400}
   credit:
     apply:
+      mode: ${PK_CREDIT_APPLY_MODE:inline}
       max-retries: ${PK_CREDIT_APPLY_MAX_RETRIES:5}
       retry-backoff-seconds: ${PK_CREDIT_APPLY_RETRY_BACKOFF_SECONDS:60}
       poll-interval-seconds: ${PK_CREDIT_POLL_INTERVAL_SECONDS:30}

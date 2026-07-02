@@ -30,6 +30,8 @@ public class CreditInfraConfiguration {
             CreditApplicationRepository creditApplicationRepository,
             ProfileVersionRepository profileVersionRepository,
             CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            CreditApplyProperties creditApplyProperties,
+            CreditApplyHandler creditApplyHandler,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
             CreditStatusHistoryRepository creditStatusHistoryRepository
     ) {
@@ -38,6 +40,8 @@ public class CreditInfraConfiguration {
                 creditApplicationRepository,
                 profileVersionRepository,
                 creditLimitSnapshotRepository,
+                creditApplyProperties,
+                creditApplyHandler,
                 creditApplyOutboxPublisher,
                 creditStatusHistoryRepository
         );

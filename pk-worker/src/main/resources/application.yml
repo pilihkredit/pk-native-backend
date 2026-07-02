@@ -35,6 +35,7 @@ pk:
       retry-backoff-seconds: ${PK_PROFILE_SYNC_RETRY_BACKOFF_SECONDS:60}
   credit:
     apply:
+      mode: ${PK_CREDIT_APPLY_MODE:outbox}
       max-retries: ${PK_CREDIT_APPLY_MAX_RETRIES:5}
       retry-backoff-seconds: ${PK_CREDIT_APPLY_RETRY_BACKOFF_SECONDS:60}
       poll-interval-seconds: ${PK_CREDIT_POLL_INTERVAL_SECONDS:30}

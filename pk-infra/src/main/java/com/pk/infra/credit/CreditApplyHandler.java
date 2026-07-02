@@ -28,7 +28,7 @@ public class CreditApplyHandler {
         this.creditApplyProperties = creditApplyProperties;
     }
 
-    public void submit(CreditApplyJob job) {
+    public String submit(CreditApplyJob job) {
         transition(job.creditApplicationId(), CreditApplicationStatus.INIT, CreditApplicationStatus.SUBMITTING, null);
 
         LenderCreditPort.LenderCreditApplyResult result = lenderCreditPort.apply(
@@ -60,6 +60,7 @@ public class CreditApplyHandler {
                 job.creditApplicationId(),
                 Instant.now().plusSeconds(creditApplyProperties.pollIntervalSeconds())
         );
+        return result.creditApplyNo();
     }
 
     private void transition(long creditApplicationId, String fromStatus, String toStatus, String externalStatus) {

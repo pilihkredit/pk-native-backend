@@ -24,6 +24,8 @@ public class CreditApplyFacade {
     private final CreditApplicationRepository creditApplicationRepository;
     private final ProfileVersionRepository profileVersionRepository;
     private final CreditLimitSnapshotRepository creditLimitSnapshotRepository;
+    private final CreditApplyProperties creditApplyProperties;
+    private final CreditApplyHandler creditApplyHandler;
     private final CreditApplyOutboxPublisher creditApplyOutboxPublisher;
     private final CreditStatusHistoryRepository creditStatusHistoryRepository;
 
@@ -32,6 +34,8 @@ public class CreditApplyFacade {
             CreditApplicationRepository creditApplicationRepository,
             ProfileVersionRepository profileVersionRepository,
             CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            CreditApplyProperties creditApplyProperties,
+            CreditApplyHandler creditApplyHandler,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
             CreditStatusHistoryRepository creditStatusHistoryRepository
     ) {
@@ -39,6 +43,8 @@ public class CreditApplyFacade {
         this.creditApplicationRepository = creditApplicationRepository;
         this.profileVersionRepository = profileVersionRepository;
         this.creditLimitSnapshotRepository = creditLimitSnapshotRepository;
+        this.creditApplyProperties = creditApplyProperties;
+        this.creditApplyHandler = creditApplyHandler;
         this.creditApplyOutboxPublisher = creditApplyOutboxPublisher;
         this.creditStatusHistoryRepository = creditStatusHistoryRepository;
     }
@@ -83,7 +89,7 @@ public class CreditApplyFacade {
                     null,
                     SOURCE
             );
-            creditApplyOutboxPublisher.publish(new CreditApplyJob(
+            CreditApplyJob job = new CreditApplyJob(
                     creditApplicationId,
                     applyId,
                     partnerUserId,
@@ -93,8 +99,11 @@ public class CreditApplyFacade {
                     command.address(),
                     command.device(),
                     command.appList()
-            ));
-            return new ApplyResult(applyId, PUBLIC_PROCESSING, null);
+            );
+            String creditApplyNo = creditApplyProperties.inlineEnabled()
+                    ? creditApplyHandler.submit(job)
+                    : enqueueOutbox(job);
+            return new ApplyResult(applyId, PUBLIC_PROCESSING, creditApplyNo);
         } catch (DataIntegrityViolationException exception) {
             var replay = creditApplicationRepository.findByRequestId(command.requestId());
             if (replay.isPresent()) {
@@ -110,6 +119,11 @@ public class CreditApplyFacade {
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         var limits = creditLimitSnapshotRepository.findByCreditApplicationId(record.id()).orElse(null);
         return toStatusResult(record, limits);
+    }
+
+    private String enqueueOutbox(CreditApplyJob job) {
+        creditApplyOutboxPublisher.publish(job);
+        return null;
     }
 
     private static void validate(ApplyCommand command) {

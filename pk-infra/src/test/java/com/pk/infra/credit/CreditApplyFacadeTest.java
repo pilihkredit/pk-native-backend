@@ -34,6 +34,10 @@ class CreditApplyFacadeTest {
     @Mock
     private CreditLimitSnapshotRepository creditLimitSnapshotRepository;
     @Mock
+    private CreditApplyProperties creditApplyProperties;
+    @Mock
+    private CreditApplyHandler creditApplyHandler;
+    @Mock
     private CreditApplyOutboxPublisher creditApplyOutboxPublisher;
     @Mock
     private CreditStatusHistoryRepository creditStatusHistoryRepository;
@@ -47,6 +51,8 @@ class CreditApplyFacadeTest {
                 creditApplicationRepository,
                 profileVersionRepository,
                 creditLimitSnapshotRepository,
+                creditApplyProperties,
+                creditApplyHandler,
                 creditApplyOutboxPublisher,
                 creditStatusHistoryRepository
         );
@@ -60,7 +66,9 @@ class CreditApplyFacadeTest {
 
         assertThat(result.applyId()).isEqualTo("APPLY-1");
         assertThat(result.status()).isEqualTo(CreditApplyFacade.PUBLIC_PROCESSING);
+        assertThat(result.creditApplyNo()).isEqualTo("CA-1");
         verify(creditApplicationRepository, never()).insert(any());
+        verify(creditApplyHandler, never()).submit(any());
         verify(creditApplyOutboxPublisher, never()).publish(any());
     }
 
@@ -83,7 +91,7 @@ class CreditApplyFacadeTest {
     }
 
     @Test
-    void acceptsSyncedProfileAndEnqueuesOutbox() {
+    void submitsToLenderInlineWhenConfigured() {
         when(creditApplicationRepository.findByRequestId("req-1")).thenReturn(java.util.Optional.empty());
         when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
                 new OnboardingProgressFacade.OnboardingProgressResult(
@@ -95,12 +103,40 @@ class CreditApplyFacadeTest {
         );
         when(profileVersionRepository.createSnapshot(1L, List.of("PERSONAL"), "CREDIT_APPLY")).thenReturn(9L);
         when(creditApplicationRepository.insert(any())).thenReturn(100L);
+        when(creditApplyProperties.inlineEnabled()).thenReturn(true);
+        when(creditApplyHandler.submit(any(CreditApplyJob.class))).thenReturn("CA-NEW");
 
         CreditApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", sampleCommand("req-1"));
 
         assertThat(result.applyId()).startsWith("APPLY");
         assertThat(result.status()).isEqualTo(CreditApplicationStatus.PROCESSING);
+        assertThat(result.creditApplyNo()).isEqualTo("CA-NEW");
+        verify(creditApplyHandler).submit(any(CreditApplyJob.class));
+        verify(creditApplyOutboxPublisher, never()).publish(any());
+    }
+
+    @Test
+    void enqueuesOutboxWhenNotInline() {
+        when(creditApplicationRepository.findByRequestId("req-1")).thenReturn(java.util.Optional.empty());
+        when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
+                new OnboardingProgressFacade.OnboardingProgressResult(
+                        "partner-1",
+                        OnboardingProgressFacade.KYC_SYNCED,
+                        List.of("PERSONAL"),
+                        List.of()
+                )
+        );
+        when(profileVersionRepository.createSnapshot(1L, List.of("PERSONAL"), "CREDIT_APPLY")).thenReturn(9L);
+        when(creditApplicationRepository.insert(any())).thenReturn(100L);
+        when(creditApplyProperties.inlineEnabled()).thenReturn(false);
+
+        CreditApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", sampleCommand("req-1"));
+
+        assertThat(result.applyId()).startsWith("APPLY");
+        assertThat(result.status()).isEqualTo(CreditApplicationStatus.PROCESSING);
+        assertThat(result.creditApplyNo()).isNull();
         verify(creditApplyOutboxPublisher).publish(any(CreditApplyJob.class));
+        verify(creditApplyHandler, never()).submit(any());
     }
 
     private static java.util.Optional<CreditApplicationRepository.CreditApplicationRecord> OptionalRecord() {
