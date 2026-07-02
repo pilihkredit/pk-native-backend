@@ -93,7 +93,7 @@ class ProfileServiceFacadeTest {
 
     @Test
     void savesPersonalModuleAndReturnsCompleted() {
-        var result = facade.savePersonal(10L, "U10001", sampleCommand("req-1"));
+        var result = facade.savePersonal(10L, "U10001", "81234567890", sampleCommand("req-1"));
 
         assertThat(result.requestId()).isEqualTo("req-1");
         assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
@@ -108,6 +108,7 @@ class ProfileServiceFacadeTest {
         when(profilePersonalRepository.findByProfileId(10L)).thenReturn(Optional.of(
                 new ProfilePersonalData(
                         10L,
+                        "81234567890",
                         5,
                         16,
                         "5000000",
@@ -120,7 +121,7 @@ class ProfileServiceFacadeTest {
                 )
         ));
 
-        var result = facade.savePersonal(10L, "U10001", sampleCommand("req-1"));
+        var result = facade.savePersonal(10L, "U10001", "81234567890", sampleCommand("req-1"));
 
         assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
         assertThat(result.lenderResponseJson()).contains("USR202506020001");
@@ -140,7 +141,7 @@ class ProfileServiceFacadeTest {
                 sampleDevice()
         );
 
-        assertThatThrownBy(() -> facade.savePersonal(10L, "U10001", command))
+        assertThatThrownBy(() -> facade.savePersonal(10L, "U10001", "81234567890", command))
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.INVALID_EDUCATION_DEGREE);
@@ -160,7 +161,7 @@ class ProfileServiceFacadeTest {
     @Test
     void returnsCompletedWithoutRewriteForSameContactsRequestId() {
         when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.of(
-                new ProfileContactsModuleData(10L, "COMPLETED", "req-contact-1", null, null)
+                new ProfileContactsModuleData(10L, "81234567890", "COMPLETED", "req-contact-1", null, null)
         ));
 
         var result = facade.saveContacts(10L, "U10001", "81234567890", sampleContactsCommand("req-contact-1"));
@@ -254,7 +255,7 @@ class ProfileServiceFacadeTest {
 
     @Test
     void savesBankCardAndReturnsPassedWithMaskedNumber() {
-        var result = facade.saveBankCard(10L, "U10001", sampleBankCardCommand("req-bank-1"));
+        var result = facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-1"));
 
         assertThat(result.requestId()).isEqualTo("req-bank-1");
         assertThat(result.verifyStatus()).isEqualTo("PASSED");
@@ -271,6 +272,7 @@ class ProfileServiceFacadeTest {
         assertThatThrownBy(() -> facade.saveBankCard(
                 10L,
                 "U10001",
+                "81234567890",
                 new ProfileServiceFacade.BankCardSaveCommand(
                         "req-bank-2",
                         "INVALID",
@@ -288,6 +290,7 @@ class ProfileServiceFacadeTest {
         when(profileBankCardRepository.findByCardNoHash(any())).thenReturn(Optional.of(
                 new com.pk.core.profile.ProfileBankCardData(
                         99L,
+                        "81234567890",
                         "BCA",
                         new EncryptedField("cipher", new byte[12], new byte[16]),
                         "hash",
@@ -300,7 +303,7 @@ class ProfileServiceFacadeTest {
                 )
         ));
 
-        assertThatThrownBy(() -> facade.saveBankCard(10L, "U10001", sampleBankCardCommand("req-bank-3")))
+        assertThatThrownBy(() -> facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-3")))
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.BANK_CARD_ALREADY_BOUND);

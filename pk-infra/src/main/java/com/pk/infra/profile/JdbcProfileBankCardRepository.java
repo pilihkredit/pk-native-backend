@@ -40,6 +40,7 @@ public class JdbcProfileBankCardRepository implements ProfileBankCardRepository 
                 """
                 INSERT INTO user_profile_bank_card (
                     profile_id,
+                    mobile_no,
                     bank_code,
                     card_no_hash,
                     card_no_ciphertext,
@@ -50,8 +51,9 @@ public class JdbcProfileBankCardRepository implements ProfileBankCardRepository 
                     default_flag,
                     module_status,
                     last_request_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
                 ON DUPLICATE KEY UPDATE
+                    mobile_no = VALUES(mobile_no),
                     bank_code = VALUES(bank_code),
                     card_no_hash = VALUES(card_no_hash),
                     card_no_ciphertext = VALUES(card_no_ciphertext),
@@ -64,6 +66,7 @@ public class JdbcProfileBankCardRepository implements ProfileBankCardRepository 
                     last_request_id = VALUES(last_request_id)
                 """,
                 data.profileId(),
+                data.mobileNo(),
                 data.bankCode(),
                 data.cardNoHash(),
                 data.cardNumber().ciphertextBase64(),
@@ -94,13 +97,14 @@ public class JdbcProfileBankCardRepository implements ProfileBankCardRepository 
     private ProfileBankCardData queryOne(String predicate, Object arg) {
         return jdbcTemplate.queryForObject(
                 """
-                SELECT profile_id, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
+                SELECT profile_id, mobile_no, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
                        verify_status, verify_error_code, module_status, last_request_id,
                        last_lender_request_json, last_lender_response_json
                 FROM user_profile_bank_card
                 """ + predicate,
                 (rs, rowNum) -> new ProfileBankCardData(
                         rs.getLong("profile_id"),
+                        rs.getString("mobile_no"),
                         rs.getString("bank_code"),
                         new EncryptedField(
                                 rs.getString("card_no_ciphertext"),

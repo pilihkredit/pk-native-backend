@@ -62,7 +62,7 @@ class CreditApplyFacadeTest {
     void returnsIdempotentResultForExistingRequestId() {
         when(creditApplicationRepository.findByRequestId("req-1")).thenReturn(OptionalRecord());
 
-        CreditApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", sampleCommand("req-1"));
+        CreditApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", "81234567890", sampleCommand("req-1"));
 
         assertThat(result.applyId()).isEqualTo("APPLY-1");
         assertThat(result.status()).isEqualTo(CreditApplyFacade.PUBLIC_PROCESSING);
@@ -84,7 +84,7 @@ class CreditApplyFacadeTest {
                 )
         );
 
-        assertThatThrownBy(() -> facade.apply(1L, "partner-1", sampleCommand("req-1")))
+        assertThatThrownBy(() -> facade.apply(1L, "partner-1", "81234567890", sampleCommand("req-1")))
                 .isInstanceOf(ApiException.class)
                 .extracting(exception -> ((ApiException) exception).apiCode())
                 .isEqualTo(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -101,12 +101,12 @@ class CreditApplyFacadeTest {
                         List.of()
                 )
         );
-        when(profileVersionRepository.createSnapshot(1L, List.of("PERSONAL"), "CREDIT_APPLY")).thenReturn(9L);
+        when(profileVersionRepository.createSnapshot(1L, "81234567890", List.of("PERSONAL"), "CREDIT_APPLY")).thenReturn(9L);
         when(creditApplicationRepository.insert(any())).thenReturn(100L);
         when(creditApplyProperties.inlineEnabled()).thenReturn(true);
         when(creditApplyHandler.submit(any(CreditApplyJob.class))).thenReturn("CA-NEW");
 
-        CreditApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", sampleCommand("req-1"));
+        CreditApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", "81234567890", sampleCommand("req-1"));
 
         assertThat(result.applyId()).startsWith("APPLY");
         assertThat(result.status()).isEqualTo(CreditApplicationStatus.PROCESSING);
@@ -126,11 +126,11 @@ class CreditApplyFacadeTest {
                         List.of()
                 )
         );
-        when(profileVersionRepository.createSnapshot(1L, List.of("PERSONAL"), "CREDIT_APPLY")).thenReturn(9L);
+        when(profileVersionRepository.createSnapshot(1L, "81234567890", List.of("PERSONAL"), "CREDIT_APPLY")).thenReturn(9L);
         when(creditApplicationRepository.insert(any())).thenReturn(100L);
         when(creditApplyProperties.inlineEnabled()).thenReturn(false);
 
-        CreditApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", sampleCommand("req-1"));
+        CreditApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", "81234567890", sampleCommand("req-1"));
 
         assertThat(result.applyId()).startsWith("APPLY");
         assertThat(result.status()).isEqualTo(CreditApplicationStatus.PROCESSING);

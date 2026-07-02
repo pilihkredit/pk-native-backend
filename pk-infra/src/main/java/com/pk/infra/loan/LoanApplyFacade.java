@@ -60,7 +60,7 @@ public class LoanApplyFacade {
         this.loanApplyOutboxPublisher = loanApplyOutboxPublisher;
     }
 
-    public ApplyResult apply(long profileId, String partnerUserId, ApplyCommand command) {
+    public ApplyResult apply(long profileId, String partnerUserId, String mobileNo, ApplyCommand command) {
         validate(command);
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
@@ -118,6 +118,7 @@ public class LoanApplyFacade {
         );
         long profileVersionId = profileVersionRepository.createSnapshot(
                 profileId,
+                mobileNo,
                 onboarding.completedModules(),
                 SOURCE
         );

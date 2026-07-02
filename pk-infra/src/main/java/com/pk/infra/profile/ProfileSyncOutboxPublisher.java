@@ -36,6 +36,7 @@ public class ProfileSyncOutboxPublisher {
             return new ProfileSyncJob(
                     payload.profileId(),
                     payload.partnerUserId(),
+                    payload.mobileNo(),
                     payload.requestId(),
                     ProfileSyncModule.valueOf(payload.module()),
                     payload.device(),
@@ -51,6 +52,7 @@ public class ProfileSyncOutboxPublisher {
             return objectMapper.writeValueAsString(new OutboxPayload(
                     job.profileId(),
                     job.partnerUserId(),
+                    job.mobileNo(),
                     job.requestId(),
                     job.module().name(),
                     job.device()
@@ -63,6 +65,7 @@ public class ProfileSyncOutboxPublisher {
     private record OutboxPayload(
             long profileId,
             String partnerUserId,
+            String mobileNo,
             String requestId,
             String module,
             LenderDeviceContext device

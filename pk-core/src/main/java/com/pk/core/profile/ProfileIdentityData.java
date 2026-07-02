@@ -2,6 +2,7 @@ package com.pk.core.profile;
 
 public record ProfileIdentityData(
         long profileId,
+        String mobileNo,
         String fullName,
         EncryptedField idNo,
         String idNoHash,

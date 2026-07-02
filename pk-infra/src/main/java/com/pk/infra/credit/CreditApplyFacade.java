@@ -49,7 +49,7 @@ public class CreditApplyFacade {
         this.creditStatusHistoryRepository = creditStatusHistoryRepository;
     }
 
-    public ApplyResult apply(long profileId, String partnerUserId, ApplyCommand command) {
+    public ApplyResult apply(long profileId, String partnerUserId, String mobileNo, ApplyCommand command) {
         validate(command);
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
@@ -69,6 +69,7 @@ public class CreditApplyFacade {
         String applyId = CreditApplyIdGenerator.generate();
         long profileVersionId = profileVersionRepository.createSnapshot(
                 profileId,
+                mobileNo,
                 onboarding.completedModules(),
                 SOURCE
         );

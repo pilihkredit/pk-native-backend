@@ -140,8 +140,10 @@ public class IdentityOcrFacade {
     public FaceRecognitionResult faceRecognition(
             long profileId,
             String partnerUserId,
+            String mobileNo,
             FaceRecognitionCommand command
     ) {
+        String normalizedMobileNo = normalizeMobile(mobileNo);
         if (isBlank(command.requestId())) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "requestId is required");
         }
@@ -192,6 +194,7 @@ public class IdentityOcrFacade {
         EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(parsed.ocrIdNo().trim());
         profileIdentityRepository.upsert(new ProfileIdentityData(
                 profileId,
+                normalizedMobileNo,
                 parsed.ocrName().trim(),
                 encryptedIdNo,
                 EktpValidator.hash(parsed.ocrIdNo()),
@@ -200,12 +203,13 @@ public class IdentityOcrFacade {
                 null,
                 null
         ));
-        persistIdentityAsset(profileId, parsed, session, encryptedIdNo);
+        persistIdentityAsset(profileId, normalizedMobileNo, parsed, session, encryptedIdNo);
         userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
 
         var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
                 profileId,
                 partnerUserId,
+                normalizedMobileNo,
                 command.requestId(),
                 ProfileSyncModule.IDENTITY,
                 command.device(),
@@ -230,8 +234,10 @@ public class IdentityOcrFacade {
     public DevLenderSyncResult devSyncIdentityToLender(
             long profileId,
             String partnerUserId,
+            String mobileNo,
             DevLenderSyncCommand command
     ) {
+        String normalizedMobileNo = normalizeMobile(mobileNo);
         if (!ocrProperties.devLenderSyncEnabled()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "dev lender sync is disabled");
         }
@@ -243,13 +249,14 @@ public class IdentityOcrFacade {
         String ocrName = requireText(resolvedCommand.ocrName(), "ocrName");
         String ocrIdNo = requireText(resolvedCommand.ocrIdNo(), "ocrIdNo");
         ProfileSyncPayload.IdentityProfilePayload payload = buildDevIdentityPayload(resolvedCommand);
-        persistDevIdentityLocalState(profileId, partnerUserId, resolvedCommand, ocrName, ocrIdNo);
+        persistDevIdentityLocalState(profileId, partnerUserId, normalizedMobileNo, resolvedCommand, ocrName, ocrIdNo);
 
         JsonNode lenderResponse;
         try {
             var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
                     profileId,
                     partnerUserId,
+                    normalizedMobileNo,
                     resolvedCommand.requestId().trim(),
                     ProfileSyncModule.IDENTITY,
                     resolvedCommand.device(),
@@ -319,6 +326,7 @@ public class IdentityOcrFacade {
     private void persistDevIdentityLocalState(
             long profileId,
             String partnerUserId,
+            String mobileNo,
             DevLenderSyncCommand command,
             String ocrName,
             String ocrIdNo
@@ -326,6 +334,7 @@ public class IdentityOcrFacade {
         EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(ocrIdNo);
         profileIdentityRepository.upsert(new ProfileIdentityData(
                 profileId,
+                mobileNo,
                 ocrName,
                 encryptedIdNo,
                 EktpValidator.hash(ocrIdNo),
@@ -334,19 +343,21 @@ public class IdentityOcrFacade {
                 null,
                 null
         ));
-        persistDevIdentityAsset(profileId, command, encryptedIdNo, ocrName);
+        persistDevIdentityAsset(profileId, mobileNo, command, encryptedIdNo, ocrName);
         userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
         refreshKycStatus(profileId, partnerUserId);
     }
 
     private void persistDevIdentityAsset(
             long profileId,
+            String mobileNo,
             DevLenderSyncCommand command,
             EncryptedField encryptedIdNo,
             String ocrName
     ) {
         long profileVersionId = profileVersionRepository.createSnapshot(
                 profileId,
+                mobileNo,
                 List.of("identity"),
                 "IDENTITY_DEV_LENDER_SYNC"
         );
@@ -358,6 +369,7 @@ public class IdentityOcrFacade {
                 """
                 INSERT INTO user_identity_asset (
                     profile_id,
+                    mobile_no,
                     profile_version_id,
                     id_card_hash,
                     id_card_ciphertext,
@@ -369,9 +381,10 @@ public class IdentityOcrFacade {
                     encryption_key_ref,
                     ocr_channel,
                     ocr_result_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 profileId,
+                mobileNo,
                 profileVersionId,
                 EktpValidator.hash(requireText(command.ocrIdNo(), "ocrIdNo")),
                 encryptedIdNo.ciphertextBase64(),
@@ -474,12 +487,14 @@ public class IdentityOcrFacade {
 
     private void persistIdentityAsset(
             long profileId,
+            String mobileNo,
             OcrSessionState.OcrParsedFields parsed,
             OcrSessionState session,
             EncryptedField encryptedIdNo
     ) {
         long profileVersionId = profileVersionRepository.createSnapshot(
                 profileId,
+                mobileNo,
                 List.of("identity"),
                 "IDENTITY_OCR"
         );
@@ -488,6 +503,7 @@ public class IdentityOcrFacade {
                 """
                 INSERT INTO user_identity_asset (
                     profile_id,
+                    mobile_no,
                     profile_version_id,
                     id_card_hash,
                     id_card_ciphertext,
@@ -499,9 +515,10 @@ public class IdentityOcrFacade {
                     encryption_key_ref,
                     ocr_channel,
                     ocr_result_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 profileId,
+                mobileNo,
                 profileVersionId,
                 EktpValidator.hash(parsed.ocrIdNo()),
                 encryptedIdNo.ciphertextBase64(),
@@ -618,6 +635,10 @@ public class IdentityOcrFacade {
         if (value != null && !value.isBlank()) {
             node.put(field, value.trim());
         }
+    }
+
+    private static String normalizeMobile(String mobileNo) {
+        return mobileNo == null ? "" : mobileNo.trim();
     }
 
     private static boolean isBlank(String value) {

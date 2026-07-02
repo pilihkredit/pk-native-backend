@@ -7,6 +7,7 @@ import com.pk.core.profile.sync.ProfileSyncPayload;
 public record ProfileSyncJob(
         long profileId,
         String partnerUserId,
+        String mobileNo,
         String requestId,
         ProfileSyncModule module,
         LenderDeviceContext device,
@@ -15,10 +16,11 @@ public record ProfileSyncJob(
     public static ProfileSyncJob fromStoredModule(
             long profileId,
             String partnerUserId,
+            String mobileNo,
             String requestId,
             ProfileSyncModule module,
             LenderDeviceContext device
     ) {
-        return new ProfileSyncJob(profileId, partnerUserId, requestId, module, device, null);
+        return new ProfileSyncJob(profileId, partnerUserId, mobileNo, requestId, module, device, null);
     }
 }

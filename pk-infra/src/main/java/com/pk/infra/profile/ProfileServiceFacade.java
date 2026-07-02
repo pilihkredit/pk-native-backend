@@ -60,8 +60,14 @@ public class ProfileServiceFacade {
         this.userProfileBindingRepository = userProfileBindingRepository;
     }
 
-    public PersonalSaveResult savePersonal(long profileId, String partnerUserId, PersonalSaveCommand command) {
+    public PersonalSaveResult savePersonal(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            PersonalSaveCommand command
+    ) {
         validate(command);
+        String normalizedMobileNo = normalizeMobile(mobileNo);
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
         var existing = profilePersonalRepository.findByProfileId(profileId);
@@ -78,6 +84,7 @@ public class ProfileServiceFacade {
 
         profilePersonalRepository.upsert(new ProfilePersonalData(
                 profileId,
+                normalizedMobileNo,
                 command.educationDegree(),
                 command.industry(),
                 command.income().trim(),
@@ -99,6 +106,7 @@ public class ProfileServiceFacade {
                 profileSyncOrchestrator.scheduleAfterSave(ProfileSyncJob.fromStoredModule(
                 profileId,
                 partnerUserId,
+                normalizedMobileNo,
                 command.requestId(),
                 ProfileSyncModule.PERSONAL,
                 command.device()
@@ -116,10 +124,11 @@ public class ProfileServiceFacade {
     public ContactsSaveResult saveContacts(
             long profileId,
             String partnerUserId,
-            String userMobileNo,
+            String mobileNo,
             ContactsSaveCommand command
     ) {
-        validateContacts(command, userMobileNo);
+        String normalizedMobileNo = normalizeMobile(mobileNo);
+        validateContacts(command, normalizedMobileNo);
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
         var existing = profileContactRepository.findModuleByProfileId(profileId);
@@ -127,10 +136,10 @@ public class ProfileServiceFacade {
             return new ContactsSaveResult(command.requestId(), MODULE_COMPLETED);
         }
 
-        List<ProfileContactData> contacts = toContactData(command.contacts());
+        List<ProfileContactData> contacts = toContactData(normalizedMobileNo, command.contacts());
         profileContactRepository.replaceContacts(
                 profileId,
-                new ProfileContactsModuleData(profileId, MODULE_COMPLETED, command.requestId(), null, null),
+                new ProfileContactsModuleData(profileId, normalizedMobileNo, MODULE_COMPLETED, command.requestId(), null, null),
                 contacts
         );
 
@@ -139,6 +148,7 @@ public class ProfileServiceFacade {
         profileSyncOrchestrator.scheduleAfterSave(ProfileSyncJob.fromStoredModule(
                 profileId,
                 partnerUserId,
+                normalizedMobileNo,
                 command.requestId(),
                 ProfileSyncModule.CONTACT,
                 command.device()
@@ -149,7 +159,13 @@ public class ProfileServiceFacade {
         return new ContactsSaveResult(command.requestId(), MODULE_COMPLETED);
     }
 
-    public BankCardSaveResult saveBankCard(long profileId, String partnerUserId, BankCardSaveCommand command) {
+    public BankCardSaveResult saveBankCard(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            BankCardSaveCommand command
+    ) {
+        String normalizedMobileNo = normalizeMobile(mobileNo);
         validateBankCard(command);
 
         var existing = profileBankCardRepository.findByProfileId(profileId);
@@ -167,6 +183,7 @@ public class ProfileServiceFacade {
         EncryptedField encryptedCardNumber = sensitiveFieldEncryptor.encrypt(normalizedCardNumber);
         profileBankCardRepository.upsert(new ProfileBankCardData(
                 profileId,
+                normalizedMobileNo,
                 command.bankCode().trim(),
                 encryptedCardNumber,
                 cardNoHash,
@@ -183,6 +200,7 @@ public class ProfileServiceFacade {
         profileSyncOrchestrator.syncNow(new ProfileSyncJob(
                 profileId,
                 partnerUserId,
+                normalizedMobileNo,
                 command.requestId(),
                 ProfileSyncModule.BANK_CARD,
                 command.device(),
@@ -266,11 +284,12 @@ public class ProfileServiceFacade {
         }
     }
 
-    private static List<ProfileContactData> toContactData(List<ContactItemCommand> contacts) {
+    private static List<ProfileContactData> toContactData(String ownerMobileNo, List<ContactItemCommand> contacts) {
         var result = new java.util.ArrayList<ProfileContactData>(contacts.size());
         for (int index = 0; index < contacts.size(); index++) {
             ContactItemCommand contact = contacts.get(index);
             result.add(new ProfileContactData(
+                    ownerMobileNo,
                     index + 1,
                     contact.relationship(),
                     contact.contactName().trim(),

@@ -47,6 +47,7 @@ public class ProfileApplicationService {
         ProfileServiceFacade.PersonalSaveResult result = profileServiceFacade.savePersonal(
                 principal.profileId(),
                 principal.partnerUserId(),
+                principal.mobileNo(),
                 new ProfileServiceFacade.PersonalSaveCommand(
                         request.requestId(),
                         request.profile().educationDegree(),
@@ -104,6 +105,7 @@ public class ProfileApplicationService {
         ProfileServiceFacade.BankCardSaveResult result = profileServiceFacade.saveBankCard(
                 principal.profileId(),
                 principal.partnerUserId(),
+                principal.mobileNo(),
                 new ProfileServiceFacade.BankCardSaveCommand(
                         request.requestId(),
                         request.bankCode(),

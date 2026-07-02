@@ -7,8 +7,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pk.core.auth.UserProfileSummary;
-import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.port.LenderProfileSyncPort;
@@ -22,15 +20,15 @@ import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class ProfileSyncHandlerTest {
+    private static final String MOBILE_NO = "81234567890";
+
     @Test
     void persistsLenderAuditAfterSuccessfulSync() {
         LenderProfileSyncPort lenderProfileSyncPort = mock(LenderProfileSyncPort.class);
         ProfileSyncPayloadLoader profileSyncPayloadLoader = mock(ProfileSyncPayloadLoader.class);
-        UserAuthRepository userAuthRepository = mock(UserAuthRepository.class);
         UserProfileBindingRepository userProfileBindingRepository = mock(UserProfileBindingRepository.class);
         ProfilePersonalRepository profilePersonalRepository = mock(ProfilePersonalRepository.class);
         ProfileContactRepository profileContactRepository = mock(ProfileContactRepository.class);
@@ -43,11 +41,10 @@ class ProfileSyncHandlerTest {
                 new ObjectMapper()
         );
 
-        when(userAuthRepository.findByProfileId(7L))
-                .thenReturn(Optional.of(new UserProfileSummary(7L, "UABC", "81234567890", false)));
-        when(profilePersonalRepository.findByProfileId(7L)).thenReturn(Optional.of(
+        when(profilePersonalRepository.findByProfileId(7L)).thenReturn(java.util.Optional.of(
                 new ProfilePersonalData(
                         7L,
+                        MOBILE_NO,
                         5,
                         16,
                         "5000000",
@@ -68,7 +65,6 @@ class ProfileSyncHandlerTest {
         ProfileSyncHandler handler = new ProfileSyncHandler(
                 lenderProfileSyncPort,
                 profileSyncPayloadLoader,
-                userAuthRepository,
                 userProfileBindingRepository,
                 profilePersonalRepository,
                 profileContactRepository,
@@ -80,6 +76,7 @@ class ProfileSyncHandlerTest {
         handler.sync(new ProfileSyncJob(
                 7L,
                 "UABC",
+                MOBILE_NO,
                 "REQ-1",
                 ProfileSyncModule.PERSONAL,
                 sampleDevice(),

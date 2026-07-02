@@ -100,6 +100,7 @@ public class IdentityOcrApplicationService {
         IdentityOcrFacade.FaceRecognitionResult result = identityOcrFacade.faceRecognition(
                 principal.profileId(),
                 principal.partnerUserId(),
+                principal.mobileNo(),
                 new IdentityOcrFacade.FaceRecognitionCommand(
                         request.requestId(),
                         request.faceImageBase64(),

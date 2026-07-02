@@ -83,7 +83,7 @@ class OnboardingProgressFacadeTest {
         stubCompletedModulesExceptIdentity();
         EncryptedField encryptedField = new EncryptedField("cipher", new byte[12], new byte[16]);
         when(profileIdentityRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileIdentityData(1L, "JOHN DOE", encryptedField, "hash", "COMPLETED", "req-1", null, null)
+                new ProfileIdentityData(1L, "81234567890", "JOHN DOE", encryptedField, "hash", "COMPLETED", "req-1", null, null)
         ));
 
         var result = facade.getProgress(1L, "U10001");
@@ -95,13 +95,13 @@ class OnboardingProgressFacadeTest {
     private void stubCompletedModulesExceptIdentity() {
         EncryptedField encryptedField = new EncryptedField("cipher", new byte[12], new byte[16]);
         when(profilePersonalRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfilePersonalData(1L, 1, 16, "5000000", encryptedField, null, "COMPLETED", "req-1", null, null)
+                new ProfilePersonalData(1L, "81234567890", 1, 16, "5000000", encryptedField, null, "COMPLETED", "req-1", null, null)
         ));
         when(profileBankCardRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileBankCardData(1L, "BCA", encryptedField, "hash", "VERIFIED", null, "COMPLETED", "req-1", null, null)
+                new ProfileBankCardData(1L, "81234567890", "BCA", encryptedField, "hash", "VERIFIED", null, "COMPLETED", "req-1", null, null)
         ));
         when(profileContactRepository.findModuleByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileContactsModuleData(1L, "COMPLETED", "req-1", null, null)
+                new ProfileContactsModuleData(1L, "81234567890", "COMPLETED", "req-1", null, null)
         ));
         when(profileDeviceRepository.existsByProfileId(1L)).thenReturn(true);
         when(profileIdentityRepository.findByProfileId(1L)).thenReturn(Optional.empty());

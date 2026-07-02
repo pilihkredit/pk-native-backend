@@ -66,7 +66,6 @@ public class ProfileInfraConfiguration {
     ProfileSyncHandler profileSyncHandler(
             LenderProfileSyncPort lenderProfileSyncPort,
             ProfileSyncPayloadLoader profileSyncPayloadLoader,
-            com.pk.core.auth.port.UserAuthRepository userAuthRepository,
             com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
@@ -77,7 +76,6 @@ public class ProfileInfraConfiguration {
         return new ProfileSyncHandler(
                 lenderProfileSyncPort,
                 profileSyncPayloadLoader,
-                userAuthRepository,
                 userProfileBindingRepository,
                 profilePersonalRepository,
                 profileContactRepository,

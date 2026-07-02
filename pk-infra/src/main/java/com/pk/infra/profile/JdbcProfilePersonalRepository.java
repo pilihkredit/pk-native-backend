@@ -21,7 +21,7 @@ public class JdbcProfilePersonalRepository implements ProfilePersonalRepository 
         try {
             return Optional.of(jdbcTemplate.queryForObject(
                     """
-                    SELECT profile_id, education_degree, industry, income,
+                    SELECT profile_id, mobile_no, education_degree, industry, income,
                            mother_surname_ciphertext, mother_surname_nonce, mother_surname_tag,
                            user_email, module_status, last_request_id,
                            last_lender_request_json, last_lender_response_json
@@ -30,6 +30,7 @@ public class JdbcProfilePersonalRepository implements ProfilePersonalRepository 
                     """,
                     (rs, rowNum) -> new ProfilePersonalData(
                             rs.getLong("profile_id"),
+                            rs.getString("mobile_no"),
                             rs.getInt("education_degree"),
                             rs.getInt("industry"),
                             rs.getString("income"),
@@ -57,6 +58,7 @@ public class JdbcProfilePersonalRepository implements ProfilePersonalRepository 
                 """
                 INSERT INTO user_profile_personal (
                     profile_id,
+                    mobile_no,
                     education_degree,
                     industry,
                     income,
@@ -66,8 +68,9 @@ public class JdbcProfilePersonalRepository implements ProfilePersonalRepository 
                     user_email,
                     module_status,
                     last_request_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
+                    mobile_no = VALUES(mobile_no),
                     education_degree = VALUES(education_degree),
                     industry = VALUES(industry),
                     income = VALUES(income),
@@ -79,6 +82,7 @@ public class JdbcProfilePersonalRepository implements ProfilePersonalRepository 
                     last_request_id = VALUES(last_request_id)
                 """,
                 data.profileId(),
+                data.mobileNo(),
                 data.educationDegree(),
                 data.industry(),
                 data.income(),

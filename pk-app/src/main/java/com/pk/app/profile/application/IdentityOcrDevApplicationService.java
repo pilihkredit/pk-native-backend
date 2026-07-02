@@ -42,6 +42,7 @@ public class IdentityOcrDevApplicationService {
         IdentityOcrFacade.DevLenderSyncResult result = identityOcrFacade.devSyncIdentityToLender(
                 principal.profileId(),
                 principal.partnerUserId(),
+                principal.mobileNo(),
                 new IdentityOcrFacade.DevLenderSyncCommand(
                         request.requestId(),
                         request.faceBase64(),

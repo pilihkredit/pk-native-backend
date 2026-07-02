@@ -63,6 +63,7 @@ public class CreditApplicationService {
         CreditApplyFacade.ApplyResult result = creditApplyFacade.apply(
                 principal.profileId(),
                 principal.partnerUserId(),
+                principal.mobileNo(),
                 new CreditApplyFacade.ApplyCommand(
                         request.requestId(),
                         request.lat(),

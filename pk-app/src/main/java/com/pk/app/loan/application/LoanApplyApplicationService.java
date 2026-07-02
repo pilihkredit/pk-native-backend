@@ -61,6 +61,7 @@ public class LoanApplyApplicationService {
         LoanApplyFacade.ApplyResult result = loanApplyFacade.apply(
                 principal.profileId(),
                 principal.partnerUserId(),
+                principal.mobileNo(),
                 new LoanApplyFacade.ApplyCommand(
                         request.loanApplyId(),
                         request.quoteNo(),

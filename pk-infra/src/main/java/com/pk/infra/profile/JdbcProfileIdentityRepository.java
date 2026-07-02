@@ -21,7 +21,7 @@ public class JdbcProfileIdentityRepository implements ProfileIdentityRepository 
         try {
             return Optional.of(jdbcTemplate.queryForObject(
                     """
-                    SELECT profile_id, full_name,
+                    SELECT profile_id, mobile_no, full_name,
                            id_no_ciphertext, id_no_nonce, id_no_tag,
                            id_no_hash, module_status, last_request_id,
                            last_lender_request_json, last_lender_response_json
@@ -30,6 +30,7 @@ public class JdbcProfileIdentityRepository implements ProfileIdentityRepository 
                     """,
                     (rs, rowNum) -> new ProfileIdentityData(
                             rs.getLong("profile_id"),
+                            rs.getString("mobile_no"),
                             rs.getString("full_name"),
                             new EncryptedField(
                                     rs.getString("id_no_ciphertext"),
@@ -55,6 +56,7 @@ public class JdbcProfileIdentityRepository implements ProfileIdentityRepository 
                 """
                 INSERT INTO user_profile_identity (
                     profile_id,
+                    mobile_no,
                     full_name,
                     id_no_ciphertext,
                     id_no_nonce,
@@ -62,8 +64,9 @@ public class JdbcProfileIdentityRepository implements ProfileIdentityRepository 
                     id_no_hash,
                     module_status,
                     last_request_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
+                    mobile_no = VALUES(mobile_no),
                     full_name = VALUES(full_name),
                     id_no_ciphertext = VALUES(id_no_ciphertext),
                     id_no_nonce = VALUES(id_no_nonce),
@@ -73,6 +76,7 @@ public class JdbcProfileIdentityRepository implements ProfileIdentityRepository 
                     last_request_id = VALUES(last_request_id)
                 """,
                 data.profileId(),
+                data.mobileNo(),
                 data.fullName(),
                 data.idNo().ciphertextBase64(),
                 data.idNo().nonce(),

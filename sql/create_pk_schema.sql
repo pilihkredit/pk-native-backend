@@ -110,6 +110,7 @@ CREATE TABLE sms_send_log (
 CREATE TABLE user_profile_version (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     version_no INT UNSIGNED NOT NULL COMMENT 'Profile version number',
     snapshot_hash CHAR(64) NOT NULL COMMENT 'Snapshot content hash',
     snapshot_json JSON NOT NULL COMMENT 'Profile snapshot JSON',
@@ -122,12 +123,14 @@ CREATE TABLE user_profile_version (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_profile_version_no (profile_id, version_no),
-    KEY idx_user_profile_version_hash (profile_id, snapshot_hash)
+    KEY idx_user_profile_version_hash (profile_id, snapshot_hash),
+    KEY idx_user_profile_version_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Immutable user profile snapshot versions';
 
 CREATE TABLE user_identity_asset (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     profile_version_id BIGINT UNSIGNED NOT NULL COMMENT 'Profile version identifier',
     id_card_hash CHAR(64) NOT NULL COMMENT 'Identity card number hash',
     id_card_ciphertext TEXT NOT NULL COMMENT 'AES-256-GCM encrypted identity card number ciphertext',
@@ -150,6 +153,7 @@ CREATE TABLE user_identity_asset (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     KEY idx_user_identity_asset_profile_version (profile_version_id),
+    KEY idx_user_identity_asset_mobile_no (mobile_no),
     KEY idx_user_identity_asset_id_card_hash (id_card_hash),
     KEY idx_user_identity_asset_identity_retention (identity_data_retention_until),
     KEY idx_user_identity_asset_biometric_retention (biometric_image_retention_until)
@@ -157,6 +161,7 @@ CREATE TABLE user_identity_asset (
 
 CREATE TABLE user_profile_identity (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
     last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
     full_name VARCHAR(128) NOT NULL COMMENT 'Legal name from OCR',
@@ -169,23 +174,27 @@ CREATE TABLE user_profile_identity (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id),
-    KEY idx_user_profile_identity_id_no_hash (id_no_hash)
+    KEY idx_user_profile_identity_id_no_hash (id_no_hash),
+    KEY idx_user_profile_identity_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User identity module state';
 
 CREATE TABLE user_profile_contacts (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
     last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
     last_lender_request_json JSON NULL COMMENT 'Last lender user/info/upsert request audit JSON',
     last_lender_response_json JSON NULL COMMENT 'Last lender user/info/upsert response data JSON',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (profile_id)
+    PRIMARY KEY (profile_id),
+    KEY idx_user_profile_contacts_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User emergency contacts module state';
 
 CREATE TABLE user_profile_contact (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     sort_no INT UNSIGNED NOT NULL COMMENT 'Display and submission order',
     relationship INT NOT NULL COMMENT 'Contact relationship code',
     contact_name VARCHAR(128) NOT NULL COMMENT 'Contact name',
@@ -194,11 +203,13 @@ CREATE TABLE user_profile_contact (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_profile_contact_sort (profile_id, sort_no),
-    KEY idx_user_profile_contact_profile (profile_id)
+    KEY idx_user_profile_contact_profile (profile_id),
+    KEY idx_user_profile_contact_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User emergency contact entries';
 
 CREATE TABLE user_profile_bank_card (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',
     card_no_hash CHAR(64) NOT NULL COMMENT 'SHA-256 hash of normalized card number',
     card_no_ciphertext TEXT NOT NULL COMMENT 'AES-256-GCM encrypted card number ciphertext',
@@ -214,7 +225,8 @@ CREATE TABLE user_profile_bank_card (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id),
-    UNIQUE KEY uk_user_profile_bank_card_hash (card_no_hash)
+    UNIQUE KEY uk_user_profile_bank_card_hash (card_no_hash),
+    KEY idx_user_profile_bank_card_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bank card onboarding module';
 
 CREATE TABLE user_device (
@@ -748,6 +760,7 @@ CREATE TABLE operator_audit_log (
 
 CREATE TABLE user_profile_personal (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     education_degree INT NOT NULL COMMENT 'Education degree code',
     industry INT NOT NULL COMMENT 'Industry code',
     income VARCHAR(16) NOT NULL COMMENT 'Monthly income as numeric string',
@@ -761,7 +774,8 @@ CREATE TABLE user_profile_personal (
     last_lender_response_json JSON NULL COMMENT 'Last lender user/info/upsert response data JSON',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (profile_id)
+    PRIMARY KEY (profile_id),
+    KEY idx_user_profile_personal_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User personal basic information module';
 
 CREATE TABLE user_password_credential (

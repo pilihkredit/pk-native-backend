@@ -22,13 +22,14 @@ public class JdbcProfileContactRepository implements ProfileContactRepository {
         try {
             return Optional.of(jdbcTemplate.queryForObject(
                     """
-                    SELECT profile_id, module_status, last_request_id,
+                    SELECT profile_id, mobile_no, module_status, last_request_id,
                            last_lender_request_json, last_lender_response_json
                     FROM user_profile_contacts
                     WHERE profile_id = ?
                     """,
                     (rs, rowNum) -> new ProfileContactsModuleData(
                             rs.getLong("profile_id"),
+                            rs.getString("mobile_no"),
                             rs.getString("module_status"),
                             rs.getString("last_request_id"),
                             rs.getString("last_lender_request_json"),
@@ -45,12 +46,13 @@ public class JdbcProfileContactRepository implements ProfileContactRepository {
     public List<ProfileContactData> findContactsByProfileId(long profileId) {
         return jdbcTemplate.query(
                 """
-                SELECT sort_no, relationship, contact_name, contact_mobile
+                SELECT mobile_no, sort_no, relationship, contact_name, contact_mobile
                 FROM user_profile_contact
                 WHERE profile_id = ?
                 ORDER BY sort_no
                 """,
                 (rs, rowNum) -> new ProfileContactData(
+                        rs.getString("mobile_no"),
                         rs.getInt("sort_no"),
                         rs.getInt("relationship"),
                         rs.getString("contact_name"),
@@ -68,13 +70,15 @@ public class JdbcProfileContactRepository implements ProfileContactRepository {
     ) {
         jdbcTemplate.update(
                 """
-                INSERT INTO user_profile_contacts (profile_id, module_status, last_request_id)
-                VALUES (?, ?, ?)
+                INSERT INTO user_profile_contacts (profile_id, mobile_no, module_status, last_request_id)
+                VALUES (?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
+                    mobile_no = VALUES(mobile_no),
                     module_status = VALUES(module_status),
                     last_request_id = VALUES(last_request_id)
                 """,
                 profileId,
+                module.mobileNo(),
                 module.moduleStatus(),
                 module.lastRequestId()
         );
@@ -86,13 +90,15 @@ public class JdbcProfileContactRepository implements ProfileContactRepository {
                     """
                     INSERT INTO user_profile_contact (
                         profile_id,
+                        mobile_no,
                         sort_no,
                         relationship,
                         contact_name,
                         contact_mobile
-                    ) VALUES (?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?)
                     """,
                     profileId,
+                    contact.mobileNo(),
                     contact.sortNo(),
                     contact.relationship(),
                     contact.contactName(),

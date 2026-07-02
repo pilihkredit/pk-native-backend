@@ -2,7 +2,6 @@ package com.pk.infra.profile;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
-import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
@@ -16,7 +15,6 @@ import com.pk.infra.auth.MobileNumberValidator;
 public class ProfileSyncHandler {
     private final LenderProfileSyncPort lenderProfileSyncPort;
     private final ProfileSyncPayloadLoader profileSyncPayloadLoader;
-    private final UserAuthRepository userAuthRepository;
     private final UserProfileBindingRepository userProfileBindingRepository;
     private final ProfilePersonalRepository profilePersonalRepository;
     private final ProfileContactRepository profileContactRepository;
@@ -27,7 +25,6 @@ public class ProfileSyncHandler {
     public ProfileSyncHandler(
             LenderProfileSyncPort lenderProfileSyncPort,
             ProfileSyncPayloadLoader profileSyncPayloadLoader,
-            UserAuthRepository userAuthRepository,
             UserProfileBindingRepository userProfileBindingRepository,
             ProfilePersonalRepository profilePersonalRepository,
             ProfileContactRepository profileContactRepository,
@@ -37,7 +34,6 @@ public class ProfileSyncHandler {
     ) {
         this.lenderProfileSyncPort = lenderProfileSyncPort;
         this.profileSyncPayloadLoader = profileSyncPayloadLoader;
-        this.userAuthRepository = userAuthRepository;
         this.userProfileBindingRepository = userProfileBindingRepository;
         this.profilePersonalRepository = profilePersonalRepository;
         this.profileContactRepository = profileContactRepository;
@@ -51,19 +47,7 @@ public class ProfileSyncHandler {
         ProfileSyncPayload payload = job.payloadSnapshot() == null
                 ? profileSyncPayloadLoader.load(job.profileId(), job.module())
                 : job.payloadSnapshot();
-        String mobileNo = userAuthRepository.findByProfileId(job.profileId())
-                .map(profile -> profile.mobileNo())
-                .filter(value -> value != null && !value.isBlank())
-                .orElseThrow(() -> new ApiException(
-                        ApiCode.INVALID_REQUEST_PARAMETERS,
-                        "user mobileNo is required for lender profile sync"
-                ));
-        if (!MobileNumberValidator.isValid(mobileNo)) {
-            throw new ApiException(
-                    ApiCode.INVALID_MOBILE_NUMBER,
-                    "mobileNo must be Indonesian format (starts with 8, 9-32 digits) for lender sync"
-            );
-        }
+        String mobileNo = requireMobileNo(job.mobileNo());
         LenderProfileSyncPort.LenderProfileSyncResult result = lenderProfileSyncPort.syncModule(
                 new LenderProfileSyncPort.LenderProfileSyncCommand(
                 job.requestId(),
@@ -97,6 +81,23 @@ public class ProfileSyncHandler {
         } catch (RuntimeException exception) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, exception.getMessage());
         }
+    }
+
+    private static String requireMobileNo(String mobileNo) {
+        if (mobileNo == null || mobileNo.isBlank()) {
+            throw new ApiException(
+                    ApiCode.INVALID_REQUEST_PARAMETERS,
+                    "user mobileNo is required for lender profile sync"
+            );
+        }
+        String normalized = mobileNo.trim();
+        if (!MobileNumberValidator.isValid(normalized)) {
+            throw new ApiException(
+                    ApiCode.INVALID_MOBILE_NUMBER,
+                    "mobileNo must be Indonesian format (starts with 8, 9-32 digits) for lender sync"
+            );
+        }
+        return normalized;
     }
 
     private void persistLenderAudit(

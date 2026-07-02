@@ -24,7 +24,7 @@ public class JdbcProfileVersionRepository implements ProfileVersionRepository {
     }
 
     @Override
-    public long createSnapshot(long profileId, List<String> completedModules, String source) {
+    public long createSnapshot(long profileId, String mobileNo, List<String> completedModules, String source) {
         int versionNo = jdbcTemplate.queryForObject(
                 """
                 SELECT COALESCE(MAX(version_no), 0) + 1
@@ -41,6 +41,7 @@ public class JdbcProfileVersionRepository implements ProfileVersionRepository {
                 """
                 INSERT INTO user_profile_version (
                     profile_id,
+                    mobile_no,
                     version_no,
                     snapshot_hash,
                     snapshot_json,
@@ -48,9 +49,10 @@ public class JdbcProfileVersionRepository implements ProfileVersionRepository {
                     legal_basis,
                     processing_purpose,
                     source
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 profileId,
+                mobileNo,
                 versionNo,
                 snapshotHash,
                 snapshotJson,

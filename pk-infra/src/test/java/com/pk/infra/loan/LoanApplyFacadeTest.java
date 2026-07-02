@@ -76,7 +76,7 @@ class LoanApplyFacadeTest {
     void returnsIdempotentResultForExistingLoanApplyId() {
         when(loanApplicationRepository.findByLoanApplyId("LOAN-1")).thenReturn(Optional.of(existingLoan()));
 
-        LoanApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", sampleCommand());
+        LoanApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", "81234567890", sampleCommand());
 
         assertThat(result.loanApplyId()).isEqualTo("LOAN-1");
         assertThat(result.status()).isEqualTo(LoanApplyFacade.PUBLIC_PROCESSING);
@@ -89,7 +89,7 @@ class LoanApplyFacadeTest {
         when(loanApplicationRepository.findByLoanApplyId("LOAN-1")).thenReturn(Optional.empty());
         when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.of(expiredQuote()));
 
-        assertThatThrownBy(() -> facade.apply(1L, "partner-1", sampleCommand()))
+        assertThatThrownBy(() -> facade.apply(1L, "partner-1", "81234567890", sampleCommand()))
                 .isInstanceOf(ApiException.class)
                 .extracting(exception -> ((ApiException) exception).apiCode())
                 .isEqualTo(ApiCode.QUOTE_SNAPSHOT_EXPIRED);
@@ -111,10 +111,10 @@ class LoanApplyFacadeTest {
                         List.of()
                 )
         );
-        when(profileVersionRepository.createSnapshot(1L, List.of("PERSONAL"), "LOAN_APPLY")).thenReturn(9L);
+        when(profileVersionRepository.createSnapshot(1L, "81234567890", List.of("PERSONAL"), "LOAN_APPLY")).thenReturn(9L);
         when(loanApplicationRepository.insert(any())).thenReturn(200L);
 
-        LoanApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", sampleCommand());
+        LoanApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", "81234567890", sampleCommand());
 
         assertThat(result.loanApplyId()).isEqualTo("LOAN-1");
         assertThat(result.status()).isEqualTo(LoanApplicationStatus.PROCESSING);
