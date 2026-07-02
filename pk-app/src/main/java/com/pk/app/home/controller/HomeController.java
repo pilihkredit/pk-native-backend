@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Post-login home routing.
+ * Post-login user profile summary.
  */
 @RestController
 @RequestMapping("/home")
@@ -25,7 +25,7 @@ public class HomeController {
         this.homeApplicationService = homeApplicationService;
     }
 
-    /** Query user stage for home routing. */
+    /** Query user onboarding summary for home routing. */
     @GetMapping("/summary")
     public ApiResponse<HomeSummaryResponse> getSummary(HttpServletRequest httpRequest) {
         AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
@@ -33,7 +33,7 @@ public class HomeController {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                homeApplicationService.getSummary(principal),
+                homeApplicationService.getSummary(principal, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

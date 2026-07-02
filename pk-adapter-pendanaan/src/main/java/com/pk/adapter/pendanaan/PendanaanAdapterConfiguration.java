@@ -5,6 +5,7 @@ import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.callback.port.LoanCallbackParser;
 import com.pk.core.credit.port.LenderCreditPort;
 import com.pk.core.external.port.LenderInteractionLogRepository;
+import com.pk.core.home.port.LenderUserStatusPort;
 import com.pk.core.loan.port.LenderLoanApplyPort;
 import com.pk.core.loan.port.LenderLoanContractPort;
 import com.pk.core.loan.port.LenderLoanProductPort;
@@ -77,6 +78,14 @@ public class PendanaanAdapterConfiguration {
             return new PendanaanCreditAdapter(httpStack.requireHttpClient(), objectMapper);
         }
         return new FakePendanaanCreditAdapter();
+    }
+
+    @Bean
+    LenderUserStatusPort lenderUserStatusPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanUserStatusAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanUserStatusAdapter();
     }
 
     @Bean

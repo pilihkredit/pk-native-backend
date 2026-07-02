@@ -1,83 +1,90 @@
 package com.pk.infra.home;
 
-import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.home.HomeNextAction;
 import com.pk.core.home.HomeUserStage;
-import com.pk.core.home.port.HomeLifecycleReadRepository;
-import com.pk.core.home.port.HomeLifecycleReadRepository.CreditApplySnapshot;
-import com.pk.core.home.port.HomeLifecycleReadRepository.LoanApplySnapshot;
+import com.pk.core.home.port.LenderUserStatusPort;
+import com.pk.core.home.port.UserLenderStatusQueryRepository;
+import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.profile.OnboardingProgressFacade;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.List;
 
 public class HomeSummaryFacade {
-    private static final String CREDIT_APPROVED = CreditApplicationStatus.APPROVED;
-
     private final OnboardingProgressFacade onboardingProgressFacade;
-    private final HomeLifecycleReadRepository homeLifecycleReadRepository;
+    private final LenderUserStatusPort lenderUserStatusPort;
+    private final UserLenderStatusQueryRepository userLenderStatusQueryRepository;
 
     public HomeSummaryFacade(
             OnboardingProgressFacade onboardingProgressFacade,
-            HomeLifecycleReadRepository homeLifecycleReadRepository
+            LenderUserStatusPort lenderUserStatusPort,
+            UserLenderStatusQueryRepository userLenderStatusQueryRepository
     ) {
         this.onboardingProgressFacade = onboardingProgressFacade;
-        this.homeLifecycleReadRepository = homeLifecycleReadRepository;
+        this.lenderUserStatusPort = lenderUserStatusPort;
+        this.userLenderStatusQueryRepository = userLenderStatusQueryRepository;
     }
 
-    public HomeSummaryResult getSummary(long profileId, String partnerUserId) {
+    public HomeSummaryResult getSummary(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            LenderDeviceContext device
+    ) {
         OnboardingProgressFacade.OnboardingProgressResult onboarding = onboardingProgressFacade.getProgress(
                 profileId,
                 partnerUserId
         );
-        Optional<CreditApplySnapshot> latestCredit = homeLifecycleReadRepository.findLatestCreditApply(profileId);
-        Optional<LoanApplySnapshot> latestLoan = homeLifecycleReadRepository.findLatestLoanApply(profileId);
-        int pendingRepayBillCount = homeLifecycleReadRepository.countPendingRepayLoans(profileId);
-        boolean hasOverdue = homeLifecycleReadRepository.hasOverdueRepay(profileId);
-        boolean hasDisbursedLoan = homeLifecycleReadRepository.hasDisbursedLoan(profileId);
-
-        StageDecision stageDecision = resolveStage(
-                onboarding.kycStatus(),
-                latestCredit.orElse(null),
-                latestLoan.orElse(null),
-                pendingRepayBillCount,
-                hasDisbursedLoan
+        StageDecision stageDecision = resolveLocalStage(onboarding.kycStatus());
+        LenderUserStatusPort.LenderUserStatusResult lenderStatus = lenderUserStatusPort.queryStatus(
+                new LenderUserStatusPort.LenderUserStatusCommand(partnerUserId, device)
         );
-
+        Instant queriedAt = Instant.now();
+        userLenderStatusQueryRepository.upsert(new UserLenderStatusQueryRepository.UserLenderStatusQueryData(
+                profileId,
+                mobileNo,
+                lenderStatus.partnerUserId() == null ? partnerUserId : lenderStatus.partnerUserId(),
+                lenderStatus.lenderUserId(),
+                lenderStatus.userLoanLifeTimeStatus(),
+                lenderStatus.userLoanLifeTimeLastAction(),
+                lenderStatus.freezeEndTime(),
+                lenderStatus.onLoanCount(),
+                lenderStatus.creditContractExpireTime(),
+                lenderStatus.requestJson(),
+                lenderStatus.responseDataJson(),
+                queriedAt
+        ));
         return new HomeSummaryResult(
-                partnerUserId,
+                onboarding.partnerUserId(),
                 stageDecision.userStage(),
                 stageDecision.nextAction(),
                 onboarding.kycStatus(),
-                latestCredit.orElse(null),
-                latestLoan.orElse(null),
-                pendingRepayBillCount,
-                hasOverdue
+                onboarding.completedModules(),
+                onboarding.missingModules(),
+                lenderStatus.lenderUserId(),
+                lenderStatus.userLoanLifeTimeStatus(),
+                lenderStatus.userLoanLifeTimeLastAction(),
+                lenderStatus.freezeEndTime(),
+                lenderStatus.onLoanCount(),
+                lenderStatus.creditContractExpireTime(),
+                lenderStatus.requestJson(),
+                lenderStatus.responseDataJson(),
+                queriedAt
         );
     }
 
-    private static StageDecision resolveStage(
-            String kycStatus,
-            CreditApplySnapshot latestCredit,
-            LoanApplySnapshot latestLoan,
-            int pendingRepayBillCount,
-            boolean hasDisbursedLoan
-    ) {
+    public String resolveLocalUserStage(long profileId, String partnerUserId) {
+        OnboardingProgressFacade.OnboardingProgressResult onboarding = onboardingProgressFacade.getProgress(
+                profileId,
+                partnerUserId
+        );
+        return resolveLocalStage(onboarding.kycStatus()).userStage();
+    }
+
+    private static StageDecision resolveLocalStage(String kycStatus) {
         if (OnboardingProgressFacade.KYC_INCOMPLETE.equals(kycStatus)) {
             return new StageDecision(HomeUserStage.ONBOARDING, HomeNextAction.COMPLETE_PROFILE);
         }
-        if (pendingRepayBillCount > 0) {
-            return new StageDecision(HomeUserStage.REPAY, HomeNextAction.VIEW_REPAY);
-        }
-        if (latestLoan != null && HomeUserStage.LOAN_ACTIVE_STATUS.equals(latestLoan.status())) {
-            return new StageDecision(HomeUserStage.LOAN_PROCESSING, HomeNextAction.WAIT);
-        }
-        if (latestCredit != null && CREDIT_APPROVED.equals(latestCredit.status())) {
-            String userStage = hasDisbursedLoan ? HomeUserStage.RELOAN : HomeUserStage.CREDIT_APPROVED;
-            return new StageDecision(userStage, HomeNextAction.GO_LOAN);
-        }
-        if (latestCredit != null && CreditApplicationStatus.isInFlight(latestCredit.status())) {
-            return new StageDecision(HomeUserStage.CREDIT_PENDING, HomeNextAction.WAIT);
-        }
-        return new StageDecision(HomeUserStage.CREDIT_PENDING, HomeNextAction.APPLY_CREDIT);
+        return new StageDecision(HomeUserStage.READY, null);
     }
 
     private record StageDecision(String userStage, String nextAction) {
@@ -88,10 +95,17 @@ public class HomeSummaryFacade {
             String userStage,
             String nextAction,
             String kycStatus,
-            CreditApplySnapshot latestCreditApply,
-            LoanApplySnapshot latestLoanApply,
-            int pendingRepayBillCount,
-            boolean hasOverdue
+            List<String> completedModules,
+            List<String> missingModules,
+            String lenderUserId,
+            Integer userLoanLifeTimeStatus,
+            Integer userLoanLifeTimeLastAction,
+            Long freezeEndTime,
+            Integer onLoanCount,
+            Long creditContractExpireTime,
+            String lastLenderRequestJson,
+            String lastLenderResponseJson,
+            Instant queriedAt
     ) {
     }
 }

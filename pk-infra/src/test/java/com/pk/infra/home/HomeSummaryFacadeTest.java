@@ -1,186 +1,113 @@
 package com.pk.infra.home;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pk.core.home.HomeNextAction;
 import com.pk.core.home.HomeUserStage;
-import com.pk.core.home.port.HomeLifecycleReadRepository;
-import com.pk.core.home.port.HomeLifecycleReadRepository.CreditApplySnapshot;
-import com.pk.core.home.port.HomeLifecycleReadRepository.LoanApplySnapshot;
-import com.pk.core.profile.EncryptedField;
-import com.pk.core.profile.ProfileBankCardData;
-import com.pk.core.profile.ProfileContactsModuleData;
-import com.pk.core.profile.ProfileIdentityData;
-import com.pk.core.profile.ProfilePersonalData;
-import com.pk.core.profile.port.ProfileContactRepository;
-import com.pk.core.profile.port.ProfileDeviceRepository;
-import com.pk.core.profile.port.ProfileIdentityRepository;
-import com.pk.core.profile.port.ProfileBankCardRepository;
-import com.pk.core.profile.port.ProfilePersonalRepository;
+import com.pk.core.home.port.LenderUserStatusPort;
+import com.pk.core.home.port.UserLenderStatusQueryRepository;
+import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.profile.OnboardingProgressFacade;
-import java.util.Optional;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class HomeSummaryFacadeTest {
-    private ProfilePersonalRepository profilePersonalRepository;
-    private ProfileBankCardRepository profileBankCardRepository;
-    private ProfileContactRepository profileContactRepository;
-    private ProfileDeviceRepository profileDeviceRepository;
-    private ProfileIdentityRepository profileIdentityRepository;
-    private HomeLifecycleReadRepository homeLifecycleReadRepository;
+    private OnboardingProgressFacade onboardingProgressFacade;
+    private LenderUserStatusPort lenderUserStatusPort;
+    private UserLenderStatusQueryRepository userLenderStatusQueryRepository;
     private HomeSummaryFacade facade;
 
     @BeforeEach
     void setUp() {
-        profilePersonalRepository = mock(ProfilePersonalRepository.class);
-        profileBankCardRepository = mock(ProfileBankCardRepository.class);
-        profileContactRepository = mock(ProfileContactRepository.class);
-        profileDeviceRepository = mock(ProfileDeviceRepository.class);
-        profileIdentityRepository = mock(ProfileIdentityRepository.class);
-        homeLifecycleReadRepository = mock(HomeLifecycleReadRepository.class);
+        onboardingProgressFacade = mock(OnboardingProgressFacade.class);
+        lenderUserStatusPort = mock(LenderUserStatusPort.class);
+        userLenderStatusQueryRepository = mock(UserLenderStatusQueryRepository.class);
         facade = new HomeSummaryFacade(
-                new OnboardingProgressFacade(
-                        profilePersonalRepository,
-                        profileBankCardRepository,
-                        profileContactRepository,
-                        profileDeviceRepository,
-                        profileIdentityRepository
-                ),
-                homeLifecycleReadRepository
+                onboardingProgressFacade,
+                lenderUserStatusPort,
+                userLenderStatusQueryRepository
         );
     }
 
     @Test
-    void returnsOnboardingWhenKycIncomplete() {
-        stubIncompleteOnboarding();
-
-        var result = facade.getSummary(1L, "U10001");
-
-        assertThat(result.userStage()).isEqualTo(HomeUserStage.ONBOARDING);
-        assertThat(result.nextAction()).isEqualTo(HomeNextAction.COMPLETE_PROFILE);
-        assertThat(result.latestCreditApply()).isNull();
-        assertThat(result.pendingRepayBillCount()).isZero();
-    }
-
-    @Test
-    void returnsCreditPendingWhenKycSyncedWithoutCreditApply() {
-        stubSyncedOnboarding();
-        when(homeLifecycleReadRepository.findLatestCreditApply(1L)).thenReturn(Optional.empty());
-        when(homeLifecycleReadRepository.findLatestLoanApply(1L)).thenReturn(Optional.empty());
-        when(homeLifecycleReadRepository.countPendingRepayLoans(1L)).thenReturn(0);
-        when(homeLifecycleReadRepository.hasOverdueRepay(1L)).thenReturn(false);
-        when(homeLifecycleReadRepository.hasDisbursedLoan(1L)).thenReturn(false);
-
-        var result = facade.getSummary(1L, "U10001");
-
-        assertThat(result.userStage()).isEqualTo(HomeUserStage.CREDIT_PENDING);
-        assertThat(result.nextAction()).isEqualTo(HomeNextAction.APPLY_CREDIT);
-    }
-
-    @Test
-    void returnsCreditApprovedWhenCreditApprovedAndNoLoanHistory() {
-        stubSyncedOnboarding();
-        when(homeLifecycleReadRepository.findLatestCreditApply(1L))
-                .thenReturn(Optional.of(new CreditApplySnapshot("APPLY-1", "APPROVED")));
-        when(homeLifecycleReadRepository.findLatestLoanApply(1L)).thenReturn(Optional.empty());
-        when(homeLifecycleReadRepository.countPendingRepayLoans(1L)).thenReturn(0);
-        when(homeLifecycleReadRepository.hasOverdueRepay(1L)).thenReturn(false);
-        when(homeLifecycleReadRepository.hasDisbursedLoan(1L)).thenReturn(false);
-
-        var result = facade.getSummary(1L, "U10001");
-
-        assertThat(result.userStage()).isEqualTo(HomeUserStage.CREDIT_APPROVED);
-        assertThat(result.nextAction()).isEqualTo(HomeNextAction.GO_LOAN);
-        assertThat(result.latestCreditApply().applyId()).isEqualTo("APPLY-1");
-    }
-
-    @Test
-    void returnsRepayWhenPendingBillsExist() {
-        stubSyncedOnboarding();
-        when(homeLifecycleReadRepository.findLatestCreditApply(1L))
-                .thenReturn(Optional.of(new CreditApplySnapshot("APPLY-1", "APPROVED")));
-        when(homeLifecycleReadRepository.findLatestLoanApply(1L))
-                .thenReturn(Optional.of(new LoanApplySnapshot("LOAN-1", "DISBURSED")));
-        when(homeLifecycleReadRepository.countPendingRepayLoans(1L)).thenReturn(2);
-        when(homeLifecycleReadRepository.hasOverdueRepay(1L)).thenReturn(true);
-        when(homeLifecycleReadRepository.hasDisbursedLoan(1L)).thenReturn(true);
-
-        var result = facade.getSummary(1L, "U10001");
-
-        assertThat(result.userStage()).isEqualTo(HomeUserStage.REPAY);
-        assertThat(result.nextAction()).isEqualTo(HomeNextAction.VIEW_REPAY);
-        assertThat(result.pendingRepayBillCount()).isEqualTo(2);
-        assertThat(result.hasOverdue()).isTrue();
-    }
-
-    @Test
-    void returnsReloanWhenCreditApprovedAndLoanAlreadyDisbursed() {
-        stubSyncedOnboarding();
-        when(homeLifecycleReadRepository.findLatestCreditApply(1L))
-                .thenReturn(Optional.of(new CreditApplySnapshot("APPLY-1", "APPROVED")));
-        when(homeLifecycleReadRepository.findLatestLoanApply(1L))
-                .thenReturn(Optional.of(new LoanApplySnapshot("LOAN-1", "DISBURSED")));
-        when(homeLifecycleReadRepository.countPendingRepayLoans(1L)).thenReturn(0);
-        when(homeLifecycleReadRepository.hasOverdueRepay(1L)).thenReturn(false);
-        when(homeLifecycleReadRepository.hasDisbursedLoan(1L)).thenReturn(true);
-
-        var result = facade.getSummary(1L, "U10001");
-
-        assertThat(result.userStage()).isEqualTo(HomeUserStage.RELOAN);
-        assertThat(result.nextAction()).isEqualTo(HomeNextAction.GO_LOAN);
-    }
-
-    @Test
-    void returnsLoanProcessingWhenLatestLoanIsProcessing() {
-        stubSyncedOnboarding();
-        when(homeLifecycleReadRepository.findLatestCreditApply(1L))
-                .thenReturn(Optional.of(new CreditApplySnapshot("APPLY-1", "APPROVED")));
-        when(homeLifecycleReadRepository.findLatestLoanApply(1L))
-                .thenReturn(Optional.of(new LoanApplySnapshot("LOAN-1", "PROCESSING")));
-        when(homeLifecycleReadRepository.countPendingRepayLoans(1L)).thenReturn(0);
-        when(homeLifecycleReadRepository.hasOverdueRepay(1L)).thenReturn(false);
-        when(homeLifecycleReadRepository.hasDisbursedLoan(1L)).thenReturn(false);
-
-        var result = facade.getSummary(1L, "U10001");
-
-        assertThat(result.userStage()).isEqualTo(HomeUserStage.LOAN_PROCESSING);
-        assertThat(result.nextAction()).isEqualTo(HomeNextAction.WAIT);
-    }
-
-    private void stubIncompleteOnboarding() {
-        when(profilePersonalRepository.findByProfileId(1L)).thenReturn(Optional.empty());
-        when(profileBankCardRepository.findByProfileId(1L)).thenReturn(Optional.empty());
-        when(profileContactRepository.findModuleByProfileId(1L)).thenReturn(Optional.empty());
-        when(profileDeviceRepository.existsByProfileId(1L)).thenReturn(false);
-    }
-
-    private void stubSyncedOnboarding() {
-        EncryptedField encryptedField = new EncryptedField("cipher", new byte[12], new byte[16]);
-        when(profilePersonalRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfilePersonalData(1L, "81234567890", 1, 16, "5000000", encryptedField, null, "COMPLETED", "req-1", null, null)
-        ));
-        when(profileBankCardRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileBankCardData(1L, "81234567890", "BCA", encryptedField, "hash", "VERIFIED", null, "COMPLETED", "req-1", null, null)
-        ));
-        when(profileContactRepository.findModuleByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileContactsModuleData(1L, "81234567890", "COMPLETED", "req-1", null, null)
-        ));
-        when(profileDeviceRepository.existsByProfileId(1L)).thenReturn(true);
-        when(profileIdentityRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileIdentityData(
-                        1L,
-                        "81234567890",
-                        "JOHN DOE",
-                        encryptedField,
-                        "hash",
-                        "COMPLETED",
-                        "req-identity",
-                        null,
-                        null
+    void syncsLenderUserStatusAndPersistsSnapshot() {
+        when(onboardingProgressFacade.getProgress(1L, "U10001")).thenReturn(
+                new OnboardingProgressFacade.OnboardingProgressResult(
+                        "U10001",
+                        OnboardingProgressFacade.KYC_SYNCED,
+                        List.of("personal"),
+                        List.of()
                 )
-        ));
+        );
+        when(lenderUserStatusPort.queryStatus(any())).thenReturn(
+                new LenderUserStatusPort.LenderUserStatusResult(
+                        "U10001",
+                        "USR-1",
+                        4,
+                        22,
+                        null,
+                        0,
+                        1780300800000L,
+                        "{\"partnerUserId\":\"U10001\"}",
+                        "{\"userId\":\"USR-1\"}"
+                )
+        );
+
+        var result = facade.getSummary(1L, "U10001", "81234567890", sampleDevice());
+
+        assertThat(result.userStage()).isEqualTo(HomeUserStage.READY);
+        assertThat(result.nextAction()).isNull();
+        assertThat(result.lenderUserId()).isEqualTo("USR-1");
+        assertThat(result.userLoanLifeTimeStatus()).isEqualTo(4);
+        assertThat(result.userLoanLifeTimeLastAction()).isEqualTo(22);
+        assertThat(result.lastLenderRequestJson()).contains("U10001");
+        assertThat(result.lastLenderResponseJson()).contains("USR-1");
+        verify(userLenderStatusQueryRepository).upsert(any());
+    }
+
+    @Test
+    void resolveLocalUserStageReturnsOnboardingWhenIncomplete() {
+        when(onboardingProgressFacade.getProgress(1L, "U10001")).thenReturn(
+                new OnboardingProgressFacade.OnboardingProgressResult(
+                        "U10001",
+                        OnboardingProgressFacade.KYC_INCOMPLETE,
+                        List.of(),
+                        List.of("personal")
+                )
+        );
+
+        assertThat(facade.resolveLocalUserStage(1L, "U10001")).isEqualTo(HomeUserStage.ONBOARDING);
+    }
+
+    @Test
+    void resolveLocalUserStageReturnsReadyWhenSynced() {
+        when(onboardingProgressFacade.getProgress(1L, "U10001")).thenReturn(
+                new OnboardingProgressFacade.OnboardingProgressResult(
+                        "U10001",
+                        OnboardingProgressFacade.KYC_SYNCED,
+                        List.of("personal"),
+                        List.of()
+                )
+        );
+
+        assertThat(facade.resolveLocalUserStage(1L, "U10001")).isEqualTo(HomeUserStage.READY);
+    }
+
+    private static LenderDeviceContext sampleDevice() {
+        return new LenderDeviceContext(
+                "LenderApp",
+                "1.0.0",
+                "com.example",
+                "device-1",
+                "android",
+                null,
+                null,
+                "ClientApp"
+        );
     }
 }
