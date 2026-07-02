@@ -3,7 +3,7 @@
 <mapper namespace="com.pk.infra.profile.mapper.ProfileBankCardMapper">
     <resultMap id="bankCardRowMap" type="com.pk.infra.profile.repository.ProfileBankCardRow">
         <constructor>
-            <arg column="profile_id" javaType="long"/>
+            <arg column="profile_id" javaType="_long"/>
             <arg column="mobile_no" javaType="string"/>
             <arg column="bank_code" javaType="string"/>
             <arg column="card_no_ciphertext" javaType="string"/>

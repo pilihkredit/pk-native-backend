@@ -5,7 +5,7 @@
 
     <resultMap id="moduleMap" type="com.pk.core.profile.ProfileContactsModuleData">
         <constructor>
-            <arg column="profile_id" javaType="long"/>
+            <arg column="profile_id" javaType="_long"/>
             <arg column="mobile_no" javaType="string"/>
             <arg column="module_status" javaType="string"/>
             <arg column="last_request_id" javaType="string"/>
@@ -17,8 +17,8 @@
     <resultMap id="contactMap" type="com.pk.core.profile.ProfileContactData">
         <constructor>
             <arg column="mobile_no" javaType="string"/>
-            <arg column="sort_no" javaType="int"/>
-            <arg column="relationship" javaType="int"/>
+            <arg column="sort_no" javaType="_int"/>
+            <arg column="relationship" javaType="_int"/>
             <arg column="contact_name" javaType="string"/>
             <arg column="contact_mobile" javaType="string"/>
         </constructor>

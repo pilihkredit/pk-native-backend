@@ -3,9 +3,9 @@
 <mapper namespace="com.pk.infra.loan.mapper.LoanApplicationMapper">
     <resultMap id="loanApplicationRecordMap" type="com.pk.core.loan.port.LoanApplicationRepository$LoanApplicationRecord">
         <constructor>
-            <arg column="id" javaType="long"/><arg column="loan_apply_id" javaType="string"/>
-            <arg column="credit_application_id" javaType="long"/><arg column="quote_id" javaType="long"/>
-            <arg column="profile_id" javaType="long"/><arg column="profile_version_id" javaType="long"/>
+            <arg column="id" javaType="_long"/><arg column="loan_apply_id" javaType="string"/>
+            <arg column="credit_application_id" javaType="_long"/><arg column="quote_id" javaType="_long"/>
+            <arg column="profile_id" javaType="_long"/><arg column="profile_version_id" javaType="_long"/>
             <arg column="external_loan_apply_no" javaType="string"/><arg column="bill_no" javaType="string"/>
             <arg column="status" javaType="string"/><arg column="external_status" javaType="string"/>
             <arg column="apply_amt" javaType="java.math.BigDecimal"/><arg column="pay_amount" javaType="java.math.BigDecimal"/>

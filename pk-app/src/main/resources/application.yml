@@ -13,6 +13,12 @@ management:
 server:
   port: ${PK_APP_PORT:8831}
 
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-handlers-package: com.pk.infra.mybatis.typehandler
+  configuration:
+    map-underscore-to-camel-case: true
+
 pk:
   environment: ${SPRING_PROFILES_ACTIVE:local}
   api:

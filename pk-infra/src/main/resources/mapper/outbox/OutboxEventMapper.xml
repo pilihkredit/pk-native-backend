@@ -5,14 +5,14 @@
 
     <resultMap id="outboxEventMap" type="com.pk.core.outbox.OutboxEvent">
         <constructor>
-            <arg column="id" javaType="long"/>
+            <arg column="id" javaType="_long"/>
             <arg column="event_no" javaType="string"/>
             <arg column="event_type" javaType="string"/>
             <arg column="aggregate_type" javaType="string"/>
             <arg column="aggregate_id" javaType="string"/>
             <arg column="payload_json" javaType="string"/>
             <arg column="status" javaType="string"/>
-            <arg column="retry_count" javaType="int"/>
+            <arg column="retry_count" javaType="_int"/>
             <arg column="next_retry_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
         </constructor>

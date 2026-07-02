@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.loan.mapper.ContractFileMapper">
 <resultMap id="contractFileMap" type="com.pk.core.loan.port.ContractFileRepository$ContractFileRecord">
-<constructor><arg column="id" javaType="long"/><arg column="loan_application_id" javaType="long"/>
+<constructor><arg column="id" javaType="_long"/><arg column="loan_application_id" javaType="_long"/>
 <arg column="bill_no" javaType="string"/><arg column="contract_type" javaType="string"/>
 <arg column="contract_name" javaType="string"/><arg column="contract_url" javaType="string"/>
 <arg column="fetched_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>

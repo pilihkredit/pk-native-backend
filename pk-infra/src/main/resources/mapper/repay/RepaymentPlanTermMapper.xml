@@ -2,14 +2,14 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.repay.mapper.RepaymentPlanTermMapper">
 <resultMap id="termMap" type="com.pk.core.repay.port.RepaymentPlanTermRepository$TermRecord">
-<constructor><arg column="id" javaType="long"/><arg column="loan_application_id" javaType="long"/>
+<constructor><arg column="id" javaType="_long"/><arg column="loan_application_id" javaType="_long"/>
 <arg column="loan_apply_id" javaType="string"/><arg column="bill_no" javaType="string"/>
-<arg column="sub_bill_no" javaType="string"/><arg column="term_no" javaType="int"/>
+<arg column="sub_bill_no" javaType="string"/><arg column="term_no" javaType="_int"/>
 <arg column="term_status" javaType="string"/>
 <arg column="due_date" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
 <arg column="grace_date" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
 <arg column="schd_amount" javaType="java.math.BigDecimal"/><arg column="should_amount" javaType="java.math.BigDecimal"/>
-<arg column="paid_amount" javaType="java.math.BigDecimal"/><arg column="overdue_days" javaType="int"/>
+<arg column="paid_amount" javaType="java.math.BigDecimal"/><arg column="overdue_days" javaType="_int"/>
 <arg column="amount_detail_json" javaType="string"/>
 <arg column="last_repay_time" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
 <arg column="synced_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>

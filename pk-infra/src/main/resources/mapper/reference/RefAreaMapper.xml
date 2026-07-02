@@ -3,7 +3,7 @@
 <mapper namespace="com.pk.infra.reference.mapper.RefAreaMapper">
 <resultMap id="areaMap" type="com.pk.core.reference.AreaReference">
 <constructor><arg column="area_code" javaType="string"/><arg column="area_name" javaType="string"/>
-<arg column="parent_code" javaType="string"/><arg column="area_level" javaType="int"/></constructor></resultMap>
+<arg column="parent_code" javaType="string"/><arg column="area_level" javaType="_int"/></constructor></resultMap>
 <select id="findActiveByParentCode" resultMap="areaMap">SELECT area_code,area_name,parent_code,area_level FROM ref_area WHERE status=#{status} AND COALESCE(parent_code,'')=#{parentCode} ORDER BY area_name</select>
 <select id="findLatestSyncedAtByParent" resultType="java.time.Instant">SELECT MAX(synced_at) FROM ref_area WHERE status=#{status} AND COALESCE(parent_code,'')=#{parentCode}</select>
 <select id="findActiveByCode" resultMap="areaMap">SELECT area_code,area_name,parent_code,area_level FROM ref_area WHERE status=#{status} AND area_code=#{areaCode} LIMIT 1</select>

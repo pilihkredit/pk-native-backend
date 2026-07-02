@@ -5,10 +5,10 @@
 
     <resultMap id="userProfileSummaryMap" type="com.pk.core.auth.UserProfileSummary">
         <constructor>
-            <arg column="id" javaType="long"/>
+            <arg column="id" javaType="_long"/>
             <arg column="partner_user_id" javaType="string"/>
             <arg column="mobile_no" javaType="string"/>
-            <arg column="newly_created" javaType="boolean"/>
+            <arg column="newly_created" javaType="_boolean"/>
         </constructor>
     </resultMap>
 

@@ -3,7 +3,7 @@
 <mapper namespace="com.pk.infra.profile.mapper.ProfileDeviceMapper">
     <resultMap id="deviceMap" type="com.pk.core.profile.ProfileDeviceData">
         <constructor>
-            <arg column="profile_id" javaType="long"/><arg column="partner_user_id" javaType="string"/>
+            <arg column="profile_id" javaType="_long"/><arg column="partner_user_id" javaType="string"/>
             <arg column="device_no" javaType="string"/><arg column="system_platform" javaType="string"/>
             <arg column="client_app_name" javaType="string"/><arg column="app_version" javaType="string"/>
             <arg column="package_name" javaType="string"/><arg column="ad_id" javaType="string"/>

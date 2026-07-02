@@ -177,11 +177,12 @@ pk-infra/
       typehandler/InstantTypeHandler.java
       typehandler/BooleanTinyintTypeHandler.java
   src/main/resources/
-    application.yml    # mybatis.mapper-locations, type-handlers-package
     mapper/
       {domain}/
         XxxMapper.xml  # All SQL statements
 ```
+
+Runtime processes (`pk-app` and `pk-worker`) declare `mybatis.mapper-locations` and `type-handlers-package` in their own `application.yml` files.
 
 **Call chain (unchanged):** `Facade` → `pk-core` Port → `{domain}.repository.*RepositoryImpl` → `{domain}.mapper.*Mapper` → XML
 

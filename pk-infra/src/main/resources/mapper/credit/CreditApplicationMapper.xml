@@ -6,13 +6,13 @@
     <resultMap id="creditApplicationRecordMap"
                type="com.pk.core.credit.port.CreditApplicationRepository$CreditApplicationRecord">
         <constructor>
-            <arg column="id" javaType="long"/>
+            <arg column="id" javaType="_long"/>
             <arg column="apply_id" javaType="string"/>
             <arg column="request_id" javaType="string"/>
             <arg column="provider_code" javaType="string"/>
-            <arg column="profile_id" javaType="long"/>
+            <arg column="profile_id" javaType="_long"/>
             <arg column="mobile_no" javaType="string"/>
-            <arg column="profile_version_id" javaType="long"/>
+            <arg column="profile_version_id" javaType="_long"/>
             <arg column="external_credit_apply_no" javaType="string"/>
             <arg column="status" javaType="string"/>
             <arg column="external_status" javaType="string"/>

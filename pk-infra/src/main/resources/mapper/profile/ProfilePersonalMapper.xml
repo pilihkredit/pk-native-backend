@@ -3,8 +3,8 @@
 <mapper namespace="com.pk.infra.profile.mapper.ProfilePersonalMapper">
     <resultMap id="personalRowMap" type="com.pk.infra.profile.repository.ProfilePersonalRow">
         <constructor>
-            <arg column="profile_id" javaType="long"/><arg column="mobile_no" javaType="string"/>
-            <arg column="education_degree" javaType="int"/><arg column="industry" javaType="int"/>
+            <arg column="profile_id" javaType="_long"/><arg column="mobile_no" javaType="string"/>
+            <arg column="education_degree" javaType="_int"/><arg column="industry" javaType="_int"/>
             <arg column="income" javaType="string"/>
             <arg column="mother_surname_ciphertext" javaType="string"/>
             <arg column="mother_surname_nonce" javaType="_byte[]"/>

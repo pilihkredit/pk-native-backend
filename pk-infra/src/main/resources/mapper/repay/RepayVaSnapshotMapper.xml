@@ -2,11 +2,11 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.repay.mapper.RepayVaSnapshotMapper">
 <resultMap id="vaMap" type="com.pk.core.repay.port.RepayVaSnapshotRepository$VaSnapshotRecord">
-<constructor><arg column="id" javaType="long"/><arg column="profile_id" javaType="long"/>
+<constructor><arg column="id" javaType="_long"/><arg column="profile_id" javaType="_long"/>
 <arg column="snapshot_no" javaType="string"/><arg column="va_no" javaType="string"/>
 <arg column="bank_code" javaType="string"/><arg column="bank_name" javaType="string"/>
-<arg column="default_flag" javaType="boolean" typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
-<arg column="disabled" javaType="boolean" typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
+<arg column="default_flag" javaType="_boolean" typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
+<arg column="disabled" javaType="_boolean" typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
 <arg column="bank_channels_json" javaType="string"/>
 <arg column="fetched_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>
 <insert id="insertSnapshot">INSERT INTO repay_va_snapshot (profile_id,snapshot_no,va_no,bank_code,bank_name,default_flag,disabled,bank_channels_json,fetched_at)

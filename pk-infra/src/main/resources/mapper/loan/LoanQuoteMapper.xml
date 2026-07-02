@@ -2,8 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.loan.mapper.LoanQuoteMapper">
 <resultMap id="quoteMap" type="com.pk.core.loan.port.LoanQuoteRepository$LoanQuoteRecord">
-<constructor><arg column="id" javaType="long"/><arg column="quote_no" javaType="string"/>
-<arg column="credit_application_id" javaType="long"/><arg column="product_snapshot_id" javaType="java.lang.Long"/>
+<constructor><arg column="id" javaType="_long"/><arg column="quote_no" javaType="string"/>
+<arg column="credit_application_id" javaType="_long"/><arg column="product_snapshot_id" javaType="java.lang.Long"/>
 <arg column="product_code" javaType="string"/><arg column="repay_method" javaType="string"/>
 <arg column="apply_amt" javaType="java.math.BigDecimal"/><arg column="loan_principal" javaType="java.math.BigDecimal"/>
 <arg column="pay_amount" javaType="java.math.BigDecimal"/><arg column="schd_amount" javaType="java.math.BigDecimal"/>

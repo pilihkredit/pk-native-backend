@@ -6,7 +6,7 @@
     <resultMap id="creditLimitSnapshotMap"
                type="com.pk.core.credit.port.CreditLimitSnapshotRepository$CreditLimitSnapshotData">
         <constructor>
-            <arg column="credit_application_id" javaType="long"/>
+            <arg column="credit_application_id" javaType="_long"/>
             <arg column="mobile_no" javaType="string"/>
             <arg column="risk_min_limit" javaType="java.math.BigDecimal"/>
             <arg column="risk_max_limit" javaType="java.math.BigDecimal"/>

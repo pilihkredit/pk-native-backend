@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.repay.mapper.LoanBillReadMapper">
 <resultMap id="billMap" type="com.pk.core.repay.port.LoanBillReadRepository$LoanBillRecord">
-<constructor><arg column="id" javaType="long"/><arg column="loan_apply_id" javaType="string"/>
+<constructor><arg column="id" javaType="_long"/><arg column="loan_apply_id" javaType="string"/>
 <arg column="external_loan_apply_no" javaType="string"/><arg column="bill_no" javaType="string"/>
 <arg column="apply_amt" javaType="java.math.BigDecimal"/><arg column="status" javaType="string"/></constructor></resultMap>
 <sql id="billCols">la.id, la.loan_apply_id, la.external_loan_apply_no, la.bill_no, la.apply_amt, la.status</sql>

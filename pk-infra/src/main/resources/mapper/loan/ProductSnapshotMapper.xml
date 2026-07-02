@@ -2,8 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.loan.mapper.ProductSnapshotMapper">
 <resultMap id="snapshotMap" type="com.pk.core.loan.port.ProductSnapshotRepository$ProductSnapshotRecord">
-<constructor><arg column="id" javaType="long"/><arg column="snapshot_no" javaType="string"/>
-<arg column="apply_id" javaType="string"/><arg column="credit_application_id" javaType="long"/>
+<constructor><arg column="id" javaType="_long"/><arg column="snapshot_no" javaType="string"/>
+<arg column="apply_id" javaType="string"/><arg column="credit_application_id" javaType="_long"/>
 <arg column="credit_status" javaType="string"/><arg column="product_status" javaType="string"/>
 <arg column="products_json" javaType="string"/>
 <arg column="fetched_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>

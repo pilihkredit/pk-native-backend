@@ -2,8 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.repay.mapper.RepaymentTrialSnapshotMapper">
 <resultMap id="trialMap" type="com.pk.core.repay.port.RepaymentTrialSnapshotRepository$TrialSnapshotRecord">
-<constructor><arg column="id" javaType="long"/><arg column="trial_no" javaType="string"/>
-<arg column="profile_id" javaType="long"/><arg column="trial_type" javaType="string"/>
+<constructor><arg column="id" javaType="_long"/><arg column="trial_no" javaType="string"/>
+<arg column="profile_id" javaType="_long"/><arg column="trial_type" javaType="string"/>
 <arg column="total_bill_count" javaType="java.lang.Integer"/>
 <arg column="total_should_amount" javaType="java.math.BigDecimal"/><arg column="total_reduction_amount" javaType="java.math.BigDecimal"/>
 <arg column="default_va_json" javaType="string"/><arg column="raw_response_json" javaType="string"/>
