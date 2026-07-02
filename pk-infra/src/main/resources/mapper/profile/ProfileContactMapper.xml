@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileContactMapper">
+
+    <resultMap id="moduleMap" type="com.pk.core.profile.ProfileContactsModuleData">
+        <constructor>
+            <arg column="profile_id" javaType="long"/>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="module_status" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+            <arg column="last_lender_request_json" javaType="string"/>
+            <arg column="last_lender_response_json" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="contactMap" type="com.pk.core.profile.ProfileContactData">
+        <constructor>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="sort_no" javaType="int"/>
+            <arg column="relationship" javaType="int"/>
+            <arg column="contact_name" javaType="string"/>
+            <arg column="contact_mobile" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findModuleByProfileId" resultMap="moduleMap">
+        SELECT profile_id, mobile_no, module_status, last_request_id,
+               last_lender_request_json, last_lender_response_json
+        FROM user_profile_contacts
+        WHERE profile_id = #{profileId}
+    </select>
+
+    <select id="findContactsByProfileId" resultMap="contactMap">
+        SELECT mobile_no, sort_no, relationship, contact_name, contact_mobile
+        FROM user_profile_contact
+        WHERE profile_id = #{profileId}
+        ORDER BY sort_no
+    </select>
+
+    <insert id="upsertModule">
+        INSERT INTO user_profile_contacts (profile_id, mobile_no, module_status, last_request_id)
+        VALUES (#{profileId}, #{mobileNo}, #{moduleStatus}, #{lastRequestId})
+        ON DUPLICATE KEY UPDATE
+            mobile_no = VALUES(mobile_no),
+            module_status = VALUES(module_status),
+            last_request_id = VALUES(last_request_id)
+    </insert>
+
+    <delete id="deleteContactsByProfileId">
+        DELETE FROM user_profile_contact WHERE profile_id = #{profileId}
+    </delete>
+
+    <insert id="insertContact">
+        INSERT INTO user_profile_contact (
+            profile_id, mobile_no, sort_no, relationship, contact_name, contact_mobile
+        ) VALUES (#{profileId}, #{mobileNo}, #{sortNo}, #{relationship}, #{contactName}, #{contactMobile})
+    </insert>
+
+    <update id="updateLastLenderAudit">
+        UPDATE user_profile_contacts
+        SET last_lender_request_json = #{requestDataJson},
+            last_lender_response_json = #{responseDataJson}
+        WHERE profile_id = #{profileId}
+    </update>
+</mapper>

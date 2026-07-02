@@ -30,6 +30,7 @@ public interface CreditApplicationRepository {
             String requestId,
             String providerCode,
             long profileId,
+            String mobileNo,
             long profileVersionId,
             String status
     ) {
@@ -41,6 +42,7 @@ public interface CreditApplicationRepository {
             String requestId,
             String providerCode,
             long profileId,
+            String mobileNo,
             long profileVersionId,
             String externalCreditApplyNo,
             String status,

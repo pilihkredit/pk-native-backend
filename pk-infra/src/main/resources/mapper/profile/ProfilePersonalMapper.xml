@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfilePersonalMapper">
+    <resultMap id="personalRowMap" type="com.pk.infra.profile.repository.ProfilePersonalRow">
+        <constructor>
+            <arg column="profile_id" javaType="long"/><arg column="mobile_no" javaType="string"/>
+            <arg column="education_degree" javaType="int"/><arg column="industry" javaType="int"/>
+            <arg column="income" javaType="string"/>
+            <arg column="mother_surname_ciphertext" javaType="string"/>
+            <arg column="mother_surname_nonce" javaType="_byte[]"/>
+            <arg column="mother_surname_tag" javaType="_byte[]"/>
+            <arg column="user_email" javaType="string"/><arg column="module_status" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+            <arg column="last_lender_request_json" javaType="string"/>
+            <arg column="last_lender_response_json" javaType="string"/>
+        </constructor>
+    </resultMap>
+    <select id="findByProfileId" resultMap="personalRowMap">
+        SELECT profile_id, mobile_no, education_degree, industry, income,
+               mother_surname_ciphertext, mother_surname_nonce, mother_surname_tag,
+               user_email, module_status, last_request_id, last_lender_request_json, last_lender_response_json
+        FROM user_profile_personal WHERE profile_id = #{profileId}
+    </select>
+    <insert id="upsert">
+        INSERT INTO user_profile_personal (profile_id, mobile_no, education_degree, industry, income,
+            mother_surname_ciphertext, mother_surname_nonce, mother_surname_tag, user_email, module_status, last_request_id)
+        VALUES (#{profileId}, #{mobileNo}, #{educationDegree}, #{industry}, #{income},
+            #{motherSurnameCiphertext}, #{motherSurnameNonce}, #{motherSurnameTag}, #{userEmail}, #{moduleStatus}, #{lastRequestId})
+        ON DUPLICATE KEY UPDATE mobile_no=VALUES(mobile_no), education_degree=VALUES(education_degree), industry=VALUES(industry),
+            income=VALUES(income), mother_surname_ciphertext=VALUES(mother_surname_ciphertext),
+            mother_surname_nonce=VALUES(mother_surname_nonce), mother_surname_tag=VALUES(mother_surname_tag),
+            user_email=VALUES(user_email), module_status=VALUES(module_status), last_request_id=VALUES(last_request_id)
+    </insert>
+    <update id="updateEmail">UPDATE user_profile SET email = #{userEmail} WHERE id = #{profileId} AND deleted_at IS NULL</update>
+    <update id="updateLastLenderAudit">
+        UPDATE user_profile_personal SET last_lender_request_json=#{requestDataJson}, last_lender_response_json=#{responseDataJson}
+        WHERE profile_id=#{profileId}
+    </update>
+</mapper>

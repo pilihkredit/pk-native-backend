@@ -25,4 +25,15 @@ class ValidationFailureMessagesTest {
         assertThat(ValidationFailureMessages.forApiException(exception))
                 .isEqualTo("Invalid loan amount");
     }
+
+    @Test
+    void ignoresLenderDetailForUpstreamBusinessCodes() {
+        ApiException exception = new ApiException(
+                ApiCode.LENDER_INVALID_OCR_RAW_DETAIL,
+                "A000445: advanceAi OCR原始报文格式错误"
+        );
+
+        assertThat(ValidationFailureMessages.forApiException(exception))
+                .isEqualTo(ApiCode.LENDER_INVALID_OCR_RAW_DETAIL.message());
+    }
 }

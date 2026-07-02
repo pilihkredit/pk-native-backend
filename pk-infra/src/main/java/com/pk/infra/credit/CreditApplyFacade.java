@@ -80,11 +80,13 @@ public class CreditApplyFacade {
                     command.requestId(),
                     CreditProviderCode.PENDANAAN,
                     profileId,
+                    mobileNo,
                     profileVersionId,
                     CreditApplicationStatus.INIT
             ));
             creditStatusHistoryRepository.insert(
                     creditApplicationId,
+                    mobileNo,
                     null,
                     CreditApplicationStatus.INIT,
                     null,

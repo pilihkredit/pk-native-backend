@@ -11,6 +11,7 @@ public interface CreditLimitSnapshotRepository {
 
     record CreditLimitSnapshotData(
             long creditApplicationId,
+            String mobileNo,
             BigDecimal riskMinLimit,
             BigDecimal riskMaxLimit,
             BigDecimal psychologicalCreditLimit,

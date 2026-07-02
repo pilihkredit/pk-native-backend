@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.repay.mapper.RepaymentTrialSnapshotMapper">
+<resultMap id="trialMap" type="com.pk.core.repay.port.RepaymentTrialSnapshotRepository$TrialSnapshotRecord">
+<constructor><arg column="id" javaType="long"/><arg column="trial_no" javaType="string"/>
+<arg column="profile_id" javaType="long"/><arg column="trial_type" javaType="string"/>
+<arg column="total_bill_count" javaType="java.lang.Integer"/>
+<arg column="total_should_amount" javaType="java.math.BigDecimal"/><arg column="total_reduction_amount" javaType="java.math.BigDecimal"/>
+<arg column="default_va_json" javaType="string"/><arg column="raw_response_json" javaType="string"/>
+<arg column="created_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>
+<insert id="insertSnapshot" useGeneratedKeys="true" keyProperty="id" keyColumn="id">INSERT INTO repayment_trial_snapshot (trial_no,profile_id,trial_type,total_bill_count,total_should_amount,total_reduction_amount,default_va_json,raw_response_json)
+VALUES (#{trialNo},#{profileId},#{trialType},#{totalBillCount},#{totalShouldAmount},#{totalReductionAmount},#{defaultVaJson},#{rawResponseJson})</insert>
+<insert id="insertOrder">INSERT INTO repayment_trial_order (trial_id,loan_application_id,loan_apply_id,settle,term_nos_json,should_amount,bill_status,term_info_json)
+VALUES (#{trialId},#{loanApplicationId},#{loanApplyId},#{settle,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},#{termNosJson},#{shouldAmount},#{billStatus},#{termInfoJson})</insert>
+<select id="findByTrialNo" resultMap="trialMap">SELECT id,trial_no,profile_id,trial_type,total_bill_count,total_should_amount,total_reduction_amount,default_va_json,raw_response_json,created_at FROM repayment_trial_snapshot WHERE trial_no=#{trialNo}</select>
+</mapper>

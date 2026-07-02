@@ -44,6 +44,7 @@ public class CreditLenderStatusApplier {
             );
             creditStatusHistoryRepository.insert(
                     record.id(),
+                    record.mobileNo(),
                     record.status(),
                     nextStatus,
                     status.externalStatus(),
@@ -59,6 +60,7 @@ public class CreditLenderStatusApplier {
                     : Instant.ofEpochMilli(status.creditContractExpireTime());
             creditLimitSnapshotRepository.upsert(new CreditLimitSnapshotRepository.CreditLimitSnapshotData(
                     record.id(),
+                    record.mobileNo(),
                     status.riskMinLimit(),
                     status.riskMaxLimit(),
                     status.psychologicalCreditLimit(),

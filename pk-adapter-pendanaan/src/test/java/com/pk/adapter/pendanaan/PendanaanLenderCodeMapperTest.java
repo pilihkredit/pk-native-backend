@@ -16,7 +16,7 @@ class PendanaanLenderCodeMapperTest {
                 ProfileSyncModule.PERSONAL
         );
         assertThat(exception.apiCode()).isEqualTo(ApiCode.LENDER_INVALID_REQUEST_PARAMETERS);
-        assertThat(exception.detail()).isEqualTo("A000001: 请求参数错误");
+        assertThat(exception.detail()).isNull();
     }
 
     @Test

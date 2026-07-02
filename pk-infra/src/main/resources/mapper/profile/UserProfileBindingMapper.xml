@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.UserProfileBindingMapper">
+    <update id="recordLenderProfileSyncWithExternalUser">
+        UPDATE user_profile SET external_user_id = #{externalUserId}, last_synced_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{profileId} AND deleted_at IS NULL
+    </update>
+    <update id="recordLenderProfileSyncWithoutExternalUser">
+        UPDATE user_profile SET last_synced_at = CURRENT_TIMESTAMP(3) WHERE id = #{profileId} AND deleted_at IS NULL
+    </update>
+    <update id="updateKycStatus">
+        UPDATE user_profile SET kyc_status = #{kycStatus}, updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{profileId} AND deleted_at IS NULL
+    </update>
+</mapper>

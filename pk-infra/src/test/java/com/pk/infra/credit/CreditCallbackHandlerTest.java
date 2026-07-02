@@ -96,6 +96,7 @@ class CreditCallbackHandlerTest {
                 "req-1",
                 CreditProviderCode.PENDANAAN,
                 1L,
+                "81234567890",
                 2L,
                 null,
                 CreditApplicationStatus.PROCESSING,

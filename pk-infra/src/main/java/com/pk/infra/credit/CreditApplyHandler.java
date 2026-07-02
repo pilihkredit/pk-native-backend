@@ -29,7 +29,10 @@ public class CreditApplyHandler {
     }
 
     public String submit(CreditApplyJob job) {
-        transition(job.creditApplicationId(), CreditApplicationStatus.INIT, CreditApplicationStatus.SUBMITTING, null);
+        String mobileNo = creditApplicationRepository.findById(job.creditApplicationId())
+                .orElseThrow(() -> new IllegalStateException("Credit application not found: " + job.creditApplicationId()))
+                .mobileNo();
+        transition(job.creditApplicationId(), mobileNo, CreditApplicationStatus.INIT, CreditApplicationStatus.SUBMITTING, null);
 
         LenderCreditPort.LenderCreditApplyResult result = lenderCreditPort.apply(
                 new LenderCreditPort.LenderCreditApplyCommand(
@@ -51,6 +54,7 @@ public class CreditApplyHandler {
         );
         creditStatusHistoryRepository.insert(
                 job.creditApplicationId(),
+                mobileNo,
                 CreditApplicationStatus.SUBMITTING,
                 CreditApplicationStatus.PROCESSING,
                 EXTERNAL_PROCESSING,
@@ -63,8 +67,14 @@ public class CreditApplyHandler {
         return result.creditApplyNo();
     }
 
-    private void transition(long creditApplicationId, String fromStatus, String toStatus, String externalStatus) {
+    private void transition(
+            long creditApplicationId,
+            String mobileNo,
+            String fromStatus,
+            String toStatus,
+            String externalStatus
+    ) {
         creditApplicationRepository.updateStatus(creditApplicationId, toStatus, externalStatus, null);
-        creditStatusHistoryRepository.insert(creditApplicationId, fromStatus, toStatus, externalStatus, SOURCE);
+        creditStatusHistoryRepository.insert(creditApplicationId, mobileNo, fromStatus, toStatus, externalStatus, SOURCE);
     }
 }

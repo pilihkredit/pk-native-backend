@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileBankCardMapper">
+    <resultMap id="bankCardRowMap" type="com.pk.infra.profile.repository.ProfileBankCardRow">
+        <constructor>
+            <arg column="profile_id" javaType="long"/>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="bank_code" javaType="string"/>
+            <arg column="card_no_ciphertext" javaType="string"/>
+            <arg column="card_no_nonce" javaType="_byte[]"/>
+            <arg column="card_no_tag" javaType="_byte[]"/>
+            <arg column="card_no_hash" javaType="string"/>
+            <arg column="verify_status" javaType="string"/>
+            <arg column="verify_error_code" javaType="string"/>
+            <arg column="module_status" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+            <arg column="last_lender_request_json" javaType="string"/>
+            <arg column="last_lender_response_json" javaType="string"/>
+        </constructor>
+    </resultMap>
+    <sql id="bankCardColumns">
+        profile_id, mobile_no, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
+        verify_status, verify_error_code, module_status, last_request_id,
+        last_lender_request_json, last_lender_response_json
+    </sql>
+    <select id="findByProfileId" resultMap="bankCardRowMap">
+        SELECT <include refid="bankCardColumns"/> FROM user_profile_bank_card WHERE profile_id = #{profileId}
+    </select>
+    <select id="findByCardNoHash" resultMap="bankCardRowMap">
+        SELECT <include refid="bankCardColumns"/> FROM user_profile_bank_card WHERE card_no_hash = #{cardNoHash}
+    </select>
+    <insert id="upsert">
+        INSERT INTO user_profile_bank_card (
+            profile_id, mobile_no, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
+            verify_status, verify_error_code, default_flag, module_status, last_request_id
+        ) VALUES (#{profileId}, #{mobileNo}, #{bankCode}, #{cardNoHash}, #{cardNoCiphertext}, #{cardNoNonce}, #{cardNoTag},
+            #{verifyStatus}, #{verifyErrorCode}, 1, #{moduleStatus}, #{lastRequestId})
+        ON DUPLICATE KEY UPDATE
+            mobile_no = VALUES(mobile_no), bank_code = VALUES(bank_code), card_no_hash = VALUES(card_no_hash),
+            card_no_ciphertext = VALUES(card_no_ciphertext), card_no_nonce = VALUES(card_no_nonce),
+            card_no_tag = VALUES(card_no_tag), verify_status = VALUES(verify_status),
+            verify_error_code = VALUES(verify_error_code), default_flag = VALUES(default_flag),
+            module_status = VALUES(module_status), last_request_id = VALUES(last_request_id)
+    </insert>
+    <update id="updateLastLenderAudit">
+        UPDATE user_profile_bank_card SET last_lender_request_json = #{requestDataJson}, last_lender_response_json = #{responseDataJson}
+        WHERE profile_id = #{profileId}
+    </update>
+</mapper>

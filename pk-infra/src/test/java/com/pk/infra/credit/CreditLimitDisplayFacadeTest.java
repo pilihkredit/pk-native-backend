@@ -98,6 +98,7 @@ class CreditLimitDisplayFacadeTest {
                 "req-1",
                 "pendanaan",
                 1L,
+                "81234567890",
                 9L,
                 "CA-1",
                 CreditApplicationStatus.APPROVED,
@@ -109,6 +110,7 @@ class CreditLimitDisplayFacadeTest {
     private static CreditLimitSnapshotRepository.CreditLimitSnapshotData limitSnapshot() {
         return new CreditLimitSnapshotRepository.CreditLimitSnapshotData(
                 100L,
+                "81234567890",
                 new BigDecimal("500000"),
                 new BigDecimal("3000000"),
                 new BigDecimal("2500000"),

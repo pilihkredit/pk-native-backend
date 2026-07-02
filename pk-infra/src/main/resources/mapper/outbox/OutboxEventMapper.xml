@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.outbox.mapper.OutboxEventMapper">
+
+    <resultMap id="outboxEventMap" type="com.pk.core.outbox.OutboxEvent">
+        <constructor>
+            <arg column="id" javaType="long"/>
+            <arg column="event_no" javaType="string"/>
+            <arg column="event_type" javaType="string"/>
+            <arg column="aggregate_type" javaType="string"/>
+            <arg column="aggregate_id" javaType="string"/>
+            <arg column="payload_json" javaType="string"/>
+            <arg column="status" javaType="string"/>
+            <arg column="retry_count" javaType="int"/>
+            <arg column="next_retry_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insertPending">
+        INSERT INTO outbox_event (
+            event_no, event_type, aggregate_type, aggregate_id, payload_json, status, retry_count, next_retry_at
+        ) VALUES (
+            #{eventNo}, #{eventType}, #{aggregateType}, #{aggregateId}, #{payloadJson}, 'PENDING', 0, NULL
+        )
+    </insert>
+
+    <select id="findReady" resultMap="outboxEventMap">
+        SELECT id, event_no, event_type, aggregate_type, aggregate_id, payload_json, status, retry_count, next_retry_at
+        FROM outbox_event
+        WHERE status = 'PENDING'
+          AND (next_retry_at IS NULL OR next_retry_at &lt;= CURRENT_TIMESTAMP(3))
+        ORDER BY id
+        LIMIT #{limit}
+    </select>
+
+    <update id="markCompleted">
+        UPDATE outbox_event SET status = 'COMPLETED' WHERE id = #{id}
+    </update>
+
+    <update id="markFailed">
+        UPDATE outbox_event
+        SET status = 'PENDING', retry_count = #{retryCount}, next_retry_at = #{nextRetryAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE id = #{id}
+    </update>
+
+    <update id="markTerminalFailure">
+        UPDATE outbox_event SET status = 'FAILED', retry_count = #{retryCount} WHERE id = #{id}
+    </update>
+</mapper>

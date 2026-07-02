@@ -17,6 +17,8 @@ import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
+import com.pk.infra.profile.mapper.UserIdentityAssetMapper;
+import com.pk.infra.profile.repository.UserIdentityAssetInsertParam;
 import com.pk.infra.ocr.AdvanceAiLenderRawOcrDetailSupport;
 import com.pk.infra.ocr.AdvanceAiRawOcrDetailBuilder;
 import com.pk.infra.ocr.OcrFieldParser;
@@ -24,7 +26,6 @@ import com.pk.infra.ocr.OcrImageSupport;
 import com.pk.infra.ocr.OcrProperties;
 import java.time.Instant;
 import java.util.List;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 public class IdentityOcrFacade {
     public static final String MODULE_COMPLETED = "COMPLETED";
@@ -39,7 +40,7 @@ public class IdentityOcrFacade {
     private final ProfileVersionRepository profileVersionRepository;
     private final UserProfileBindingRepository userProfileBindingRepository;
     private final OnboardingProgressFacade onboardingProgressFacade;
-    private final JdbcTemplate jdbcTemplate;
+    private final UserIdentityAssetMapper userIdentityAssetMapper;
     private final OcrProperties ocrProperties;
     private final ObjectMapper objectMapper;
 
@@ -53,7 +54,7 @@ public class IdentityOcrFacade {
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
             OnboardingProgressFacade onboardingProgressFacade,
-            JdbcTemplate jdbcTemplate,
+            UserIdentityAssetMapper userIdentityAssetMapper,
             OcrProperties ocrProperties,
             ObjectMapper objectMapper
     ) {
@@ -66,7 +67,7 @@ public class IdentityOcrFacade {
         this.profileVersionRepository = profileVersionRepository;
         this.userProfileBindingRepository = userProfileBindingRepository;
         this.onboardingProgressFacade = onboardingProgressFacade;
-        this.jdbcTemplate = jdbcTemplate;
+        this.userIdentityAssetMapper = userIdentityAssetMapper;
         this.ocrProperties = ocrProperties;
         this.objectMapper = objectMapper;
     }
@@ -365,24 +366,7 @@ public class IdentityOcrFacade {
                 toDevParsedFields(command),
                 lenderRawOcrDetail(buildDevRawOcrDetail(command))
         );
-        jdbcTemplate.update(
-                """
-                INSERT INTO user_identity_asset (
-                    profile_id,
-                    mobile_no,
-                    profile_version_id,
-                    id_card_hash,
-                    id_card_ciphertext,
-                    id_card_nonce,
-                    id_card_tag,
-                    full_name,
-                    id_card_image_encrypted_ref,
-                    face_photo_image_encrypted_ref,
-                    encryption_key_ref,
-                    ocr_channel,
-                    ocr_result_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
+        userIdentityAssetMapper.insert(new UserIdentityAssetInsertParam(
                 profileId,
                 mobileNo,
                 profileVersionId,
@@ -396,7 +380,7 @@ public class IdentityOcrFacade {
                 "pk-field-encryption-key",
                 OCR_CHANNEL,
                 ocrResultJson
-        );
+        ));
     }
 
     private JsonNode buildLenderSyncFailureNode(ApiException exception) {
@@ -404,7 +388,7 @@ public class IdentityOcrFacade {
             ObjectNode node = objectMapper.createObjectNode();
             node.put("syncFailed", true);
             node.put("code", exception.apiCode().code());
-            node.put("msg", exception.detail() == null ? exception.apiCode().message() : exception.detail());
+            node.put("msg", exception.apiCode().message());
             return node;
         } catch (Exception mappingException) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
@@ -499,24 +483,7 @@ public class IdentityOcrFacade {
                 "IDENTITY_OCR"
         );
         String ocrResultJson = buildOcrResultJson(parsed, lenderRawOcrDetail(session.ocrRawJson()));
-        jdbcTemplate.update(
-                """
-                INSERT INTO user_identity_asset (
-                    profile_id,
-                    mobile_no,
-                    profile_version_id,
-                    id_card_hash,
-                    id_card_ciphertext,
-                    id_card_nonce,
-                    id_card_tag,
-                    full_name,
-                    id_card_image_encrypted_ref,
-                    face_photo_image_encrypted_ref,
-                    encryption_key_ref,
-                    ocr_channel,
-                    ocr_result_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
+        userIdentityAssetMapper.insert(new UserIdentityAssetInsertParam(
                 profileId,
                 mobileNo,
                 profileVersionId,
@@ -530,7 +497,7 @@ public class IdentityOcrFacade {
                 "pk-field-encryption-key",
                 OCR_CHANNEL,
                 ocrResultJson
-        );
+        ));
     }
 
     private String buildOcrResultJson(OcrSessionState.OcrParsedFields parsed, String rawOcrDetail) {

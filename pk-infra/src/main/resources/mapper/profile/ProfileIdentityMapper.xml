@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileIdentityMapper">
+
+    <resultMap id="identityRowMap" type="com.pk.infra.profile.repository.ProfileIdentityRow">
+        <constructor>
+            <arg column="profile_id" javaType="long"/>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="full_name" javaType="string"/>
+            <arg column="id_no_ciphertext" javaType="string"/>
+            <arg column="id_no_nonce" javaType="_byte[]"/>
+            <arg column="id_no_tag" javaType="_byte[]"/>
+            <arg column="id_no_hash" javaType="string"/>
+            <arg column="module_status" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+            <arg column="last_lender_request_json" javaType="string"/>
+            <arg column="last_lender_response_json" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findByProfileId" resultMap="identityRowMap">
+        SELECT profile_id, mobile_no, full_name,
+               id_no_ciphertext, id_no_nonce, id_no_tag,
+               id_no_hash, module_status, last_request_id,
+               last_lender_request_json, last_lender_response_json
+        FROM user_profile_identity
+        WHERE profile_id = #{profileId}
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO user_profile_identity (
+            profile_id, mobile_no, full_name,
+            id_no_ciphertext, id_no_nonce, id_no_tag,
+            id_no_hash, module_status, last_request_id
+        ) VALUES (
+            #{profileId}, #{mobileNo}, #{fullName},
+            #{idNoCiphertext}, #{idNoNonce}, #{idNoTag},
+            #{idNoHash}, #{moduleStatus}, #{lastRequestId}
+        )
+        ON DUPLICATE KEY UPDATE
+            mobile_no = VALUES(mobile_no),
+            full_name = VALUES(full_name),
+            id_no_ciphertext = VALUES(id_no_ciphertext),
+            id_no_nonce = VALUES(id_no_nonce),
+            id_no_tag = VALUES(id_no_tag),
+            id_no_hash = VALUES(id_no_hash),
+            module_status = VALUES(module_status),
+            last_request_id = VALUES(last_request_id)
+    </insert>
+
+    <update id="updateLastLenderAudit">
+        UPDATE user_profile_identity
+        SET last_lender_request_json = #{requestJson},
+            last_lender_response_json = #{responseJson}
+        WHERE profile_id = #{profileId}
+    </update>
+</mapper>

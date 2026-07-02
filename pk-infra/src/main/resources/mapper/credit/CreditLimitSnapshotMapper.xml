@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.credit.mapper.CreditLimitSnapshotMapper">
+
+    <resultMap id="creditLimitSnapshotMap"
+               type="com.pk.core.credit.port.CreditLimitSnapshotRepository$CreditLimitSnapshotData">
+        <constructor>
+            <arg column="credit_application_id" javaType="long"/>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="risk_min_limit" javaType="java.math.BigDecimal"/>
+            <arg column="risk_max_limit" javaType="java.math.BigDecimal"/>
+            <arg column="psychological_credit_limit" javaType="java.math.BigDecimal"/>
+            <arg column="fake_credit_limit" javaType="java.math.BigDecimal"/>
+            <arg column="borrow_amt_step_size" javaType="java.math.BigDecimal"/>
+            <arg column="contract_expire_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="source" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <delete id="deleteByCreditApplicationId">
+        DELETE FROM credit_limit_snapshot
+        WHERE credit_application_id = #{creditApplicationId}
+    </delete>
+
+    <insert id="insert">
+        INSERT INTO credit_limit_snapshot (
+            credit_application_id,
+            mobile_no,
+            risk_min_limit,
+            risk_max_limit,
+            psychological_credit_limit,
+            fake_credit_limit,
+            borrow_amt_step_size,
+            contract_expire_at,
+            source
+        ) VALUES (
+            #{creditApplicationId},
+            #{mobileNo},
+            #{riskMinLimit},
+            #{riskMaxLimit},
+            #{psychologicalCreditLimit},
+            #{fakeCreditLimit},
+            #{borrowAmtStepSize},
+            #{contractExpireAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+            #{source}
+        )
+    </insert>
+
+    <select id="findByCreditApplicationId" resultMap="creditLimitSnapshotMap">
+        SELECT credit_application_id, mobile_no, risk_min_limit, risk_max_limit, psychological_credit_limit,
+               fake_credit_limit, borrow_amt_step_size, contract_expire_at, source
+        FROM credit_limit_snapshot
+        WHERE credit_application_id = #{creditApplicationId}
+    </select>
+</mapper>

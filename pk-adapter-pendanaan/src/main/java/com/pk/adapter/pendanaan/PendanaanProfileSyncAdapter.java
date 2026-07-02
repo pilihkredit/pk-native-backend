@@ -38,10 +38,8 @@ public class PendanaanProfileSyncAdapter implements LenderProfileSyncPort {
             String responseDataJson = serializeResponseData(data);
             return new LenderProfileSyncResult(externalUserId, responseDataJson);
         }
-        String responseMsg = PendanaanHttpSupport.textOrEmpty(envelope.get("msg"));
         throw PendanaanProfileCodeMapper.toApiException(
                 responseCode,
-                responseMsg,
                 command.module()
         );
     }

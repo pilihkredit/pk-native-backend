@@ -146,6 +146,7 @@ class CreditApplyFacadeTest {
                 "req-1",
                 "pendanaan",
                 1L,
+                "81234567890",
                 9L,
                 "CA-1",
                 CreditApplicationStatus.PROCESSING,

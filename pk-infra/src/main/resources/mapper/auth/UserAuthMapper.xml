@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.auth.mapper.UserAuthMapper">
+
+    <resultMap id="userProfileSummaryMap" type="com.pk.core.auth.UserProfileSummary">
+        <constructor>
+            <arg column="id" javaType="long"/>
+            <arg column="partner_user_id" javaType="string"/>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="newly_created" javaType="boolean"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findByMobileNo" resultMap="userProfileSummaryMap">
+        SELECT id, partner_user_id, mobile_no, 0 AS newly_created
+        FROM user_profile
+        WHERE mobile_no = #{mobileNo}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <select id="findByProfileId" resultMap="userProfileSummaryMap">
+        SELECT id, partner_user_id, mobile_no, 0 AS newly_created
+        FROM user_profile
+        WHERE id = #{profileId}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <insert id="insertProfile">
+        INSERT INTO user_profile (
+            partner_user_id,
+            mobile_no,
+            kyc_status,
+            data_lifecycle_status,
+            data_residency_country,
+            retention_policy_code
+        ) VALUES (
+            #{partnerUserId},
+            #{mobileNo},
+            'PENDING',
+            'ACTIVE',
+            'ID',
+            'DEFAULT'
+        )
+    </insert>
+
+    <update id="saveSessionTokens">
+        UPDATE user_profile
+        SET access_token = #{accessToken},
+            refresh_token = #{refreshToken},
+            access_token_expires_at = #{accessTokenExpiresAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE id = #{profileId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="saveAccessToken">
+        UPDATE user_profile
+        SET access_token = #{accessToken},
+            access_token_expires_at = #{accessTokenExpiresAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE id = #{profileId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="clearSessionTokens">
+        UPDATE user_profile
+        SET access_token = NULL,
+            refresh_token = NULL,
+            access_token_expires_at = NULL
+        WHERE id = #{profileId}
+          AND deleted_at IS NULL
+    </update>
+</mapper>

@@ -333,6 +333,7 @@ CREATE TABLE credit_application (
     request_id VARCHAR(64) NOT NULL COMMENT 'Idempotency request identifier',
     provider_code VARCHAR(32) NOT NULL COMMENT 'External provider code',
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     profile_version_id BIGINT UNSIGNED NOT NULL COMMENT 'Profile version identifier',
     external_credit_apply_no VARCHAR(64) NULL COMMENT 'External credit application number',
     status VARCHAR(32) NOT NULL COMMENT 'Record status',
@@ -350,12 +351,14 @@ CREATE TABLE credit_application (
     UNIQUE KEY uk_credit_application_request_id (request_id),
     KEY idx_credit_application_profile_status (profile_id, status),
     KEY idx_credit_application_poll (status, next_poll_at),
-    KEY idx_credit_application_external_no (external_credit_apply_no)
+    KEY idx_credit_application_external_no (external_credit_apply_no),
+    KEY idx_credit_application_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Credit application records';
 
 CREATE TABLE credit_limit_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     credit_application_id BIGINT UNSIGNED NOT NULL COMMENT 'Credit application identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     risk_min_limit DECIMAL(18,2) NULL COMMENT 'Minimum available credit limit',
     risk_max_limit DECIMAL(18,2) NULL COMMENT 'Maximum available credit limit',
     psychological_credit_limit DECIMAL(18,2) NULL COMMENT 'Psychological credit limit',
@@ -366,12 +369,14 @@ CREATE TABLE credit_limit_snapshot (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    KEY idx_credit_limit_snapshot_credit_application (credit_application_id)
+    KEY idx_credit_limit_snapshot_credit_application (credit_application_id),
+    KEY idx_credit_limit_snapshot_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Credit limit snapshot records';
 
 CREATE TABLE credit_status_history (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     credit_application_id BIGINT UNSIGNED NOT NULL COMMENT 'Credit application identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     from_status VARCHAR(32) NULL COMMENT 'Previous status',
     to_status VARCHAR(32) NOT NULL COMMENT 'Next status',
     external_status VARCHAR(32) NULL COMMENT 'External status',
@@ -380,7 +385,8 @@ CREATE TABLE credit_status_history (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    KEY idx_credit_status_history_credit_created (credit_application_id, created_at)
+    KEY idx_credit_status_history_credit_created (credit_application_id, created_at),
+    KEY idx_credit_status_history_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Credit status transition history';
 
 CREATE TABLE pk_product_snapshot (

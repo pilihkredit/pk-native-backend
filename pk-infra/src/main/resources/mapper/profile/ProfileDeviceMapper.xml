@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileDeviceMapper">
+    <resultMap id="deviceMap" type="com.pk.core.profile.ProfileDeviceData">
+        <constructor>
+            <arg column="profile_id" javaType="long"/><arg column="partner_user_id" javaType="string"/>
+            <arg column="device_no" javaType="string"/><arg column="system_platform" javaType="string"/>
+            <arg column="client_app_name" javaType="string"/><arg column="app_version" javaType="string"/>
+            <arg column="package_name" javaType="string"/><arg column="ad_id" javaType="string"/>
+            <arg column="device_json" javaType="string"/><arg column="last_request_id" javaType="string"/>
+        </constructor>
+    </resultMap>
+    <select id="existsByProfileId" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM user_device WHERE profile_id = #{profileId} LIMIT 1)
+    </select>
+    <select id="findByDeviceNo" resultMap="deviceMap">
+        SELECT profile_id, partner_user_id, device_no, system_platform, client_app_name, app_version,
+               package_name, ad_id, device_json, last_request_id
+        FROM user_device WHERE device_no = #{deviceNo}
+    </select>
+    <insert id="upsertByDeviceNo">
+        INSERT INTO user_device (profile_id, partner_user_id, device_no, system_platform, client_app_name,
+            app_version, package_name, ad_id, device_json, last_request_id)
+        VALUES (#{profileId}, #{partnerUserId}, #{deviceNo}, #{systemPlatform}, #{clientAppName},
+            #{appVersion}, #{packageName}, #{adId}, #{deviceJson}, #{lastRequestId})
+        ON DUPLICATE KEY UPDATE profile_id=VALUES(profile_id), partner_user_id=VALUES(partner_user_id),
+            system_platform=VALUES(system_platform), client_app_name=VALUES(client_app_name),
+            app_version=VALUES(app_version), package_name=VALUES(package_name), ad_id=VALUES(ad_id),
+            device_json=VALUES(device_json), last_request_id=VALUES(last_request_id), updated_at=CURRENT_TIMESTAMP(3)
+    </insert>
+</mapper>

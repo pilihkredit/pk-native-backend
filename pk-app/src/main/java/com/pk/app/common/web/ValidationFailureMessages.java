@@ -1,5 +1,6 @@
 package com.pk.app.common.web;
 
+import com.pk.core.api.ApiCodeLayer;
 import com.pk.core.api.ApiException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -22,11 +23,23 @@ public final class ValidationFailureMessages {
     }
 
     public static String forApiException(ApiException exception) {
+        if (usesPlatformOwnedMessageOnly(exception)) {
+            return exception.apiCode().message();
+        }
         String detail = exception.detail();
         if (detail != null && !detail.isBlank()) {
             return detail;
         }
         return exception.apiCode().message();
+    }
+
+    /**
+     * Lender/upstream failures use PK-maintained English {@link ApiCode#message()} only.
+     * Platform validation may still expose field-level {@link ApiException#detail()}.
+     */
+    private static boolean usesPlatformOwnedMessageOnly(ApiException exception) {
+        ApiCodeLayer layer = exception.apiCode().layer();
+        return layer == ApiCodeLayer.UPSTREAM_BUSINESS || layer == ApiCodeLayer.SYSTEM;
     }
 
     public static String forValidationException(Exception exception) {
