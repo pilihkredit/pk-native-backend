@@ -129,7 +129,6 @@ public class LoanInfraConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(LenderLoanApplyPort.class)
     LoanApplyHandler loanApplyHandler(
             LoanApplicationRepository loanApplicationRepository,
             LoanStatusHistoryRepository loanStatusHistoryRepository,

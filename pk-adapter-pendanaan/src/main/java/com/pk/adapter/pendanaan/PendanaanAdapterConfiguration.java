@@ -105,12 +105,11 @@ public class PendanaanAdapterConfiguration {
     }
 
     @Bean
-    @Nullable
     LenderLoanApplyPort lenderLoanApplyPort(PendanaanHttpStack httpStack) {
-        if (!httpStack.enabled()) {
-            return null;
+        if (httpStack.enabled()) {
+            return new PendanaanLoanApplyAdapter(httpStack.requireHttpClient());
         }
-        return new PendanaanLoanApplyAdapter(httpStack.requireHttpClient());
+        return new FakePendanaanLoanApplyAdapter();
     }
 
     @Bean
