@@ -54,7 +54,7 @@ public class LoanController {
 
     @GetMapping("/products")
     public ApiResponse<LoanProductsResponse> listProducts(
-            @RequestParam("applyId") String applyId,
+            @RequestParam(value = "applyId", required = false) String applyId,
             HttpServletRequest httpRequest
     ) {
         AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();

@@ -92,16 +92,23 @@ public class LoanProductFacade {
     }
 
     private CreditApplicationRepository.CreditApplicationRecord requireApprovedCredit(long profileId, String applyId) {
-        if (applyId == null || applyId.isBlank()) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
+        String resolvedApplyId = resolveApplyId(profileId, applyId);
         CreditApplicationRepository.CreditApplicationRecord record = creditApplicationRepository
-                .findByApplyIdAndProfileId(applyId, profileId)
+                .findByApplyIdAndProfileId(resolvedApplyId, profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         if (!CreditApplicationStatus.APPROVED.equals(record.status())) {
             throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
         }
         return record;
+    }
+
+    private String resolveApplyId(long profileId, String applyId) {
+        if (applyId != null && !applyId.isBlank()) {
+            return applyId;
+        }
+        return creditApplicationRepository.findLatestByProfileId(profileId)
+                .map(CreditApplicationRepository.CreditApplicationRecord::applyId)
+                .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
     }
 
     private static ProductsResult toProductsResult(String applyId, ProductListResolver.ResolvedProductList resolved) {
