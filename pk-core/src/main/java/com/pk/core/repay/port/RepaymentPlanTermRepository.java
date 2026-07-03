@@ -6,7 +6,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RepaymentPlanTermRepository {
-    void upsertTerms(long loanApplicationId, String loanApplyId, String billNo, List<TermUpsert> terms, Instant syncedAt);
+    void upsertTerms(
+            long loanApplicationId,
+            String loanApplyId,
+            String billNo,
+            List<TermUpsert> terms,
+            String lastLenderRequestJson,
+            String lastLenderResponseJson,
+            Instant syncedAt
+    );
 
     List<TermRecord> findByLoanApplicationId(long loanApplicationId);
 

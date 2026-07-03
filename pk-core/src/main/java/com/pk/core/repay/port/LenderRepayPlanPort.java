@@ -11,6 +11,7 @@ public interface LenderRepayPlanPort {
             String loanApplyNo,
             String billNo,
             List<LenderRepayPlanTerm> terms,
+            String requestJson,
             String rawResponseJson
     ) {
     }

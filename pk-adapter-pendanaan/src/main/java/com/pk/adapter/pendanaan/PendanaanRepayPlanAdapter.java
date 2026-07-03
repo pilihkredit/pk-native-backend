@@ -30,6 +30,7 @@ public class PendanaanRepayPlanAdapter implements LenderRepayPlanPort {
                 PendanaanJsonSupport.requireText(data.get("loanApplyNo"), "loanApplyNo"),
                 PendanaanJsonSupport.requireText(data.get("billNo"), "billNo"),
                 mapTerms(data.get("terms")),
+                requestBody,
                 rawResponseJson
         );
     }

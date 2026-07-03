@@ -78,6 +78,8 @@ public class RepayPlanFacade {
                 lenderPlan.loanApplyId(),
                 lenderPlan.billNo(),
                 upserts,
+                lenderPlan.requestJson(),
+                lenderPlan.rawResponseJson(),
                 syncedAt
         );
     }

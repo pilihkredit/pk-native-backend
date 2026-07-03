@@ -5,7 +5,7 @@ import java.time.Instant; import java.util.List;
 import org.springframework.stereotype.Repository; import org.springframework.transaction.annotation.Transactional;
 @Repository public class RepaymentPlanTermRepositoryImpl implements RepaymentPlanTermRepository {
 private final RepaymentPlanTermMapper mapper; public RepaymentPlanTermRepositoryImpl(RepaymentPlanTermMapper mapper){this.mapper=mapper;}
-@Override @Transactional public void upsertTerms(long loanApplicationId,String loanApplyId,String billNo,List<TermUpsert> terms,Instant syncedAt){
-    for(TermUpsert term:terms) mapper.upsertTerm(RepaymentPlanTermUpsertParam.of(loanApplicationId,loanApplyId,billNo,term,syncedAt));}
+@Override @Transactional public void upsertTerms(long loanApplicationId,String loanApplyId,String billNo,List<TermUpsert> terms,String lastLenderRequestJson,String lastLenderResponseJson,Instant syncedAt){
+    for(TermUpsert term:terms) mapper.upsertTerm(RepaymentPlanTermUpsertParam.of(loanApplicationId,loanApplyId,billNo,term,lastLenderRequestJson,lastLenderResponseJson,syncedAt));}
 @Override public List<TermRecord> findByLoanApplicationId(long loanApplicationId){return mapper.findByLoanApplicationId(loanApplicationId);}
 @Override public List<TermRecord> findPendingByProfileId(long profileId){return mapper.findPendingByProfileId(profileId);}}

@@ -712,6 +712,8 @@ CREATE TABLE repayment_plan_term (
     overdue_days INT NULL COMMENT 'Overdue days',
     amount_detail_json JSON NULL COMMENT 'Amount detail JSON',
     last_repay_time DATETIME(3) NULL COMMENT 'Last repayment time',
+    last_lender_request_json JSON NULL COMMENT 'Last lender repay plan request JSON',
+    last_lender_response_json JSON NULL COMMENT 'Last lender repay plan response JSON',
     synced_at DATETIME(3) NOT NULL COMMENT 'Last synchronization time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
