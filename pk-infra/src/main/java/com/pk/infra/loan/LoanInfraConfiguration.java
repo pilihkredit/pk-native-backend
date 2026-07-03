@@ -6,10 +6,12 @@ import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.loan.port.LenderLoanApplyPort;
 import com.pk.core.loan.port.LenderLoanContractPort;
+import com.pk.core.loan.port.LenderLoanHistoryPort;
 import com.pk.core.loan.port.LenderLoanProductPort;
 import com.pk.core.loan.port.LenderLoanStatusPort;
 import com.pk.core.loan.port.LenderLoanTrialPort;
 import com.pk.core.loan.port.LoanApplicationRepository;
+import com.pk.core.loan.port.LoanLenderHistoryOrderRepository;
 import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.loan.port.LoanQuoteRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
@@ -19,7 +21,6 @@ import com.pk.core.loan.port.ProductSnapshotRepository;
 import com.pk.core.loan.port.LenderProductLatestRepository;
 import com.pk.core.outbox.port.OutboxEventRepository;
 import com.pk.infra.profile.OnboardingProgressFacade;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -170,7 +171,14 @@ public class LoanInfraConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(LenderLoanContractPort.class)
+    LoanHistoryFacade loanHistoryFacade(
+            LenderLoanHistoryPort lenderLoanHistoryPort,
+            LoanLenderHistoryOrderRepository loanLenderHistoryOrderRepository
+    ) {
+        return new LoanHistoryFacade(lenderLoanHistoryPort, loanLenderHistoryOrderRepository);
+    }
+
+    @Bean
     LoanContractFacade loanContractFacade(
             LoanApplicationRepository loanApplicationRepository,
             LenderLoanContractPort lenderLoanContractPort,

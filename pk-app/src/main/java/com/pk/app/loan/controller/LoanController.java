@@ -3,6 +3,7 @@ package com.pk.app.loan.controller;
 import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
 import com.pk.app.loan.application.LoanApplyApplicationService;
+import com.pk.app.loan.application.LoanHistoryApplicationService;
 import com.pk.app.repay.application.LoanBillsApplicationService;
 import com.pk.app.loan.application.LoanProductApplicationService;
 import com.pk.app.loan.application.LoanTrialApplicationService;
@@ -10,6 +11,7 @@ import com.pk.app.loan.dto.request.LoanApplyRequest;
 import com.pk.app.loan.dto.request.LoanTrialRequest;
 import com.pk.app.loan.dto.response.LoanApplyResponse;
 import com.pk.app.loan.dto.response.LoanBillsResponse;
+import com.pk.app.loan.dto.response.LoanHistoryOrdersResponse;
 import com.pk.app.loan.dto.response.LoanProductsResponse;
 import com.pk.app.loan.dto.response.LoanStatusResponse;
 import com.pk.app.loan.dto.response.LoanTrialResponse;
@@ -34,17 +36,20 @@ public class LoanController {
     private final LoanTrialApplicationService loanTrialApplicationService;
     private final LoanApplyApplicationService loanApplyApplicationService;
     private final LoanBillsApplicationService loanBillsApplicationService;
+    private final LoanHistoryApplicationService loanHistoryApplicationService;
 
     public LoanController(
             LoanProductApplicationService loanProductApplicationService,
             LoanTrialApplicationService loanTrialApplicationService,
             LoanApplyApplicationService loanApplyApplicationService,
-            LoanBillsApplicationService loanBillsApplicationService
+            LoanBillsApplicationService loanBillsApplicationService,
+            LoanHistoryApplicationService loanHistoryApplicationService
     ) {
         this.loanProductApplicationService = loanProductApplicationService;
         this.loanTrialApplicationService = loanTrialApplicationService;
         this.loanApplyApplicationService = loanApplyApplicationService;
         this.loanBillsApplicationService = loanBillsApplicationService;
+        this.loanHistoryApplicationService = loanHistoryApplicationService;
     }
 
     @GetMapping("/products")
@@ -103,6 +108,18 @@ public class LoanController {
         }
         return ApiResponse.success(
                 loanBillsApplicationService.listBills(principal, status),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    @GetMapping("/orders")
+    public ApiResponse<LoanHistoryOrdersResponse> listOrders(HttpServletRequest httpRequest) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                loanHistoryApplicationService.listOrders(principal),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

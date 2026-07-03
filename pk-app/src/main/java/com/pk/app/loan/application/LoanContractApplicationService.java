@@ -6,11 +6,9 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.infra.loan.LoanContractFacade;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConditionalOnBean(LoanContractFacade.class)
 public class LoanContractApplicationService {
     private final LoanContractFacade loanContractFacade;
     private final PendanaanProperties pendanaanProperties;

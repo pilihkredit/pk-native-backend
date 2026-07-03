@@ -63,6 +63,16 @@ final class PendanaanLoanRequestMapper {
         }
     }
 
+    static String buildHistoryListBody(String partnerUserId) {
+        try {
+            ObjectNode root = OBJECT_MAPPER.createObjectNode();
+            root.put("partnerUserId", partnerUserId);
+            return OBJECT_MAPPER.writeValueAsString(root);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Failed to build loan history list request", exception);
+        }
+    }
+
     static String buildContractListBody(String loanApplyId) {
         try {
             ObjectNode root = OBJECT_MAPPER.createObjectNode();

@@ -19,6 +19,7 @@ final class PendanaanOpenApiPaths {
     static final String LOAN_TRIAL = PREFIX + "/loan/trial";
     static final String LOAN_APPLY = PREFIX + "/loan/apply";
     static final String LOAN_APPLY_STATUS = PREFIX + "/loan/applyStatus";
+    static final String LOAN_HISTORY_LIST = PREFIX + "/loan/history/list";
     static final String LOAN_CONTRACT_LIST = PREFIX + "/loan/contract/list";
     static final String REPAY_PLAN = PREFIX + "/repay/plan";
     static final String REPAY_VA_LIST = PREFIX + "/repay/va/list";

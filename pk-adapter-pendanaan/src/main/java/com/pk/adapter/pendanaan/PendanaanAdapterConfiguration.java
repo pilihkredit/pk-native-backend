@@ -8,6 +8,7 @@ import com.pk.core.external.port.LenderInteractionLogRepository;
 import com.pk.core.home.port.LenderUserStatusPort;
 import com.pk.core.loan.port.LenderLoanApplyPort;
 import com.pk.core.loan.port.LenderLoanContractPort;
+import com.pk.core.loan.port.LenderLoanHistoryPort;
 import com.pk.core.loan.port.LenderLoanProductPort;
 import com.pk.core.loan.port.LenderLoanStatusPort;
 import com.pk.core.loan.port.LenderLoanTrialPort;
@@ -121,12 +122,19 @@ public class PendanaanAdapterConfiguration {
     }
 
     @Bean
-    @Nullable
-    LenderLoanContractPort lenderLoanContractPort(PendanaanHttpStack httpStack) {
-        if (!httpStack.enabled()) {
-            return null;
+    LenderLoanHistoryPort lenderLoanHistoryPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanHistoryAdapter(httpStack.requireHttpClient(), objectMapper);
         }
-        return new PendanaanLoanContractAdapter(httpStack.requireHttpClient());
+        return new FakePendanaanLoanHistoryAdapter();
+    }
+
+    @Bean
+    LenderLoanContractPort lenderLoanContractPort(PendanaanHttpStack httpStack) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanContractAdapter(httpStack.requireHttpClient());
+        }
+        return new FakePendanaanLoanContractAdapter();
     }
 
     @Bean
