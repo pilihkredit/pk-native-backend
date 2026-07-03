@@ -11,6 +11,8 @@ public interface CreditApplicationRepository {
 
     Optional<CreditApplicationRecord> findByApplyIdAndProfileId(String applyId, long profileId);
 
+    Optional<CreditApplicationRecord> findLatestByProfileId(long profileId);
+
     Optional<CreditApplicationRecord> findByApplyId(String applyId);
 
     long insert(CreditApplicationInsert insert);

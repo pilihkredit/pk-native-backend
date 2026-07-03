@@ -119,17 +119,19 @@ public class CreditApplyFacade {
         }
     }
 
-    public StatusResult getStatus(long profileId, String applyId) {
+    public StatusResult getStatus(long profileId) {
         CreditApplicationRepository.CreditApplicationRecord record = creditApplicationRepository
-                .findByApplyIdAndProfileId(applyId, profileId)
+                .findLatestByProfileId(profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         if (!CreditApplicationStatus.isTerminal(record.status())) {
             creditStatusPollHandler.syncFromLenderForApi(record);
             record = creditApplicationRepository
-                    .findByApplyIdAndProfileId(applyId, profileId)
+                    .findByApplyIdAndProfileId(record.applyId(), profileId)
                     .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         }
-        var query = creditLenderStatusQueryRepository.findByApplyIdAndProfileId(applyId, profileId).orElse(null);
+        var query = creditLenderStatusQueryRepository
+                .findByApplyIdAndProfileId(record.applyId(), profileId)
+                .orElse(null);
         return toStatusResult(record, query);
     }
 

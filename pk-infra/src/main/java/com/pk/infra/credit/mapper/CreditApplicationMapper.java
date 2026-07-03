@@ -17,6 +17,8 @@ public interface CreditApplicationMapper {
             @Param("profileId") long profileId
     );
 
+    CreditApplicationRecord findLatestByProfileId(@Param("profileId") long profileId);
+
     CreditApplicationRecord findByApplyId(@Param("applyId") String applyId);
 
     int insert(com.pk.infra.credit.repository.CreditApplicationRepositoryImpl.CreditApplicationInsertParam param);

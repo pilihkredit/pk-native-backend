@@ -77,11 +77,11 @@ public class CreditApplicationService {
         return new CreditApplyResponse(result.applyId(), result.status(), result.creditApplyNo());
     }
 
-    public CreditStatusResponse getStatus(AuthenticatedPrincipal principal, String applyId) {
+    public CreditStatusResponse getStatus(AuthenticatedPrincipal principal) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        CreditApplyFacade.StatusResult result = creditApplyFacade.getStatus(principal.profileId(), applyId);
+        CreditApplyFacade.StatusResult result = creditApplyFacade.getStatus(principal.profileId());
         return new CreditStatusResponse(
                 result.applyId(),
                 result.status(),

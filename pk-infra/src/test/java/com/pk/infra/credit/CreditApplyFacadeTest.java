@@ -121,10 +121,12 @@ class CreditApplyFacadeTest {
     @Test
     void syncsFromLenderWhenStatusIsNotTerminal() {
         CreditApplicationRepository.CreditApplicationRecord record = OptionalRecord().get();
+        when(creditApplicationRepository.findLatestByProfileId(1L))
+                .thenReturn(java.util.Optional.of(record));
         when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(java.util.Optional.of(record));
 
-        CreditApplyFacade.StatusResult result = facade.getStatus(1L, "APPLY-1");
+        CreditApplyFacade.StatusResult result = facade.getStatus(1L);
 
         assertThat(result.applyId()).isEqualTo("APPLY-1");
         assertThat(result.status()).isEqualTo(CreditApplicationStatus.PROCESSING);
@@ -147,15 +149,26 @@ class CreditApplyFacadeTest {
                 "SUCCESS",
                 null
         );
-        when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditApplicationRepository.findLatestByProfileId(1L))
                 .thenReturn(java.util.Optional.of(record));
         when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(java.util.Optional.empty());
 
-        CreditApplyFacade.StatusResult result = facade.getStatus(1L, "APPLY-1");
+        CreditApplyFacade.StatusResult result = facade.getStatus(1L);
 
         assertThat(result.status()).isEqualTo(CreditApplicationStatus.APPROVED);
         verify(creditStatusPollHandler, never()).syncFromLenderForApi(any());
+    }
+
+    @Test
+    void throwsWhenUserHasNoCreditApplication() {
+        when(creditApplicationRepository.findLatestByProfileId(1L))
+                .thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> facade.getStatus(1L))
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ApiException) exception).apiCode())
+                .isEqualTo(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
     }
 
     @Test

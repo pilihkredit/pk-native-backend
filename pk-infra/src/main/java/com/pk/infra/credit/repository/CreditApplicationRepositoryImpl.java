@@ -31,6 +31,11 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
     }
 
     @Override
+    public Optional<CreditApplicationRecord> findLatestByProfileId(long profileId) {
+        return Optional.ofNullable(creditApplicationMapper.findLatestByProfileId(profileId));
+    }
+
+    @Override
     public Optional<CreditApplicationRecord> findByApplyId(String applyId) {
         return Optional.ofNullable(creditApplicationMapper.findByApplyId(applyId));
     }

@@ -47,6 +47,14 @@
           AND profile_id = #{profileId}
     </select>
 
+    <select id="findLatestByProfileId" resultMap="creditApplicationRecordMap">
+        SELECT <include refid="creditApplicationColumns"/>
+        FROM credit_application
+        WHERE profile_id = #{profileId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
     <select id="findByApplyId" resultMap="creditApplicationRecordMap">
         SELECT <include refid="creditApplicationColumns"/>
         FROM credit_application
