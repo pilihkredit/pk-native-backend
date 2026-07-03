@@ -10,11 +10,14 @@ public interface LenderProductLatestRepository {
     record ReplaceLatestCommand(
             long profileId,
             long creditApplicationId,
+            String mobileNo,
             String applyId,
             String creditApplyNo,
             String lenderUserId,
             String creditStatus,
             String productStatus,
+            String lastLenderRequestJson,
+            String lastLenderResponseJson,
             Instant fetchedAt,
             List<LenderLoanProduct> products
     ) {

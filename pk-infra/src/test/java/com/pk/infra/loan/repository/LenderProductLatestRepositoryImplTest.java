@@ -63,13 +63,27 @@ class LenderProductLatestRepositoryImplTest {
         ArgumentCaptor<LenderProductLatestInsertParam> productCaptor =
                 ArgumentCaptor.forClass(LenderProductLatestInsertParam.class);
         verify(mapper).insertProduct(productCaptor.capture());
+        assertThat(productCaptor.getValue().getMobileNo()).isEqualTo("81234567890");
         assertThat(productCaptor.getValue().getProductCode()).isEqualTo("PD001");
         assertThat(productCaptor.getValue().getComprehensiveRateUnit()).isEqualTo("M");
 
         ArgumentCaptor<LenderProductRepayMethodLatestInsertParam> methodCaptor =
                 ArgumentCaptor.forClass(LenderProductRepayMethodLatestInsertParam.class);
         verify(mapper).insertRepayMethod(methodCaptor.capture());
+        assertThat(methodCaptor.getValue().getMobileNo()).isEqualTo("81234567890");
         assertThat(methodCaptor.getValue().getUnevenBillsRepaymentRateJson()).contains("termNum");
+
+        ArgumentCaptor<LenderProductUnevenRateLatestInsertParam> rateCaptor =
+                ArgumentCaptor.forClass(LenderProductUnevenRateLatestInsertParam.class);
+        verify(mapper, org.mockito.Mockito.times(2)).insertUnevenRate(rateCaptor.capture());
+        assertThat(rateCaptor.getAllValues())
+                .allSatisfy(rate -> assertThat(rate.getMobileNo()).isEqualTo("81234567890"));
+
+        ArgumentCaptor<LenderProductLatestRepository.ReplaceLatestCommand> commandCaptor =
+                ArgumentCaptor.forClass(LenderProductLatestRepository.ReplaceLatestCommand.class);
+        verify(mapper).upsertListLatest(commandCaptor.capture());
+        assertThat(commandCaptor.getValue().lastLenderRequestJson()).contains("APPLY-1");
+        assertThat(commandCaptor.getValue().lastLenderResponseJson()).contains("PD001");
     }
 
     @Test
@@ -84,11 +98,14 @@ class LenderProductLatestRepositoryImplTest {
         repository.replaceLatest(new LenderProductLatestRepository.ReplaceLatestCommand(
                 1L,
                 100L,
+                "81234567891",
                 "APPLY-2",
                 "CA-2",
                 "USR-2",
                 "SUCCESS",
                 "READY",
+                "{\"applyId\":\"APPLY-2\"}",
+                "{\"products\":[{\"productCode\":\"PD002\"}]}",
                 Instant.now(),
                 List.of(new LenderLoanProduct(
                         "PD002",
@@ -110,11 +127,14 @@ class LenderProductLatestRepositoryImplTest {
         return new LenderProductLatestRepository.ReplaceLatestCommand(
                 1L,
                 100L,
+                "81234567890",
                 "APPLY-1",
                 "CA-1",
                 "USR-1",
                 "SUCCESS",
                 "READY",
+                "{\"applyId\":\"APPLY-1\"}",
+                "{\"products\":[{\"productCode\":\"PD001\"}]}",
                 Instant.parse("2026-06-24T04:00:00Z"),
                 List.of(new LenderLoanProduct(
                         "PD001",

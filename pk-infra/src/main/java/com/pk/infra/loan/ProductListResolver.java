@@ -101,11 +101,14 @@ public class ProductListResolver {
         lenderProductLatestRepository.replaceLatest(new LenderProductLatestRepository.ReplaceLatestCommand(
                 profileId,
                 creditRecord.id(),
+                creditRecord.mobileNo(),
                 lenderResult.applyId() == null ? creditRecord.applyId() : lenderResult.applyId(),
                 lenderResult.creditApplyNo(),
                 lenderResult.userId(),
                 lenderResult.externalCreditStatus(),
                 productStatus,
+                lenderResult.requestJson(),
+                lenderResult.responseDataJson(),
                 fetchedAt,
                 lenderResult.products()
         ));

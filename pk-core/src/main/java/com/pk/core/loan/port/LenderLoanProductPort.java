@@ -12,7 +12,9 @@ public interface LenderLoanProductPort {
             String userId,
             String externalCreditStatus,
             String productStatus,
-            List<LenderLoanProduct> products
+            List<LenderLoanProduct> products,
+            String requestJson,
+            String responseDataJson
     ) {
     }
 }

@@ -24,6 +24,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -94,7 +95,12 @@ class ProductListResolverTest {
         verify(lenderLoanProductPort).listProducts("APPLY-1");
         verify(productListCache).putSnapshotNo(eq(1L), eq("APPLY-1"), any());
         verify(productSnapshotRepository).insert(any());
-        verify(lenderProductLatestRepository).replaceLatest(any());
+        ArgumentCaptor<LenderProductLatestRepository.ReplaceLatestCommand> latestCaptor =
+                ArgumentCaptor.forClass(LenderProductLatestRepository.ReplaceLatestCommand.class);
+        verify(lenderProductLatestRepository).replaceLatest(latestCaptor.capture());
+        assertThat(latestCaptor.getValue().mobileNo()).isEqualTo(record.mobileNo());
+        assertThat(latestCaptor.getValue().lastLenderRequestJson()).contains("APPLY-1");
+        assertThat(latestCaptor.getValue().lastLenderResponseJson()).contains("PD001");
     }
 
     @Test
@@ -192,7 +198,9 @@ class ProductListResolverTest {
                         null,
                         new BigDecimal("0.18"),
                         List.of(new LenderRepayMethod("RP001", "D", 30, 6, 180, 0, null, List.of()))
-                ))
+                )),
+                "{\"applyId\":\"APPLY-1\"}",
+                "{\"products\":[{\"productCode\":\"PD001\"}]}"
         );
     }
 }

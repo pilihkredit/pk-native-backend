@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 public class LenderProductLatestInsertParam {
     private long productListLatestId;
+    private String mobileNo;
     private String productCode;
     private String productName;
     private BigDecimal minAmount;
@@ -19,6 +20,14 @@ public class LenderProductLatestInsertParam {
 
     public void setProductListLatestId(long productListLatestId) {
         this.productListLatestId = productListLatestId;
+    }
+
+    public String getMobileNo() {
+        return mobileNo;
+    }
+
+    public void setMobileNo(String mobileNo) {
+        this.mobileNo = mobileNo;
     }
 
     public String getProductCode() {

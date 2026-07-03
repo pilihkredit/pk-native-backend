@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 public class LenderProductUnevenRateLatestInsertParam {
     private long repayMethodLatestId;
+    private String mobileNo;
     private int termNum;
     private BigDecimal repaymentRate;
     private int sortOrder;
@@ -14,6 +15,14 @@ public class LenderProductUnevenRateLatestInsertParam {
 
     public void setRepayMethodLatestId(long repayMethodLatestId) {
         this.repayMethodLatestId = repayMethodLatestId;
+    }
+
+    public String getMobileNo() {
+        return mobileNo;
+    }
+
+    public void setMobileNo(String mobileNo) {
+        this.mobileNo = mobileNo;
     }
 
     public int getTermNum() {

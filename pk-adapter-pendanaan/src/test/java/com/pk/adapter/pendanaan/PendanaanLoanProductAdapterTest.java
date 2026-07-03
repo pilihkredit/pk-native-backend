@@ -63,6 +63,8 @@ class PendanaanLoanProductAdapterTest {
         assertThat(result.userId()).isEqualTo("USR202506020001");
         assertThat(result.externalCreditStatus()).isEqualTo("SUCCESS");
         assertThat(result.productStatus()).isEqualTo("READY");
+        assertThat(result.requestJson()).contains("APPLY-1");
+        assertThat(result.responseDataJson()).contains("CA2025060200001");
         assertThat(result.products()).hasSize(1);
         assertThat(result.products().getFirst().comprehensiveRateUnit()).isEqualTo("M");
         assertThat(result.products().getFirst().repayMethods()).hasSize(1);

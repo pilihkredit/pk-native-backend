@@ -13,29 +13,38 @@
         INSERT INTO pk_lender_product_list_latest (
             profile_id,
             credit_application_id,
+            mobile_no,
             apply_id,
             credit_apply_no,
             lender_user_id,
             credit_status,
             product_status,
+            last_lender_request_json,
+            last_lender_response_json,
             fetched_at
         ) VALUES (
             #{profileId},
             #{creditApplicationId},
+            #{mobileNo},
             #{applyId},
             #{creditApplyNo},
             #{lenderUserId},
             #{creditStatus},
             #{productStatus},
+            #{lastLenderRequestJson},
+            #{lastLenderResponseJson},
             #{fetchedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
         ON DUPLICATE KEY UPDATE
             profile_id = VALUES(profile_id),
+            mobile_no = VALUES(mobile_no),
             apply_id = VALUES(apply_id),
             credit_apply_no = VALUES(credit_apply_no),
             lender_user_id = VALUES(lender_user_id),
             credit_status = VALUES(credit_status),
             product_status = VALUES(product_status),
+            last_lender_request_json = VALUES(last_lender_request_json),
+            last_lender_response_json = VALUES(last_lender_response_json),
             fetched_at = VALUES(fetched_at)
     </insert>
 
@@ -62,6 +71,7 @@
     <insert id="insertProduct" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO pk_lender_product_latest (
             product_list_latest_id,
+            mobile_no,
             product_code,
             product_name,
             min_amount,
@@ -71,6 +81,7 @@
             sort_order
         ) VALUES (
             #{productListLatestId},
+            #{mobileNo},
             #{productCode},
             #{productName},
             #{minAmount},
@@ -84,6 +95,7 @@
     <insert id="insertRepayMethod" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO pk_lender_product_repay_method_latest (
             product_latest_id,
+            mobile_no,
             repay_method,
             cycle_type,
             cycle_interval,
@@ -94,6 +106,7 @@
             sort_order
         ) VALUES (
             #{productLatestId},
+            #{mobileNo},
             #{repayMethod},
             #{cycleType},
             #{cycleInterval},
@@ -108,11 +121,13 @@
     <insert id="insertUnevenRate">
         INSERT INTO pk_lender_product_uneven_rate_latest (
             repay_method_latest_id,
+            mobile_no,
             term_num,
             repayment_rate,
             sort_order
         ) VALUES (
             #{repayMethodLatestId},
+            #{mobileNo},
             #{termNum},
             #{repaymentRate},
             #{sortOrder}

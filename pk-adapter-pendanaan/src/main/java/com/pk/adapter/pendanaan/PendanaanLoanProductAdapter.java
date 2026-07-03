@@ -34,8 +34,21 @@ public class PendanaanLoanProductAdapter implements LenderLoanProductPort {
                 textOrNull(data.get("userId")),
                 textOrNull(data.get("creditStatus")),
                 textOrNull(data.get("productStatus")),
-                mapProducts(data.get("products"))
+                mapProducts(data.get("products")),
+                requestBody,
+                serializeResponseData(data)
         );
+    }
+
+    private String serializeResponseData(JsonNode data) {
+        if (data == null || data.isNull()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(data);
+        } catch (Exception exception) {
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+        }
     }
 
     private List<LenderLoanProduct> mapProducts(JsonNode productsNode) {

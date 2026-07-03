@@ -2,6 +2,7 @@ package com.pk.infra.loan.repository;
 
 public class LenderProductRepayMethodLatestInsertParam {
     private long productLatestId;
+    private String mobileNo;
     private String repayMethod;
     private String cycleType;
     private Integer cycleInterval;
@@ -18,6 +19,14 @@ public class LenderProductRepayMethodLatestInsertParam {
 
     public void setProductLatestId(long productLatestId) {
         this.productLatestId = productLatestId;
+    }
+
+    public String getMobileNo() {
+        return mobileNo;
+    }
+
+    public void setMobileNo(String mobileNo) {
+        this.mobileNo = mobileNo;
     }
 
     public String getRepayMethod() {
