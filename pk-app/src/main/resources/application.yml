@@ -70,7 +70,7 @@ pk:
     session-ttl: ${PK_OCR_SESSION_TTL:30m}
     liveness-threshold: ${PK_OCR_LIVENESS_THRESHOLD:60}
     face-threshold: ${PK_OCR_FACE_THRESHOLD:60}
-    license-effective-seconds: ${PK_OCR_LICENSE_EFFECTIVE_SECONDS:86400}
+    license-effective-seconds: ${PK_OCR_LICENSE_EFFECTIVE_SECONDS:2592000}
   credit:
     apply:
       mode: ${PK_CREDIT_APPLY_MODE:inline}

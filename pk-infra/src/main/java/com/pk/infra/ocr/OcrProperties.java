@@ -19,7 +19,7 @@ public class OcrProperties {
     private String faceRecognitionUrl = "/face-recognition/v4/check";
     private String tokenKeyPrefix = "pk:ocr:token";
     private long tokenCacheSeconds = 3600L;
-    private long licenseEffectiveSeconds = 86400L;
+    private long licenseEffectiveSeconds = 2592000L;
     private int livenessThreshold = 60;
     private int faceThreshold = 60;
     private int maxImageBytes = 2 * 1024 * 1024;
