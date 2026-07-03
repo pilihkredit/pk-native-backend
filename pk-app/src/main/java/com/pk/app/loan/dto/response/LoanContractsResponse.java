@@ -9,7 +9,7 @@ public record LoanContractsResponse(String loanApplyId, List<LoanContractRespons
                 result.loanApplyId(),
                 result.contracts().stream()
                         .map(contract -> new LoanContractResponse(
-                                contract.contractNo(),
+                                contract.contractType(),
                                 contract.contractName(),
                                 contract.contractUrl(),
                                 contract.signStatus()

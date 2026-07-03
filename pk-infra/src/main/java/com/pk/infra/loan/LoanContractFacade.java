@@ -38,6 +38,8 @@ public class LoanContractFacade {
                     contract.contractType(),
                     contract.contractName(),
                     contract.contractUrl(),
+                    lenderResult.requestJson(),
+                    lenderResult.responseDataJson(),
                     fetchedAt
             ));
         }
@@ -63,7 +65,7 @@ public class LoanContractFacade {
     }
 
     public record ContractResult(
-            String contractNo,
+            String contractType,
             String contractName,
             String contractUrl,
             String signStatus

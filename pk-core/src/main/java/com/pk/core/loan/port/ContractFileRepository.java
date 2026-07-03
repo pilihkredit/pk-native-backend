@@ -14,6 +14,8 @@ public interface ContractFileRepository {
             String contractType,
             String contractName,
             String contractUrl,
+            String lastLenderRequestJson,
+            String lastLenderResponseJson,
             Instant fetchedAt
     ) {
     }
@@ -25,6 +27,8 @@ public interface ContractFileRepository {
             String contractType,
             String contractName,
             String contractUrl,
+            String lastLenderRequestJson,
+            String lastLenderResponseJson,
             Instant fetchedAt
     ) {
     }

@@ -1,7 +1,7 @@
 package com.pk.app.loan.dto.response;
 
 public record LoanContractResponse(
-        String contractNo,
+        String contractType,
         String contractName,
         String contractUrl,
         String signStatus

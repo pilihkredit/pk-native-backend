@@ -5,10 +5,11 @@
 <constructor><arg column="id" javaType="_long"/><arg column="loan_application_id" javaType="_long"/>
 <arg column="bill_no" javaType="string"/><arg column="contract_type" javaType="string"/>
 <arg column="contract_name" javaType="string"/><arg column="contract_url" javaType="string"/>
+<arg column="last_lender_request_json" javaType="string"/><arg column="last_lender_response_json" javaType="string"/>
 <arg column="fetched_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>
-<insert id="upsert">INSERT INTO contract_file (loan_application_id,bill_no,contract_type,contract_name,contract_url,fetched_at)
-VALUES (#{loanApplicationId},#{billNo},#{contractType},#{contractName},#{contractUrl},#{fetchedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})
-ON DUPLICATE KEY UPDATE bill_no=VALUES(bill_no),contract_name=VALUES(contract_name),contract_url=VALUES(contract_url),fetched_at=VALUES(fetched_at)</insert>
-<select id="findByLoanApplicationId" resultMap="contractFileMap">SELECT id,loan_application_id,bill_no,contract_type,contract_name,contract_url,fetched_at
+<insert id="upsert">INSERT INTO contract_file (loan_application_id,bill_no,contract_type,contract_name,contract_url,last_lender_request_json,last_lender_response_json,fetched_at)
+VALUES (#{loanApplicationId},#{billNo},#{contractType},#{contractName},#{contractUrl},#{lastLenderRequestJson},#{lastLenderResponseJson},#{fetchedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})
+ON DUPLICATE KEY UPDATE bill_no=VALUES(bill_no),contract_name=VALUES(contract_name),contract_url=VALUES(contract_url),last_lender_request_json=VALUES(last_lender_request_json),last_lender_response_json=VALUES(last_lender_response_json),fetched_at=VALUES(fetched_at)</insert>
+<select id="findByLoanApplicationId" resultMap="contractFileMap">SELECT id,loan_application_id,bill_no,contract_type,contract_name,contract_url,last_lender_request_json,last_lender_response_json,fetched_at
 FROM contract_file WHERE loan_application_id=#{loanApplicationId} ORDER BY contract_type</select>
 </mapper>

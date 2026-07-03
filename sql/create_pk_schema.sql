@@ -662,6 +662,8 @@ CREATE TABLE contract_file (
     contract_name VARCHAR(128) NOT NULL COMMENT 'Contract name',
     contract_url VARCHAR(1024) NOT NULL COMMENT 'Contract URL',
     file_ref VARCHAR(512) NULL COMMENT 'Object storage file reference',
+    last_lender_request_json JSON NULL COMMENT 'Last lender contract list request JSON',
+    last_lender_response_json JSON NULL COMMENT 'Last lender contract list response JSON',
     fetched_at DATETIME(3) NOT NULL COMMENT 'Fetch time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
