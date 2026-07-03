@@ -96,7 +96,10 @@
 
     <update id="markSubmitted">
         UPDATE credit_application
-        SET status = 'PROCESSING',
+        SET status = CASE
+                WHEN status IN ('INIT', 'SUBMITTING') THEN 'PROCESSING'
+                ELSE status
+            END,
             external_credit_apply_no = #{externalCreditApplyNo},
             external_status = #{externalStatus},
             submitted_at = COALESCE(submitted_at, CURRENT_TIMESTAMP(3))

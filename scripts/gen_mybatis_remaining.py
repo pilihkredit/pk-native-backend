@@ -89,7 +89,7 @@ w(RES / "loan/LoanApplicationMapper.xml", f"""
         WHERE id = #{{id}}
     </update>
     <update id="markSubmitted">
-        UPDATE loan_application SET status = 'PROCESSING', external_loan_apply_no = #{{externalLoanApplyNo}}, external_status = #{{externalStatus}},
+        UPDATE loan_application SET status = CASE WHEN status IN ('INIT', 'SUBMITTING') THEN 'PROCESSING' ELSE status END, external_loan_apply_no = #{{externalLoanApplyNo}}, external_status = #{{externalStatus}},
             submitted_at = COALESCE(submitted_at, CURRENT_TIMESTAMP(3)) WHERE id = #{{id}}
     </update>
     <update id="updateDisbursementDetails">
