@@ -34,6 +34,8 @@ public class LoanApplyFacade {
     private final ProfileVersionRepository profileVersionRepository;
     private final LoanApplicationRepository loanApplicationRepository;
     private final LoanStatusHistoryRepository loanStatusHistoryRepository;
+    private final LoanApplyHandler loanApplyHandler;
+    private final LoanApplyProperties loanApplyProperties;
     private final LoanApplyOutboxPublisher loanApplyOutboxPublisher;
 
     public LoanApplyFacade(
@@ -46,6 +48,8 @@ public class LoanApplyFacade {
             ProfileVersionRepository profileVersionRepository,
             LoanApplicationRepository loanApplicationRepository,
             LoanStatusHistoryRepository loanStatusHistoryRepository,
+            LoanApplyHandler loanApplyHandler,
+            LoanApplyProperties loanApplyProperties,
             LoanApplyOutboxPublisher loanApplyOutboxPublisher
     ) {
         this.onboardingProgressFacade = onboardingProgressFacade;
@@ -57,6 +61,8 @@ public class LoanApplyFacade {
         this.profileVersionRepository = profileVersionRepository;
         this.loanApplicationRepository = loanApplicationRepository;
         this.loanStatusHistoryRepository = loanStatusHistoryRepository;
+        this.loanApplyHandler = loanApplyHandler;
+        this.loanApplyProperties = loanApplyProperties;
         this.loanApplyOutboxPublisher = loanApplyOutboxPublisher;
     }
 
@@ -149,7 +155,7 @@ public class LoanApplyFacade {
                     null,
                     SOURCE
             );
-            loanApplyOutboxPublisher.publish(new LoanApplyJob(
+            LoanApplyJob job = new LoanApplyJob(
                     loanApplicationId,
                     loanApplyId,
                     creditRecord.applyId(),
@@ -165,8 +171,11 @@ public class LoanApplyFacade {
                     command.adId(),
                     command.device(),
                     command.appList()
-            ));
-            return new ApplyResult(loanApplyId, PUBLIC_PROCESSING, null);
+            );
+            String loanApplyNo = loanApplyProperties.inlineEnabled()
+                    ? loanApplyHandler.submit(job)
+                    : enqueueOutbox(job);
+            return new ApplyResult(loanApplyId, PUBLIC_PROCESSING, loanApplyNo);
         } catch (DataIntegrityViolationException exception) {
             var replay = loanApplicationRepository.findByRequestId(command.requestId());
             if (replay.isPresent()) {
@@ -181,6 +190,11 @@ public class LoanApplyFacade {
                 .findByLoanApplyIdAndProfileId(loanApplyId, profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         return toStatusResult(record);
+    }
+
+    private String enqueueOutbox(LoanApplyJob job) {
+        loanApplyOutboxPublisher.publish(job);
+        return null;
     }
 
     private static void validate(ApplyCommand command) {

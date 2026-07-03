@@ -108,6 +108,8 @@ public class LoanInfraConfiguration {
             ProfileVersionRepository profileVersionRepository,
             LoanApplicationRepository loanApplicationRepository,
             LoanStatusHistoryRepository loanStatusHistoryRepository,
+            LoanApplyHandler loanApplyHandler,
+            LoanApplyProperties loanApplyProperties,
             LoanApplyOutboxPublisher loanApplyOutboxPublisher
     ) {
         return new LoanApplyFacade(
@@ -120,6 +122,8 @@ public class LoanInfraConfiguration {
                 profileVersionRepository,
                 loanApplicationRepository,
                 loanStatusHistoryRepository,
+                loanApplyHandler,
+                loanApplyProperties,
                 loanApplyOutboxPublisher
         );
     }

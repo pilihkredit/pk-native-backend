@@ -27,7 +27,7 @@ public class LoanApplyHandler {
         this.loanApplyProperties = loanApplyProperties;
     }
 
-    public void submit(LoanApplyJob job) {
+    public String submit(LoanApplyJob job) {
         transition(job.loanApplicationId(), LoanApplicationStatus.INIT, LoanApplicationStatus.SUBMITTING, null);
 
         LenderLoanApplyPort.LenderLoanApplyResult result = lenderLoanApplyPort.apply(
@@ -68,6 +68,7 @@ public class LoanApplyHandler {
                 job.loanApplicationId(),
                 Instant.now().plusSeconds(loanApplyProperties.pollIntervalSeconds())
         );
+        return result.loanApplyNo();
     }
 
     private void transition(long loanApplicationId, String fromStatus, String toStatus, String externalStatus) {
