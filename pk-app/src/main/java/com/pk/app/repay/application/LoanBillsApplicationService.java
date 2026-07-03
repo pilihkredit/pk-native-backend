@@ -20,7 +20,12 @@ public class LoanBillsApplicationService {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        LoanBillsFacade.BillsResult result = loanBillsFacade.listBills(principal.profileId(), status);
+        LoanBillsFacade.BillsResult result = loanBillsFacade.listBills(
+                principal.profileId(),
+                principal.partnerUserId(),
+                principal.mobileNo(),
+                status
+        );
         return new LoanBillsResponse(result.bills().stream().map(LoanBillResponse::from).toList());
     }
 }

@@ -2,58 +2,86 @@ package com.pk.infra.repay;
 
 import com.pk.core.display.DisplayFormatters;
 import com.pk.core.repay.RepayBillStatus;
-import com.pk.core.repay.port.LoanBillReadRepository;
-import com.pk.core.repay.port.RepaymentPlanTermRepository;
+import com.pk.core.repay.port.LenderLoanBillListPort;
+import com.pk.core.repay.port.LoanLenderBillRepository;
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 public class LoanBillsFacade {
-    private final LoanBillReadRepository loanBillReadRepository;
-    private final RepaymentPlanTermRepository repaymentPlanTermRepository;
-    private final Optional<RepayPlanFacade> repayPlanFacade;
+    private final LenderLoanBillListPort lenderLoanBillListPort;
+    private final LoanLenderBillRepository loanLenderBillRepository;
 
     public LoanBillsFacade(
-            LoanBillReadRepository loanBillReadRepository,
-            RepaymentPlanTermRepository repaymentPlanTermRepository,
-            Optional<RepayPlanFacade> repayPlanFacade
+            LenderLoanBillListPort lenderLoanBillListPort,
+            LoanLenderBillRepository loanLenderBillRepository
     ) {
-        this.loanBillReadRepository = loanBillReadRepository;
-        this.repaymentPlanTermRepository = repaymentPlanTermRepository;
-        this.repayPlanFacade = repayPlanFacade;
+        this.lenderLoanBillListPort = lenderLoanBillListPort;
+        this.loanLenderBillRepository = loanLenderBillRepository;
     }
 
-    public BillsResult listBills(long profileId, String status) {
-        LoanBillReadRepository.BillFilter filter = "SETTLED".equalsIgnoreCase(status)
-                ? LoanBillReadRepository.BillFilter.SETTLED
-                : LoanBillReadRepository.BillFilter.ACTIVE;
-        List<LoanBillReadRepository.LoanBillRecord> loans =
-                loanBillReadRepository.findByProfileIdAndBillFilter(profileId, filter);
-        List<BillResult> bills = new ArrayList<>();
-        for (LoanBillReadRepository.LoanBillRecord loan : loans) {
-            repayPlanFacade.ifPresent(facade -> facade.syncPlan(profileId, loan.loanApplyId()));
-            List<RepaymentPlanTermRepository.TermRecord> terms =
-                    repaymentPlanTermRepository.findByLoanApplicationId(loan.loanApplicationId());
-            RepaymentPlanTermRepository.TermRecord nextDue = RepayPlanFacade.findNextDueTerm(terms);
-            Long nextDueDate = nextDue == null || nextDue.dueDate() == null ? null : nextDue.dueDate().toEpochMilli();
-            BigDecimal nextDueAmount = nextDue == null ? null : nextDue.shouldAmount();
-            String billStatus = RepayPlanFacade.deriveBillStatus(terms);
-            bills.add(new BillResult(
-                    loan.loanApplyId(),
-                    loan.loanApplyNo(),
-                    loan.billNo(),
-                    loan.applyAmt(),
-                    DisplayFormatters.formatIdrAmount(loan.applyAmt()),
-                    billStatus,
-                    nextDueDate,
-                    DisplayFormatters.formatJakartaDate(nextDueDate),
-                    nextDueAmount,
-                    DisplayFormatters.formatIdrAmount(nextDueAmount),
-                    RepayBillStatus.SETTLE.equals(billStatus)
-            ));
-        }
+    public BillsResult listBills(long profileId, String partnerUserId, String mobileNo, String status) {
+        List<String> billStatuses = resolveBillStatuses(status);
+        LenderLoanBillListPort.LenderLoanBillListResult result =
+                lenderLoanBillListPort.listBills(partnerUserId, billStatuses);
+        Instant queriedAt = Instant.now();
+        List<BillResult> bills = result.bills().stream()
+                .map(bill -> {
+                    persist(profileId, mobileNo, result.requestJson(), bill, queriedAt);
+                    return toBillResult(bill);
+                })
+                .toList();
         return new BillsResult(bills);
+    }
+
+    private void persist(
+            long profileId,
+            String mobileNo,
+            String requestJson,
+            LenderLoanBillListPort.LenderLoanBill bill,
+            Instant queriedAt
+    ) {
+        loanLenderBillRepository.upsert(new LoanLenderBillRepository.LoanLenderBillData(
+                bill.loanApplyId(),
+                profileId,
+                mobileNo,
+                bill.loanApplyNo(),
+                bill.lenderUserId(),
+                bill.billNo(),
+                bill.applyAmt(),
+                bill.billStatus(),
+                bill.termDueDate(),
+                bill.nextDueAmount(),
+                requestJson,
+                bill.responseItemJson(),
+                queriedAt
+        ));
+    }
+
+    private static BillResult toBillResult(LenderLoanBillListPort.LenderLoanBill bill) {
+        Long nextDueDate = bill.termDueDate();
+        BigDecimal nextDueAmount = bill.nextDueAmount();
+        String billStatus = bill.billStatus();
+        return new BillResult(
+                bill.loanApplyId(),
+                bill.loanApplyNo(),
+                bill.billNo(),
+                bill.applyAmt(),
+                DisplayFormatters.formatIdrAmount(bill.applyAmt()),
+                billStatus,
+                nextDueDate,
+                DisplayFormatters.formatJakartaDate(nextDueDate),
+                nextDueAmount,
+                DisplayFormatters.formatIdrAmount(nextDueAmount),
+                RepayBillStatus.SETTLE.equals(billStatus)
+        );
+    }
+
+    private static List<String> resolveBillStatuses(String status) {
+        if ("SETTLED".equalsIgnoreCase(status)) {
+            return List.of(RepayBillStatus.SETTLE);
+        }
+        return List.of(RepayBillStatus.NORMAL, RepayBillStatus.OVERDUE);
     }
 
     public record BillsResult(List<BillResult> bills) {

@@ -1,89 +1,94 @@
 package com.pk.infra.repay;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pk.core.repay.RepayBillStatus;
-import com.pk.core.repay.RepayTermStatus;
-import com.pk.core.repay.port.LoanBillReadRepository;
-import com.pk.core.repay.port.RepaymentPlanTermRepository;
+import com.pk.core.repay.port.LenderLoanBillListPort;
+import com.pk.core.repay.port.LoanLenderBillRepository;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class LoanBillsFacadeTest {
     @Mock
-    private LoanBillReadRepository loanBillReadRepository;
+    private LenderLoanBillListPort lenderLoanBillListPort;
     @Mock
-    private RepaymentPlanTermRepository repaymentPlanTermRepository;
+    private LoanLenderBillRepository loanLenderBillRepository;
 
     private LoanBillsFacade facade;
 
     @BeforeEach
     void setUp() {
-        facade = new LoanBillsFacade(loanBillReadRepository, repaymentPlanTermRepository, Optional.empty());
+        facade = new LoanBillsFacade(lenderLoanBillListPort, loanLenderBillRepository);
     }
 
     @Test
-    void listActiveBillsAggregatesNextDueAndDisplayFields() {
-        when(loanBillReadRepository.findByProfileIdAndBillFilter(1L, LoanBillReadRepository.BillFilter.ACTIVE))
-                .thenReturn(List.of(loanRecord()));
-        when(repaymentPlanTermRepository.findByLoanApplicationId(100L))
-                .thenReturn(List.of(
-                        term(1, RepayTermStatus.UNPAID, Instant.parse("2025-06-13T00:00:00Z"), new BigDecimal("295000")),
-                        term(2, RepayTermStatus.PAID, Instant.parse("2025-07-13T00:00:00Z"), new BigDecimal("295000"))
-                ));
+    void syncsActiveBillsFromLenderAndUpsertsByLoanApplyId() {
+        when(lenderLoanBillListPort.listBills("partner-1", List.of("NORMAL", "OVERDUE"))).thenReturn(
+                new LenderLoanBillListPort.LenderLoanBillListResult(
+                        "{\"partnerUserId\":\"partner-1\",\"billStatus\":[\"NORMAL\",\"OVERDUE\"]}",
+                        List.of(bill("LOAN-1", RepayBillStatus.NORMAL))
+                )
+        );
 
-        LoanBillsFacade.BillsResult result = facade.listBills(1L, "ACTIVE");
+        LoanBillsFacade.BillsResult result = facade.listBills(1L, "partner-1", "81234567890", "ACTIVE");
+
+        ArgumentCaptor<LoanLenderBillRepository.LoanLenderBillData> captor =
+                ArgumentCaptor.forClass(LoanLenderBillRepository.LoanLenderBillData.class);
+        verify(loanLenderBillRepository).upsert(captor.capture());
+
+        LoanLenderBillRepository.LoanLenderBillData saved = captor.getValue();
+        assertThat(saved.loanApplyId()).isEqualTo("LOAN-1");
+        assertThat(saved.profileId()).isEqualTo(1L);
+        assertThat(saved.mobileNo()).isEqualTo("81234567890");
+        assertThat(saved.billStatus()).isEqualTo(RepayBillStatus.NORMAL);
+        assertThat(saved.lastLenderRequestJson())
+                .isEqualTo("{\"partnerUserId\":\"partner-1\",\"billStatus\":[\"NORMAL\",\"OVERDUE\"]}");
+        assertThat(saved.lastLenderResponseJson()).isEqualTo("{\"loanApplyId\":\"LOAN-1\"}");
 
         assertThat(result.bills()).hasSize(1);
+        assertThat(result.bills().getFirst().loanApplyId()).isEqualTo("LOAN-1");
         assertThat(result.bills().getFirst().billStatus()).isEqualTo(RepayBillStatus.NORMAL);
         assertThat(result.bills().getFirst().nextDueAmountDisplay()).isEqualTo("Rp 295.000");
         assertThat(result.bills().getFirst().applyAmtDisplay()).isEqualTo("Rp 1.500.000");
         assertThat(result.bills().getFirst().canReloan()).isFalse();
     }
 
-    private static LoanBillReadRepository.LoanBillRecord loanRecord() {
-        return new LoanBillReadRepository.LoanBillRecord(
-                100L,
-                "LOAN-1",
-                "LN-1",
-                "BN-1",
-                new BigDecimal("1500000"),
-                "DISBURSED"
+    @Test
+    void syncsSettledBillsFromLender() {
+        when(lenderLoanBillListPort.listBills("partner-1", List.of("SETTLE"))).thenReturn(
+                new LenderLoanBillListPort.LenderLoanBillListResult(
+                        "{\"partnerUserId\":\"partner-1\",\"billStatus\":[\"SETTLE\"]}",
+                        List.of(bill("LOAN-2", RepayBillStatus.SETTLE))
+                )
         );
+
+        LoanBillsFacade.BillsResult result = facade.listBills(1L, "partner-1", "81234567890", "SETTLED");
+
+        assertThat(result.bills()).hasSize(1);
+        assertThat(result.bills().getFirst().billStatus()).isEqualTo(RepayBillStatus.SETTLE);
+        assertThat(result.bills().getFirst().canReloan()).isTrue();
     }
 
-    private static RepaymentPlanTermRepository.TermRecord term(
-            int termNo,
-            String status,
-            Instant dueDate,
-            BigDecimal shouldAmount
-    ) {
-        return new RepaymentPlanTermRepository.TermRecord(
-                termNo,
-                100L,
-                "LOAN-1",
-                "BN-1",
-                "SUB-" + termNo,
-                termNo,
-                status,
-                dueDate,
-                null,
-                shouldAmount,
-                shouldAmount,
-                BigDecimal.ZERO,
-                0,
-                null,
-                null,
-                Instant.now()
+    private static LenderLoanBillListPort.LenderLoanBill bill(String loanApplyId, String billStatus) {
+        return new LenderLoanBillListPort.LenderLoanBill(
+                loanApplyId,
+                "LN-" + loanApplyId,
+                "USR-1",
+                "BN-" + loanApplyId,
+                new BigDecimal("1500000"),
+                billStatus,
+                1749792000000L,
+                new BigDecimal("295000"),
+                "{\"loanApplyId\":\"" + loanApplyId + "\"}"
         );
     }
 }

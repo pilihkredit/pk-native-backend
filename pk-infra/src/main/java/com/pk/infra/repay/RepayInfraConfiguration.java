@@ -1,11 +1,13 @@
 package com.pk.infra.repay;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.repay.port.LenderLoanBillListPort;
 import com.pk.core.repay.port.LenderRepayCurrentOrderPort;
 import com.pk.core.repay.port.LenderRepayPlanPort;
 import com.pk.core.repay.port.LenderRepayTrialPort;
 import com.pk.core.repay.port.LenderRepayVaPort;
 import com.pk.core.repay.port.LoanBillReadRepository;
+import com.pk.core.repay.port.LoanLenderBillRepository;
 import com.pk.core.repay.port.RepayCurrentOrderRepository;
 import com.pk.core.repay.port.RepayVaSnapshotRepository;
 import com.pk.core.repay.port.RepaymentPlanTermRepository;
@@ -19,11 +21,10 @@ import org.springframework.context.annotation.Configuration;
 public class RepayInfraConfiguration {
     @Bean
     LoanBillsFacade loanBillsFacade(
-            LoanBillReadRepository loanBillReadRepository,
-            RepaymentPlanTermRepository repaymentPlanTermRepository,
-            java.util.Optional<RepayPlanFacade> repayPlanFacade
+            LenderLoanBillListPort lenderLoanBillListPort,
+            LoanLenderBillRepository loanLenderBillRepository
     ) {
-        return new LoanBillsFacade(loanBillReadRepository, repaymentPlanTermRepository, repayPlanFacade);
+        return new LoanBillsFacade(lenderLoanBillListPort, loanLenderBillRepository);
     }
 
     @Bean
@@ -34,23 +35,6 @@ public class RepayInfraConfiguration {
             LenderRepayPlanPort lenderRepayPlanPort
     ) {
         return new RepayPlanFacade(loanBillReadRepository, repaymentPlanTermRepository, lenderRepayPlanPort);
-    }
-
-    @Bean
-    RepayBillsOverviewFacade repayBillsOverviewFacade(
-            LoanBillReadRepository loanBillReadRepository,
-            RepaymentPlanTermRepository repaymentPlanTermRepository,
-            RepayCurrentOrderRepository repayCurrentOrderRepository,
-            ObjectMapper objectMapper,
-            java.util.Optional<RepayPlanFacade> repayPlanFacade
-    ) {
-        return new RepayBillsOverviewFacade(
-                loanBillReadRepository,
-                repaymentPlanTermRepository,
-                repayCurrentOrderRepository,
-                objectMapper,
-                repayPlanFacade
-        );
     }
 
     @Bean

@@ -73,6 +73,22 @@ final class PendanaanLoanRequestMapper {
         }
     }
 
+    static String buildBillListBody(String partnerUserId, List<String> billStatuses) {
+        try {
+            ObjectNode root = OBJECT_MAPPER.createObjectNode();
+            root.put("partnerUserId", partnerUserId);
+            if (billStatuses != null && !billStatuses.isEmpty()) {
+                ArrayNode array = root.putArray("billStatus");
+                for (String billStatus : billStatuses) {
+                    array.add(billStatus);
+                }
+            }
+            return OBJECT_MAPPER.writeValueAsString(root);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Failed to build loan bill list request", exception);
+        }
+    }
+
     static String buildContractListBody(String loanApplyId) {
         try {
             ObjectNode root = OBJECT_MAPPER.createObjectNode();

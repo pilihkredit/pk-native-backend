@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.repay.mapper.LoanLenderBillMapper">
+
+    <resultMap id="loanLenderBillMap"
+               type="com.pk.core.repay.port.LoanLenderBillRepository$LoanLenderBillData">
+        <constructor>
+            <arg column="loan_apply_id" javaType="string"/>
+            <arg column="profile_id" javaType="_long"/>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="external_loan_apply_no" javaType="string"/>
+            <arg column="lender_user_id" javaType="string"/>
+            <arg column="bill_no" javaType="string"/>
+            <arg column="apply_amt" javaType="java.math.BigDecimal"/>
+            <arg column="bill_status" javaType="string"/>
+            <arg column="term_due_date" javaType="java.lang.Long"/>
+            <arg column="next_due_amount" javaType="java.math.BigDecimal"/>
+            <arg column="last_lender_request_json" javaType="string"/>
+            <arg column="last_lender_response_json" javaType="string"/>
+            <arg column="queried_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="loanLenderBillColumns">
+        loan_apply_id, profile_id, mobile_no, external_loan_apply_no, lender_user_id, bill_no,
+        apply_amt, bill_status, term_due_date, next_due_amount,
+        last_lender_request_json, last_lender_response_json, queried_at
+    </sql>
+
+    <insert id="upsert">
+        INSERT INTO loan_lender_bill (
+            loan_apply_id,
+            profile_id,
+            mobile_no,
+            external_loan_apply_no,
+            lender_user_id,
+            bill_no,
+            apply_amt,
+            bill_status,
+            term_due_date,
+            next_due_amount,
+            last_lender_request_json,
+            last_lender_response_json,
+            queried_at
+        ) VALUES (
+            #{loanApplyId},
+            #{profileId},
+            #{mobileNo},
+            #{externalLoanApplyNo},
+            #{lenderUserId},
+            #{billNo},
+            #{applyAmt},
+            #{billStatus},
+            #{termDueDate},
+            #{nextDueAmount},
+            #{lastLenderRequestJson},
+            #{lastLenderResponseJson},
+            #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        )
+        ON DUPLICATE KEY UPDATE
+            profile_id = VALUES(profile_id),
+            mobile_no = VALUES(mobile_no),
+            external_loan_apply_no = VALUES(external_loan_apply_no),
+            lender_user_id = VALUES(lender_user_id),
+            bill_no = VALUES(bill_no),
+            apply_amt = VALUES(apply_amt),
+            bill_status = VALUES(bill_status),
+            term_due_date = VALUES(term_due_date),
+            next_due_amount = VALUES(next_due_amount),
+            last_lender_request_json = VALUES(last_lender_request_json),
+            last_lender_response_json = VALUES(last_lender_response_json),
+            queried_at = VALUES(queried_at)
+    </insert>
+
+    <select id="findByProfileIdAndBillStatuses" resultMap="loanLenderBillMap">
+        SELECT <include refid="loanLenderBillColumns"/>
+        FROM loan_lender_bill
+        WHERE profile_id = #{profileId}
+        <if test="billStatuses != null and billStatuses.size() > 0">
+            AND bill_status IN
+            <foreach collection="billStatuses" item="status" open="(" separator="," close=")">
+                #{status}
+            </foreach>
+        </if>
+        ORDER BY term_due_date DESC
+    </select>
+</mapper>

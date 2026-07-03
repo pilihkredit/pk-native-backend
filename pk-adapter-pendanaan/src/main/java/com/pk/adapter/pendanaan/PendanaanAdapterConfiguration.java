@@ -12,6 +12,7 @@ import com.pk.core.loan.port.LenderLoanHistoryPort;
 import com.pk.core.loan.port.LenderLoanProductPort;
 import com.pk.core.loan.port.LenderLoanStatusPort;
 import com.pk.core.loan.port.LenderLoanTrialPort;
+import com.pk.core.repay.port.LenderLoanBillListPort;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.reference.port.LenderAreaPort;
 import com.pk.core.reference.port.LenderBankPort;
@@ -127,6 +128,14 @@ public class PendanaanAdapterConfiguration {
             return new PendanaanLoanHistoryAdapter(httpStack.requireHttpClient(), objectMapper);
         }
         return new FakePendanaanLoanHistoryAdapter();
+    }
+
+    @Bean
+    LenderLoanBillListPort lenderLoanBillListPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanBillListAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanLoanBillListAdapter();
     }
 
     @Bean
