@@ -32,6 +32,7 @@ public class PendanaanRepayVaAdapter implements LenderRepayVaPort {
                 PendanaanJsonSupport.requireText(data.get("userId"), "userId"),
                 defaultVaNode == null || defaultVaNode.isNull() ? null : mapVa(defaultVaNode),
                 mapVaList(data.get("vas")),
+                requestBody,
                 rawResponseJson
         );
     }
@@ -91,7 +92,7 @@ public class PendanaanRepayVaAdapter implements LenderRepayVaPort {
         List<LenderRepayVa.LenderRepayVaChannel> channels = new ArrayList<>();
         for (JsonNode channelNode : channelsNode) {
             channels.add(new LenderRepayVa.LenderRepayVaChannel(
-                    PendanaanJsonSupport.requireText(channelNode.get("bankChannel"), "bankChannel"),
+                    PendanaanJsonSupport.textOrNull(channelNode.get("bankChannel")),
                     PendanaanJsonSupport.textOrNull(channelNode.get("instruction")),
                     Boolean.TRUE.equals(PendanaanJsonSupport.booleanOrNull(channelNode.get("defaultChannel")))
             ));

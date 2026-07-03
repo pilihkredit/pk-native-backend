@@ -40,6 +40,7 @@ class RepayVaFacadeTest {
                 "USR-1",
                 va(true, false),
                 List.of(va(true, false)),
+                "{\"partnerUserId\":\"U10001\"}",
                 "{}"
         ));
 
@@ -48,7 +49,8 @@ class RepayVaFacadeTest {
         assertThat(result.vaList()).hasSize(1);
         assertThat(result.vaList().getFirst().status()).isEqualTo("ACTIVE");
         assertThat(result.vaList().getFirst().bankChannel()).isEqualTo("BCA");
-        verify(repayVaSnapshotRepository).replaceSnapshots(anyLong(), anyString(), any(), any(Instant.class));
+        verify(repayVaSnapshotRepository)
+                .replaceSnapshots(anyLong(), anyString(), any(), any(), any(), any(Instant.class));
     }
 
     @Test
@@ -58,6 +60,7 @@ class RepayVaFacadeTest {
                 "USR-1",
                 va(true, false),
                 List.of(va(true, false)),
+                "{\"partnerUserId\":\"U10001\"}",
                 "{}"
         ));
 
@@ -70,7 +73,8 @@ class RepayVaFacadeTest {
         assertThat(result.vaNo()).isEqualTo("8801234567890");
         assertThat(result.defaultFlag()).isTrue();
         verify(lenderRepayVaPort).setDefaultVa(any());
-        verify(repayVaSnapshotRepository).replaceSnapshots(anyLong(), anyString(), any(), any(Instant.class));
+        verify(repayVaSnapshotRepository)
+                .replaceSnapshots(anyLong(), anyString(), any(), any(), any(), any(Instant.class));
     }
 
     private static LenderRepayVa va(boolean defaultFlag, boolean disabled) {

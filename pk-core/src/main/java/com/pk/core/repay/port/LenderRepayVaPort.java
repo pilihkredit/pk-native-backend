@@ -13,6 +13,7 @@ public interface LenderRepayVaPort {
             String userId,
             LenderRepayVa defaultVa,
             List<LenderRepayVa> vas,
+            String requestJson,
             String rawResponseJson
     ) {
     }

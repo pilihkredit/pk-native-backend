@@ -732,6 +732,8 @@ CREATE TABLE repay_va_snapshot (
     default_flag TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Default flag',
     disabled TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Disabled flag',
     bank_channels_json JSON NULL COMMENT 'Bank channel instruction JSON',
+    last_lender_request_json JSON NULL COMMENT 'Last lender VA list request JSON',
+    last_lender_response_json JSON NULL COMMENT 'Last lender VA list response JSON',
     fetched_at DATETIME(3) NOT NULL COMMENT 'Fetch time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',

@@ -26,7 +26,7 @@ public class RepayVaFacade {
 
     public VaListResult listVas(long profileId, String partnerUserId) {
         LenderRepayVaPort.LenderRepayVaListResult lenderResult = lenderRepayVaPort.listVas(partnerUserId);
-        persistSnapshots(profileId, lenderResult.vas());
+        persistSnapshots(profileId, lenderResult);
         return new VaListResult(lenderResult.vas().stream().map(this::toVaInfo).toList());
     }
 
@@ -38,14 +38,14 @@ public class RepayVaFacade {
                 command.bankChannel()
         ));
         LenderRepayVaPort.LenderRepayVaListResult refreshed = lenderRepayVaPort.listVas(partnerUserId);
-        persistSnapshots(profileId, refreshed.vas());
+        persistSnapshots(profileId, refreshed);
         return new VaDefaultResult(command.vaNo(), true);
     }
 
-    private void persistSnapshots(long profileId, List<LenderRepayVa> vas) {
+    private void persistSnapshots(long profileId, LenderRepayVaPort.LenderRepayVaListResult lenderResult) {
         String snapshotNo = RepayNoGenerator.vaSnapshotNo();
         Instant fetchedAt = Instant.now();
-        List<RepayVaSnapshotRepository.VaSnapshotInsert> inserts = vas.stream()
+        List<RepayVaSnapshotRepository.VaSnapshotInsert> inserts = lenderResult.vas().stream()
                 .map(va -> new RepayVaSnapshotRepository.VaSnapshotInsert(
                         va.vaNo(),
                         va.bankCode(),
@@ -55,7 +55,14 @@ public class RepayVaFacade {
                         serializeChannels(va)
                 ))
                 .toList();
-        repayVaSnapshotRepository.replaceSnapshots(profileId, snapshotNo, inserts, fetchedAt);
+        repayVaSnapshotRepository.replaceSnapshots(
+                profileId,
+                snapshotNo,
+                inserts,
+                lenderResult.requestJson(),
+                lenderResult.rawResponseJson(),
+                fetchedAt
+        );
     }
 
     private String serializeChannels(LenderRepayVa va) {

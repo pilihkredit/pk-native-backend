@@ -5,7 +5,14 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RepayVaSnapshotRepository {
-    void replaceSnapshots(long profileId, String snapshotNo, List<VaSnapshotInsert> snapshots, Instant fetchedAt);
+    void replaceSnapshots(
+            long profileId,
+            String snapshotNo,
+            List<VaSnapshotInsert> snapshots,
+            String lastLenderRequestJson,
+            String lastLenderResponseJson,
+            Instant fetchedAt
+    );
 
     List<VaSnapshotRecord> findLatestByProfileId(long profileId);
 
