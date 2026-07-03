@@ -13,7 +13,7 @@ public interface LenderUserStatusPort {
 
     record LenderUserStatusResult(
             String partnerUserId,
-            String lenderUserId,
+            String userId,
             Integer userLoanLifeTimeStatus,
             Integer userLoanLifeTimeLastAction,
             Long freezeEndTime,

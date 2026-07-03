@@ -50,20 +50,12 @@ public class HomeApplicationService {
     private static HomeSummaryResponse toResponse(HomeSummaryFacade.HomeSummaryResult result) {
         return new HomeSummaryResponse(
                 result.partnerUserId(),
-                result.userStage(),
-                result.nextAction(),
-                result.kycStatus(),
-                result.completedModules(),
-                result.missingModules(),
-                result.lenderUserId(),
+                result.userId(),
                 result.userLoanLifeTimeStatus(),
                 result.userLoanLifeTimeLastAction(),
                 result.freezeEndTime(),
                 result.onLoanCount(),
-                result.creditContractExpireTime(),
-                result.lastLenderRequestJson(),
-                result.lastLenderResponseJson(),
-                result.queriedAt() == null ? null : result.queriedAt().toEpochMilli()
+                result.creditContractExpireTime()
         );
     }
 }

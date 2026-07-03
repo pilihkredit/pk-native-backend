@@ -55,7 +55,7 @@ class PendanaanUserStatusAdapterTest {
         );
 
         assertThat(result.partnerUserId()).isEqualTo("U10001");
-        assertThat(result.lenderUserId()).isEqualTo("USR-1");
+        assertThat(result.userId()).isEqualTo("USR-1");
         assertThat(result.userLoanLifeTimeStatus()).isEqualTo(4);
         assertThat(result.userLoanLifeTimeLastAction()).isEqualTo(22);
         assertThat(result.onLoanCount()).isZero();

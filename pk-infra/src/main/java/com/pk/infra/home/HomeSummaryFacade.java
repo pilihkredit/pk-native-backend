@@ -7,7 +7,6 @@ import com.pk.core.home.port.UserLenderStatusQueryRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import java.time.Instant;
-import java.util.List;
 
 public class HomeSummaryFacade {
     private final OnboardingProgressFacade onboardingProgressFacade;
@@ -30,11 +29,6 @@ public class HomeSummaryFacade {
             String mobileNo,
             LenderDeviceContext device
     ) {
-        OnboardingProgressFacade.OnboardingProgressResult onboarding = onboardingProgressFacade.getProgress(
-                profileId,
-                partnerUserId
-        );
-        StageDecision stageDecision = resolveLocalStage(onboarding.kycStatus());
         LenderUserStatusPort.LenderUserStatusResult lenderStatus = lenderUserStatusPort.queryStatus(
                 new LenderUserStatusPort.LenderUserStatusCommand(partnerUserId, device)
         );
@@ -43,7 +37,7 @@ public class HomeSummaryFacade {
                 profileId,
                 mobileNo,
                 lenderStatus.partnerUserId() == null ? partnerUserId : lenderStatus.partnerUserId(),
-                lenderStatus.lenderUserId(),
+                lenderStatus.userId(),
                 lenderStatus.userLoanLifeTimeStatus(),
                 lenderStatus.userLoanLifeTimeLastAction(),
                 lenderStatus.freezeEndTime(),
@@ -54,21 +48,13 @@ public class HomeSummaryFacade {
                 queriedAt
         ));
         return new HomeSummaryResult(
-                onboarding.partnerUserId(),
-                stageDecision.userStage(),
-                stageDecision.nextAction(),
-                onboarding.kycStatus(),
-                onboarding.completedModules(),
-                onboarding.missingModules(),
-                lenderStatus.lenderUserId(),
+                lenderStatus.partnerUserId() == null ? partnerUserId : lenderStatus.partnerUserId(),
+                lenderStatus.userId(),
                 lenderStatus.userLoanLifeTimeStatus(),
                 lenderStatus.userLoanLifeTimeLastAction(),
                 lenderStatus.freezeEndTime(),
                 lenderStatus.onLoanCount(),
-                lenderStatus.creditContractExpireTime(),
-                lenderStatus.requestJson(),
-                lenderStatus.responseDataJson(),
-                queriedAt
+                lenderStatus.creditContractExpireTime()
         );
     }
 
@@ -92,20 +78,12 @@ public class HomeSummaryFacade {
 
     public record HomeSummaryResult(
             String partnerUserId,
-            String userStage,
-            String nextAction,
-            String kycStatus,
-            List<String> completedModules,
-            List<String> missingModules,
-            String lenderUserId,
+            String userId,
             Integer userLoanLifeTimeStatus,
             Integer userLoanLifeTimeLastAction,
             Long freezeEndTime,
             Integer onLoanCount,
-            Long creditContractExpireTime,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson,
-            Instant queriedAt
+            Long creditContractExpireTime
     ) {
     }
 }

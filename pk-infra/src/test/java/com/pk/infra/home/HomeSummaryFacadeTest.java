@@ -6,7 +6,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.pk.core.home.HomeNextAction;
 import com.pk.core.home.HomeUserStage;
 import com.pk.core.home.port.LenderUserStatusPort;
 import com.pk.core.home.port.UserLenderStatusQueryRepository;
@@ -36,14 +35,6 @@ class HomeSummaryFacadeTest {
 
     @Test
     void syncsLenderUserStatusAndPersistsSnapshot() {
-        when(onboardingProgressFacade.getProgress(1L, "U10001")).thenReturn(
-                new OnboardingProgressFacade.OnboardingProgressResult(
-                        "U10001",
-                        OnboardingProgressFacade.KYC_SYNCED,
-                        List.of("personal"),
-                        List.of()
-                )
-        );
         when(lenderUserStatusPort.queryStatus(any())).thenReturn(
                 new LenderUserStatusPort.LenderUserStatusResult(
                         "U10001",
@@ -60,13 +51,12 @@ class HomeSummaryFacadeTest {
 
         var result = facade.getSummary(1L, "U10001", "81234567890", sampleDevice());
 
-        assertThat(result.userStage()).isEqualTo(HomeUserStage.READY);
-        assertThat(result.nextAction()).isNull();
-        assertThat(result.lenderUserId()).isEqualTo("USR-1");
+        assertThat(result.partnerUserId()).isEqualTo("U10001");
+        assertThat(result.userId()).isEqualTo("USR-1");
         assertThat(result.userLoanLifeTimeStatus()).isEqualTo(4);
         assertThat(result.userLoanLifeTimeLastAction()).isEqualTo(22);
-        assertThat(result.lastLenderRequestJson()).contains("U10001");
-        assertThat(result.lastLenderResponseJson()).contains("USR-1");
+        assertThat(result.onLoanCount()).isZero();
+        assertThat(result.creditContractExpireTime()).isEqualTo(1780300800000L);
         verify(userLenderStatusQueryRepository).upsert(any());
     }
 
