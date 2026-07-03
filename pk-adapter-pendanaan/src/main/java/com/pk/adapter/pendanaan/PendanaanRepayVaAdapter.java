@@ -52,6 +52,8 @@ public class PendanaanRepayVaAdapter implements LenderRepayVaPort {
                     BUSINESS_TYPE_DEFAULT,
                     command.partnerUserId()
             );
+        } catch (com.pk.core.api.ApiException apiException) {
+            throw apiException;
         } catch (Exception exception) {
             throw new com.pk.core.api.ApiException(com.pk.core.api.ApiCode.SERVICE_UNAVAILABLE, exception);
         }

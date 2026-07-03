@@ -47,8 +47,8 @@ class RepayVaFacadeTest {
         RepayVaFacade.VaListResult result = facade.listVas(1L, "U10001");
 
         assertThat(result.vaList()).hasSize(1);
-        assertThat(result.vaList().getFirst().status()).isEqualTo("ACTIVE");
-        assertThat(result.vaList().getFirst().bankChannel()).isEqualTo("BCA");
+        assertThat(result.vaList().getFirst().disabled()).isFalse();
+        assertThat(result.vaList().getFirst().bankCode()).isEqualTo("BCA");
         verify(repayVaSnapshotRepository)
                 .replaceSnapshots(anyLong(), anyString(), any(), any(), any(), any(Instant.class));
     }

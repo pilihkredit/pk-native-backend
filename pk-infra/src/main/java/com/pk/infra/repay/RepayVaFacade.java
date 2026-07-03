@@ -86,12 +86,25 @@ public class RepayVaFacade {
     }
 
     private VaInfoResult toVaInfo(LenderRepayVa va) {
+        List<VaChannelResult> channels = va.bankChannels() == null
+                ? List.of()
+                : va.bankChannels().stream()
+                        .map(channel -> new VaChannelResult(
+                                channel.bankChannel(),
+                                channel.instruction(),
+                                channel.defaultChannel()
+                        ))
+                        .toList();
         return new VaInfoResult(
                 va.vaNo(),
                 va.bankCode(),
                 va.bankName(),
+                va.bankType(),
+                va.icon(),
+                channels,
                 va.defaultFlag(),
-                va.disabled() ? "DISABLED" : "ACTIVE"
+                va.disabled(),
+                va.show()
         );
     }
 
@@ -103,10 +116,21 @@ public class RepayVaFacade {
 
     public record VaInfoResult(
             String vaNo,
-            String bankChannel,
+            String bankCode,
             String bankName,
+            Integer bankType,
+            String icon,
+            List<VaChannelResult> bankChannels,
             boolean defaultFlag,
-            String status
+            boolean disabled,
+            boolean show
+    ) {
+    }
+
+    public record VaChannelResult(
+            String bankChannel,
+            String instruction,
+            boolean defaultChannel
     ) {
     }
 
