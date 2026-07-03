@@ -74,15 +74,14 @@ public class IdentityOcrFacade {
 
     public LicenseTokenResult getLicenseToken(long profileId, Long licenseEffectiveSeconds) {
         AdvanceAiOcrPort.LicenseTokenResult result = advanceAiOcrPort.getLicenseToken(licenseEffectiveSeconds);
-        OcrSessionState current = ocrSessionStore.find(profileId).orElse(emptySession());
         ocrSessionStore.save(profileId, new OcrSessionState(
                 true,
-                current.ocrCheckCompleted(),
-                current.livenessPassed(),
-                current.livenessScore(),
-                current.ocrRawJson(),
-                current.parsed(),
-                current.idCardImageBase64(),
+                false,
+                false,
+                null,
+                null,
+                null,
+                null,
                 Instant.now()
         ));
         return new LicenseTokenResult(result.licenseToken(), result.effectiveSeconds());

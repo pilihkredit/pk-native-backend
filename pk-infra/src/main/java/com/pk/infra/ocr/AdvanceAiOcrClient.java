@@ -39,7 +39,7 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         long effectiveSeconds = licenseEffectiveSeconds == null || licenseEffectiveSeconds <= 0
                 ? properties.licenseEffectiveSeconds()
                 : licenseEffectiveSeconds;
-        String token = requireAccessToken();
+        String token = refreshAccessToken();
         Map<String, Object> requestData = Map.of("licenseEffectiveSeconds", effectiveSeconds);
         JsonNode response = postJson("license-token", properties.licenseUrl(), requestData, token);
         String code = text(response, "code");
@@ -120,6 +120,12 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         if (cached != null && !cached.isBlank()) {
             return cached;
         }
+        return refreshAccessToken();
+    }
+
+    /** license-token 每次前端请求都向 Advance.ai 重新申请 access token 与 license。 */
+    private String refreshAccessToken() {
+        redisTemplate.delete(properties.tokenKeyPrefix());
         String token = generateToken();
         if (token == null || token.isBlank()) {
             throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
