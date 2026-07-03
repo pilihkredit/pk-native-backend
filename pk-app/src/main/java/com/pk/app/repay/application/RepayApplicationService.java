@@ -20,12 +20,10 @@ import com.pk.infra.repay.RepayPlanFacade;
 import com.pk.infra.repay.RepayTrialFacade;
 import com.pk.infra.repay.RepayVaFacade;
 import java.util.List;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@ConditionalOnBean(RepayPlanFacade.class)
 public class RepayApplicationService {
     private final RepayPlanFacade repayPlanFacade;
     private final RepayVaFacade repayVaFacade;

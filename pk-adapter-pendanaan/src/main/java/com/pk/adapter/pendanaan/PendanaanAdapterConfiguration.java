@@ -24,7 +24,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.lang.Nullable;
 
 @Configuration
 @EnableConfigurationProperties(PendanaanProperties.class)
@@ -147,38 +146,34 @@ public class PendanaanAdapterConfiguration {
     }
 
     @Bean
-    @Nullable
     LenderRepayPlanPort lenderRepayPlanPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
-        if (!httpStack.enabled()) {
-            return null;
+        if (httpStack.enabled()) {
+            return new PendanaanRepayPlanAdapter(httpStack.requireHttpClient(), objectMapper);
         }
-        return new PendanaanRepayPlanAdapter(httpStack.requireHttpClient(), objectMapper);
+        return new FakePendanaanRepayPlanAdapter();
     }
 
     @Bean
-    @Nullable
     LenderRepayVaPort lenderRepayVaPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
-        if (!httpStack.enabled()) {
-            return null;
+        if (httpStack.enabled()) {
+            return new PendanaanRepayVaAdapter(httpStack.requireHttpClient(), objectMapper);
         }
-        return new PendanaanRepayVaAdapter(httpStack.requireHttpClient(), objectMapper);
+        return new FakePendanaanRepayVaAdapter();
     }
 
     @Bean
-    @Nullable
     LenderRepayTrialPort lenderRepayTrialPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
-        if (!httpStack.enabled()) {
-            return null;
+        if (httpStack.enabled()) {
+            return new PendanaanRepayTrialAdapter(httpStack.requireHttpClient(), objectMapper);
         }
-        return new PendanaanRepayTrialAdapter(httpStack.requireHttpClient(), objectMapper);
+        return new FakePendanaanRepayTrialAdapter();
     }
 
     @Bean
-    @Nullable
     LenderRepayCurrentOrderPort lenderRepayCurrentOrderPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
-        if (!httpStack.enabled()) {
-            return null;
+        if (httpStack.enabled()) {
+            return new PendanaanRepayCurrentOrderAdapter(httpStack.requireHttpClient(), objectMapper);
         }
-        return new PendanaanRepayCurrentOrderAdapter(httpStack.requireHttpClient(), objectMapper);
+        return new FakePendanaanRepayCurrentOrderAdapter();
     }
 }
