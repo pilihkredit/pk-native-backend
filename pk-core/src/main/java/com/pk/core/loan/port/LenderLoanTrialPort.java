@@ -25,6 +25,7 @@ public interface LenderLoanTrialPort {
             BigDecimal loanPrincipal,
             Integer totalDays,
             List<LenderTrialTerm> termInfo,
+            String requestJson,
             String rawResponseJson
     ) {
     }

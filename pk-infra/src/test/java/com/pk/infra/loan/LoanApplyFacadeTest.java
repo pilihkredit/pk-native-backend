@@ -145,6 +145,7 @@ class LoanApplyFacadeTest {
                 10L,
                 "QUOTE-1",
                 100L,
+                "81234567890",
                 55L,
                 "PD001",
                 "RP001",
@@ -156,6 +157,8 @@ class LoanApplyFacadeTest {
                 30,
                 null,
                 "{}",
+                "{}",
+                "{}",
                 Instant.now()
         );
     }
@@ -165,6 +168,7 @@ class LoanApplyFacadeTest {
                 10L,
                 "QUOTE-1",
                 100L,
+                "81234567890",
                 55L,
                 "PD001",
                 "RP001",
@@ -175,6 +179,8 @@ class LoanApplyFacadeTest {
                 new BigDecimal("100000"),
                 30,
                 null,
+                "{}",
+                "{}",
                 "{}",
                 Instant.now().minus(Duration.ofHours(1))
         );

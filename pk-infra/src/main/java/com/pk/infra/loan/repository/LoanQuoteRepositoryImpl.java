@@ -8,8 +8,9 @@ private final LoanQuoteMapper mapper; public LoanQuoteRepositoryImpl(LoanQuoteMa
 @Override @Transactional public LoanQuoteRecord insert(LoanQuoteInsert command, List<LoanQuoteTermInsert> terms){
     LoanQuoteInsertParam p=LoanQuoteInsertParam.from(command); mapper.insertQuote(p);
     for(LoanQuoteTermInsert term:terms) mapper.insertTerm(LoanQuoteTermInsertParam.from(p.getId(),term));
-    return new LoanQuoteRecord(p.getId(),command.quoteNo(),command.creditApplicationId(),command.productSnapshotId(),
+    return new LoanQuoteRecord(p.getId(),command.quoteNo(),command.creditApplicationId(),command.mobileNo(),command.productSnapshotId(),
         command.productCode(),command.repayMethod(),command.applyAmt(),command.loanPrincipal(),command.payAmount(),
-        command.schdAmount(),command.interest(),command.totalDays(),command.feeJson(),command.rawResponseJson(),command.quotedAt());}
+        command.schdAmount(),command.interest(),command.totalDays(),command.feeJson(),
+        command.lastLenderRequestJson(),command.lastLenderResponseJson(),command.rawResponseJson(),command.quotedAt());}
 @Override public int countTermsByQuoteId(long quoteId){return mapper.countTermsByQuoteId(quoteId);}
 @Override public Optional<LoanQuoteRecord> findByQuoteNo(String quoteNo){return Optional.ofNullable(mapper.findByQuoteNo(quoteNo));}}

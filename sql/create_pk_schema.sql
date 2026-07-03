@@ -511,6 +511,7 @@ CREATE TABLE loan_quote (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     quote_no VARCHAR(64) NOT NULL COMMENT 'Quote number',
     credit_application_id BIGINT UNSIGNED NOT NULL COMMENT 'Credit application identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     product_snapshot_id BIGINT UNSIGNED NULL COMMENT 'Product snapshot identifier',
     product_code VARCHAR(64) NOT NULL COMMENT 'Product code',
     repay_method VARCHAR(64) NOT NULL COMMENT 'Repayment method code',
@@ -521,18 +522,22 @@ CREATE TABLE loan_quote (
     interest DECIMAL(18,2) NULL COMMENT 'Interest amount',
     total_days INT NULL COMMENT 'Total loan days',
     fee_json JSON NULL COMMENT 'Fee detail JSON',
+    last_lender_request_json JSON NULL COMMENT 'Last lender loan trial request JSON',
+    last_lender_response_json JSON NULL COMMENT 'Last lender loan trial response JSON',
     raw_response_json JSON NOT NULL COMMENT 'Raw response JSON',
     quoted_at DATETIME(3) NOT NULL COMMENT 'Quote time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_loan_quote_no (quote_no),
-    KEY idx_loan_quote_credit_quoted (credit_application_id, quoted_at)
+    KEY idx_loan_quote_credit_quoted (credit_application_id, quoted_at),
+    KEY idx_loan_quote_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loan quote snapshots';
 
 CREATE TABLE loan_quote_term (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     quote_id BIGINT UNSIGNED NOT NULL COMMENT 'Quote identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     term_no INT NOT NULL COMMENT 'Term number',
     due_date DATETIME(3) NULL COMMENT 'Due date',
     schd_amount DECIMAL(18,2) NULL COMMENT 'Scheduled amount',
@@ -542,7 +547,8 @@ CREATE TABLE loan_quote_term (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_loan_quote_term (quote_id, term_no)
+    UNIQUE KEY uk_loan_quote_term (quote_id, term_no),
+    KEY idx_loan_quote_term_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loan quote repayment term details';
 
 CREATE TABLE loan_application (

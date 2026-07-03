@@ -15,6 +15,7 @@ public interface LoanQuoteRepository {
     record LoanQuoteInsert(
             String quoteNo,
             long creditApplicationId,
+            String mobileNo,
             Long productSnapshotId,
             String productCode,
             String repayMethod,
@@ -25,12 +26,15 @@ public interface LoanQuoteRepository {
             BigDecimal interest,
             Integer totalDays,
             String feeJson,
+            String lastLenderRequestJson,
+            String lastLenderResponseJson,
             String rawResponseJson,
             Instant quotedAt
     ) {
     }
 
     record LoanQuoteTermInsert(
+            String mobileNo,
             int termNo,
             Instant dueDate,
             BigDecimal schdAmount,
@@ -44,6 +48,7 @@ public interface LoanQuoteRepository {
             long id,
             String quoteNo,
             long creditApplicationId,
+            String mobileNo,
             Long productSnapshotId,
             String productCode,
             String repayMethod,
@@ -54,6 +59,8 @@ public interface LoanQuoteRepository {
             BigDecimal interest,
             Integer totalDays,
             String feeJson,
+            String lastLenderRequestJson,
+            String lastLenderResponseJson,
             String rawResponseJson,
             Instant quotedAt
     ) {

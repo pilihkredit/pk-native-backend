@@ -25,6 +25,7 @@ public class FakePendanaanLoanTrialAdapter implements LenderLoanTrialPort {
         BigDecimal schdAmount = applyAmt.multiply(new BigDecimal("1.18")).setScale(0, RoundingMode.HALF_UP);
         BigDecimal interest = schdAmount.subtract(applyAmt);
         List<LenderTrialTerm> terms = buildTerms(loanTerm, applyAmt, schdAmount, interest);
+        String requestJson = buildRequestJson(command);
         String rawResponseJson = buildRawJson(command, payAmount, schdAmount, interest, loanTerm, terms);
         return new LenderLoanTrialResult(
                 applyAmt,
@@ -35,8 +36,25 @@ public class FakePendanaanLoanTrialAdapter implements LenderLoanTrialPort {
                 payAmount,
                 loanTerm * 30,
                 terms,
+                requestJson,
                 rawResponseJson
         );
+    }
+
+    private String buildRequestJson(LenderLoanTrialCommand command) {
+        try {
+            var root = objectMapper.createObjectNode();
+            root.put("applyId", command.applyId());
+            root.put("applyAmt", command.applyAmt());
+            root.put("productCode", command.productCode());
+            root.put("repayMethod", command.repayMethod());
+            if (command.couponId() != null) {
+                root.put("couponId", command.couponId());
+            }
+            return objectMapper.writeValueAsString(root);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Failed to build fake loan trial request JSON", exception);
+        }
     }
 
     private List<LenderTrialTerm> buildTerms(

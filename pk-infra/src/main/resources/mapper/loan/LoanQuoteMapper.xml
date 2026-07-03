@@ -3,18 +3,18 @@
 <mapper namespace="com.pk.infra.loan.mapper.LoanQuoteMapper">
 <resultMap id="quoteMap" type="com.pk.core.loan.port.LoanQuoteRepository$LoanQuoteRecord">
 <constructor><arg column="id" javaType="_long"/><arg column="quote_no" javaType="string"/>
-<arg column="credit_application_id" javaType="_long"/><arg column="product_snapshot_id" javaType="java.lang.Long"/>
+<arg column="credit_application_id" javaType="_long"/><arg column="mobile_no" javaType="string"/><arg column="product_snapshot_id" javaType="java.lang.Long"/>
 <arg column="product_code" javaType="string"/><arg column="repay_method" javaType="string"/>
 <arg column="apply_amt" javaType="java.math.BigDecimal"/><arg column="loan_principal" javaType="java.math.BigDecimal"/>
 <arg column="pay_amount" javaType="java.math.BigDecimal"/><arg column="schd_amount" javaType="java.math.BigDecimal"/>
 <arg column="interest" javaType="java.math.BigDecimal"/><arg column="total_days" javaType="java.lang.Integer"/>
-<arg column="fee_json" javaType="string"/><arg column="raw_response_json" javaType="string"/>
+<arg column="fee_json" javaType="string"/><arg column="last_lender_request_json" javaType="string"/><arg column="last_lender_response_json" javaType="string"/><arg column="raw_response_json" javaType="string"/>
 <arg column="quoted_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>
 <insert id="insertQuote" useGeneratedKeys="true" keyProperty="id" keyColumn="id">INSERT INTO loan_quote
-(quote_no,credit_application_id,product_snapshot_id,product_code,repay_method,apply_amt,loan_principal,pay_amount,schd_amount,interest,total_days,fee_json,raw_response_json,quoted_at)
-VALUES (#{quoteNo},#{creditApplicationId},#{productSnapshotId},#{productCode},#{repayMethod},#{applyAmt},#{loanPrincipal},#{payAmount},#{schdAmount},#{interest},#{totalDays},#{feeJson},#{rawResponseJson},#{quotedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})</insert>
-<insert id="insertTerm">INSERT INTO loan_quote_term (quote_id,term_no,due_date,schd_amount,schd_principal,schd_interest,fee_json)
-VALUES (#{quoteId},#{termNo},#{dueDate,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},#{schdAmount},#{schdPrincipal},#{schdInterest},#{feeJson})</insert>
+(quote_no,credit_application_id,mobile_no,product_snapshot_id,product_code,repay_method,apply_amt,loan_principal,pay_amount,schd_amount,interest,total_days,fee_json,last_lender_request_json,last_lender_response_json,raw_response_json,quoted_at)
+VALUES (#{quoteNo},#{creditApplicationId},#{mobileNo},#{productSnapshotId},#{productCode},#{repayMethod},#{applyAmt},#{loanPrincipal},#{payAmount},#{schdAmount},#{interest},#{totalDays},#{feeJson},#{lastLenderRequestJson},#{lastLenderResponseJson},#{rawResponseJson},#{quotedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})</insert>
+<insert id="insertTerm">INSERT INTO loan_quote_term (quote_id,mobile_no,term_no,due_date,schd_amount,schd_principal,schd_interest,fee_json)
+VALUES (#{quoteId},#{mobileNo},#{termNo},#{dueDate,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},#{schdAmount},#{schdPrincipal},#{schdInterest},#{feeJson})</insert>
 <select id="countTermsByQuoteId" resultType="int">SELECT COUNT(*) FROM loan_quote_term WHERE quote_id=#{quoteId}</select>
-<select id="findByQuoteNo" resultMap="quoteMap">SELECT id,quote_no,credit_application_id,product_snapshot_id,product_code,repay_method,apply_amt,loan_principal,pay_amount,schd_amount,interest,total_days,fee_json,raw_response_json,quoted_at FROM loan_quote WHERE quote_no=#{quoteNo}</select>
+<select id="findByQuoteNo" resultMap="quoteMap">SELECT id,quote_no,credit_application_id,mobile_no,product_snapshot_id,product_code,repay_method,apply_amt,loan_principal,pay_amount,schd_amount,interest,total_days,fee_json,last_lender_request_json,last_lender_response_json,raw_response_json,quoted_at FROM loan_quote WHERE quote_no=#{quoteNo}</select>
 </mapper>

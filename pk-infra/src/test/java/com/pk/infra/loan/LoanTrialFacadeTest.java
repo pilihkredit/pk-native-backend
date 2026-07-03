@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -36,6 +37,8 @@ class LoanTrialFacadeTest {
     private LenderLoanTrialPort lenderLoanTrialPort;
     @Mock
     private LoanQuoteRepository loanQuoteRepository;
+    @Captor
+    private ArgumentCaptor<List<LoanQuoteRepository.LoanQuoteTermInsert>> termCaptor;
 
     private LoanTrialFacade facade;
 
@@ -75,6 +78,7 @@ class LoanTrialFacadeTest {
                     900L,
                     insert.quoteNo(),
                     insert.creditApplicationId(),
+                    insert.mobileNo(),
                     insert.productSnapshotId(),
                     insert.productCode(),
                     insert.repayMethod(),
@@ -85,6 +89,8 @@ class LoanTrialFacadeTest {
                     insert.interest(),
                     insert.totalDays(),
                     insert.feeJson(),
+                    insert.lastLenderRequestJson(),
+                    insert.lastLenderResponseJson(),
                     insert.rawResponseJson(),
                     insert.quotedAt()
             );
@@ -113,6 +119,11 @@ class LoanTrialFacadeTest {
                 ArgumentCaptor.forClass(LoanQuoteRepository.LoanQuoteInsert.class);
         verify(loanQuoteRepository).insert(insertCaptor.capture(), any());
         assertThat(insertCaptor.getValue().productSnapshotId()).isEqualTo(501L);
+        assertThat(insertCaptor.getValue().mobileNo()).isEqualTo("81234567890");
+        assertThat(insertCaptor.getValue().lastLenderRequestJson()).contains("APPLY-1");
+        assertThat(insertCaptor.getValue().lastLenderResponseJson()).contains("loanTerm");
+        verify(loanQuoteRepository).insert(any(), termCaptor.capture());
+        assertThat(termCaptor.getValue()).allSatisfy(term -> assertThat(term.mobileNo()).isEqualTo("81234567890"));
         verify(lenderLoanTrialPort).trial(any(LenderLoanTrialPort.LenderLoanTrialCommand.class));
     }
 
@@ -171,6 +182,7 @@ class LoanTrialFacadeTest {
                         new BigDecimal("250000"),
                         new BigDecimal("45000")
                 )),
+                "{\"applyId\":\"APPLY-1\",\"applyAmt\":1500000}",
                 "{\"loanTerm\":6}"
         );
     }

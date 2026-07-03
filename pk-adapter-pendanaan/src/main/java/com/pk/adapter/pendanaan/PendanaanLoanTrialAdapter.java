@@ -35,6 +35,7 @@ public class PendanaanLoanTrialAdapter implements LenderLoanTrialPort {
                 decimalOrNull(data == null ? null : data.get("loanPrincipal")),
                 intOrNull(data == null ? null : data.get("totalDays")),
                 mapTerms(data == null ? null : data.get("termInfo")),
+                requestBody,
                 rawResponseJson
         );
     }

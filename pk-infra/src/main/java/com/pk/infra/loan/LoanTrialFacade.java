@@ -83,12 +83,13 @@ public class LoanTrialFacade {
         Instant quotedAt = Instant.now();
         String quoteNo = LoanQuoteNoGenerator.generate();
         List<LoanQuoteRepository.LoanQuoteTermInsert> termInserts = lenderResult.termInfo().stream()
-                .map(this::toTermInsert)
+                .map(term -> toTermInsert(creditRecord.mobileNo(), term))
                 .toList();
         loanQuoteRepository.insert(
                 new LoanQuoteRepository.LoanQuoteInsert(
                         quoteNo,
                         creditRecord.id(),
+                        creditRecord.mobileNo(),
                         productSnapshot.snapshotId(),
                         command.productCode(),
                         command.repayMethod(),
@@ -99,6 +100,8 @@ public class LoanTrialFacade {
                         lenderResult.interest(),
                         lenderResult.totalDays(),
                         null,
+                        lenderResult.requestJson(),
+                        lenderResult.rawResponseJson(),
                         lenderResult.rawResponseJson(),
                         quotedAt
                 ),
@@ -136,8 +139,9 @@ public class LoanTrialFacade {
         }
     }
 
-    private LoanQuoteRepository.LoanQuoteTermInsert toTermInsert(LenderTrialTerm term) {
+    private LoanQuoteRepository.LoanQuoteTermInsert toTermInsert(String mobileNo, LenderTrialTerm term) {
         return new LoanQuoteRepository.LoanQuoteTermInsert(
+                mobileNo,
                 term.termNo(),
                 term.dueDate(),
                 term.schdAmount(),
