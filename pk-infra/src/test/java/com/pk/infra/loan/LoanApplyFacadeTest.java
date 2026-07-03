@@ -55,6 +55,8 @@ class LoanApplyFacadeTest {
     private LoanApplyProperties loanApplyProperties;
     @Mock
     private LoanApplyOutboxPublisher loanApplyOutboxPublisher;
+    @Mock
+    private LoanStatusPollHandler loanStatusPollHandler;
 
     private LoanApplyFacade facade;
     private LoanQuoteProperties loanQuoteProperties;
@@ -75,8 +77,54 @@ class LoanApplyFacadeTest {
                 loanStatusHistoryRepository,
                 loanApplyHandler,
                 loanApplyProperties,
-                loanApplyOutboxPublisher
+                loanApplyOutboxPublisher,
+                loanStatusPollHandler
         );
+    }
+
+    @Test
+    void syncsFromLenderWhenStatusIsNotTerminal() {
+        LoanApplicationRepository.LoanApplicationRecord record = existingLoan();
+        when(loanApplicationRepository.findByLoanApplyIdAndProfileId("LOAN-1", 1L))
+                .thenReturn(Optional.of(record));
+
+        LoanApplyFacade.StatusResult result = facade.getStatus(1L, "LOAN-1");
+
+        assertThat(result.loanApplyId()).isEqualTo("LOAN-1");
+        assertThat(result.status()).isEqualTo(LoanApplicationStatus.PROCESSING);
+        verify(loanStatusPollHandler).syncFromLenderForApi(record);
+    }
+
+    @Test
+    void skipsLenderSyncWhenStatusIsTerminal() {
+        LoanApplicationRepository.LoanApplicationRecord record = new LoanApplicationRepository.LoanApplicationRecord(
+                200L,
+                "LOAN-1",
+                "REQ-1",
+                "APPLY-1",
+                "81234567890",
+                100L,
+                10L,
+                1L,
+                9L,
+                "LN-1",
+                "USR-1",
+                "BN-1",
+                LoanApplicationStatus.DISBURSED,
+                "SUCCESS",
+                new BigDecimal("1500000"),
+                new BigDecimal("1455000"),
+                Instant.parse("2026-07-01T00:00:00Z"),
+                null,
+                null
+        );
+        when(loanApplicationRepository.findByLoanApplyIdAndProfileId("LOAN-1", 1L))
+                .thenReturn(Optional.of(record));
+
+        LoanApplyFacade.StatusResult result = facade.getStatus(1L, "LOAN-1");
+
+        assertThat(result.status()).isEqualTo(LoanApplicationStatus.DISBURSED);
+        verify(loanStatusPollHandler, never()).syncFromLenderForApi(any());
     }
 
     @Test

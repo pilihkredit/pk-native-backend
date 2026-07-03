@@ -47,7 +47,9 @@ public class LoanCallbackHandler {
                 parsed.billNo(),
                 parsed.applyAmt(),
                 parsed.payAmount(),
-                parsed.payTime()
+                parsed.payTime(),
+                null,
+                null
         );
         loanLenderStatusApplier.apply(application.get(), status, SOURCE);
         callbackEventRepository.markProcessed(callbackEvent.id(), now);

@@ -1,6 +1,7 @@
 package com.pk.adapter.pendanaan;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.loan.port.LenderLoanStatusPort;
@@ -11,9 +12,11 @@ public class PendanaanLoanStatusAdapter implements LenderLoanStatusPort {
     static final String BUSINESS_TYPE = "LOAN_APPLY_STATUS";
 
     private final PendanaanHttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
-    public PendanaanLoanStatusAdapter(PendanaanHttpClient httpClient) {
+    public PendanaanLoanStatusAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
         this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -29,8 +32,21 @@ public class PendanaanLoanStatusAdapter implements LenderLoanStatusPort {
                 textOrNull(data.get("billNo")),
                 decimalOrNull(data.get("applyAmt")),
                 decimalOrNull(data.get("payAmount")),
-                longOrNull(data.get("payTime"))
+                longOrNull(data.get("payTime")),
+                requestBody,
+                serializeResponseData(data)
         );
+    }
+
+    private String serializeResponseData(JsonNode data) {
+        if (data == null || data.isNull()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(data);
+        } catch (Exception exception) {
+            return null;
+        }
     }
 
     private static String requiredText(JsonNode node, String field) {

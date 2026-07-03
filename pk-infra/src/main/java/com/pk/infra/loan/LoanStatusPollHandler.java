@@ -4,7 +4,8 @@ import com.pk.core.loan.port.LenderLoanStatusPort;
 import com.pk.core.loan.port.LoanApplicationRepository;
 
 public class LoanStatusPollHandler {
-    private static final String SOURCE = "LOAN_STATUS_POLL";
+    private static final String POLL_SOURCE = "LOAN_STATUS_POLL";
+    private static final String API_SOURCE = "LOAN_STATUS_API";
 
     private final LenderLoanStatusPort lenderLoanStatusPort;
     private final LoanLenderStatusApplier loanLenderStatusApplier;
@@ -18,7 +19,18 @@ public class LoanStatusPollHandler {
     }
 
     public void poll(LoanApplicationRepository.LoanApplicationRecord record) {
+        syncFromLender(record, POLL_SOURCE);
+    }
+
+    public void syncFromLenderForApi(LoanApplicationRepository.LoanApplicationRecord record) {
+        syncFromLender(record, API_SOURCE);
+    }
+
+    private void syncFromLender(
+            LoanApplicationRepository.LoanApplicationRecord record,
+            String source
+    ) {
         LenderLoanStatusPort.LenderLoanStatusResult status = lenderLoanStatusPort.queryStatus(record.loanApplyId());
-        loanLenderStatusApplier.apply(record, status, SOURCE);
+        loanLenderStatusApplier.apply(record, status, source);
     }
 }

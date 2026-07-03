@@ -10,6 +10,7 @@ import com.pk.core.loan.port.LenderLoanProductPort;
 import com.pk.core.loan.port.LenderLoanStatusPort;
 import com.pk.core.loan.port.LenderLoanTrialPort;
 import com.pk.core.loan.port.LoanApplicationRepository;
+import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.loan.port.LoanQuoteRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
 import com.pk.core.loan.port.ContractFileRepository;
@@ -98,6 +99,14 @@ public class LoanInfraConfiguration {
     }
 
     @Bean
+    LoanStatusPollHandler loanStatusPollHandler(
+            LenderLoanStatusPort lenderLoanStatusPort,
+            LoanLenderStatusApplier loanLenderStatusApplier
+    ) {
+        return new LoanStatusPollHandler(lenderLoanStatusPort, loanLenderStatusApplier);
+    }
+
+    @Bean
     LoanApplyFacade loanApplyFacade(
             OnboardingProgressFacade onboardingProgressFacade,
             CreditApplicationRepository creditApplicationRepository,
@@ -110,7 +119,8 @@ public class LoanInfraConfiguration {
             LoanStatusHistoryRepository loanStatusHistoryRepository,
             LoanApplyHandler loanApplyHandler,
             LoanApplyProperties loanApplyProperties,
-            LoanApplyOutboxPublisher loanApplyOutboxPublisher
+            LoanApplyOutboxPublisher loanApplyOutboxPublisher,
+            LoanStatusPollHandler loanStatusPollHandler
     ) {
         return new LoanApplyFacade(
                 onboardingProgressFacade,
@@ -124,7 +134,8 @@ public class LoanInfraConfiguration {
                 loanStatusHistoryRepository,
                 loanApplyHandler,
                 loanApplyProperties,
-                loanApplyOutboxPublisher
+                loanApplyOutboxPublisher,
+                loanStatusPollHandler
         );
     }
 
@@ -147,22 +158,15 @@ public class LoanInfraConfiguration {
     LoanLenderStatusApplier loanLenderStatusApplier(
             LoanApplicationRepository loanApplicationRepository,
             LoanStatusHistoryRepository loanStatusHistoryRepository,
+            LoanLenderStatusQueryRepository loanLenderStatusQueryRepository,
             LoanApplyProperties loanApplyProperties
     ) {
         return new LoanLenderStatusApplier(
                 loanApplicationRepository,
                 loanStatusHistoryRepository,
+                loanLenderStatusQueryRepository,
                 loanApplyProperties
         );
-    }
-
-    @Bean
-    @ConditionalOnBean(LenderLoanStatusPort.class)
-    LoanStatusPollHandler loanStatusPollHandler(
-            LenderLoanStatusPort lenderLoanStatusPort,
-            LoanLenderStatusApplier loanLenderStatusApplier
-    ) {
-        return new LoanStatusPollHandler(lenderLoanStatusPort, loanLenderStatusApplier);
     }
 
     @Bean

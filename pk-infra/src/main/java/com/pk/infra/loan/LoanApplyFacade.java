@@ -37,6 +37,7 @@ public class LoanApplyFacade {
     private final LoanApplyHandler loanApplyHandler;
     private final LoanApplyProperties loanApplyProperties;
     private final LoanApplyOutboxPublisher loanApplyOutboxPublisher;
+    private final LoanStatusPollHandler loanStatusPollHandler;
 
     public LoanApplyFacade(
             OnboardingProgressFacade onboardingProgressFacade,
@@ -50,7 +51,8 @@ public class LoanApplyFacade {
             LoanStatusHistoryRepository loanStatusHistoryRepository,
             LoanApplyHandler loanApplyHandler,
             LoanApplyProperties loanApplyProperties,
-            LoanApplyOutboxPublisher loanApplyOutboxPublisher
+            LoanApplyOutboxPublisher loanApplyOutboxPublisher,
+            LoanStatusPollHandler loanStatusPollHandler
     ) {
         this.onboardingProgressFacade = onboardingProgressFacade;
         this.creditApplicationRepository = creditApplicationRepository;
@@ -64,6 +66,7 @@ public class LoanApplyFacade {
         this.loanApplyHandler = loanApplyHandler;
         this.loanApplyProperties = loanApplyProperties;
         this.loanApplyOutboxPublisher = loanApplyOutboxPublisher;
+        this.loanStatusPollHandler = loanStatusPollHandler;
     }
 
     public ApplyResult apply(long profileId, String partnerUserId, String mobileNo, ApplyCommand command) {
@@ -189,6 +192,12 @@ public class LoanApplyFacade {
         LoanApplicationRepository.LoanApplicationRecord record = loanApplicationRepository
                 .findByLoanApplyIdAndProfileId(loanApplyId, profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
+        if (!LoanApplicationStatus.isTerminal(record.status())) {
+            loanStatusPollHandler.syncFromLenderForApi(record);
+            record = loanApplicationRepository
+                    .findByLoanApplyIdAndProfileId(loanApplyId, profileId)
+                    .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
+        }
         return toStatusResult(record);
     }
 
