@@ -8,6 +8,8 @@ import java.util.Optional;
 public interface LoanApplicationRepository {
     Optional<LoanApplicationRecord> findById(long id);
 
+    Optional<LoanApplicationRecord> findByRequestId(String requestId);
+
     Optional<LoanApplicationRecord> findByLoanApplyId(String loanApplyId);
 
     Optional<LoanApplicationRecord> findByLoanApplyIdAndProfileId(String loanApplyId, long profileId);
@@ -17,6 +19,8 @@ public interface LoanApplicationRepository {
     void updateStatus(long id, String status, String externalStatus);
 
     void markSubmitted(long id, String externalLoanApplyNo, String externalStatus);
+
+    void markLenderApplySubmitted(LenderApplySubmitted submitted);
 
     void updateDisbursementDetails(
             long id,
@@ -32,6 +36,9 @@ public interface LoanApplicationRepository {
 
     record LoanApplicationInsert(
             String loanApplyId,
+            String requestId,
+            String applyId,
+            String mobileNo,
             long creditApplicationId,
             long quoteId,
             long profileId,
@@ -42,20 +49,36 @@ public interface LoanApplicationRepository {
     ) {
     }
 
+    record LenderApplySubmitted(
+            long id,
+            String externalLoanApplyNo,
+            String lenderUserId,
+            String externalStatus,
+            String lastLenderRequestJson,
+            String lastLenderResponseJson
+    ) {
+    }
+
     record LoanApplicationRecord(
             long id,
             String loanApplyId,
+            String requestId,
+            String applyId,
+            String mobileNo,
             long creditApplicationId,
             long quoteId,
             long profileId,
             long profileVersionId,
             String externalLoanApplyNo,
+            String lenderUserId,
             String billNo,
             String status,
             String externalStatus,
             BigDecimal applyAmt,
             BigDecimal payAmount,
-            Instant payTime
+            Instant payTime,
+            String lastLenderRequestJson,
+            String lastLenderResponseJson
     ) {
     }
 }

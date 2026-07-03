@@ -101,15 +101,21 @@ class LoanContractFacadeTest {
         return new LoanApplicationRepository.LoanApplicationRecord(
                 id,
                 "LOAN-1",
+                "REQ-1",
+                "APPLY-1",
+                "81234567890",
                 100L,
                 200L,
                 1L,
                 300L,
                 null,
                 null,
+                null,
                 "PROCESSING",
                 null,
                 new BigDecimal("1500000"),
+                null,
+                null,
                 null,
                 null
         );

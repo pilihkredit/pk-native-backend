@@ -64,7 +64,7 @@ public class LoanApplyFacade {
         validate(command);
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
-        var existing = loanApplicationRepository.findByLoanApplyId(command.loanApplyId());
+        var existing = loanApplicationRepository.findByRequestId(command.requestId());
         if (existing.isPresent()) {
             return toApplyResult(existing.get());
         }
@@ -81,6 +81,9 @@ public class LoanApplyFacade {
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         if (creditRecord.profileId() != profileId) {
             throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
+        }
+        if (!command.applyId().equals(creditRecord.applyId())) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
         if (!CreditApplicationStatus.APPROVED.equals(creditRecord.status())) {
             throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
@@ -124,9 +127,13 @@ public class LoanApplyFacade {
                 SOURCE
         );
 
+        String loanApplyId = LoanApplyIdGenerator.generate();
         try {
             long loanApplicationId = loanApplicationRepository.insert(new LoanApplicationRepository.LoanApplicationInsert(
-                    command.loanApplyId(),
+                    loanApplyId,
+                    command.requestId(),
+                    creditRecord.applyId(),
+                    mobileNo,
                     creditRecord.id(),
                     quote.id(),
                     profileId,
@@ -144,7 +151,7 @@ public class LoanApplyFacade {
             );
             loanApplyOutboxPublisher.publish(new LoanApplyJob(
                     loanApplicationId,
-                    command.loanApplyId(),
+                    loanApplyId,
                     creditRecord.applyId(),
                     applyAmt,
                     quote.productCode(),
@@ -159,9 +166,9 @@ public class LoanApplyFacade {
                     command.device(),
                     command.appList()
             ));
-            return new ApplyResult(command.loanApplyId(), PUBLIC_PROCESSING, null);
+            return new ApplyResult(loanApplyId, PUBLIC_PROCESSING, null);
         } catch (DataIntegrityViolationException exception) {
-            var replay = loanApplicationRepository.findByLoanApplyId(command.loanApplyId());
+            var replay = loanApplicationRepository.findByRequestId(command.requestId());
             if (replay.isPresent()) {
                 return toApplyResult(replay.get());
             }
@@ -177,9 +184,12 @@ public class LoanApplyFacade {
     }
 
     private static void validate(ApplyCommand command) {
-        if (command.loanApplyId() == null
-                || command.loanApplyId().isBlank()
-                || command.loanApplyId().length() > 64
+        if (command.requestId() == null
+                || command.requestId().isBlank()
+                || command.requestId().length() > 64
+                || command.applyId() == null
+                || command.applyId().isBlank()
+                || command.applyId().length() > 64
                 || command.quoteNo() == null
                 || command.quoteNo().isBlank()
                 || command.quoteNo().length() > 64) {
@@ -215,7 +225,8 @@ public class LoanApplyFacade {
     }
 
     public record ApplyCommand(
-            String loanApplyId,
+            String requestId,
+            String applyId,
             String quoteNo,
             String loanPurpose,
             BigDecimal lat,

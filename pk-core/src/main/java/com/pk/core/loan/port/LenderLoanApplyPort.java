@@ -26,6 +26,13 @@ public interface LenderLoanApplyPort {
     ) {
     }
 
-    record LenderLoanApplyResult(String loanApplyNo, String externalStatus) {
+    record LenderLoanApplyResult(
+            String loanApplyId,
+            String loanApplyNo,
+            String lenderUserId,
+            String externalStatus,
+            String requestJson,
+            String responseDataJson
+    ) {
     }
 }

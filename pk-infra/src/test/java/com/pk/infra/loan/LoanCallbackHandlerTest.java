@@ -92,15 +92,21 @@ class LoanCallbackHandlerTest {
         return new LoanApplicationRepository.LoanApplicationRecord(
                 10L,
                 "LOAN-001",
+                "REQ-001",
+                "APPLY-001",
+                "81234567890",
                 100L,
                 200L,
                 1L,
                 300L,
                 null,
                 null,
+                null,
                 LoanApplicationStatus.PROCESSING,
                 null,
                 new BigDecimal("1500000"),
+                null,
+                null,
                 null,
                 null
         );

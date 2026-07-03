@@ -32,9 +32,14 @@ public class PendanaanLoanApplyAdapter implements LenderLoanApplyPort {
         if (data == null || data.isNull()) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
+        String responseDataJson = data.toString();
         return new LenderLoanApplyResult(
+                requiredText(data, "loanApplyId"),
                 requiredText(data, "loanApplyNo"),
-                requiredText(data, "applyStatus")
+                requiredText(data, "userId"),
+                requiredText(data, "applyStatus"),
+                requestBody,
+                responseDataJson
         );
     }
 

@@ -4,22 +4,35 @@
     <resultMap id="loanApplicationRecordMap" type="com.pk.core.loan.port.LoanApplicationRepository$LoanApplicationRecord">
         <constructor>
             <arg column="id" javaType="_long"/><arg column="loan_apply_id" javaType="string"/>
+            <arg column="request_id" javaType="string"/><arg column="apply_id" javaType="string"/>
+            <arg column="mobile_no" javaType="string"/>
             <arg column="credit_application_id" javaType="_long"/><arg column="quote_id" javaType="_long"/>
             <arg column="profile_id" javaType="_long"/><arg column="profile_version_id" javaType="_long"/>
-            <arg column="external_loan_apply_no" javaType="string"/><arg column="bill_no" javaType="string"/>
+            <arg column="external_loan_apply_no" javaType="string"/><arg column="lender_user_id" javaType="string"/>
+            <arg column="bill_no" javaType="string"/>
             <arg column="status" javaType="string"/><arg column="external_status" javaType="string"/>
             <arg column="apply_amt" javaType="java.math.BigDecimal"/><arg column="pay_amount" javaType="java.math.BigDecimal"/>
             <arg column="pay_time" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="last_lender_request_json" javaType="string"/>
+            <arg column="last_lender_response_json" javaType="string"/>
         </constructor>
     </resultMap>
-    <sql id="cols">id, loan_apply_id, credit_application_id, quote_id, profile_id, profile_version_id,
-        external_loan_apply_no, bill_no, status, external_status, apply_amt, pay_amount, pay_time</sql>
+    <sql id="cols">id, loan_apply_id, request_id, apply_id, mobile_no, credit_application_id, quote_id, profile_id, profile_version_id,
+        external_loan_apply_no, lender_user_id, bill_no, status, external_status, apply_amt, pay_amount, pay_time,
+        last_lender_request_json, last_lender_response_json</sql>
     <select id="findById" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE id = #{id}</select>
+    <select id="findByRequestId" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE request_id = #{requestId}</select>
     <select id="findByLoanApplyId" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE loan_apply_id = #{loanApplyId}</select>
     <select id="findByLoanApplyIdAndProfileId" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE loan_apply_id = #{loanApplyId} AND profile_id = #{profileId}</select>
     <insert id="insert">
-        INSERT INTO loan_application (loan_apply_id, credit_application_id, quote_id, profile_id, profile_version_id, status, apply_amt, loan_purpose, submitted_at)
-        VALUES (#{loanApplyId}, #{creditApplicationId}, #{quoteId}, #{profileId}, #{profileVersionId}, #{status}, #{applyAmt}, #{loanPurpose}, CURRENT_TIMESTAMP(3))
+        INSERT INTO loan_application (
+            loan_apply_id, request_id, apply_id, mobile_no, credit_application_id, quote_id, profile_id, profile_version_id,
+            status, apply_amt, loan_purpose, submitted_at
+        )
+        VALUES (
+            #{loanApplyId}, #{requestId}, #{applyId}, #{mobileNo}, #{creditApplicationId}, #{quoteId}, #{profileId}, #{profileVersionId},
+            #{status}, #{applyAmt}, #{loanPurpose}, CURRENT_TIMESTAMP(3)
+        )
     </insert>
     <select id="findIdByLoanApplyId" resultType="long">SELECT id FROM loan_application WHERE loan_apply_id = #{loanApplyId}</select>
     <update id="updateStatus">
@@ -32,6 +45,17 @@
         SET status = CASE WHEN status IN ('INIT', 'SUBMITTING') THEN 'PROCESSING' ELSE status END,
             external_loan_apply_no = #{externalLoanApplyNo}, external_status = #{externalStatus},
             submitted_at = COALESCE(submitted_at, CURRENT_TIMESTAMP(3)) WHERE id = #{id}
+    </update>
+    <update id="markLenderApplySubmitted">
+        UPDATE loan_application
+        SET status = CASE WHEN status IN ('INIT', 'SUBMITTING') THEN 'PROCESSING' ELSE status END,
+            external_loan_apply_no = #{externalLoanApplyNo},
+            lender_user_id = #{lenderUserId},
+            external_status = #{externalStatus},
+            last_lender_request_json = #{lastLenderRequestJson},
+            last_lender_response_json = #{lastLenderResponseJson},
+            submitted_at = COALESCE(submitted_at, CURRENT_TIMESTAMP(3))
+        WHERE id = #{id}
     </update>
     <update id="updateDisbursementDetails">
         UPDATE loan_application SET bill_no = #{billNo}, apply_amt = COALESCE(#{applyAmt}, apply_amt),

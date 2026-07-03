@@ -49,11 +49,14 @@ public class LoanApplyHandler {
                 )
         );
 
-        loanApplicationRepository.markSubmitted(
+        loanApplicationRepository.markLenderApplySubmitted(new LoanApplicationRepository.LenderApplySubmitted(
                 job.loanApplicationId(),
                 result.loanApplyNo(),
-                result.externalStatus()
-        );
+                result.lenderUserId(),
+                result.externalStatus(),
+                result.requestJson(),
+                result.responseDataJson()
+        ));
         loanStatusHistoryRepository.insert(
                 job.loanApplicationId(),
                 LoanApplicationStatus.SUBMITTING,

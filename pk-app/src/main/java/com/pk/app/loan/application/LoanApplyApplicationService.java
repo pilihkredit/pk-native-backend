@@ -55,7 +55,7 @@ public class LoanApplyApplicationService {
         userDeviceWriter.upsertFromRequest(
                 principal.profileId(),
                 principal.partnerUserId(),
-                request.loanApplyId(),
+                request.requestId(),
                 device
         );
         LoanApplyFacade.ApplyResult result = loanApplyFacade.apply(
@@ -63,7 +63,8 @@ public class LoanApplyApplicationService {
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new LoanApplyFacade.ApplyCommand(
-                        request.loanApplyId(),
+                        request.requestId(),
+                        request.applyId(),
                         request.quoteNo(),
                         request.loanPurpose(),
                         request.lat(),

@@ -27,6 +27,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -73,8 +74,8 @@ class LoanApplyFacadeTest {
     }
 
     @Test
-    void returnsIdempotentResultForExistingLoanApplyId() {
-        when(loanApplicationRepository.findByLoanApplyId("LOAN-1")).thenReturn(Optional.of(existingLoan()));
+    void returnsIdempotentResultForExistingRequestId() {
+        when(loanApplicationRepository.findByRequestId("REQ-1")).thenReturn(Optional.of(existingLoan()));
 
         LoanApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", "81234567890", sampleCommand());
 
@@ -86,7 +87,7 @@ class LoanApplyFacadeTest {
 
     @Test
     void rejectsExpiredQuote() {
-        when(loanApplicationRepository.findByLoanApplyId("LOAN-1")).thenReturn(Optional.empty());
+        when(loanApplicationRepository.findByRequestId("REQ-1")).thenReturn(Optional.empty());
         when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.of(expiredQuote()));
 
         assertThatThrownBy(() -> facade.apply(1L, "partner-1", "81234567890", sampleCommand()))
@@ -96,11 +97,24 @@ class LoanApplyFacadeTest {
     }
 
     @Test
-    void acceptsValidQuoteAndEnqueuesOutbox() {
-        when(loanApplicationRepository.findByLoanApplyId("LOAN-1")).thenReturn(Optional.empty());
+    void rejectsMismatchedApplyId() {
+        when(loanApplicationRepository.findByRequestId("REQ-1")).thenReturn(Optional.empty());
         when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.of(freshQuote()));
         when(loanQuoteRepository.countTermsByQuoteId(10L)).thenReturn(2);
-        when(creditApplicationRepository.findById(100L)).thenReturn(Optional.of(approvedCredit()));
+        when(creditApplicationRepository.findById(100L)).thenReturn(Optional.of(approvedCredit("APPLY-OTHER")));
+
+        assertThatThrownBy(() -> facade.apply(1L, "partner-1", "81234567890", sampleCommand()))
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ApiException) exception).apiCode())
+                .isEqualTo(ApiCode.INVALID_REQUEST_PARAMETERS);
+    }
+
+    @Test
+    void acceptsValidQuoteAndEnqueuesOutbox() {
+        when(loanApplicationRepository.findByRequestId("REQ-1")).thenReturn(Optional.empty());
+        when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.of(freshQuote()));
+        when(loanQuoteRepository.countTermsByQuoteId(10L)).thenReturn(2);
+        when(creditApplicationRepository.findById(100L)).thenReturn(Optional.of(approvedCredit("APPLY-1")));
         when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L)).thenReturn(Optional.of(limits()));
         when(loanProductFacade.resolveProductList(1L, "APPLY-1", true)).thenReturn(productSnapshot());
         when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
@@ -116,25 +130,42 @@ class LoanApplyFacadeTest {
 
         LoanApplyFacade.ApplyResult result = facade.apply(1L, "partner-1", "81234567890", sampleCommand());
 
-        assertThat(result.loanApplyId()).isEqualTo("LOAN-1");
+        assertThat(result.loanApplyId()).startsWith("LOAN");
         assertThat(result.status()).isEqualTo(LoanApplicationStatus.PROCESSING);
         assertThat(result.loanApplyNo()).isNull();
-        verify(loanApplyOutboxPublisher).publish(any(LoanApplyJob.class));
+
+        ArgumentCaptor<LoanApplicationRepository.LoanApplicationInsert> insertCaptor =
+                ArgumentCaptor.forClass(LoanApplicationRepository.LoanApplicationInsert.class);
+        verify(loanApplicationRepository).insert(insertCaptor.capture());
+        assertThat(insertCaptor.getValue().requestId()).isEqualTo("REQ-1");
+        assertThat(insertCaptor.getValue().applyId()).isEqualTo("APPLY-1");
+        assertThat(insertCaptor.getValue().mobileNo()).isEqualTo("81234567890");
+        assertThat(insertCaptor.getValue().loanApplyId()).isEqualTo(result.loanApplyId());
+
+        ArgumentCaptor<LoanApplyJob> jobCaptor = ArgumentCaptor.forClass(LoanApplyJob.class);
+        verify(loanApplyOutboxPublisher).publish(jobCaptor.capture());
+        assertThat(jobCaptor.getValue().loanApplyId()).isEqualTo(result.loanApplyId());
     }
 
     private static LoanApplicationRepository.LoanApplicationRecord existingLoan() {
         return new LoanApplicationRepository.LoanApplicationRecord(
                 200L,
                 "LOAN-1",
+                "REQ-1",
+                "APPLY-1",
+                "81234567890",
                 100L,
                 10L,
                 1L,
                 9L,
                 "LN-1",
+                "USR-1",
                 null,
                 LoanApplicationStatus.PROCESSING,
                 "PROCESSING",
                 new BigDecimal("1500000"),
+                null,
+                null,
                 null,
                 null
         );
@@ -186,10 +217,10 @@ class LoanApplyFacadeTest {
         );
     }
 
-    private static CreditApplicationRepository.CreditApplicationRecord approvedCredit() {
+    private static CreditApplicationRepository.CreditApplicationRecord approvedCredit(String applyId) {
         return new CreditApplicationRepository.CreditApplicationRecord(
                 100L,
-                "APPLY-1",
+                applyId,
                 "req-1",
                 "pendanaan",
                 1L,
@@ -238,7 +269,8 @@ class LoanApplyFacadeTest {
 
     private static LoanApplyFacade.ApplyCommand sampleCommand() {
         return new LoanApplyFacade.ApplyCommand(
-                "LOAN-1",
+                "REQ-1",
+                "APPLY-1",
                 "QUOTE-1",
                 "Modal Usaha",
                 null,

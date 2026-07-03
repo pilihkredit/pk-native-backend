@@ -11,6 +11,7 @@ public class LoanApplicationRepositoryImpl implements LoanApplicationRepository 
     private final LoanApplicationMapper mapper;
     public LoanApplicationRepositoryImpl(LoanApplicationMapper mapper) { this.mapper = mapper; }
     @Override public Optional<LoanApplicationRecord> findById(long id) { return Optional.ofNullable(mapper.findById(id)); }
+    @Override public Optional<LoanApplicationRecord> findByRequestId(String requestId) { return Optional.ofNullable(mapper.findByRequestId(requestId)); }
     @Override public Optional<LoanApplicationRecord> findByLoanApplyId(String loanApplyId) { return Optional.ofNullable(mapper.findByLoanApplyId(loanApplyId)); }
     @Override public Optional<LoanApplicationRecord> findByLoanApplyIdAndProfileId(String loanApplyId, long profileId) {
         return Optional.ofNullable(mapper.findByLoanApplyIdAndProfileId(loanApplyId, profileId));
@@ -23,6 +24,9 @@ public class LoanApplicationRepositoryImpl implements LoanApplicationRepository 
     }
     @Override public void updateStatus(long id, String status, String externalStatus) { mapper.updateStatus(id, status, externalStatus); }
     @Override public void markSubmitted(long id, String externalLoanApplyNo, String externalStatus) { mapper.markSubmitted(id, externalLoanApplyNo, externalStatus); }
+    @Override public void markLenderApplySubmitted(LenderApplySubmitted submitted) {
+        mapper.markLenderApplySubmitted(LenderApplySubmittedParam.from(submitted));
+    }
     @Override public void updateDisbursementDetails(long id, String billNo, BigDecimal applyAmt, BigDecimal payAmount, Instant payTime) {
         mapper.updateDisbursementDetails(id, billNo, applyAmt, payAmount, payTime);
     }
