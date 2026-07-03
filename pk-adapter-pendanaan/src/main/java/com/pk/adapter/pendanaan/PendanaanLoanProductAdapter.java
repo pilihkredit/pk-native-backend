@@ -29,6 +29,9 @@ public class PendanaanLoanProductAdapter implements LenderLoanProductPort {
         String requestBody = "{\"applyId\":\"" + applyId + "\"}";
         JsonNode data = httpClient.post(PRODUCT_LIST_PATH, requestBody, BUSINESS_TYPE, applyId);
         return new LenderLoanProductListResult(
+                textOrNull(data.get("applyId")),
+                textOrNull(data.get("creditApplyNo")),
+                textOrNull(data.get("userId")),
                 textOrNull(data.get("creditStatus")),
                 textOrNull(data.get("productStatus")),
                 mapProducts(data.get("products"))
@@ -60,6 +63,7 @@ public class PendanaanLoanProductAdapter implements LenderLoanProductPort {
         }
         List<LenderRepayMethod> repayMethods = new ArrayList<>();
         for (JsonNode methodNode : repayMethodsNode) {
+            JsonNode unevenNode = methodNode.get("unevenBillsRepaymentRate");
             repayMethods.add(new LenderRepayMethod(
                     textOrNull(methodNode.get("repayMethod")),
                     textOrNull(methodNode.get("cycleType")),
@@ -67,10 +71,22 @@ public class PendanaanLoanProductAdapter implements LenderLoanProductPort {
                     intOrNull(methodNode.get("cycleCount")),
                     intOrNull(methodNode.get("totalCycleInterval")),
                     intOrNull(methodNode.get("repayMethodType")),
-                    parseUnevenRates(methodNode.get("unevenBillsRepaymentRate"))
+                    rawUnevenJson(unevenNode),
+                    parseUnevenRates(unevenNode)
             ));
         }
         return List.copyOf(repayMethods);
+    }
+
+    private static String rawUnevenJson(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        if (node.isTextual()) {
+            String value = node.asText();
+            return value.isBlank() ? null : value;
+        }
+        return node.toString();
     }
 
     private List<LenderRepayMethod.UnevenBillRate> parseUnevenRates(JsonNode node) {

@@ -48,7 +48,7 @@ class CreditLimitDisplayFacadeTest {
         when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(Optional.of(statusQuery()));
         when(loanProductFacade.findRepayMethod(1L, "APPLY-1", "RP001"))
-                .thenReturn(new LenderRepayMethod("RP001", "D", 30, 6, 180, 0, List.of()));
+                .thenReturn(new LenderRepayMethod("RP001", "D", 30, 6, 180, 0, null, List.of()));
 
         CreditLimitDisplayFacade.LimitDisplayResult result = facade.getLimitDisplay(1L, "APPLY-1", "RP001");
 
@@ -70,6 +70,7 @@ class CreditLimitDisplayFacadeTest {
                         2,
                         60,
                         1,
+                        null,
                         List.of(new LenderRepayMethod.UnevenBillRate(1, new BigDecimal("0.6")))
                 ));
 

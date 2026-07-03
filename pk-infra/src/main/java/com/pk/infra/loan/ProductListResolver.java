@@ -3,6 +3,7 @@ package com.pk.infra.loan;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.loan.LenderLoanProduct;
 import com.pk.core.loan.port.LenderLoanProductPort;
+import com.pk.core.loan.port.LenderProductLatestRepository;
 import com.pk.core.loan.port.ProductListCache;
 import com.pk.core.loan.port.ProductSnapshotRepository;
 import com.pk.infra.credit.CreditExternalStatusMapper;
@@ -15,6 +16,7 @@ public class ProductListResolver {
     private final ProductSnapshotRepository productSnapshotRepository;
     private final ProductListCache productListCache;
     private final LenderLoanProductPort lenderLoanProductPort;
+    private final LenderProductLatestRepository lenderProductLatestRepository;
     private final ProductSnapshotPayloadCodec payloadCodec;
     private final Duration cacheTtl;
 
@@ -22,12 +24,14 @@ public class ProductListResolver {
             ProductSnapshotRepository productSnapshotRepository,
             ProductListCache productListCache,
             LenderLoanProductPort lenderLoanProductPort,
+            LenderProductLatestRepository lenderProductLatestRepository,
             ProductSnapshotPayloadCodec payloadCodec,
             LoanProductProperties loanProductProperties
     ) {
         this.productSnapshotRepository = productSnapshotRepository;
         this.productListCache = productListCache;
         this.lenderLoanProductPort = lenderLoanProductPort;
+        this.lenderProductLatestRepository = lenderProductLatestRepository;
         this.payloadCodec = payloadCodec;
         this.cacheTtl = loanProductProperties.cacheTtl();
     }
@@ -94,6 +98,17 @@ public class ProductListResolver {
                         fetchedAt
                 )
         );
+        lenderProductLatestRepository.replaceLatest(new LenderProductLatestRepository.ReplaceLatestCommand(
+                profileId,
+                creditRecord.id(),
+                lenderResult.applyId() == null ? creditRecord.applyId() : lenderResult.applyId(),
+                lenderResult.creditApplyNo(),
+                lenderResult.userId(),
+                lenderResult.externalCreditStatus(),
+                productStatus,
+                fetchedAt,
+                lenderResult.products()
+        ));
         productListCache.putSnapshotNo(profileId, creditRecord.applyId(), snapshot.snapshotNo());
         return new ResolvedProductList(
                 snapshot.id(),

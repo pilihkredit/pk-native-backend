@@ -13,6 +13,7 @@ import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.loan.LenderLoanProduct;
 import com.pk.core.loan.LenderRepayMethod;
 import com.pk.core.loan.port.LenderLoanProductPort;
+import com.pk.core.loan.port.LenderProductLatestRepository;
 import com.pk.core.loan.port.ProductListCache;
 import com.pk.core.loan.port.ProductSnapshotRepository;
 import java.math.BigDecimal;
@@ -34,6 +35,8 @@ class ProductListResolverTest {
     private ProductListCache productListCache;
     @Mock
     private LenderLoanProductPort lenderLoanProductPort;
+    @Mock
+    private LenderProductLatestRepository lenderProductLatestRepository;
 
     private ProductListResolver resolver;
 
@@ -45,6 +48,7 @@ class ProductListResolverTest {
                 productSnapshotRepository,
                 productListCache,
                 lenderLoanProductPort,
+                lenderProductLatestRepository,
                 new ProductSnapshotPayloadCodec(new ObjectMapper()),
                 properties
         );
@@ -62,6 +66,7 @@ class ProductListResolverTest {
         assertThat(result.snapshotNo()).isEqualTo(snapshot.snapshotNo());
         assertThat(result.productStatus()).isEqualTo("READY");
         verify(lenderLoanProductPort, never()).listProducts(any());
+        verify(lenderProductLatestRepository, never()).replaceLatest(any());
     }
 
     @Test
@@ -89,6 +94,7 @@ class ProductListResolverTest {
         verify(lenderLoanProductPort).listProducts("APPLY-1");
         verify(productListCache).putSnapshotNo(eq(1L), eq("APPLY-1"), any());
         verify(productSnapshotRepository).insert(any());
+        verify(lenderProductLatestRepository).replaceLatest(any());
     }
 
     @Test
@@ -121,6 +127,7 @@ class ProductListResolverTest {
 
         assertThat(result.snapshotId()).isEqualTo(502L);
         verify(lenderLoanProductPort).listProducts("APPLY-1");
+        verify(lenderProductLatestRepository).replaceLatest(any());
     }
 
     private static CreditApplicationRepository.CreditApplicationRecord approvedRecord() {
@@ -172,6 +179,9 @@ class ProductListResolverTest {
 
     private static LenderLoanProductPort.LenderLoanProductListResult lenderProducts() {
         return new LenderLoanProductPort.LenderLoanProductListResult(
+                "APPLY-1",
+                "CA-1",
+                "USR-1",
                 "SUCCESS",
                 "READY",
                 List.of(new LenderLoanProduct(
@@ -181,7 +191,7 @@ class ProductListResolverTest {
                         new BigDecimal("3000000"),
                         null,
                         new BigDecimal("0.18"),
-                        List.of(new LenderRepayMethod("RP001", "D", 30, 6, 180, 0, List.of()))
+                        List.of(new LenderRepayMethod("RP001", "D", 30, 6, 180, 0, null, List.of()))
                 ))
         );
     }

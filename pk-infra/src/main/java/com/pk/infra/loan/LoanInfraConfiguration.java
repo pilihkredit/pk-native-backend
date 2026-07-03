@@ -15,6 +15,7 @@ import com.pk.core.loan.port.LoanStatusHistoryRepository;
 import com.pk.core.loan.port.ContractFileRepository;
 import com.pk.core.loan.port.ProductListCache;
 import com.pk.core.loan.port.ProductSnapshotRepository;
+import com.pk.core.loan.port.LenderProductLatestRepository;
 import com.pk.core.outbox.port.OutboxEventRepository;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -47,6 +48,7 @@ public class LoanInfraConfiguration {
             ProductSnapshotRepository productSnapshotRepository,
             ProductListCache productListCache,
             LenderLoanProductPort lenderLoanProductPort,
+            LenderProductLatestRepository lenderProductLatestRepository,
             ProductSnapshotPayloadCodec productSnapshotPayloadCodec,
             LoanProductProperties loanProductProperties
     ) {
@@ -54,6 +56,7 @@ public class LoanInfraConfiguration {
                 productSnapshotRepository,
                 productListCache,
                 lenderLoanProductPort,
+                lenderProductLatestRepository,
                 productSnapshotPayloadCodec,
                 loanProductProperties
         );

@@ -7,6 +7,9 @@ public interface LenderLoanProductPort {
     LenderLoanProductListResult listProducts(String applyId);
 
     record LenderLoanProductListResult(
+            String applyId,
+            String creditApplyNo,
+            String userId,
             String externalCreditStatus,
             String productStatus,
             List<LenderLoanProduct> products

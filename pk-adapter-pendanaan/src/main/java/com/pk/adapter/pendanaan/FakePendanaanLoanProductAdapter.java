@@ -10,6 +10,9 @@ public class FakePendanaanLoanProductAdapter implements LenderLoanProductPort {
     @Override
     public LenderLoanProductListResult listProducts(String applyId) {
         return new LenderLoanProductListResult(
+                applyId,
+                "CA-FAKE-" + applyId,
+                "USR-FAKE",
                 "SUCCESS",
                 "READY",
                 List.of(
@@ -28,6 +31,7 @@ public class FakePendanaanLoanProductAdapter implements LenderLoanProductPort {
                                                 6,
                                                 180,
                                                 0,
+                                                null,
                                                 List.of()
                                         ),
                                         new LenderRepayMethod(
@@ -37,6 +41,7 @@ public class FakePendanaanLoanProductAdapter implements LenderLoanProductPort {
                                                 2,
                                                 60,
                                                 1,
+                                                "[{\"termNum\":1,\"repaymentRate\":0.6},{\"termNum\":2,\"repaymentRate\":0.4}]",
                                                 List.of(
                                                         new LenderRepayMethod.UnevenBillRate(
                                                                 1,

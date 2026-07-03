@@ -17,6 +17,7 @@ class RepaymentUniformityTest {
                 6,
                 180,
                 0,
+                null,
                 List.of()
         );
 
@@ -32,6 +33,7 @@ class RepaymentUniformityTest {
                 2,
                 60,
                 1,
+                null,
                 List.of(
                         new LenderRepayMethod.UnevenBillRate(1, new BigDecimal("0.6")),
                         new LenderRepayMethod.UnevenBillRate(2, new BigDecimal("0.4"))

@@ -10,6 +10,7 @@ public record LenderRepayMethod(
         Integer cycleCount,
         Integer totalCycleInterval,
         Integer repayMethodType,
+        String unevenBillsRepaymentRateRaw,
         List<UnevenBillRate> unevenBillsRepaymentRates
 ) {
     public record UnevenBillRate(int termNum, BigDecimal repaymentRate) {
