@@ -2,10 +2,13 @@ package com.pk.app.profile.controller;
 
 import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.pk.app.profile.application.ProfileQueryApplicationService;
 import com.pk.app.profile.application.ProfileEnumApplicationService;
 import com.pk.app.profile.application.ProfileApplicationService;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
+import com.pk.app.profile.dto.request.ProfileInfoQueryRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
@@ -31,13 +34,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/profile")
 public class ProfileController {
     private final ProfileApplicationService profileApplicationService;
+    private final ProfileQueryApplicationService profileQueryApplicationService;
     private final ProfileEnumApplicationService profileEnumApplicationService;
 
     public ProfileController(
             ProfileApplicationService profileApplicationService,
+            ProfileQueryApplicationService profileQueryApplicationService,
             ProfileEnumApplicationService profileEnumApplicationService
     ) {
         this.profileApplicationService = profileApplicationService;
+        this.profileQueryApplicationService = profileQueryApplicationService;
         this.profileEnumApplicationService = profileEnumApplicationService;
     }
 
@@ -53,6 +59,22 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileEnumApplicationService.listEnums(module),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Query synced profile modules from lender. */
+    @PostMapping("/info/query")
+    public ApiResponse<JsonNode> queryInfo(
+            @Valid @RequestBody ProfileInfoQueryRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileQueryApplicationService.query(principal, request),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

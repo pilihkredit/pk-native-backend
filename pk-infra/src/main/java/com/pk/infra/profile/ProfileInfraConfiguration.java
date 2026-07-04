@@ -2,6 +2,7 @@ package com.pk.infra.profile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.profile.port.LenderEnumMapper;
+import com.pk.core.profile.port.LenderProfileQueryPort;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileEnumCatalog;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
@@ -60,6 +61,14 @@ public class ProfileInfraConfiguration {
                 profileBankCardRepository,
                 objectMapper
         );
+    }
+
+    @Bean
+    ProfileQueryFacade profileQueryFacade(
+            LenderProfileQueryPort lenderProfileQueryPort,
+            ObjectMapper objectMapper
+    ) {
+        return new ProfileQueryFacade(lenderProfileQueryPort, objectMapper);
     }
 
     @Bean
