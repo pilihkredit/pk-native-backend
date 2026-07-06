@@ -9,7 +9,7 @@ import com.pk.app.debug.config.DebugUserProgressProperties;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.UserProfileSummary;
 import com.pk.core.auth.port.UserAuthRepository;
-import com.pk.infra.debug.DebugUserProgressReadMapper;
+import com.pk.infra.debug.mapper.DebugUserProgressReadMapper;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import java.time.Instant;
 import java.util.List;

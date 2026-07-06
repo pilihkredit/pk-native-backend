@@ -1,4 +1,4 @@
-package com.pk.infra.debug;
+package com.pk.infra.debug.mapper;
 
 import java.time.Instant;
 import java.util.List;
