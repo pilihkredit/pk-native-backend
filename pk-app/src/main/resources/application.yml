@@ -50,6 +50,7 @@ pk:
     pendanaan:
       connect-timeout-ms: ${PK_LENDER_PENDANAAN_CONNECT_TIMEOUT_MS:10000}
       read-timeout-ms: ${PK_LENDER_PENDANAAN_READ_TIMEOUT_MS:30000}
+      tracking-url: ${PK_LENDER_PENDANAAN_TRACKING_URL:https://logcus.pendanaan.com}
       logging:
         enabled: ${PK_LENDER_PENDANAAN_LOGGING_ENABLED:true}
         max-body-bytes: ${PK_LENDER_PENDANAAN_LOGGING_MAX_BODY_BYTES:65536}

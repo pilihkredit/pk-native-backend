@@ -21,6 +21,7 @@ import com.pk.core.repay.port.LenderRepayCurrentOrderPort;
 import com.pk.core.repay.port.LenderRepayPlanPort;
 import com.pk.core.repay.port.LenderRepayTrialPort;
 import com.pk.core.repay.port.LenderRepayVaPort;
+import com.pk.core.tracking.port.LenderTrackingPort;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -184,5 +185,18 @@ public class PendanaanAdapterConfiguration {
             return new PendanaanRepayCurrentOrderAdapter(httpStack.requireHttpClient(), objectMapper);
         }
         return new FakePendanaanRepayCurrentOrderAdapter();
+    }
+
+    @Bean
+    LenderTrackingPort lenderTrackingPort(
+            PendanaanHttpStack httpStack,
+            PendanaanProperties properties,
+            LenderInteractionLogRepository interactionLogRepository,
+            ObjectMapper objectMapper
+    ) {
+        if (httpStack.enabled()) {
+            return new PendanaanTrackingAdapter(properties, interactionLogRepository, objectMapper);
+        }
+        return new FakePendanaanTrackingAdapter();
     }
 }

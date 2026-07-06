@@ -37,8 +37,21 @@ public class TrackingController {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                trackingApplicationService.ingest(principal, deviceNo, request),
+                trackingApplicationService.ingest(principal, deviceNo, resolveClientIp(httpRequest), request),
                 RequestTrace.resolveTraceId(httpRequest)
         );
+    }
+
+    private static String resolveClientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            int commaIndex = forwardedFor.indexOf(',');
+            return commaIndex < 0 ? forwardedFor.trim() : forwardedFor.substring(0, commaIndex).trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return request.getRemoteAddr();
     }
 }

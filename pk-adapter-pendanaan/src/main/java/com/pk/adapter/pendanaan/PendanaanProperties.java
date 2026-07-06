@@ -12,6 +12,7 @@ public class PendanaanProperties {
     private String clientId = "";
     private String clientSecret = "";
     private String appName = "";
+    private String trackingUrl = "https://logcus.pendanaan.com";
     private int connectTimeoutMs = 10_000;
     private int readTimeoutMs = 30_000;
     private Logging logging = new Logging();
@@ -83,6 +84,14 @@ public class PendanaanProperties {
 
     public void setAppName(String appName) {
         this.appName = appName;
+    }
+
+    public String trackingUrl() {
+        return trackingUrl;
+    }
+
+    public void setTrackingUrl(String trackingUrl) {
+        this.trackingUrl = trackingUrl;
     }
 
     public int connectTimeoutMs() {

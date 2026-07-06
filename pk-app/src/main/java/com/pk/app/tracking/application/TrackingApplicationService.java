@@ -20,6 +20,7 @@ public class TrackingApplicationService {
     public TrackingEventsResponse ingest(
             AuthenticatedPrincipal principal,
             String deviceNo,
+            String clientIp,
             TrackingEventsRequest request
     ) {
         if (principal == null) {
@@ -32,13 +33,29 @@ public class TrackingApplicationService {
                         item.eventTime(),
                         item.traceId(),
                         item.url(),
-                        item.extend()
+                        item.extend(),
+                        item.clientNo(),
+                        item.clientManufacture(),
+                        item.clientModel(),
+                        item.clientCategory(),
+                        item.clientOs(),
+                        item.clientOsVersion(),
+                        item.ai(),
+                        item.av(),
+                        item.wv(),
+                        item.bn(),
+                        item.bv(),
+                        item.androidId(),
+                        item.gaid(),
+                        item.idfv(),
+                        item.idfa()
                 ))
                 .toList();
         TrackingFacade.IngestResult result = trackingFacade.ingest(
                 principal.profileId(),
                 principal.partnerUserId(),
                 deviceNo,
+                clientIp,
                 commands
         );
         return new TrackingEventsResponse(result.acceptedCount(), result.rejectedCount());
