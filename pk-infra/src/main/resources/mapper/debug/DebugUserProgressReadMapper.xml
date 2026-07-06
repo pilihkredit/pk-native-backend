@@ -37,32 +37,28 @@
         LIMIT 20
     </select>
 
-    <select id="findRecentInteractions" resultMap="interactionRecordMap">
+    <select id="findInteractionsByMobileNo" resultMap="interactionRecordMap">
         SELECT id, provider_code, interaction_no, business_type, business_id, http_method,
                endpoint, response_code, response_msg, success, duration_ms, request_ref,
                response_ref, created_at
         FROM external_interaction
-        WHERE
-        <choose>
-            <when test="businessIds != null and businessIds.size() > 0">
-                business_id IN
+        WHERE mobile_no = #{mobileNo}
+        <if test="businessIds != null and businessIds.size() > 0">
+            OR (
+                mobile_no IS NULL
+                AND business_id IN
                 <foreach collection="businessIds" item="businessId" open="(" separator="," close=")">
                     #{businessId}
                 </foreach>
-            </when>
-            <otherwise>
-                1 = 0
-            </otherwise>
-        </choose>
-        <if test="partnerUserId != null and partnerUserId != ''">
-            OR request_ref LIKE CONCAT('%', #{partnerUserId}, '%')
-            OR response_ref LIKE CONCAT('%', #{partnerUserId}, '%')
+            )
         </if>
-        <if test="mobileNo != null and mobileNo != ''">
-            OR request_ref LIKE CONCAT('%', #{mobileNo}, '%')
-            OR response_ref LIKE CONCAT('%', #{mobileNo}, '%')
-        </if>
-        ORDER BY created_at DESC, id DESC
-        LIMIT #{limit}
+        OR (
+            mobile_no IS NULL
+            AND (
+                request_ref LIKE CONCAT('%', #{mobileNo}, '%')
+                OR response_ref LIKE CONCAT('%', #{mobileNo}, '%')
+            )
+        )
+        ORDER BY endpoint ASC, created_at DESC, id DESC
     </select>
 </mapper>

@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KTA 用户进度诊断台</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070a12;
+      --panel: rgba(15, 23, 42, .78);
+      --panel-strong: rgba(15, 23, 42, .94);
+      --line: rgba(148, 163, 184, .22);
+      --text: #e5edf8;
+      --muted: #8da0b8;
+      --cyan: #22d3ee;
+      --green: #34d399;
+      --red: #fb7185;
+      --amber: #fbbf24;
+      --blue: #60a5fa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(34, 211, 238, .18), transparent 34rem),
+        radial-gradient(circle at 88% 4%, rgba(96, 165, 250, .16), transparent 34rem),
+        linear-gradient(135deg, #050712, #0d1324 52%, #07111c);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    .shell { width: min(1320px, calc(100vw - 32px)); margin: 0 auto; padding: 28px 0 44px; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-end;
+      padding: 18px 0 28px;
+    }
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 46px); line-height: 1.05; }
+    .subtitle { margin-top: 10px; color: var(--muted); font-size: 14px; }
+    .badge {
+      border: 1px solid rgba(34, 211, 238, .36);
+      background: rgba(34, 211, 238, .09);
+      color: #b7f4ff;
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      white-space: nowrap;
+      box-shadow: 0 0 28px rgba(34, 211, 238, .11);
+    }
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border-radius: 8px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .36);
+    }
+    .search {
+      display: grid;
+      grid-template-columns: 1.2fr .9fr .8fr auto;
+      gap: 12px;
+      padding: 16px;
+      align-items: end;
+    }
+    .card-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .card-toolbar h2 { margin: 0; }
+    .api-filter { min-width: min(100%, 420px); flex: 1; }
+    .api-summary {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border: 1px solid rgba(34, 211, 238, .18);
+      background: rgba(34, 211, 238, .06);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .api-summary strong { color: #dbeafe; }
+    label { display: grid; gap: 8px; color: var(--muted); font-size: 12px; }
+    input, select {
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, .24);
+      background: rgba(2, 6, 23, .72);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 12px 13px;
+      outline: none;
+      font-size: 14px;
+    }
+    input:focus, select:focus { border-color: rgba(34, 211, 238, .72); box-shadow: 0 0 0 3px rgba(34, 211, 238, .12); }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 13px 18px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: #031018;
+      font-weight: 800;
+      cursor: pointer;
+      min-width: 112px;
+      box-shadow: 0 16px 36px rgba(34, 211, 238, .2);
+    }
+    button:disabled { opacity: .58; cursor: wait; }
+    .status { margin: 14px 2px 0; color: var(--muted); min-height: 22px; }
+    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; margin-top: 16px; }
+    .card { padding: 16px; }
+    .card h2 { margin: 0 0 14px; font-size: 15px; color: #dbeafe; }
+    .kv { display: grid; gap: 10px; }
+    .kv div { display: flex; justify-content: space-between; gap: 14px; color: var(--muted); font-size: 13px; }
+    .kv strong { color: var(--text); overflow-wrap: anywhere; text-align: right; }
+    .modules { display: grid; gap: 10px; }
+    .module {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--line);
+      background: rgba(2, 6, 23, .46);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+    }
+    .ok { color: var(--green); }
+    .miss { color: var(--red); }
+    .timeline { display: grid; gap: 16px; }
+    .endpoint-group {
+      border: 1px solid var(--line);
+      background: rgba(2, 6, 23, .42);
+      border-radius: 8px;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .endpoint-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(148, 163, 184, .16);
+    }
+    .endpoint-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #dbeafe;
+      overflow-wrap: anywhere;
+    }
+    .endpoint-count {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .event {
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .event-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .type { font-size: 15px; font-weight: 800; color: #eff6ff; }
+    .endpoint { color: var(--muted); font-size: 12px; margin-top: 4px; overflow-wrap: anywhere; }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .pill.success { color: var(--green); border-color: rgba(52, 211, 153, .38); background: rgba(52, 211, 153, .08); }
+    .pill.fail { color: var(--red); border-color: rgba(251, 113, 133, .38); background: rgba(251, 113, 133, .08); }
+    .event-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; color: var(--muted); font-size: 12px; }
+    .jsons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .json-panel { display: grid; gap: 8px; }
+    .json-panel h3 {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: #93c5fd;
+      letter-spacing: .02em;
+    }
+    pre, .annotated-json {
+      margin: 0;
+      max-height: 260px;
+      overflow: auto;
+      border: 1px solid rgba(148, 163, 184, .18);
+      background: rgba(2, 6, 23, .72);
+      border-radius: 8px;
+      padding: 10px;
+      color: #c7d2fe;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .annotated-json { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .json-line { min-height: 18px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .json-key { color: #67e8f9; }
+    .json-string { color: #bbf7d0; }
+    .json-number { color: #fde68a; }
+    .json-bool { color: #fca5a5; }
+    .json-null { color: #94a3b8; }
+    .json-comment { color: #93c5fd; opacity: .92; margin-left: 8px; }
+    .empty {
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed rgba(148, 163, 184, .28);
+      border-radius: 8px;
+    }
+    @media (max-width: 980px) {
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .search { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .jsons { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div>
+        <h1>KTA 用户进度诊断台</h1>
+        <div class="subtitle">按手机号查询用户进度，并从开放平台 Lender 接口下拉选择，查看该接口全部请求参数与返回参数。</div>
+      </div>
+      <div class="badge">Feishu App Console</div>
+    </section>
+
+    <section class="panel search">
+      <label>Environment
+        <select id="baseUrl">
+          <option value="https://api-test.pilihkredit.id/api/v1">测试环境 - https://api-test.pilihkredit.id/api/v1</option>
+          <option value="https://api.pilihkredit.id/api/v1">生产环境 - https://api.pilihkredit.id/api/v1</option>
+        </select>
+      </label>
+      <label>Debug Token
+        <input id="debugToken" placeholder="X-Debug-Token" type="password" autocomplete="off">
+      </label>
+      <label>Mobile No
+        <input id="mobileNo" placeholder="801234567" autocomplete="off">
+      </label>
+      <button id="queryBtn">查询</button>
+    </section>
+    <div id="status" class="status"></div>
+
+    <section class="grid">
+      <aside class="panel card">
+        <h2>用户与进度</h2>
+        <div id="profile" class="kv">
+          <div><span>状态</span><strong>等待查询</strong></div>
+        </div>
+        <h2 style="margin-top:22px;">模块完成度</h2>
+        <div id="modules" class="modules"></div>
+      </aside>
+      <section class="panel card">
+        <div class="card-toolbar">
+          <h2>Lender 接口排查</h2>
+          <label class="api-filter">Lender 接口
+            <select id="lenderApi" disabled>
+              <option value="">请先查询手机号</option>
+            </select>
+          </label>
+        </div>
+        <div id="apiSummary" class="api-summary">选择手机号并查询后，可按开放平台接口文档筛选 Lender 路径。</div>
+        <div id="timeline" class="timeline">
+          <div class="empty">输入手机号后，选择 Lender 接口查看请求与返回参数。</div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const els = {
+      baseUrl: document.getElementById('baseUrl'),
+      debugToken: document.getElementById('debugToken'),
+      mobileNo: document.getElementById('mobileNo'),
+      lenderApi: document.getElementById('lenderApi'),
+      queryBtn: document.getElementById('queryBtn'),
+      status: document.getElementById('status'),
+      profile: document.getElementById('profile'),
+      modules: document.getElementById('modules'),
+      apiSummary: document.getElementById('apiSummary'),
+      timeline: document.getElementById('timeline')
+    };
+
+    // 对齐开放平台 API 文档附录：接口索引
+    // https://ek8l1y505u.feishu.cn/wiki/ExC1wwGVWiQ8CqkrRdEcc2ZinKb
+    const LENDER_APIS = [
+      { no: 1, name: 'OAuth 获取 Token', method: 'POST', path: '/api/open/v1/oauth/token' },
+      { no: 2, name: '银行列表查询', method: 'GET', path: '/api/open/v1/bank/list' },
+      { no: 3, name: '省市区列表查询', method: 'POST', path: '/api/open/v1/area/list' },
+      { no: 4, name: '用户资料同步', method: 'POST', path: '/api/open/v1/user/info/upsert' },
+      { no: 5, name: '用户资料查询', method: 'POST', path: '/api/open/v1/user/info/query' },
+      { no: 6, name: '用户状态查询', method: 'POST', path: '/api/open/v1/user/status' },
+      { no: 7, name: '授信申请', method: 'POST', path: '/api/open/v1/credit/apply' },
+      { no: 10, name: '授信状态查询', method: 'POST', path: '/api/open/v1/credit/applyStatus' },
+      { no: 11, name: '历史授信订单查询', method: 'POST', path: '/api/open/v1/credit/history/list' },
+      { no: 12, name: '用户金融产品列表查询', method: 'POST', path: '/api/open/v1/product/list' },
+      { no: 13, name: '借款试算', method: 'POST', path: '/api/open/v1/loan/trial' },
+      { no: 14, name: '借款申请', method: 'POST', path: '/api/open/v1/loan/apply' },
+      { no: 16, name: '借款结果查询', method: 'POST', path: '/api/open/v1/loan/applyStatus' },
+      { no: 17, name: '历史借款订单查询', method: 'POST', path: '/api/open/v1/loan/history/list' },
+      { no: 18, name: '借款合同查询', method: 'POST', path: '/api/open/v1/loan/contract/list' },
+      { no: 19, name: '账单列表查询', method: 'POST', path: '/api/open/v1/loan/bill/list' },
+      { no: 20, name: '还款计划查询', method: 'POST', path: '/api/open/v1/repay/plan' },
+      { no: 21, name: '用户 VA 列表查询', method: 'POST', path: '/api/open/v1/repay/va/list' },
+      { no: 22, name: '设置用户默认 VA', method: 'POST', path: '/api/open/v1/repay/va/default' },
+      { no: 23, name: '还款试算', method: 'POST', path: '/api/open/v1/repay/trial' },
+      { no: 24, name: '批量账单还款试算', method: 'POST', path: '/api/open/v1/repay/trial/batch' },
+      { no: 25, name: '设置用户当前还款订单', method: 'POST', path: '/api/open/v1/repay/current/order' }
+    ];
+
+    let lastQueryData = null;
+
+    const FIELD_COMMENTS = {
+      code: '状态码，000000 表示成功，其他值为错误码',
+      msg: '状态描述，成功时通常为 success',
+      data: '业务数据，失败时通常为 null',
+      fallback: '是否服务降级，true 表示当前返回为降级数据',
+      requestId: '请求唯一标识，用于调用方排查与幂等控制',
+      traceId: '链路追踪 ID，用于问题排查',
+      partnerUserId: '合作方用户 ID',
+      userId: '平台内部用户 ID',
+      userName: '用户姓名',
+      mobileNo: '手机号',
+      newUser: '是否新注册用户；true=本次创建新用户，false=复用已有用户或已有绑定关系',
+      updatedModules: '本次更新的资料模块，例如 mobileNo、profile、identity、bankCard、device',
+      userLoanLifeTimeStatus: '用户信贷生命周期状态：1 待完成五大资料认证、2 待发起预审核、3 预审核处理中、4 待提现、5 提现处理中、6 待打款、7 打款中、8 正常待还款、9 逾期待还款、10 用户冻结、11 提现捞回',
+      userLoanLifeTimeLastAction: '当前动作码：10 注册、11 五项基础认证完成、21 发起授权申请、22 授信审核通过、23 授信取消、24 授信延迟拒绝、25 授信拒绝未冻结、26 授信拒绝冻结、27 解冻无有效授信合同、29 授信合同失效未冻结、31 发起提现、34 提现延迟拒绝、36 提现拒绝冻结、41 打款申请、43 打款成功、51 跑批',
+      freezeEndTime: '用户冻结结束时间，Unix 毫秒时间戳；未冻结或非拒绝状态时可能为 null',
+      onLoanCount: '在贷账单数量，统计正常/逾期未结清账单总数',
+      creditContractExpireTime: '授信合同过期时间，Unix 毫秒时间戳；无有效授信合同时返回 null',
+      applyId: '授信申请 ID',
+      creditApplyNo: '平台内部授信申请编号',
+      status: '授信状态：PROCESSING=处理中，SUCCESS=成功，REFUSED=拒绝，FAIL=失败，CANCEL=已取消',
+      creditStatus: '授信状态：PROCESSING=处理中，SUCCESS=成功，REFUSED=拒绝，FAIL=失败，CANCEL=取消',
+      riskMinLimit: '最低借款额度；无有效授信合同时返回 null',
+      riskMaxLimit: '最高借款额度；无有效授信合同时返回 null',
+      psychologicalCreditLimit: '心理额度；无有效授信合同时返回 null',
+      fakeCreditLimit: '假额度；无有效授信合同时返回 null',
+      borrowAmtStepSize: '借款金额步长；无有效授信合同时返回 null',
+      createTime: '订单创建时间，Unix 毫秒时间戳',
+      productStatus: '产品状态：PENDING=待处理，READY=可用，EMPTY=无产品',
+      products: '产品列表',
+      productCode: '金融产品编码',
+      productName: '金融产品名称',
+      minAmount: '最小借款金额',
+      maxAmount: '最大借款金额',
+      comprehensiveRateUnit: '综合利率单位：D=日，M=月，Y=年',
+      comprehensiveRate: '综合费率',
+      repayMethods: '可选还款方式列表',
+      repayMethod: '还款方式编码',
+      cycleType: '周期类型：D=天，M=月',
+      cycleInterval: '周期间隔',
+      cycleCount: '周期数',
+      totalCycleInterval: '总周期间隔',
+      unevenBillsFlag: '是否不等额账单',
+      unevenBillsRepaymentRate: '还款比例 JSON 数组，不等额还款时返回',
+      applyAmt: '申请金额',
+      loanTerm: '贷款期数',
+      loanPrincipal: '实际放款本金',
+      showLoanPrincipal: '展示本金',
+      payAmount: '打款金额/实付金额；放款成功后返回',
+      handFee: '砍头费',
+      schdAmount: '计划应还总额',
+      shouldAmount: '应还总金额',
+      interest: '利息总额',
+      dayRate: '日利率',
+      showDayRate: '展示日利率',
+      totalDays: '总借款天数',
+      fee1Name: '费用1名称',
+      fee1: '费用1',
+      fee2Name: '费用2名称',
+      fee2: '费用2',
+      fee3Name: '费用3名称',
+      fee3: '费用3',
+      tax: '税费',
+      taxRatePercent: '税率展示',
+      ppnAmount: 'PPN 金额',
+      shouldStampDuty: '应还印花税',
+      shouldPrincipal: '应还本金',
+      shouldInterest: '应还利息',
+      shouldFee: '应还费用合计',
+      shouldFee1: '应还费用1',
+      shouldFee2: '应还费用2',
+      shouldFee3: '应还费用3',
+      shouldFee1Tax: '应还费用1税费',
+      shouldFee2Tax: '应还费用2税费',
+      shouldFee3Tax: '应还费用3税费',
+      shouldPenInterest: '应还罚息',
+      shouldInitLateFee: '应还初始逾期罚金',
+      shouldAdvSettleFee: '应还提前结清手续费',
+      shouldPenalty: '应还罚息合计',
+      reductionAmount: '减免总金额',
+      adReductionAmt: '提前结清减免总金额',
+      adReductionRatio: '提前结清减免比例',
+      adReductionEndDate: '提前结清减免截止日期，Unix 毫秒时间戳',
+      reductionStampDuty: '减免印花税',
+      reductionPrincipal: '减免本金',
+      reductionInterest: '减免利息',
+      reductionFee1: '减免费用1',
+      reductionFee2: '减免费用2',
+      reductionFee3: '减免费用3',
+      reductionFee1Tax: '减免费用1税费',
+      reductionFee2Tax: '减免费用2税费',
+      reductionFee3Tax: '减免费用3税费',
+      reductionPenInterest: '减免罚息',
+      reductionInitLateFee: '减免初始逾期罚金',
+      afterServiceFeeStatus: '后收服务费状态',
+      feePrepayType: '砍头类型',
+      lendingDate: '放款日期，Unix 毫秒时间戳',
+      firstRepayDate: '首次还款日期，Unix 毫秒时间戳',
+      lastRepayDate: '最后还款日期，Unix 毫秒时间戳',
+      termInfo: '分期明细列表',
+      termNo: '期次号',
+      valueDate: '起息日期，Unix 毫秒时间戳',
+      dueDate: '到期日期，Unix 毫秒时间戳',
+      graceDate: '宽限期截止日期，Unix 毫秒时间戳',
+      schdPrincipal: '计划本金',
+      schdInterest: '计划利息',
+      showInterest: '展示利息',
+      fee1Tax: '费用1税费',
+      fee2Tax: '费用2税费',
+      fee3Tax: '费用3税费',
+      stampDuty: '印花税',
+      loanApplyId: '借款申请 ID',
+      loanApplyNo: '平台内部借款申请编号',
+      applyStatus: '借款申请状态：PROCESSING=处理中，SUCCESS=成功，REFUSED=拒绝，PAYING=打款中，FAIL=失败，CANCEL=已取消',
+      billNo: '借据号；放款成功后返回',
+      lendAmt: '放款金额',
+      lendTime: '放款成功时间，Unix 毫秒时间戳',
+      payTime: '打款时间，Unix 毫秒时间戳；放款成功后返回',
+      paySerialNo: '支付流水号',
+      loanTime: '放款成功时间，Unix 毫秒时间戳',
+      loanDays: '贷款天数',
+      billStatus: '借据/账单状态：NORMAL=正常，OVERDUE=逾期，SETTLE=结清',
+      terms: '还款期次明细列表',
+      subBillNo: '期供编号',
+      termStatus: '期次状态：NORMAL=正常，OVERDUE=逾期，SETTLE=结清',
+      partRepayFlag: '部分还款标识',
+      schdFee1: '计划费用1',
+      schdFee2: '计划费用2',
+      schdFee3: '计划费用3',
+      schdStampDuty: '计划印花税',
+      schdFee1Tax: '计划费用1税费',
+      schdFee2Tax: '计划费用2税费',
+      schdFee3Tax: '计划费用3税费',
+      schdPenInterest: '计划罚息',
+      schdInitLateFee: '计划初始逾期罚金',
+      paidAmount: '已还金额/已还总金额',
+      paidPrincipal: '已还本金',
+      paidInterest: '已还利息',
+      paidFee1: '已还费用1',
+      paidFee2: '已还费用2',
+      paidFee3: '已还费用3',
+      paidStampDuty: '已还印花税',
+      paidFee1Tax: '已还费用1税费',
+      paidFee2Tax: '已还费用2税费',
+      paidFee3Tax: '已还费用3税费',
+      paidPenInterest: '已还罚息',
+      paidInitLateFee: '已还初始逾期罚金',
+      overdueDays: '逾期天数',
+      lastRepayTime: '最后一次还款时间，Unix 毫秒时间戳',
+      advSetteFlag: '提前结清标识，Y/N',
+      contracts: '合同列表',
+      contractName: '合同名称',
+      contractType: '合同类型',
+      contractUrl: '合同文件 URL（PDF 链接）',
+      vas: '可用 VA 账户列表',
+      vaNo: 'VA 账号',
+      bankCode: '银行编码',
+      bankName: '银行名称',
+      bankType: '银行类型',
+      icon: '银行图标 URL',
+      defaultFlag: '是否为默认账户',
+      disabled: '是否禁用',
+      show: '是否展示',
+      bankChannels: '还款指引列表',
+      bankChannel: '银行渠道，如 ATM、INTERNET、MOBILE、CASHIER、IKIOSK',
+      instruction: '还款指引文案（HTML）',
+      defaultVa: '默认还款 VA',
+      spareVa: '备用 VA',
+      disabledDefaultVa: '默认 VA 故障时返回此字段，请使用备用 VA',
+      totalBillCount: '本次试算账单总数',
+      totalShouldAmount: '应还总金额汇总',
+      totalReductionAmount: '减免总金额汇总',
+      totalPaidAmount: '已还总金额汇总',
+      billTrials: '逐账单试算结果列表',
+      settle: '是否全额结清：true=全额结清，false=按期次还款',
+      termNos: '待还期次列表；非结清时必填',
+      currency: '币种',
+      applyTime: '申请时间，Unix 毫秒时间戳',
+      auditTime: '审批时间，Unix 毫秒时间戳',
+      repayMethodType: '还款方式类型：0=等额，1=不等额',
+      prePenInterest: '预计算罚息',
+      penInterest: '罚息',
+      initLateFee: '初始逾期罚金',
+      couponAmount: '优惠券金额',
+      couponDiscount: '优惠券减免额',
+      couponId: '优惠券 ID',
+      couponType: '优惠券类型',
+      couponName: '优惠券名称',
+      userValideDisTime: '优惠券有效倒计时（毫秒）',
+      termDueDate: '最近还款日/当前期到期日，Unix 毫秒时间戳',
+      daysOfDueDate: '距到期日天数，逾期为负数',
+      discountInfos: '减免详情列表',
+      reductionAllAmt: '该项减免总额',
+      reductionType: '减免类型',
+      faceUrl: '人脸图片访问 URL',
+      idCardUrl: '身份证图片访问 URL',
+      profile: '用户资料模块',
+      identity: '身份信息模块',
+      bankCard: '银行卡模块',
+      contact: '联系人模块',
+      device: '设备信息模块',
+      loginLog: '登录日志模块',
+      cardName: '银行卡户名',
+      cardNumber: '银行卡号',
+      idNo: '印尼 EKTP 证件号',
+      name: '姓名',
+      birthday: '生日',
+      birthPlace: '出生地',
+      gender: '性别',
+      religion: '宗教',
+      maritalStatus: '婚姻状态',
+      nationality: '国籍',
+      occupation: '职业',
+      bloodType: '血型',
+      expiryDate: '证件有效期',
+      ocrName: 'OCR 识别姓名',
+      ocrIdNo: 'OCR 识别证件号',
+      ocrChannel: 'OCR 渠道标识：tongdun 或 advanceAi',
+      rawOcrDetail: 'OCR 渠道原始返回内容',
+      deviceNo: '设备号',
+      appName: 'APP 名称',
+      appVersion: 'APP 版本号',
+      packageName: 'APP 包名',
+      systemPlatform: '系统平台：ios 或 android',
+      phoneBrand: '手机品牌',
+      phoneBrandModel: '手机型号',
+      systemVersion: '系统版本号',
+      deliveryPlatform: '投放平台，如 google play / App Store',
+      cpuCores: 'CPU 核心数',
+      memoryTotal: '总内存（bytes）',
+      sdCardTotal: 'SD 卡总容量（bytes）',
+      adId: '广告追踪 ID',
+      eventId: '事件 ID',
+      eventType: '事件类型',
+      eventTime: '事件发生时间，13 位时间戳',
+      eventValue: '事件附加值',
+      value: '事件金额/数值型附加信息',
+      clientId: '当前 client 预配置的 tokenClientId',
+      accessToken: '接口调用凭证',
+      expiresIn: '有效期，单位：秒',
+      tokenType: 'Token 类型，固定值 Bearer'
+    };
+
+    els.baseUrl.value = localStorage.getItem('ktaDebugBaseUrl') || 'https://api-test.pilihkredit.id/api/v1';
+    els.debugToken.value = localStorage.getItem('ktaDebugToken') || '';
+
+    function setStatus(text, tone) {
+      els.status.textContent = text || '';
+      els.status.style.color = tone === 'error' ? 'var(--red)' : tone === 'ok' ? 'var(--green)' : 'var(--muted)';
+    }
+
+    function safeJson(text) {
+      if (!text) return '';
+      try { return JSON.stringify(JSON.parse(text), null, 2); } catch (_) { return text; }
+    }
+
+    function annotatedJson(text) {
+      if (!text) return '';
+      try {
+        return renderJsonValue(JSON.parse(text), 0);
+      } catch (_) {
+        return `<pre>${esc(text)}</pre>`;
+      }
+    }
+
+    function renderJsonValue(value, depth, keyName) {
+      const pad = '  '.repeat(depth);
+      if (Array.isArray(value)) {
+        if (value.length === 0) return line(`${pad}[]`, keyName);
+        const rows = [line(`${pad}[`, keyName)];
+        value.forEach((item, index) => {
+          rows.push(renderJsonValue(item, depth + 1));
+          if (index < value.length - 1) rows[rows.length - 1] = rows[rows.length - 1].replace('</div>', ',</div>');
+        });
+        rows.push(line(`${pad}]`));
+        return rows.join('');
+      }
+      if (value && typeof value === 'object') {
+        const entries = Object.entries(value);
+        if (entries.length === 0) return line(`${pad}{}`, keyName);
+        const rows = [line(`${pad}{`, keyName)];
+        entries.forEach(([key, child], index) => {
+          const comma = index < entries.length - 1 ? ',' : '';
+          if (child && typeof child === 'object') {
+            rows.push(line(`${'  '.repeat(depth + 1)}<span class="json-key">"${esc(key)}"</span>:`, key));
+            rows.push(renderJsonValue(child, depth + 1).replace(/<\/div>$/, `${comma}</div>`));
+          } else {
+            rows.push(line(`${'  '.repeat(depth + 1)}<span class="json-key">"${esc(key)}"</span>: ${formatPrimitive(child)}${comma}`, key));
+          }
+        });
+        rows.push(line(`${pad}}`));
+        return rows.join('');
+      }
+      return line(`${pad}${formatPrimitive(value)}`, keyName);
+    }
+
+    function line(content, keyName) {
+      const comment = keyName && FIELD_COMMENTS[keyName]
+        ? ` <span class="json-comment">// ${esc(FIELD_COMMENTS[keyName])}</span>`
+        : '';
+      return `<div class="json-line">${content}${comment}</div>`;
+    }
+
+    function formatPrimitive(value) {
+      if (typeof value === 'string') return `<span class="json-string">"${esc(value)}"</span>`;
+      if (typeof value === 'number') return `<span class="json-number">${String(value)}</span>`;
+      if (typeof value === 'boolean') return `<span class="json-bool">${String(value)}</span>`;
+      if (value === null) return '<span class="json-null">null</span>';
+      return esc(String(value));
+    }
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    function renderEmpty(message) {
+      els.profile.innerHTML = `<div><span>状态</span><strong>${esc(message)}</strong></div>`;
+      els.modules.innerHTML = '';
+      els.apiSummary.textContent = '选择手机号并查询后，可按开放平台接口文档筛选 Lender 路径。';
+      els.lenderApi.innerHTML = '<option value="">请先查询手机号</option>';
+      els.lenderApi.disabled = true;
+      els.timeline.innerHTML = `<div class="empty">${esc(message)}</div>`;
+      lastQueryData = null;
+    }
+
+    function normalizeOpenApiPath(endpoint) {
+      if (!endpoint) return '';
+      let value = endpoint.trim();
+      try {
+        value = new URL(value).pathname;
+      } catch (_) {}
+      const idx = value.indexOf('/api/open/v1');
+      return idx >= 0 ? value.slice(idx) : value;
+    }
+
+    function apiKey(api) {
+      return `${api.method} ${api.path}`;
+    }
+
+    function findApiDefinition(item) {
+      const path = normalizeOpenApiPath(item.endpoint);
+      return LENDER_APIS.find(api => api.path === path && api.method === (item.httpMethod || '').toUpperCase())
+        || LENDER_APIS.find(api => api.path === path);
+    }
+
+    function countByApi(interactions) {
+      const counts = new Map(LENDER_APIS.map(api => [apiKey(api), 0]));
+      const extras = new Map();
+      for (const item of interactions) {
+        const api = findApiDefinition(item);
+        if (api) {
+          counts.set(apiKey(api), (counts.get(apiKey(api)) || 0) + 1);
+          continue;
+        }
+        const key = endpointKey(item);
+        extras.set(key, (extras.get(key) || 0) + 1);
+      }
+      return { counts, extras };
+    }
+
+    function populateLenderApiSelect(interactions) {
+      const { counts, extras } = countByApi(interactions);
+      const total = interactions.length;
+      const options = [`<option value="__all__">全部接口（${total} 条）</option>`];
+      for (const api of LENDER_APIS) {
+        const count = counts.get(apiKey(api)) || 0;
+        const label = `${api.no}. ${api.name} — ${api.method} ${api.path}（${count} 条）`;
+        options.push(`<option value="${esc(apiKey(api))}">${esc(label)}</option>`);
+      }
+      for (const [key, count] of extras.entries()) {
+        options.push(`<option value="${esc('__extra__:' + key)}">其他 — ${esc(key)}（${count} 条）</option>`);
+      }
+      els.lenderApi.innerHTML = options.join('');
+      els.lenderApi.disabled = false;
+      const firstWithRecords = LENDER_APIS.find(api => (counts.get(apiKey(api)) || 0) > 0);
+      els.lenderApi.value = firstWithRecords ? apiKey(firstWithRecords) : '__all__';
+    }
+
+    function filterInteractions(interactions, selected) {
+      if (!selected || selected === '__all__') return interactions;
+      if (selected.startsWith('__extra__:')) {
+        const key = selected.slice('__extra__:'.length);
+        return interactions.filter(item => endpointKey(item) === key);
+      }
+      const api = LENDER_APIS.find(item => apiKey(item) === selected);
+      if (!api) return interactions;
+      return interactions.filter(item => {
+        const path = normalizeOpenApiPath(item.endpoint);
+        const method = (item.httpMethod || '').toUpperCase();
+        return path === api.path && (!api.method || method === api.method);
+      });
+    }
+
+    function selectedApiMeta(selected) {
+      if (!selected || selected === '__all__') {
+        return { title: '全部 Lender 接口', method: '-', path: '按路径分组展示' };
+      }
+      if (selected.startsWith('__extra__:')) {
+        return { title: '其他接口', method: '', path: selected.slice('__extra__:'.length) };
+      }
+      const api = LENDER_APIS.find(item => apiKey(item) === selected);
+      if (!api) return { title: '未知接口', method: '', path: selected };
+      return { title: `${api.no}. ${api.name}`, method: api.method, path: api.path };
+    }
+
+    function renderApiSummary(selected, items) {
+      const meta = selectedApiMeta(selected);
+      els.apiSummary.innerHTML = `
+        <div><strong>${esc(meta.title)}</strong></div>
+        <div>方法：<strong>${esc(meta.method || '-')}</strong>　路径：<strong>${esc(meta.path)}</strong></div>
+        <div>当前筛选共 <strong>${items.length}</strong> 条调用记录（按时间倒序展示请求参数与返回参数）。</div>
+      `;
+    }
+
+    function endpointKey(item) {
+      return `${item.httpMethod || ''} ${item.endpoint || ''}`.trim();
+    }
+
+    function groupByEndpoint(interactions) {
+      const groups = new Map();
+      for (const item of interactions) {
+        const key = endpointKey(item);
+        if (!groups.has(key)) {
+          groups.set(key, []);
+        }
+        groups.get(key).push(item);
+      }
+      return groups;
+    }
+
+    function renderInteraction(item, index) {
+      return `
+        <article class="event">
+          <div class="event-head">
+            <div>
+              <div class="type">#${index + 1} ${esc(item.businessType)}</div>
+              <div class="endpoint">${esc(item.httpMethod)} ${esc(item.endpoint)}</div>
+            </div>
+            <div class="pill ${item.success ? 'success' : 'fail'}">${item.success ? 'SUCCESS' : 'FAILED'}</div>
+          </div>
+          <div class="event-meta">
+            <span>${esc(item.createdAt || '')}</span>
+            <span>interactionNo=${esc(item.interactionNo || '')}</span>
+            <span>businessId=${esc(item.businessId || '')}</span>
+            <span>code=${esc(item.responseCode || '')}</span>
+            <span>${esc(item.durationMs ?? '')}ms</span>
+          </div>
+          <div class="jsons">
+            <div class="json-panel">
+              <h3>请求参数</h3>
+              <div class="annotated-json">${annotatedJson(item.requestRef)}</div>
+            </div>
+            <div class="json-panel">
+              <h3>返回参数</h3>
+              <div class="annotated-json">${annotatedJson(item.responseRef || item.responseMsg)}</div>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderTimeline(interactions, selected) {
+      const items = filterInteractions(interactions, selected);
+      renderApiSummary(selected, items);
+      if (items.length === 0) {
+        els.timeline.innerHTML = '<div class="empty">该接口暂无调用记录</div>';
+        return;
+      }
+      if (selected === '__all__') {
+        const groups = groupByEndpoint(items);
+        els.timeline.innerHTML = [...groups.entries()].map(([path, groupItems]) => `
+          <section class="endpoint-group">
+            <div class="endpoint-head">
+              <div class="endpoint-title">${esc(path)}</div>
+              <div class="endpoint-count">${groupItems.length} 条记录</div>
+            </div>
+            ${groupItems.map((item, index) => renderInteraction(item, index)).join('')}
+          </section>
+        `).join('');
+        return;
+      }
+      els.timeline.innerHTML = items.map((item, index) => renderInteraction(item, index)).join('');
+    }
+
+    function render(data) {
+      if (!data || !data.found) {
+        renderEmpty('未找到用户');
+        return;
+      }
+      const user = data.user;
+      const progress = data.progress;
+      els.profile.innerHTML = `
+        <div><span>Profile ID</span><strong>${esc(user.profileId)}</strong></div>
+        <div><span>Partner User ID</span><strong>${esc(user.partnerUserId)}</strong></div>
+        <div><span>Mobile No</span><strong>${esc(user.mobileNo)}</strong></div>
+        <div><span>KYC Status</span><strong>${esc(progress.kycStatus)}</strong></div>
+      `;
+      const completed = new Set(progress.completedModules || []);
+      const all = [...new Set([...(progress.completedModules || []), ...(progress.missingModules || [])])];
+      els.modules.innerHTML = all.map(name => {
+        const done = completed.has(name);
+        return `<div class="module"><span>${esc(name)}</span><strong class="${done ? 'ok' : 'miss'}">${done ? 'COMPLETED' : 'MISSING'}</strong></div>`;
+      }).join('') || '<div class="empty">没有模块数据</div>';
+
+      const interactions = data.interactions || [];
+      lastQueryData = data;
+      populateLenderApiSelect(interactions);
+      if (interactions.length === 0) {
+        els.apiSummary.innerHTML = '<div>该用户暂无 Lender 外呼记录。可先完成进件/授信/借款等流程后再查询。</div>';
+        els.timeline.innerHTML = '<div class="empty">没有找到接口交互记录</div>';
+        return;
+      }
+      renderTimeline(interactions, els.lenderApi.value);
+    }
+
+    async function query() {
+      const baseUrl = els.baseUrl.value.trim().replace(/\/+$/, '');
+      const token = els.debugToken.value.trim();
+      const mobileNo = els.mobileNo.value.trim();
+      if (!baseUrl || !token || !mobileNo) {
+        setStatus('请选择环境，并填写 Debug Token 和手机号。', 'error');
+        return;
+      }
+      localStorage.setItem('ktaDebugBaseUrl', baseUrl);
+      localStorage.setItem('ktaDebugToken', token);
+      els.queryBtn.disabled = true;
+      setStatus('查询中...');
+      try {
+        const url = `${baseUrl}/debug/user-progress?mobileNo=${encodeURIComponent(mobileNo)}`;
+        const res = await fetch(url, { headers: { 'X-Debug-Token': token } });
+        const body = await res.json();
+        if (!res.ok || body.code !== '000000') {
+          throw new Error(body.msg || `HTTP ${res.status}`);
+        }
+        render(body.data);
+        setStatus(`查询完成，traceId=${body.traceId || ''}`, 'ok');
+      } catch (error) {
+        renderEmpty('查询失败');
+        setStatus(error.message || String(error), 'error');
+      } finally {
+        els.queryBtn.disabled = false;
+      }
+    }
+
+    els.queryBtn.addEventListener('click', query);
+    els.lenderApi.addEventListener('change', () => {
+      if (!lastQueryData) return;
+      renderTimeline(lastQueryData.interactions || [], els.lenderApi.value);
+    });
+    els.mobileNo.addEventListener('keydown', event => {
+      if (event.key === 'Enter') query();
+    });
+  </script>
+</body>
+</html>

@@ -6,6 +6,17 @@ import org.junit.jupiter.api.Test;
 
 class PendanaanHttpSupportTest {
     @Test
+    void extractsMobileNoFromNestedJson() {
+        assertThat(PendanaanHttpSupport.extractMobileNo("""
+                {"partnerUserId":"U1","userInfo":{"mobileNo":"81234567890"}}
+                """)).isEqualTo("81234567890");
+        assertThat(PendanaanHttpSupport.extractMobileNo("""
+                {"mobileNo":"801234567"}
+                """)).isEqualTo("801234567");
+        assertThat(PendanaanHttpSupport.extractMobileNo("{\"partnerUserId\":\"U1\"}")).isNull();
+    }
+
+    @Test
     void previewsClientSecretAccessTokenAndImageFields() {
         String longSecret = "s".repeat(120);
         String longToken = "t".repeat(120);

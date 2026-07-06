@@ -11,11 +11,9 @@ public interface DebugUserProgressReadMapper {
 
     List<String> findLoanApplyIds(@Param("profileId") long profileId);
 
-    List<InteractionRecord> findRecentInteractions(
-            @Param("businessIds") List<String> businessIds,
-            @Param("partnerUserId") String partnerUserId,
+    List<InteractionRecord> findInteractionsByMobileNo(
             @Param("mobileNo") String mobileNo,
-            @Param("limit") int limit
+            @Param("businessIds") List<String> businessIds
     );
 
     record InteractionRecord(

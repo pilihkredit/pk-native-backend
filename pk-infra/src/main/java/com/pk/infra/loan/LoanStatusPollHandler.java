@@ -2,6 +2,7 @@ package com.pk.infra.loan;
 
 import com.pk.core.loan.port.LenderLoanStatusPort;
 import com.pk.core.loan.port.LoanApplicationRepository;
+import com.pk.core.external.LenderInteractionContext;
 
 public class LoanStatusPollHandler {
     private static final String POLL_SOURCE = "LOAN_STATUS_POLL";
@@ -30,7 +31,10 @@ public class LoanStatusPollHandler {
             LoanApplicationRepository.LoanApplicationRecord record,
             String source
     ) {
-        LenderLoanStatusPort.LenderLoanStatusResult status = lenderLoanStatusPort.queryStatus(record.loanApplyId());
+        LenderLoanStatusPort.LenderLoanStatusResult status = LenderInteractionContext.runWithMobileNo(
+                record.mobileNo(),
+                () -> lenderLoanStatusPort.queryStatus(record.loanApplyId())
+        );
         loanLenderStatusApplier.apply(record, status, source);
     }
 }

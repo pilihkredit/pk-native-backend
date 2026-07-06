@@ -117,6 +117,51 @@ final class PendanaanHttpSupport {
         return value.replace('\n', ' ').replace('\r', ' ');
     }
 
+    static String extractMobileNo(String requestBody) {
+        if (requestBody == null || requestBody.isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode root = LOG_MAPPER.readTree(requestBody);
+            return findMobileNoNode(root);
+        } catch (Exception exception) {
+            return null;
+        }
+    }
+
+    private static String findMobileNoNode(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        if (node.isObject()) {
+            JsonNode direct = node.get("mobileNo");
+            if (direct != null && direct.isTextual()) {
+                String value = direct.asText("").trim();
+                if (!value.isEmpty()) {
+                    return value;
+                }
+            }
+            var fields = node.fields();
+            while (fields.hasNext()) {
+                var entry = fields.next();
+                String nested = findMobileNoNode(entry.getValue());
+                if (nested != null) {
+                    return nested;
+                }
+            }
+            return null;
+        }
+        if (node.isArray()) {
+            for (JsonNode child : node) {
+                String nested = findMobileNoNode(child);
+                if (nested != null) {
+                    return nested;
+                }
+            }
+        }
+        return null;
+    }
+
     static String formatTransportFailure(Throwable throwable) {
         if (throwable == null) {
             return "";

@@ -2,6 +2,7 @@ package com.pk.app.security;
 
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
+import com.pk.core.external.LenderInteractionContext;
 import com.pk.infra.auth.AuthServiceFacade;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -38,19 +39,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        String bearerToken = resolveBearerToken(request);
-        if (bearerToken != null) {
-            try {
-                AuthenticatedPrincipal principal = authServiceFacade.validateAccessToken(bearerToken);
-                SecurityContextHolder.getContext().setAuthentication(authentication(principal));
-            } catch (ApiException exception) {
-                if (!publicApiEndpointRegistry.isPublic(request)) {
-                    apiExceptionResponseWriter.write(request, response, exception);
-                    return;
+        try {
+            String bearerToken = resolveBearerToken(request);
+            if (bearerToken != null) {
+                try {
+                    AuthenticatedPrincipal principal = authServiceFacade.validateAccessToken(bearerToken);
+                    SecurityContextHolder.getContext().setAuthentication(authentication(principal));
+                    LenderInteractionContext.setMobileNo(principal.mobileNo());
+                } catch (ApiException exception) {
+                    if (!publicApiEndpointRegistry.isPublic(request)) {
+                        apiExceptionResponseWriter.write(request, response, exception);
+                        return;
+                    }
                 }
             }
+            filterChain.doFilter(request, response);
+        } finally {
+            LenderInteractionContext.clear();
         }
-        filterChain.doFilter(request, response);
     }
 
     private static UsernamePasswordAuthenticationToken authentication(AuthenticatedPrincipal principal) {

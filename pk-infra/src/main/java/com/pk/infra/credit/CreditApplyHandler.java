@@ -4,6 +4,7 @@ import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditStatusHistoryRepository;
 import com.pk.core.credit.port.LenderCreditPort;
+import com.pk.core.external.LenderInteractionContext;
 import java.time.Instant;
 
 public class CreditApplyHandler {
@@ -33,16 +34,19 @@ public class CreditApplyHandler {
                 .mobileNo();
         transition(job.creditApplicationId(), mobileNo, CreditApplicationStatus.INIT, CreditApplicationStatus.SUBMITTING, null);
 
-        LenderCreditPort.LenderCreditApplyResult result = lenderCreditPort.apply(
-                new LenderCreditPort.LenderCreditApplyCommand(
-                        job.applyId(),
-                        job.partnerUserId(),
-                        job.lat(),
-                        job.lng(),
-                        job.ip(),
-                        job.address(),
-                        job.device(),
-                        job.appList()
+        LenderCreditPort.LenderCreditApplyResult result = LenderInteractionContext.runWithMobileNo(
+                mobileNo,
+                () -> lenderCreditPort.apply(
+                        new LenderCreditPort.LenderCreditApplyCommand(
+                                job.applyId(),
+                                job.partnerUserId(),
+                                job.lat(),
+                                job.lng(),
+                                job.ip(),
+                                job.address(),
+                                job.device(),
+                                job.appList()
+                        )
                 )
         );
 

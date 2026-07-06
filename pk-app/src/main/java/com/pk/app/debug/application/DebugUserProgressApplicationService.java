@@ -15,8 +15,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class DebugUserProgressApplicationService {
-    private static final int INTERACTION_LIMIT = 80;
-
     private final UserAuthRepository userAuthRepository;
     private final OnboardingProgressFacade onboardingProgressFacade;
     private final DebugUserProgressReadMapper readMapper;
@@ -60,7 +58,7 @@ public class DebugUserProgressApplicationService {
         List<String> loanApplyIds = readMapper.findLoanApplyIds(user.profileId());
         List<String> businessIds = businessIds(user, creditApplyIds, loanApplyIds);
         List<DebugUserProgressResponse.InteractionInfo> interactions = readMapper
-                .findRecentInteractions(businessIds, user.partnerUserId(), user.mobileNo(), INTERACTION_LIMIT)
+                .findInteractionsByMobileNo(user.mobileNo(), businessIds)
                 .stream()
                 .map(DebugUserProgressApplicationService::toInteractionInfo)
                 .toList();

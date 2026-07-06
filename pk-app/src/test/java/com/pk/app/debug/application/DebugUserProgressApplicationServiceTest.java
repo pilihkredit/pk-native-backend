@@ -42,7 +42,7 @@ class DebugUserProgressApplicationServiceTest {
                 ));
         when(readMapper.findCreditApplyIds(10L)).thenReturn(List.of("AP-1"));
         when(readMapper.findLoanApplyIds(10L)).thenReturn(List.of("LN-1"));
-        when(readMapper.findRecentInteractions(List.of("U10001", "801234567", "AP-1", "LN-1"), "U10001", "801234567", 80))
+        when(readMapper.findInteractionsByMobileNo("801234567", List.of("U10001", "801234567", "AP-1", "LN-1")))
                 .thenReturn(List.of(new DebugUserProgressReadMapper.InteractionRecord(
                         1L,
                         "pendanaan",

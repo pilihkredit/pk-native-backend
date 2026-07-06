@@ -2,6 +2,7 @@ package com.pk.infra.credit;
 
 import com.pk.core.credit.port.LenderCreditPort;
 import com.pk.core.credit.port.CreditApplicationRepository;
+import com.pk.core.external.LenderInteractionContext;
 
 public class CreditStatusPollHandler {
     private static final String POLL_SOURCE = "CREDIT_STATUS_POLL";
@@ -33,7 +34,10 @@ public class CreditStatusPollHandler {
             String source,
             String limitSource
     ) {
-        LenderCreditPort.LenderCreditStatusResult status = lenderCreditPort.queryStatus(record.applyId());
+        LenderCreditPort.LenderCreditStatusResult status = LenderInteractionContext.runWithMobileNo(
+                record.mobileNo(),
+                () -> lenderCreditPort.queryStatus(record.applyId())
+        );
         creditLenderStatusApplier.apply(record, status, source, limitSource);
     }
 }

@@ -1,6 +1,7 @@
 package com.pk.adapter.pendanaan;
 
 import com.pk.core.external.LenderInteractionLog;
+import com.pk.core.external.LenderInteractionContext;
 import com.pk.core.external.port.LenderInteractionLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +66,7 @@ final class PendanaanInteractionSupport {
                 interactionNo,
                 businessType,
                 businessId,
+                resolveMobileNo(requestBody),
                 method,
                 endpoint,
                 interactionNo,
@@ -76,5 +78,13 @@ final class PendanaanInteractionSupport {
                 success,
                 durationMs
         ));
+    }
+
+    private static String resolveMobileNo(String requestBody) {
+        String fromContext = LenderInteractionContext.mobileNo();
+        if (fromContext != null && !fromContext.isBlank()) {
+            return fromContext.trim();
+        }
+        return PendanaanHttpSupport.extractMobileNo(requestBody);
     }
 }

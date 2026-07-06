@@ -793,6 +793,7 @@ CREATE TABLE external_interaction (
     interaction_no VARCHAR(64) NOT NULL COMMENT 'External interaction number',
     business_type VARCHAR(64) NOT NULL COMMENT 'Business type',
     business_id VARCHAR(64) NULL COMMENT 'Business identifier',
+    mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number',
     http_method VARCHAR(16) NOT NULL COMMENT 'HTTP method',
     endpoint VARCHAR(256) NOT NULL COMMENT 'API endpoint',
     request_id VARCHAR(64) NULL COMMENT 'Request identifier',
@@ -809,7 +810,8 @@ CREATE TABLE external_interaction (
     UNIQUE KEY uk_external_interaction_no (interaction_no),
     KEY idx_external_interaction_business (business_type, business_id),
     KEY idx_external_interaction_request_id (request_id),
-    KEY idx_external_interaction_endpoint_created (endpoint, created_at)
+    KEY idx_external_interaction_endpoint_created (endpoint, created_at),
+    KEY idx_external_interaction_mobile_created (mobile_no, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='External API interaction audit records';
 
 CREATE TABLE callback_event (

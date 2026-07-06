@@ -5,6 +5,7 @@ public record LenderInteractionLog(
         String interactionNo,
         String businessType,
         String businessId,
+        String mobileNo,
         String httpMethod,
         String endpoint,
         String requestId,

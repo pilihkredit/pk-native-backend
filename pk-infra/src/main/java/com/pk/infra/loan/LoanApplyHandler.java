@@ -4,6 +4,7 @@ import com.pk.core.loan.LoanApplicationStatus;
 import com.pk.core.loan.port.LenderLoanApplyPort;
 import com.pk.core.loan.port.LoanApplicationRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
+import com.pk.core.external.LenderInteractionContext;
 import java.time.Instant;
 
 public class LoanApplyHandler {
@@ -28,24 +29,30 @@ public class LoanApplyHandler {
     }
 
     public String submit(LoanApplyJob job) {
+        String mobileNo = loanApplicationRepository.findById(job.loanApplicationId())
+                .orElseThrow(() -> new IllegalStateException("Loan application not found: " + job.loanApplicationId()))
+                .mobileNo();
         transition(job.loanApplicationId(), LoanApplicationStatus.INIT, LoanApplicationStatus.SUBMITTING, null);
 
-        LenderLoanApplyPort.LenderLoanApplyResult result = lenderLoanApplyPort.apply(
-                new LenderLoanApplyPort.LenderLoanApplyCommand(
-                        job.creditApplyId(),
-                        job.loanApplyId(),
-                        job.applyAmt(),
-                        job.productCode(),
-                        job.repayMethod(),
-                        job.loanPurpose(),
-                        job.couponId(),
-                        job.lat(),
-                        job.lng(),
-                        job.ip(),
-                        job.address(),
-                        job.adId(),
-                        job.device(),
-                        job.appList()
+        LenderLoanApplyPort.LenderLoanApplyResult result = LenderInteractionContext.runWithMobileNo(
+                mobileNo,
+                () -> lenderLoanApplyPort.apply(
+                        new LenderLoanApplyPort.LenderLoanApplyCommand(
+                                job.creditApplyId(),
+                                job.loanApplyId(),
+                                job.applyAmt(),
+                                job.productCode(),
+                                job.repayMethod(),
+                                job.loanPurpose(),
+                                job.couponId(),
+                                job.lat(),
+                                job.lng(),
+                                job.ip(),
+                                job.address(),
+                                job.adId(),
+                                job.device(),
+                                job.appList()
+                        )
                 )
         );
 
