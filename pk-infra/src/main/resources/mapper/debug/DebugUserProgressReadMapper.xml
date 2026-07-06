@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.debug.DebugUserProgressReadMapper">
+    <resultMap id="interactionRecordMap" type="com.pk.infra.debug.DebugUserProgressReadMapper$InteractionRecord">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="provider_code" javaType="string"/>
+            <arg column="interaction_no" javaType="string"/>
+            <arg column="business_type" javaType="string"/>
+            <arg column="business_id" javaType="string"/>
+            <arg column="http_method" javaType="string"/>
+            <arg column="endpoint" javaType="string"/>
+            <arg column="response_code" javaType="string"/>
+            <arg column="response_msg" javaType="string"/>
+            <arg column="success" javaType="_boolean" typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
+            <arg column="duration_ms" javaType="java.lang.Integer"/>
+            <arg column="request_ref" javaType="string"/>
+            <arg column="response_ref" javaType="string"/>
+            <arg column="created_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findCreditApplyIds" resultType="string">
+        SELECT apply_id
+        FROM credit_application
+        WHERE profile_id = #{profileId}
+        ORDER BY id DESC
+        LIMIT 20
+    </select>
+
+    <select id="findLoanApplyIds" resultType="string">
+        SELECT loan_apply_id
+        FROM loan_application
+        WHERE profile_id = #{profileId}
+        ORDER BY id DESC
+        LIMIT 20
+    </select>
+
+    <select id="findRecentInteractions" resultMap="interactionRecordMap">
+        SELECT id, provider_code, interaction_no, business_type, business_id, http_method,
+               endpoint, response_code, response_msg, success, duration_ms, request_ref,
+               response_ref, created_at
+        FROM external_interaction
+        WHERE
+        <choose>
+            <when test="businessIds != null and businessIds.size() > 0">
+                business_id IN
+                <foreach collection="businessIds" item="businessId" open="(" separator="," close=")">
+                    #{businessId}
+                </foreach>
+            </when>
+            <otherwise>
+                1 = 0
+            </otherwise>
+        </choose>
+        <if test="partnerUserId != null and partnerUserId != ''">
+            OR request_ref LIKE CONCAT('%', #{partnerUserId}, '%')
+            OR response_ref LIKE CONCAT('%', #{partnerUserId}, '%')
+        </if>
+        <if test="mobileNo != null and mobileNo != ''">
+            OR request_ref LIKE CONCAT('%', #{mobileNo}, '%')
+            OR response_ref LIKE CONCAT('%', #{mobileNo}, '%')
+        </if>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

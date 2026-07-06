@@ -26,6 +26,10 @@ pk:
     logging:
       enabled: ${PK_API_LOGGING_ENABLED:true}
       max-body-bytes: ${PK_API_LOGGING_MAX_BODY_BYTES:65536}
+  debug:
+    user-progress:
+      enabled: ${PK_DEBUG_USER_PROGRESS_ENABLED:false}
+      token: ${PK_DEBUG_USER_PROGRESS_TOKEN:}
   auth:
     access-token-ttl: ${PK_AUTH_ACCESS_TOKEN_TTL:15m}
     refresh-token-ttl: ${PK_AUTH_REFRESH_TOKEN_TTL:30d}
