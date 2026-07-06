@@ -32,13 +32,11 @@
         INSERT INTO user_profile (
             partner_user_id,
             mobile_no,
-            kyc_status,
-            retention_policy_code
+            kyc_status
         ) VALUES (
             #{partnerUserId},
             #{mobileNo},
-            'PENDING',
-            'DEFAULT'
+            'PENDING'
         )
     </insert>
 

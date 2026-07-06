@@ -6,6 +6,7 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.infra.callback.CallbackProperties;
 import com.pk.infra.callback.CallbackTokenIssuer;
+import com.pk.infra.callback.ServerEventCallbackIntakeFacade;
 import com.pk.infra.credit.CreditCallbackIntakeFacade;
 import com.pk.infra.loan.LoanCallbackIntakeFacade;
 import org.springframework.stereotype.Service;
@@ -17,17 +18,20 @@ public class CallbackApplicationService {
     private final CallbackTokenIssuer callbackTokenIssuer;
     private final CreditCallbackIntakeFacade creditCallbackIntakeFacade;
     private final LoanCallbackIntakeFacade loanCallbackIntakeFacade;
+    private final ServerEventCallbackIntakeFacade serverEventCallbackIntakeFacade;
 
     public CallbackApplicationService(
             CallbackProperties callbackProperties,
             CallbackTokenIssuer callbackTokenIssuer,
             CreditCallbackIntakeFacade creditCallbackIntakeFacade,
-            LoanCallbackIntakeFacade loanCallbackIntakeFacade
+            LoanCallbackIntakeFacade loanCallbackIntakeFacade,
+            ServerEventCallbackIntakeFacade serverEventCallbackIntakeFacade
     ) {
         this.callbackProperties = callbackProperties;
         this.callbackTokenIssuer = callbackTokenIssuer;
         this.creditCallbackIntakeFacade = creditCallbackIntakeFacade;
         this.loanCallbackIntakeFacade = loanCallbackIntakeFacade;
+        this.serverEventCallbackIntakeFacade = serverEventCallbackIntakeFacade;
     }
 
     public CallbackOAuthTokenResponse issueToken(CallbackOAuthTokenRequest request) {
@@ -58,6 +62,13 @@ public class CallbackApplicationService {
         ensureEnabled();
         callbackTokenIssuer.validateToken(accessToken);
         loanCallbackIntakeFacade.intake(rawPayloadJson);
+    }
+
+    @Transactional
+    public void receiveEventPush(String accessToken, String rawPayloadJson) {
+        ensureEnabled();
+        callbackTokenIssuer.validateToken(accessToken);
+        serverEventCallbackIntakeFacade.intake(rawPayloadJson);
     }
 
     private void ensureEnabled() {

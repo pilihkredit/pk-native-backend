@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.callback.port.CallbackEventRepository;
 import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.callback.port.LoanCallbackParser;
+import com.pk.core.callback.port.ServerEventCallbackParser;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.CreditStatusHistoryRepository;
@@ -109,6 +110,17 @@ public class CallbackInfraConfiguration {
                 loanApplicationRepository,
                 loanCallbackParser,
                 loanLenderStatusApplier
+        );
+    }
+
+    @Bean
+    ServerEventCallbackIntakeFacade serverEventCallbackIntakeFacade(
+            CallbackEventRepository callbackEventRepository,
+            ServerEventCallbackParser serverEventCallbackParser
+    ) {
+        return new ServerEventCallbackIntakeFacade(
+                callbackEventRepository,
+                serverEventCallbackParser
         );
     }
 }

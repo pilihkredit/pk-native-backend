@@ -3,6 +3,7 @@ package com.pk.adapter.pendanaan;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.callback.port.LoanCallbackParser;
+import com.pk.core.callback.port.ServerEventCallbackParser;
 import com.pk.core.credit.port.LenderCreditPort;
 import com.pk.core.external.port.LenderInteractionLogRepository;
 import com.pk.core.home.port.LenderUserStatusPort;
@@ -40,6 +41,12 @@ public class PendanaanAdapterConfiguration {
     @ConditionalOnMissingBean(LoanCallbackParser.class)
     LoanCallbackParser pendanaanLoanCallbackParser(ObjectMapper objectMapper) {
         return new PendanaanLoanCallbackParser(objectMapper);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ServerEventCallbackParser.class)
+    ServerEventCallbackParser pendanaanServerEventCallbackParser(ObjectMapper objectMapper) {
+        return new PendanaanServerEventCallbackParser(objectMapper);
     }
 
     @Bean
