@@ -23,15 +23,15 @@ class PendanaanHttpSupportTest {
     }
 
     @Test
-    void redactsLenderResponseMsgField() {
+    void preservesLenderResponseMsgField() {
         String payload = """
                 {"code":"A000445","msg":"advanceAi OCR原始报文格式错误","data":null,"success":false}
                 """;
 
         String redacted = PendanaanHttpSupport.redactSensitiveJson(payload);
 
-        assertThat(redacted).contains("\"msg\":\"[redacted]\"");
-        assertThat(redacted).doesNotContain("原始报文");
+        assertThat(redacted).contains("advanceAi OCR原始报文格式错误");
+        assertThat(redacted).doesNotContain("[redacted]");
     }
 
     @Test

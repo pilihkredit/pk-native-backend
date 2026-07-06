@@ -45,7 +45,7 @@ final class PendanaanInteractionSupport {
                     PendanaanHttpSupport.formatLogBody(redactedRequest, logging.maxBodyBytes())
             );
             log.info(
-                    "Lender response provider={} interactionNo={} businessType={} businessId={} method={} endpoint={} httpStatus={} code={} success={} durationMs={} body={}",
+                    "Lender response provider={} interactionNo={} businessType={} businessId={} method={} endpoint={} httpStatus={} code={} msg={} success={} durationMs={} body={}",
                     PROVIDER_CODE,
                     interactionNo,
                     businessType,
@@ -54,6 +54,7 @@ final class PendanaanInteractionSupport {
                     endpoint,
                     httpStatus == null ? "" : httpStatus,
                     responseCode,
+                    responseMsg == null ? "" : responseMsg,
                     success,
                     durationMs,
                     PendanaanHttpSupport.formatLogBody(redactedResponse, logging.maxBodyBytes())
