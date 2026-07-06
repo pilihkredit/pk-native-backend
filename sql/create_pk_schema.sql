@@ -64,10 +64,7 @@ CREATE TABLE user_profile (
     mobile_no VARCHAR(32) NOT NULL COMMENT 'Current mobile number',
     email VARCHAR(128) NULL COMMENT 'Email address',
     whats_app VARCHAR(32) NULL COMMENT 'WhatsApp number',
-    current_profile_version_id BIGINT UNSIGNED NULL COMMENT 'Current profile version identifier',
     kyc_status VARCHAR(32) NOT NULL COMMENT 'KYC completion status',
-    data_lifecycle_status VARCHAR(32) NOT NULL COMMENT 'Personal data lifecycle status',
-    data_residency_country CHAR(2) NOT NULL DEFAULT 'ID' COMMENT 'Primary data residency country code',
     retention_policy_code VARCHAR(64) NOT NULL COMMENT 'Applied retention policy code',
     retention_until DATETIME(3) NULL COMMENT 'Planned retention end time',
     anonymized_at DATETIME(3) NULL COMMENT 'Anonymization completion time',
@@ -83,7 +80,7 @@ CREATE TABLE user_profile (
     UNIQUE KEY uk_user_profile_partner_user_id (partner_user_id),
     KEY idx_user_profile_external_user_id (external_user_id),
     KEY idx_user_profile_mobile_no (mobile_no),
-    KEY idx_user_profile_lifecycle_retention (data_lifecycle_status, retention_until)
+    KEY idx_user_profile_retention_until (retention_until)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Current user profile master data';
 
 CREATE TABLE sms_send_log (

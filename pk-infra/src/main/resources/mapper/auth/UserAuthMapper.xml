@@ -33,15 +33,11 @@
             partner_user_id,
             mobile_no,
             kyc_status,
-            data_lifecycle_status,
-            data_residency_country,
             retention_policy_code
         ) VALUES (
             #{partnerUserId},
             #{mobileNo},
             'PENDING',
-            'ACTIVE',
-            'ID',
             'DEFAULT'
         )
     </insert>
