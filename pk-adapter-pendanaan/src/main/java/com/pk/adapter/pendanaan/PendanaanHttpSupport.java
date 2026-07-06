@@ -13,7 +13,7 @@ import java.util.HexFormat;
 import java.util.Set;
 
 final class PendanaanHttpSupport {
-    static final String ACCEPT_LANGUAGE = "in_ID";
+    static final String ACCEPT_LANGUAGE = "in-ID";
     private static final int SENSITIVE_PREVIEW_LENGTH = 100;
     private static final ObjectMapper LOG_MAPPER = new ObjectMapper();
     private static final Set<String> SENSITIVE_LOG_FIELDS = Set.of(
