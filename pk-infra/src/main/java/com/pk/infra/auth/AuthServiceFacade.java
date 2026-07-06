@@ -203,22 +203,26 @@ public class AuthServiceFacade {
         if (deviceNo == null || deviceNo.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        OtpChallenge challenge = otpChallengeStore.findByToken(otpToken)
-                .orElseThrow(() -> new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE));
-        if (challenge.expired(Instant.now())) {
+        if (isOtpBypass(otpCode)) {
+            otpChallengeStore.findByToken(otpToken).ifPresent(challenge -> otpChallengeStore.delete(otpToken));
+        } else {
+            OtpChallenge challenge = otpChallengeStore.findByToken(otpToken)
+                    .orElseThrow(() -> new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE));
+            if (challenge.expired(Instant.now())) {
+                otpChallengeStore.delete(otpToken);
+                throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
+            }
+            if (!mobileNo.equals(challenge.mobileNo())) {
+                throw new ApiException(ApiCode.OTP_TOKEN_MISMATCH);
+            }
+            if (!deviceNo.equals(challenge.deviceNo())) {
+                throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+            }
+            if (!otpCode.equals(challenge.otpCode())) {
+                throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
+            }
             otpChallengeStore.delete(otpToken);
-            throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
         }
-        if (!mobileNo.equals(challenge.mobileNo())) {
-            throw new ApiException(ApiCode.OTP_TOKEN_MISMATCH);
-        }
-        if (!deviceNo.equals(challenge.deviceNo())) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        if (!otpCode.equals(challenge.otpCode())) {
-            throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
-        }
-        otpChallengeStore.delete(otpToken);
 
         UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
                 .orElseGet(() -> userAuthRepository.createByMobileNo(mobileNo));
@@ -309,6 +313,12 @@ public class AuthServiceFacade {
         if (!MobileNumberValidator.isValid(mobileNo)) {
             throw new ApiException(ApiCode.INVALID_MOBILE_NUMBER);
         }
+    }
+
+    private boolean isOtpBypass(String otpCode) {
+        return authProperties.otpBypassEnabled()
+                && authProperties.otpBypassCode() != null
+                && authProperties.otpBypassCode().equals(otpCode);
     }
 
     public record OtpSendResult(String otpToken, long expireIn, long resendAfter, String otpCodeForLocalDev) {

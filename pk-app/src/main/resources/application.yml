@@ -36,6 +36,8 @@ pk:
     jwt-secret: ${PK_AUTH_JWT_SECRET:local-dev-secret-change-in-prod-min-32-chars}
     password-max-failed-attempts: ${PK_AUTH_PASSWORD_MAX_FAILED_ATTEMPTS:5}
     password-lock-duration: ${PK_AUTH_PASSWORD_LOCK_DURATION:15m}
+    otp-bypass-enabled: ${PK_AUTH_OTP_BYPASS_ENABLED:false}
+    otp-bypass-code: ${PK_AUTH_OTP_BYPASS_CODE:123456}
   security:
     field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY:local-dev-field-encryption-key-32b}
   reference:

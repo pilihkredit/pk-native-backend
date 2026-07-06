@@ -253,4 +253,55 @@ class AuthServiceFacadeTest {
         verify(otpChallengeStore, never()).save(any(), any(), any());
         verify(smsSendLogRepository, never()).insert(any());
     }
+
+    @Test
+    void acceptsBypassCodeWithoutStoredChallengeWhenEnabled() {
+        AuthProperties properties = new AuthProperties();
+        properties.setAccessTokenTtl(Duration.ofMinutes(15));
+        properties.setRefreshTokenTtl(Duration.ofDays(30));
+        properties.setJwtSecret("local-dev-secret-change-in-prod-min-32-chars");
+        properties.setOtpBypassEnabled(true);
+        properties.setOtpBypassCode("123456");
+        TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
+        SessionStore sessionStore = mock(SessionStore.class);
+        RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
+        when(sessionStore.findByProfileId(7L)).thenReturn(Optional.empty());
+        when(otpChallengeStore.findByToken("unused-token")).thenReturn(Optional.empty());
+        when(userAuthRepository.findByMobileNo("8123456789"))
+                .thenReturn(Optional.of(new UserProfileSummary(7L, "UABC", "8123456789", false)));
+        when(userPasswordCredentialRepository.isPasswordSet(7L)).thenReturn(false);
+
+        AuthServiceFacade verifyFacade = new AuthServiceFacade(
+                properties,
+                sessionStore,
+                otpChallengeStore,
+                refreshTokenStore,
+                tokenIssuer,
+                userAuthRepository,
+                userPasswordCredentialRepository,
+                passwordHasher,
+                smsSendLogRepository,
+                smsSender
+        );
+
+        AuthServiceFacade.OtpVerifyResult result = verifyFacade.verifyOtp(
+                "8123456789",
+                "unused-token",
+                "123456",
+                "device-1"
+        );
+
+        assertThat(result.tokenPair().accessToken()).isNotBlank();
+        verify(otpChallengeStore, never()).delete(any());
+    }
+
+    @Test
+    void rejectsBypassCodeWhenBypassDisabled() {
+        when(otpChallengeStore.findByToken("token-1")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> facade.verifyOtp("8123456789", "token-1", "123456", "device-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
+    }
 }
