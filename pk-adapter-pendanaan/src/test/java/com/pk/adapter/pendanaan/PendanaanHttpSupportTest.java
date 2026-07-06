@@ -59,4 +59,19 @@ class PendanaanHttpSupportTest {
 
         assertThat(formatted).isEqualTo("xxxxxxxxxx...[truncated 10 bytes]");
     }
+
+    @Test
+    void ensureSuccessThrowsWithLenderMessage() throws Exception {
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        com.fasterxml.jackson.databind.JsonNode envelope = mapper.readTree("""
+                {"code":"A000001","msg":"请求参数错误","data":null}
+                """);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PendanaanHttpSupport.ensureSuccess(envelope))
+                .isInstanceOf(com.pk.core.api.ApiException.class)
+                .satisfies(throwable -> {
+                    com.pk.core.api.ApiException exception = (com.pk.core.api.ApiException) throwable;
+                    assertThat(exception.detail()).isEqualTo("请求参数错误");
+                });
+    }
 }

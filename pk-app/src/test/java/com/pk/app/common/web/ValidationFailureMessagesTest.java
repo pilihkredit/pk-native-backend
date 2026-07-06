@@ -27,13 +27,13 @@ class ValidationFailureMessagesTest {
     }
 
     @Test
-    void ignoresLenderDetailForUpstreamBusinessCodes() {
+    void usesLenderDetailForUpstreamBusinessCodes() {
         ApiException exception = new ApiException(
                 ApiCode.LENDER_INVALID_OCR_RAW_DETAIL,
-                "A000445: advanceAi OCR原始报文格式错误"
+                "advanceAi OCR原始报文格式错误"
         );
 
         assertThat(ValidationFailureMessages.forApiException(exception))
-                .isEqualTo(ApiCode.LENDER_INVALID_OCR_RAW_DETAIL.message());
+                .isEqualTo("advanceAi OCR原始报文格式错误");
     }
 }

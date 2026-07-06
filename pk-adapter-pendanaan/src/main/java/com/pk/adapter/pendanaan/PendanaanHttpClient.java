@@ -142,6 +142,7 @@ public class PendanaanHttpClient {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
                 .timeout(Duration.ofMillis(properties.readTimeoutMs()))
+                .header("Accept-Language", PendanaanHttpSupport.ACCEPT_LANGUAGE)
                 .header("Authorization", "Bearer " + tokenProvider.getAccessToken());
         if ("POST".equals(method)) {
             builder.header("Content-Type", "application/json");

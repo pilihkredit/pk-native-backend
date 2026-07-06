@@ -32,7 +32,10 @@ public class PendanaanCreditAdapter implements LenderCreditPort {
         );
         String responseCode = PendanaanHttpSupport.textOrEmpty(envelope.get("code"));
         if (!ApiCode.SUCCESS.code().equals(responseCode)) {
-            throw PendanaanHttpSupport.mapFailureCode(responseCode);
+            throw PendanaanHttpSupport.mapFailureCode(
+                    responseCode,
+                    PendanaanHttpSupport.textOrEmpty(envelope.get("msg"))
+            );
         }
         JsonNode data = envelope.get("data");
         if (data == null || data.isNull()) {

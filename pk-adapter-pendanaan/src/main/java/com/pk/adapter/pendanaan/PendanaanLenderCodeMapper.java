@@ -80,7 +80,10 @@ final class PendanaanLenderCodeMapper {
     }
 
     private static String buildDetail(String lenderCode, String lenderMessage) {
-        return null;
+        if (lenderMessage == null || lenderMessage.isBlank()) {
+            return null;
+        }
+        return lenderMessage.trim();
     }
 
     static boolean isBankCardVerificationFailure(String lenderCode) {

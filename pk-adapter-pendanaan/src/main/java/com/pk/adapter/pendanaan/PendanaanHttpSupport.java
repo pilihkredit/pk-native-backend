@@ -13,6 +13,7 @@ import java.util.HexFormat;
 import java.util.Set;
 
 final class PendanaanHttpSupport {
+    static final String ACCEPT_LANGUAGE = "in_ID";
     private static final int SENSITIVE_PREVIEW_LENGTH = 100;
     private static final ObjectMapper LOG_MAPPER = new ObjectMapper();
     private static final Set<String> SENSITIVE_LOG_FIELDS = Set.of(
@@ -177,16 +178,31 @@ final class PendanaanHttpSupport {
     }
 
     static ApiException mapFailureCode(String responseCode) {
+        return mapFailureCode(responseCode, null);
+    }
+
+    static ApiException mapFailureCode(String responseCode, String responseMsg) {
         if ("999998".equals(responseCode) || "999999".equals(responseCode)) {
-            return new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+            return new ApiException(ApiCode.SERVICE_UNAVAILABLE, normalizeLenderMessage(responseMsg));
         }
-        return PendanaanLenderCodeMapper.toApiException(responseCode, null, ProfileSyncModule.PERSONAL);
+        return PendanaanLenderCodeMapper.toApiException(
+                responseCode,
+                normalizeLenderMessage(responseMsg),
+                ProfileSyncModule.PERSONAL
+        );
     }
 
     static void ensureSuccess(JsonNode envelope) {
         String responseCode = textOrEmpty(envelope.get("code"));
         if (!ApiCode.SUCCESS.code().equals(responseCode)) {
-            throw mapFailureCode(responseCode);
+            throw mapFailureCode(responseCode, textOrEmpty(envelope.get("msg")));
         }
+    }
+
+    private static String normalizeLenderMessage(String responseMsg) {
+        if (responseMsg == null || responseMsg.isBlank()) {
+            return null;
+        }
+        return responseMsg.trim();
     }
 }

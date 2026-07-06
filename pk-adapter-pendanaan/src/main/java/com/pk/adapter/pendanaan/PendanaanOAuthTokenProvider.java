@@ -71,6 +71,7 @@ public class PendanaanOAuthTokenProvider {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
                     .timeout(Duration.ofMillis(properties.readTimeoutMs()))
+                    .header("Accept-Language", PendanaanHttpSupport.ACCEPT_LANGUAGE)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
