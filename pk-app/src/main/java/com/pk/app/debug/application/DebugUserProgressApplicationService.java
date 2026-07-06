@@ -1,5 +1,6 @@
 package com.pk.app.debug.application;
 
+import com.pk.app.debug.config.DebugUserProgressProperties;
 import com.pk.app.debug.dto.DebugUserProgressResponse;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -19,24 +20,37 @@ public class DebugUserProgressApplicationService {
     private final UserAuthRepository userAuthRepository;
     private final OnboardingProgressFacade onboardingProgressFacade;
     private final DebugUserProgressReadMapper readMapper;
+    private final DebugUserProgressProperties properties;
 
     public DebugUserProgressApplicationService(
             UserAuthRepository userAuthRepository,
             OnboardingProgressFacade onboardingProgressFacade,
-            DebugUserProgressReadMapper readMapper
+            DebugUserProgressReadMapper readMapper,
+            DebugUserProgressProperties properties
     ) {
         this.userAuthRepository = userAuthRepository;
         this.onboardingProgressFacade = onboardingProgressFacade;
         this.readMapper = readMapper;
+        this.properties = properties;
     }
 
-    public DebugUserProgressResponse query(String mobileNo) {
+    public DebugUserProgressResponse query(String debugToken, String mobileNo) {
+        validateToken(debugToken);
         if (mobileNo == null || mobileNo.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
         return userAuthRepository.findByMobileNo(mobileNo.trim())
                 .map(this::buildResponse)
                 .orElseGet(DebugUserProgressResponse::notFound);
+    }
+
+    private void validateToken(String debugToken) {
+        if (!properties.enabled() || !properties.tokenConfigured()) {
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+        }
+        if (debugToken == null || !properties.token().equals(debugToken.trim())) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
     }
 
     private DebugUserProgressResponse buildResponse(UserProfileSummary user) {

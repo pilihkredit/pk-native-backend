@@ -8,6 +8,7 @@ import com.pk.core.auth.PublicApi;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @PublicApi
 @CrossOrigin(
         originPatterns = {"https://*.aiforce.cloud", "https://*.feishu.cn", "http://localhost:*"},
-        allowedHeaders = {"Content-Type"},
+        allowedHeaders = {"X-Debug-Token", "Content-Type"},
         exposedHeaders = {"Content-Type"}
 )
 public class DebugUserProgressController {
@@ -29,11 +30,12 @@ public class DebugUserProgressController {
 
     @GetMapping
     public ApiResponse<DebugUserProgressResponse> query(
+            @RequestHeader(value = "X-Debug-Token", required = false) String debugToken,
             @RequestParam("mobileNo") String mobileNo,
             HttpServletRequest request
     ) {
         return ApiResponse.success(
-                applicationService.query(mobileNo),
+                applicationService.query(debugToken, mobileNo),
                 RequestTrace.resolveTraceId(request)
         );
     }
