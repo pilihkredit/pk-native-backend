@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,9 +13,7 @@ import com.pk.core.reference.BankReference;
 import com.pk.core.reference.port.LenderBankPort;
 import com.pk.core.reference.port.RefBankRepository;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,33 +32,32 @@ class BankReferenceFacadeTest {
     }
 
     @Test
-    void returnsCachedBanksWithoutCallingLenderWhenFresh() {
-        List<BankReference> cached = sampleBanks();
-        when(refBankRepository.findAllActive()).thenReturn(cached);
-        when(refBankRepository.findLatestSyncedAt()).thenReturn(Optional.of(Instant.now()));
+    void listBanksAlwaysReturnsLenderOrderAndRefreshesCache() {
+        List<BankReference> lenderBanks = List.of(
+                new BankReference("MANDIRI", "Bank Mandiri", null, null),
+                new BankReference("BCA", "Bank Central Asia", null, null)
+        );
+        when(lenderBankPort.listBanks()).thenReturn(lenderBanks);
 
         List<BankReference> result = facade.listBanks();
 
-        assertThat(result).isEqualTo(cached);
-        verify(lenderBankPort, never()).listBanks();
+        assertThat(result).containsExactlyElementsOf(lenderBanks);
+        verify(lenderBankPort).listBanks();
+        verify(refBankRepository).replaceAll(eq(lenderBanks), any());
     }
 
     @Test
     void syncsFromLenderWhenCacheEmpty() {
-        when(refBankRepository.findAllActive()).thenReturn(List.of(), sampleBanks());
-        when(refBankRepository.findLatestSyncedAt()).thenReturn(Optional.empty());
         when(lenderBankPort.listBanks()).thenReturn(sampleBanks());
 
         List<BankReference> result = facade.listBanks();
 
-        assertThat(result).hasSize(2);
+        assertThat(result).containsExactlyElementsOf(sampleBanks());
         verify(refBankRepository).replaceAll(eq(sampleBanks()), any());
     }
 
     @Test
     void throwsServiceUnavailableWhenLenderReturnsEmpty() {
-        when(refBankRepository.findAllActive()).thenReturn(List.of());
-        when(refBankRepository.findLatestSyncedAt()).thenReturn(Optional.empty());
         when(lenderBankPort.listBanks()).thenReturn(List.of());
 
         assertThatThrownBy(() -> facade.listBanks())
