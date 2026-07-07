@@ -8,12 +8,12 @@ public class BiometricStorageProperties {
     private String encryptionKeyRef = "pk-field-encryption-key";
 
     @NestedConfigurationProperty
-    private final Oss oss = new Oss();
+    private Oss oss = new Oss();
 
     @NestedConfigurationProperty
-    private final Local local = new Local();
+    private Local local = new Local();
 
-    public String encryptionKeyRef() {
+    public String getEncryptionKeyRef() {
         return encryptionKeyRef;
     }
 
@@ -21,8 +21,28 @@ public class BiometricStorageProperties {
         this.encryptionKeyRef = encryptionKeyRef;
     }
 
+    public String encryptionKeyRef() {
+        return encryptionKeyRef;
+    }
+
+    public Oss getOss() {
+        return oss;
+    }
+
+    public void setOss(Oss oss) {
+        this.oss = oss;
+    }
+
     public Oss oss() {
         return oss;
+    }
+
+    public Local getLocal() {
+        return local;
+    }
+
+    public void setLocal(Local local) {
+        this.local = local;
     }
 
     public Local local() {
@@ -37,12 +57,20 @@ public class BiometricStorageProperties {
         private String accessKeySecret = "";
         private String pathPrefix = "pk-biometric";
 
+        public boolean isEnabled() {
+            return enabled;
+        }
+
         public boolean enabled() {
             return enabled;
         }
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public String getEndpoint() {
+            return endpoint;
         }
 
         public String endpoint() {
@@ -53,12 +81,20 @@ public class BiometricStorageProperties {
             this.endpoint = endpoint;
         }
 
+        public String getBucket() {
+            return bucket;
+        }
+
         public String bucket() {
             return bucket;
         }
 
         public void setBucket(String bucket) {
             this.bucket = bucket;
+        }
+
+        public String getAccessKeyId() {
+            return accessKeyId;
         }
 
         public String accessKeyId() {
@@ -69,12 +105,20 @@ public class BiometricStorageProperties {
             this.accessKeyId = accessKeyId;
         }
 
+        public String getAccessKeySecret() {
+            return accessKeySecret;
+        }
+
         public String accessKeySecret() {
             return accessKeySecret;
         }
 
         public void setAccessKeySecret(String accessKeySecret) {
             this.accessKeySecret = accessKeySecret;
+        }
+
+        public String getPathPrefix() {
+            return pathPrefix;
         }
 
         public String pathPrefix() {
@@ -90,12 +134,20 @@ public class BiometricStorageProperties {
         private String baseDir = System.getProperty("java.io.tmpdir") + "/pk-biometric";
         private String pathPrefix = "pk-biometric";
 
+        public String getBaseDir() {
+            return baseDir;
+        }
+
         public String baseDir() {
             return baseDir;
         }
 
         public void setBaseDir(String baseDir) {
             this.baseDir = baseDir;
+        }
+
+        public String getPathPrefix() {
+            return pathPrefix;
         }
 
         public String pathPrefix() {
