@@ -17,7 +17,6 @@ import com.pk.infra.profile.IdentityOcrFacade;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @ConditionalOnProperty(prefix = "pk.ocr", name = "enabled", havingValue = "true")
@@ -89,7 +88,6 @@ public class IdentityOcrApplicationService {
         );
     }
 
-    @Transactional
     public IdentityOcrFaceRecognitionResponse faceRecognition(
             AuthenticatedPrincipal principal,
             IdentityOcrFaceRecognitionRequest request,

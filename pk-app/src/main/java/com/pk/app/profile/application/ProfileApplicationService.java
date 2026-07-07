@@ -17,7 +17,6 @@ import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.profile.ProfileServiceFacade;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ProfileApplicationService {
@@ -35,7 +34,6 @@ public class ProfileApplicationService {
         this.objectMapper = objectMapper;
     }
 
-    @Transactional
     public ProfilePersonalSaveResponse savePersonal(
             AuthenticatedPrincipal principal,
             ProfilePersonalSaveRequest request,
@@ -65,7 +63,6 @@ public class ProfileApplicationService {
         );
     }
 
-    @Transactional
     public ProfileContactsSaveResponse saveContacts(
             AuthenticatedPrincipal principal,
             ProfileContactsSaveRequest request,
@@ -93,7 +90,6 @@ public class ProfileApplicationService {
         return new ProfileContactsSaveResponse(result.requestId(), result.moduleStatus());
     }
 
-    @Transactional
     public ProfileBankCardSaveResponse saveBankCard(
             AuthenticatedPrincipal principal,
             ProfileBankCardSaveRequest request,

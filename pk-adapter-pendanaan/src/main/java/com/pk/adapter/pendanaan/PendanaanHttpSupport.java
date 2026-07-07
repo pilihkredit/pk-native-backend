@@ -14,6 +14,7 @@ import java.util.Set;
 
 final class PendanaanHttpSupport {
     static final String ACCEPT_LANGUAGE = "in-ID";
+    static final int STORAGE_REF_MAX_CHARS = 256 * 1024;
     private static final int SENSITIVE_PREVIEW_LENGTH = 100;
     private static final ObjectMapper LOG_MAPPER = new ObjectMapper();
     private static final Set<String> SENSITIVE_LOG_FIELDS = Set.of(
@@ -51,7 +52,7 @@ final class PendanaanHttpSupport {
         if (value == null) {
             return null;
         }
-        return value.length() <= 512 ? value : value.substring(0, 512);
+        return value.length() <= STORAGE_REF_MAX_CHARS ? value : value.substring(0, STORAGE_REF_MAX_CHARS);
     }
 
     static String formatLogBody(String value, int maxBodyBytes) {

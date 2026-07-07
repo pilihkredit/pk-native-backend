@@ -17,7 +17,6 @@ import com.pk.infra.profile.UserDeviceWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CreditApplicationService {
@@ -35,7 +34,6 @@ public class CreditApplicationService {
         this.userDeviceWriter = userDeviceWriter;
     }
 
-    @Transactional
     public CreditApplyResponse apply(
             AuthenticatedPrincipal principal,
             CreditApplyRequest request,

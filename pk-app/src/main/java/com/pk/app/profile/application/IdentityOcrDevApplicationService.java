@@ -12,7 +12,6 @@ import com.pk.infra.profile.IdentityOcrFacade;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @ConditionalOnProperty(prefix = "pk.ocr", name = "dev-lender-sync-enabled", havingValue = "true")
@@ -28,7 +27,6 @@ public class IdentityOcrDevApplicationService {
         this.pendanaanProperties = pendanaanProperties;
     }
 
-    @Transactional
     public IdentityOcrDevLenderSyncResponse syncToLender(
             AuthenticatedPrincipal principal,
             IdentityOcrDevLenderSyncRequest request,

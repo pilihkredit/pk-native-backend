@@ -63,6 +63,15 @@ class PendanaanHttpSupportTest {
     }
 
     @Test
+    void truncatesStorageRefWhenExceedingLimit() {
+        String body = "x".repeat(PendanaanHttpSupport.STORAGE_REF_MAX_CHARS + 10);
+
+        String truncated = PendanaanHttpSupport.truncate(body);
+
+        assertThat(truncated).hasSize(PendanaanHttpSupport.STORAGE_REF_MAX_CHARS);
+    }
+
+    @Test
     void truncatesLogBodyWhenExceedingLimit() {
         String body = "x".repeat(20);
 

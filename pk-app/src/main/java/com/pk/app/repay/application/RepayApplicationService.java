@@ -21,7 +21,6 @@ import com.pk.infra.repay.RepayTrialFacade;
 import com.pk.infra.repay.RepayVaFacade;
 import java.util.List;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class RepayApplicationService {
@@ -45,7 +44,6 @@ public class RepayApplicationService {
         this.pendanaanProperties = pendanaanProperties;
     }
 
-    @Transactional
     public RepayPlanListResponse getPlan(AuthenticatedPrincipal principal, String loanApplyId) {
         requirePrincipal(principal);
         requireLenderHttp();
@@ -56,7 +54,6 @@ public class RepayApplicationService {
         return RepayPlanListResponse.multiple(plans.stream().map(RepayPlanResponse::from).toList());
     }
 
-    @Transactional
     public RepayVaListResponse listVas(AuthenticatedPrincipal principal) {
         requirePrincipal(principal);
         requireLenderHttp();
@@ -66,7 +63,6 @@ public class RepayApplicationService {
         ));
     }
 
-    @Transactional
     public RepayVaDefaultResponse setDefaultVa(AuthenticatedPrincipal principal, RepayVaDefaultRequest request) {
         requirePrincipal(principal);
         requireLenderHttp();
@@ -77,7 +73,6 @@ public class RepayApplicationService {
         ));
     }
 
-    @Transactional
     public RepayTrialResponse trial(AuthenticatedPrincipal principal, RepayTrialRequest request) {
         requirePrincipal(principal);
         requireLenderHttp();
@@ -92,7 +87,6 @@ public class RepayApplicationService {
         ));
     }
 
-    @Transactional
     public RepayTrialBatchResponse trialBatch(AuthenticatedPrincipal principal, RepayTrialBatchRequest request) {
         requirePrincipal(principal);
         requireLenderHttp();
@@ -111,7 +105,6 @@ public class RepayApplicationService {
         ));
     }
 
-    @Transactional
     public RepayCurrentOrderResponse setCurrentOrder(
             AuthenticatedPrincipal principal,
             RepayCurrentOrderRequest request

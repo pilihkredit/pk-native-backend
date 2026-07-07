@@ -40,3 +40,6 @@ surefire-reports/
 *.local.yml
 application-local.yml
 blocked-personal-substrings.local.txt
+
+# Local diagnostic tools / scripts (kept outside repo at ../user-progress-miaoda/)
+tools/

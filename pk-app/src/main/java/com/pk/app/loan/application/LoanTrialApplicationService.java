@@ -7,7 +7,6 @@ import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.infra.loan.LoanTrialFacade;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class LoanTrialApplicationService {
@@ -17,7 +16,6 @@ public class LoanTrialApplicationService {
         this.loanTrialFacade = loanTrialFacade;
     }
 
-    @Transactional
     public LoanTrialResponse trial(AuthenticatedPrincipal principal, LoanTrialRequest request) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
