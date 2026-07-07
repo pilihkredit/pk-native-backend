@@ -30,6 +30,10 @@ public final class OcrImageSupport {
         }
     }
 
+    public static String encodeBase64(byte[] imageBytes) {
+        return Base64.getEncoder().encodeToString(imageBytes);
+    }
+
     public static String stripDataUriPrefix(String imageBase64) {
         if (imageBase64 == null) {
             return null;

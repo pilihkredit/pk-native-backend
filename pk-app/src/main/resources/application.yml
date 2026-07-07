@@ -44,6 +44,18 @@ pk:
     otp-bypass-code: ${PK_AUTH_OTP_BYPASS_CODE:123456}
   security:
     field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY:local-dev-field-encryption-key-32b}
+  biometric-storage:
+    encryption-key-ref: pk-field-encryption-key
+    local:
+      base-dir: ${PK_BIOMETRIC_LOCAL_BASE_DIR:${java.io.tmpdir}/pk-biometric}
+      path-prefix: pk-biometric
+    oss:
+      enabled: ${PK_BIOMETRIC_OSS_ENABLED:false}
+      endpoint: ${PK_BIOMETRIC_OSS_ENDPOINT:}
+      bucket: ${PK_BIOMETRIC_OSS_BUCKET:}
+      access-key-id: ${PK_BIOMETRIC_OSS_ACCESS_KEY_ID:}
+      access-key-secret: ${PK_BIOMETRIC_OSS_ACCESS_KEY_SECRET:}
+      path-prefix: ${PK_BIOMETRIC_OSS_PATH_PREFIX:pk-biometric}
   reference:
     bank-cache-ttl: ${PK_REFERENCE_BANK_CACHE_TTL:24h}
     area-cache-ttl: ${PK_REFERENCE_AREA_CACHE_TTL:24h}

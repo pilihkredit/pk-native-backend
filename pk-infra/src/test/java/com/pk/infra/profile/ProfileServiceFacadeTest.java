@@ -58,6 +58,16 @@ class ProfileServiceFacadeTest {
             public String decrypt(EncryptedField encryptedField) {
                 return "Siti";
             }
+
+            @Override
+            public EncryptedField encryptBytes(byte[] plaintext) {
+                return encrypt(new String(plaintext));
+            }
+
+            @Override
+            public byte[] decryptBytes(EncryptedField encryptedField) {
+                return decrypt(encryptedField).getBytes();
+            }
         };
         facade = new ProfileServiceFacade(
                 profilePersonalRepository,

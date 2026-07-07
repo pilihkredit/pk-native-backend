@@ -6,4 +6,8 @@ public interface SensitiveFieldEncryptor {
     EncryptedField encrypt(String plaintext);
 
     String decrypt(EncryptedField encryptedField);
+
+    EncryptedField encryptBytes(byte[] plaintext);
+
+    byte[] decryptBytes(EncryptedField encryptedField);
 }

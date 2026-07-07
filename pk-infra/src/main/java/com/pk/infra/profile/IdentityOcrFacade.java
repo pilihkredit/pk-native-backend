@@ -6,10 +6,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.credit.port.ProfileVersionRepository;
+import com.pk.core.profile.BiometricImageKind;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileIdentityData;
 import com.pk.core.profile.ocr.OcrSessionState;
 import com.pk.core.profile.port.AdvanceAiOcrPort;
+import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.OcrSessionStore;
 import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
@@ -35,6 +37,7 @@ public class IdentityOcrFacade {
     private final OcrSessionStore ocrSessionStore;
     private final ProfileIdentityRepository profileIdentityRepository;
     private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
+    private final BiometricImageStore biometricImageStore;
     private final ProfileSyncOrchestrator profileSyncOrchestrator;
     private final UserDeviceWriter userDeviceWriter;
     private final ProfileVersionRepository profileVersionRepository;
@@ -49,6 +52,7 @@ public class IdentityOcrFacade {
             OcrSessionStore ocrSessionStore,
             ProfileIdentityRepository profileIdentityRepository,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
+            BiometricImageStore biometricImageStore,
             ProfileSyncOrchestrator profileSyncOrchestrator,
             UserDeviceWriter userDeviceWriter,
             ProfileVersionRepository profileVersionRepository,
@@ -62,6 +66,7 @@ public class IdentityOcrFacade {
         this.ocrSessionStore = ocrSessionStore;
         this.profileIdentityRepository = profileIdentityRepository;
         this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
+        this.biometricImageStore = biometricImageStore;
         this.profileSyncOrchestrator = profileSyncOrchestrator;
         this.userDeviceWriter = userDeviceWriter;
         this.profileVersionRepository = profileVersionRepository;
@@ -96,6 +101,7 @@ public class IdentityOcrFacade {
             throw new ApiException(ApiCode.OCR_NO_RESULT);
         }
         String rawJson = ocrResponseJson;
+        String idCardImageEncryptedRef = biometricImageStore.store(profileId, BiometricImageKind.ID_CARD, imageBytes);
         OcrSessionState current = ocrSessionStore.find(profileId).orElse(emptySession());
         ocrSessionStore.save(profileId, new OcrSessionState(
                 current.licenseObtained(),
@@ -104,7 +110,7 @@ public class IdentityOcrFacade {
                 current.livenessScore(),
                 rawJson,
                 parsed,
-                OcrImageSupport.stripDataUriPrefix(imageBase64),
+                idCardImageEncryptedRef,
                 Instant.now()
         ));
         return toOcrCheckResult(parsed);
@@ -131,7 +137,7 @@ public class IdentityOcrFacade {
                 result.livenessScore(),
                 current.ocrRawJson(),
                 current.parsed(),
-                current.idCardImageBase64(),
+                current.idCardImageEncryptedRef(),
                 Instant.now()
         ));
         return new LivenessCheckResult(result.livenessScore(), true, ocrProperties.livenessThreshold());
@@ -174,13 +180,18 @@ public class IdentityOcrFacade {
         }
 
         byte[] faceImage = OcrImageSupport.decodeBase64Image(command.faceImageBase64(), ocrProperties.maxImageBytes());
-        String idCardBase64 = command.idCardImageBase64() == null || command.idCardImageBase64().isBlank()
-                ? session.idCardImageBase64()
-                : OcrImageSupport.stripDataUriPrefix(command.idCardImageBase64());
-        if (isBlank(idCardBase64)) {
-            throw new ApiException(ApiCode.OCR_SESSION_INVALID);
+        String idCardImageEncryptedRef;
+        byte[] idCardImage;
+        if (!isBlank(command.idCardImageBase64())) {
+            idCardImage = OcrImageSupport.decodeBase64Image(command.idCardImageBase64(), ocrProperties.maxImageBytes());
+            idCardImageEncryptedRef = biometricImageStore.store(profileId, BiometricImageKind.ID_CARD, idCardImage);
+        } else {
+            idCardImageEncryptedRef = session.idCardImageEncryptedRef();
+            if (isBlank(idCardImageEncryptedRef)) {
+                throw new ApiException(ApiCode.OCR_SESSION_INVALID);
+            }
+            idCardImage = biometricImageStore.load(idCardImageEncryptedRef);
         }
-        byte[] idCardImage = OcrImageSupport.decodeBase64Image(idCardBase64, ocrProperties.maxImageBytes());
 
         AdvanceAiOcrPort.FaceCompareResult compareResult = advanceAiOcrPort.compareFaces(idCardImage, faceImage);
         boolean passed = compareResult.similarity() >= ocrProperties.faceThreshold();
@@ -188,7 +199,9 @@ public class IdentityOcrFacade {
             throw new ApiException(ApiCode.OCR_FACE_RECOGNITION_FAILED);
         }
 
-        String faceBase64 = OcrImageSupport.stripDataUriPrefix(command.faceImageBase64());
+        String faceImageEncryptedRef = biometricImageStore.store(profileId, BiometricImageKind.FACE, faceImage);
+        String faceBase64 = OcrImageSupport.encodeBase64(faceImage);
+        String idCardBase64 = OcrImageSupport.encodeBase64(idCardImage);
         ProfileSyncPayload.IdentityProfilePayload payload = buildIdentityPayload(parsed, session, faceBase64, idCardBase64);
 
         EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(parsed.ocrIdNo().trim());
@@ -203,7 +216,15 @@ public class IdentityOcrFacade {
                 null,
                 null
         ));
-        persistIdentityAsset(profileId, normalizedMobileNo, parsed, session, encryptedIdNo);
+        persistIdentityAsset(
+                profileId,
+                normalizedMobileNo,
+                parsed,
+                session,
+                encryptedIdNo,
+                idCardImageEncryptedRef,
+                faceImageEncryptedRef
+        );
         userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
 
         var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
@@ -374,9 +395,9 @@ public class IdentityOcrFacade {
                 encryptedIdNo.nonce(),
                 encryptedIdNo.tag(),
                 ocrName,
-                "dev://id-card/" + profileId,
-                "dev://face/" + profileId,
-                "pk-field-encryption-key",
+                storeDevImage(profileId, BiometricImageKind.ID_CARD, command.idCardBase64()),
+                storeDevImage(profileId, BiometricImageKind.FACE, command.faceBase64()),
+                biometricImageStore.encryptionKeyRef(),
                 OCR_CHANNEL,
                 ocrResultJson
         ));
@@ -473,7 +494,9 @@ public class IdentityOcrFacade {
             String mobileNo,
             OcrSessionState.OcrParsedFields parsed,
             OcrSessionState session,
-            EncryptedField encryptedIdNo
+            EncryptedField encryptedIdNo,
+            String idCardImageEncryptedRef,
+            String facePhotoImageEncryptedRef
     ) {
         long profileVersionId = profileVersionRepository.createSnapshot(
                 profileId,
@@ -491,19 +514,26 @@ public class IdentityOcrFacade {
                 encryptedIdNo.nonce(),
                 encryptedIdNo.tag(),
                 parsed.ocrName().trim(),
-                "session://id-card/" + profileId,
-                "session://face/" + profileId,
-                "pk-field-encryption-key",
+                idCardImageEncryptedRef,
+                facePhotoImageEncryptedRef,
+                biometricImageStore.encryptionKeyRef(),
                 OCR_CHANNEL,
                 ocrResultJson
         ));
+    }
+
+    private String storeDevImage(long profileId, BiometricImageKind kind, String imageBase64) {
+        if (isBlank(imageBase64)) {
+            return "missing://profile/" + profileId + "/" + kind.objectName();
+        }
+        byte[] imageBytes = OcrImageSupport.decodeBase64Image(imageBase64, ocrProperties.maxImageBytes());
+        return biometricImageStore.store(profileId, kind, imageBytes);
     }
 
     private String buildOcrResultJson(OcrSessionState.OcrParsedFields parsed, String rawOcrDetail) {
         try {
             ObjectNode node = objectMapper.createObjectNode();
             putIfPresent(node, "ocrName", parsed.ocrName());
-            putIfPresent(node, "ocrIdNo", parsed.ocrIdNo());
             putIfPresent(node, "gender", parsed.gender());
             putIfPresent(node, "religion", parsed.religion());
             putIfPresent(node, "maritalStatus", parsed.maritalStatus());

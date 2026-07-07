@@ -27,12 +27,17 @@ public class AesGcmSensitiveFieldEncryptor implements SensitiveFieldEncryptor {
 
     @Override
     public EncryptedField encrypt(String plaintext) {
+        return encryptBytes(plaintext.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public EncryptedField encryptBytes(byte[] plaintext) {
         try {
             byte[] nonce = new byte[NONCE_BYTES];
             secureRandom.nextBytes(nonce);
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(GCM_TAG_BITS, nonce));
-            byte[] ciphertext = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
+            byte[] ciphertext = cipher.doFinal(plaintext);
             int tagOffset = ciphertext.length - 16;
             byte[] body = new byte[tagOffset];
             byte[] tag = new byte[16];
@@ -46,6 +51,11 @@ public class AesGcmSensitiveFieldEncryptor implements SensitiveFieldEncryptor {
 
     @Override
     public String decrypt(EncryptedField encryptedField) {
+        return new String(decryptBytes(encryptedField), StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public byte[] decryptBytes(EncryptedField encryptedField) {
         try {
             byte[] body = Base64.getDecoder().decode(encryptedField.ciphertextBase64());
             byte[] combined = new byte[body.length + encryptedField.tag().length];
@@ -53,8 +63,7 @@ public class AesGcmSensitiveFieldEncryptor implements SensitiveFieldEncryptor {
             System.arraycopy(encryptedField.tag(), 0, combined, body.length, encryptedField.tag().length);
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(GCM_TAG_BITS, encryptedField.nonce()));
-            byte[] plaintext = cipher.doFinal(combined);
-            return new String(plaintext, StandardCharsets.UTF_8);
+            return cipher.doFinal(combined);
         } catch (GeneralSecurityException exception) {
             throw new IllegalStateException("Failed to decrypt sensitive field", exception);
         }

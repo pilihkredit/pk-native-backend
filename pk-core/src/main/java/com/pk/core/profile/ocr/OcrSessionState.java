@@ -9,7 +9,7 @@ public record OcrSessionState(
         Integer livenessScore,
         String ocrRawJson,
         OcrParsedFields parsed,
-        String idCardImageBase64,
+        String idCardImageEncryptedRef,
         Instant updatedAt
 ) {
     public record OcrParsedFields(

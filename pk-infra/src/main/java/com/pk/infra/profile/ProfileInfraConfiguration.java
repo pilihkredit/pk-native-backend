@@ -13,7 +13,10 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties({ProfileProperties.class, ProfileSyncProperties.class})
-@org.springframework.context.annotation.Import(com.pk.infra.ocr.OcrInfraConfiguration.class)
+@org.springframework.context.annotation.Import({
+        com.pk.infra.ocr.OcrInfraConfiguration.class,
+        com.pk.infra.biometric.BiometricStorageConfiguration.class
+})
 public class ProfileInfraConfiguration {
     @Bean
     ProfileEnumCatalog profileEnumCatalog() {
@@ -131,6 +134,7 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.OcrSessionStore ocrSessionStore,
             com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
+            com.pk.core.profile.port.BiometricImageStore biometricImageStore,
             ProfileSyncOrchestrator profileSyncOrchestrator,
             UserDeviceWriter userDeviceWriter,
             com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
@@ -145,6 +149,7 @@ public class ProfileInfraConfiguration {
                 ocrSessionStore,
                 profileIdentityRepository,
                 sensitiveFieldEncryptor,
+                biometricImageStore,
                 profileSyncOrchestrator,
                 userDeviceWriter,
                 profileVersionRepository,
