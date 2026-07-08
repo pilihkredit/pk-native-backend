@@ -2,8 +2,6 @@ package com.pk.app.tracking.application;
 
 import com.pk.app.tracking.dto.request.TrackingEventsRequest;
 import com.pk.app.tracking.dto.response.TrackingEventsResponse;
-import com.pk.core.api.ApiCode;
-import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.infra.tracking.TrackingFacade;
 import java.util.List;
@@ -23,9 +21,8 @@ public class TrackingApplicationService {
             String clientIp,
             TrackingEventsRequest request
     ) {
-        if (principal == null) {
-            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
-        }
+        Long profileId = principal == null ? null : principal.profileId();
+        String partnerUserId = principal == null ? null : principal.partnerUserId();
         List<TrackingFacade.TrackingEventCommand> commands = request.events().stream()
                 .map(item -> new TrackingFacade.TrackingEventCommand(
                         item.eventId(),
@@ -52,8 +49,8 @@ public class TrackingApplicationService {
                 ))
                 .toList();
         TrackingFacade.IngestResult result = trackingFacade.ingest(
-                principal.profileId(),
-                principal.partnerUserId(),
+                profileId,
+                partnerUserId,
                 deviceNo,
                 clientIp,
                 commands

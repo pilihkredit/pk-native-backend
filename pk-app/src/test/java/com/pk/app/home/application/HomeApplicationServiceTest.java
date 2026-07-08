@@ -43,7 +43,8 @@ class HomeApplicationServiceTest {
                         22,
                         null,
                         0,
-                        1780300800000L
+                        1780300800000L,
+                        true
                 ));
 
         var response = service.getSummary(
@@ -53,6 +54,7 @@ class HomeApplicationServiceTest {
         );
 
         assertThat(response.partnerUserId()).isEqualTo("U10001");
+        assertThat(response.autoCredit()).isTrue();
         verify(userDeviceWriter).upsertFromRequest(
                 eq(10L),
                 eq("U10001"),

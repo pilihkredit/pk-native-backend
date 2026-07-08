@@ -15,6 +15,8 @@
             <arg column="freeze_end_time" javaType="java.lang.Long"/>
             <arg column="on_loan_count" javaType="java.lang.Integer"/>
             <arg column="credit_contract_expire_time" javaType="java.lang.Long"/>
+            <arg column="auto_credit" javaType="java.lang.Boolean"
+                 typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
             <arg column="last_lender_request_json" javaType="string"/>
             <arg column="last_lender_response_json" javaType="string"/>
             <arg column="queried_at" javaType="java.time.Instant"
@@ -33,6 +35,7 @@
             freeze_end_time,
             on_loan_count,
             credit_contract_expire_time,
+            auto_credit,
             last_lender_request_json,
             last_lender_response_json,
             queried_at
@@ -46,6 +49,7 @@
             #{freezeEndTime},
             #{onLoanCount},
             #{creditContractExpireTime},
+            #{autoCredit, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
             #{lastLenderRequestJson},
             #{lastLenderResponseJson},
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
@@ -59,6 +63,7 @@
             freeze_end_time = VALUES(freeze_end_time),
             on_loan_count = VALUES(on_loan_count),
             credit_contract_expire_time = VALUES(credit_contract_expire_time),
+            auto_credit = VALUES(auto_credit),
             last_lender_request_json = VALUES(last_lender_request_json),
             last_lender_response_json = VALUES(last_lender_response_json),
             queried_at = VALUES(queried_at)
@@ -68,7 +73,7 @@
         SELECT profile_id, mobile_no, partner_user_id, lender_user_id,
                user_loan_life_time_status, user_loan_life_time_last_action,
                freeze_end_time, on_loan_count, credit_contract_expire_time,
-               last_lender_request_json, last_lender_response_json, queried_at
+               auto_credit, last_lender_request_json, last_lender_response_json, queried_at
         FROM user_lender_status_query
         WHERE profile_id = #{profileId}
     </select>

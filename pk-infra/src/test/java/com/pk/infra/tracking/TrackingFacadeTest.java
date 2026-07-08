@@ -76,6 +76,23 @@ class TrackingFacadeTest {
     }
 
     @Test
+    void acceptsEventsWithoutAuthenticatedUser() {
+        TrackingFacade.IngestResult result = facade.ingest(
+                null,
+                null,
+                "device-1",
+                "192.168.1.10",
+                List.of(validEvent("EVT-ANON-1"))
+        );
+
+        assertThat(result.acceptedCount()).isEqualTo(1);
+        assertThat(lenderTrackingPort.submitted).hasSize(1);
+        assertThat(lenderTrackingPort.submitted.getFirst().uid()).isEmpty();
+        assertThat(repository.inserted.getFirst().profileId()).isNull();
+        assertThat(repository.inserted.getFirst().partnerUserId()).isNull();
+    }
+
+    @Test
     void rejectsEmptyOrOversizedBatch() {
         assertThatThrownBy(() -> facade.ingest(1L, "partner", "device", "192.168.1.10", List.of()))
                 .isInstanceOf(ApiException.class)

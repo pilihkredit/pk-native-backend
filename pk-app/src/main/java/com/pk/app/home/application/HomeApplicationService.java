@@ -78,7 +78,8 @@ public class HomeApplicationService {
                 result.userLoanLifeTimeLastAction(),
                 result.freezeEndTime(),
                 result.onLoanCount(),
-                result.creditContractExpireTime()
+                result.creditContractExpireTime(),
+                result.autoCredit()
         );
     }
 }

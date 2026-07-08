@@ -1,6 +1,7 @@
 package com.pk.infra.callback;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.callback.port.CallbackEventRepository;
 import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.callback.port.LoanCallbackParser;
@@ -116,11 +117,13 @@ public class CallbackInfraConfiguration {
     @Bean
     ServerEventCallbackIntakeFacade serverEventCallbackIntakeFacade(
             CallbackEventRepository callbackEventRepository,
-            ServerEventCallbackParser serverEventCallbackParser
+            ServerEventCallbackParser serverEventCallbackParser,
+            AppsFlyerS2sReporter appsFlyerS2sReporter
     ) {
         return new ServerEventCallbackIntakeFacade(
                 callbackEventRepository,
-                serverEventCallbackParser
+                serverEventCallbackParser,
+                appsFlyerS2sReporter
         );
     }
 }

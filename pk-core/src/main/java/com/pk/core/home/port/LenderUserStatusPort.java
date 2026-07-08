@@ -19,6 +19,7 @@ public interface LenderUserStatusPort {
             Long freezeEndTime,
             Integer onLoanCount,
             Long creditContractExpireTime,
+            Boolean autoCredit,
             String requestJson,
             String responseDataJson
     ) {

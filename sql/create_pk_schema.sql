@@ -255,6 +255,7 @@ CREATE TABLE user_lender_status_query (
     freeze_end_time BIGINT NULL COMMENT 'Lender freeze end time in epoch milliseconds',
     on_loan_count INT NULL COMMENT 'Active on-loan bill count from lender',
     credit_contract_expire_time BIGINT NULL COMMENT 'Credit contract expire time in epoch milliseconds',
+    auto_credit TINYINT(1) NULL COMMENT 'Whether lender recommends automatic credit application',
     last_lender_request_json JSON NULL COMMENT 'Last lender user status request JSON',
     last_lender_response_json JSON NULL COMMENT 'Last lender user status response JSON',
     queried_at DATETIME(3) NOT NULL COMMENT 'Last lender user status query time',

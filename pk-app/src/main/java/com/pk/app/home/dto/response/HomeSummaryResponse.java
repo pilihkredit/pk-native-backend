@@ -10,6 +10,7 @@ public record HomeSummaryResponse(
         Integer userLoanLifeTimeLastAction,
         Long freezeEndTime,
         Integer onLoanCount,
-        Long creditContractExpireTime
+        Long creditContractExpireTime,
+        Boolean autoCredit
 ) {
 }

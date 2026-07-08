@@ -44,6 +44,7 @@ class HomeSummaryFacadeTest {
                         null,
                         0,
                         1780300800000L,
+                        true,
                         "{\"partnerUserId\":\"U10001\"}",
                         "{\"userId\":\"USR-1\"}"
                 )
@@ -57,6 +58,7 @@ class HomeSummaryFacadeTest {
         assertThat(result.userLoanLifeTimeLastAction()).isEqualTo(22);
         assertThat(result.onLoanCount()).isZero();
         assertThat(result.creditContractExpireTime()).isEqualTo(1780300800000L);
+        assertThat(result.autoCredit()).isTrue();
         verify(userLenderStatusQueryRepository).upsert(any());
     }
 

@@ -35,6 +35,7 @@ public class PendanaanUserStatusAdapter implements LenderUserStatusPort {
                 longOrNull(data.get("freezeEndTime")),
                 intOrNull(data.get("onLoanCount")),
                 longOrNull(data.get("creditContractExpireTime")),
+                booleanOrNull(data.get("autoCredit")),
                 requestBody,
                 serializeResponseData(data)
         );
@@ -71,5 +72,12 @@ public class PendanaanUserStatusAdapter implements LenderUserStatusPort {
             return null;
         }
         return node.asLong();
+    }
+
+    private static Boolean booleanOrNull(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        return node.asBoolean();
     }
 }

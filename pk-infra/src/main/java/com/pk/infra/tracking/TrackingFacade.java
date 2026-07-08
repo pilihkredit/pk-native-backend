@@ -39,7 +39,7 @@ public class TrackingFacade {
     }
 
     public IngestResult ingest(
-            long profileId,
+            Long profileId,
             String partnerUserId,
             String deviceNo,
             String clientIp,
@@ -142,7 +142,7 @@ public class TrackingFacade {
 
     private TrackingEventRepository.TrackingEventInsert toInsert(
             TrackingEventCommand event,
-            long profileId,
+            Long profileId,
             String partnerUserId,
             String deviceNo
     ) {

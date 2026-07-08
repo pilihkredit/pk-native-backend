@@ -2,9 +2,12 @@ package com.pk.infra.callback;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.callback.CallbackProcessStatus;
 import com.pk.core.callback.CallbackTypes;
 import com.pk.core.callback.port.CallbackEventRepository;
@@ -25,12 +28,18 @@ class ServerEventCallbackIntakeFacadeTest {
     private CallbackEventRepository callbackEventRepository;
     @Mock
     private ServerEventCallbackParser serverEventCallbackParser;
+    @Mock
+    private AppsFlyerS2sReporter appsFlyerS2sReporter;
 
     private ServerEventCallbackIntakeFacade facade;
 
     @BeforeEach
     void setUp() {
-        facade = new ServerEventCallbackIntakeFacade(callbackEventRepository, serverEventCallbackParser);
+        facade = new ServerEventCallbackIntakeFacade(
+                callbackEventRepository,
+                serverEventCallbackParser,
+                appsFlyerS2sReporter
+        );
     }
 
     @Test
@@ -38,6 +47,8 @@ class ServerEventCallbackIntakeFacadeTest {
         when(serverEventCallbackParser.parse("{}")).thenReturn(parsedEvent());
         when(callbackEventRepository.findByIdempotencyKey(any())).thenReturn(Optional.empty());
         when(callbackEventRepository.insert(any())).thenReturn(42L);
+        when(appsFlyerS2sReporter.report(any(Long.class), any()))
+                .thenReturn(AppsFlyerS2sReporter.ReportResult.recorded(9L, "OK"));
 
         ServerEventCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
 
@@ -54,6 +65,7 @@ class ServerEventCallbackIntakeFacadeTest {
         assertThat(captor.getValue().externalStatus()).isEqualTo("BASIC_AUTH_FINISH");
         assertThat(captor.getValue().payloadJson()).isEqualTo("{}");
         assertThat(captor.getValue().processStatus()).isEqualTo(CallbackProcessStatus.PROCESSED);
+        verify(appsFlyerS2sReporter).report(eq(42L), any());
     }
 
     @Test
@@ -65,6 +77,7 @@ class ServerEventCallbackIntakeFacadeTest {
 
         assertThat(result.callbackEventId()).isEqualTo(7L);
         assertThat(result.duplicate()).isTrue();
+        verifyNoInteractions(appsFlyerS2sReporter);
     }
 
     private static ServerEventCallbackParser.ParsedServerEventCallback parsedEvent() {

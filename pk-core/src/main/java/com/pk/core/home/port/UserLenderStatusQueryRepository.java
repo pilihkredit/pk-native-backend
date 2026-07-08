@@ -18,6 +18,7 @@ public interface UserLenderStatusQueryRepository {
             Long freezeEndTime,
             Integer onLoanCount,
             Long creditContractExpireTime,
+            Boolean autoCredit,
             String lastLenderRequestJson,
             String lastLenderResponseJson,
             Instant queriedAt

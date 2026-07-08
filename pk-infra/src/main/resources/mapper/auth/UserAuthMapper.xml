@@ -28,6 +28,14 @@
         LIMIT 1
     </select>
 
+    <select id="findByPartnerUserId" resultMap="userProfileSummaryMap">
+        SELECT id, partner_user_id, mobile_no, 0 AS newly_created
+        FROM user_profile
+        WHERE partner_user_id = #{partnerUserId}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
     <insert id="insertProfile">
         INSERT INTO user_profile (
             partner_user_id,

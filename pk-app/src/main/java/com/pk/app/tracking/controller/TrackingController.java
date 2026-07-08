@@ -6,9 +6,8 @@ import com.pk.app.security.SecurityContextSupport;
 import com.pk.app.tracking.application.TrackingApplicationService;
 import com.pk.app.tracking.dto.request.TrackingEventsRequest;
 import com.pk.app.tracking.dto.response.TrackingEventsResponse;
-import com.pk.core.api.ApiCode;
-import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
+import com.pk.core.auth.PublicApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@PublicApi
 @RestController
 @RequestMapping("/tracking")
 public class TrackingController {
@@ -33,9 +33,6 @@ public class TrackingController {
             HttpServletRequest httpRequest
     ) {
         AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
-        if (principal == null) {
-            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
-        }
         return ApiResponse.success(
                 trackingApplicationService.ingest(principal, deviceNo, resolveClientIp(httpRequest), request),
                 RequestTrace.resolveTraceId(httpRequest)

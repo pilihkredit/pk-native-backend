@@ -11,6 +11,8 @@ public interface UserAuthMapper {
 
     UserProfileSummary findByProfileId(@Param("profileId") long profileId);
 
+    UserProfileSummary findByPartnerUserId(@Param("partnerUserId") String partnerUserId);
+
     int insertProfile(
             @Param("partnerUserId") String partnerUserId,
             @Param("mobileNo") String mobileNo

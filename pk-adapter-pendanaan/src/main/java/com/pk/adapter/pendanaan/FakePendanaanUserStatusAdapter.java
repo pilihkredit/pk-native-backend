@@ -13,6 +13,7 @@ public class FakePendanaanUserStatusAdapter implements LenderUserStatusPort {
                 null,
                 0,
                 null,
+                false,
                 null,
                 null
         );

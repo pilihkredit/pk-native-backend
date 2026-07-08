@@ -43,6 +43,7 @@ public class HomeSummaryFacade {
                 lenderStatus.freezeEndTime(),
                 lenderStatus.onLoanCount(),
                 lenderStatus.creditContractExpireTime(),
+                lenderStatus.autoCredit(),
                 lenderStatus.requestJson(),
                 lenderStatus.responseDataJson(),
                 queriedAt
@@ -54,7 +55,8 @@ public class HomeSummaryFacade {
                 lenderStatus.userLoanLifeTimeLastAction(),
                 lenderStatus.freezeEndTime(),
                 lenderStatus.onLoanCount(),
-                lenderStatus.creditContractExpireTime()
+                lenderStatus.creditContractExpireTime(),
+                lenderStatus.autoCredit()
         );
     }
 
@@ -83,7 +85,8 @@ public class HomeSummaryFacade {
             Integer userLoanLifeTimeLastAction,
             Long freezeEndTime,
             Integer onLoanCount,
-            Long creditContractExpireTime
+            Long creditContractExpireTime,
+            Boolean autoCredit
     ) {
     }
 }

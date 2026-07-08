@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS user_lender_status_query (
     freeze_end_time BIGINT NULL COMMENT 'Lender freeze end time in epoch milliseconds',
     on_loan_count INT NULL COMMENT 'Active on-loan bill count from lender',
     credit_contract_expire_time BIGINT NULL COMMENT 'Credit contract expire time in epoch milliseconds',
+    auto_credit TINYINT(1) NULL COMMENT 'Whether lender recommends automatic credit application',
     last_lender_request_json JSON NULL COMMENT 'Last lender user status request JSON',
     last_lender_response_json JSON NULL COMMENT 'Last lender user status response JSON',
     queried_at DATETIME(3) NOT NULL COMMENT 'Last lender user status query time',
@@ -22,3 +23,20 @@ CREATE TABLE IF NOT EXISTS user_lender_status_query (
     KEY idx_user_lender_status_query_partner_user (partner_user_id),
     KEY idx_user_lender_status_query_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest lender user status query results';
+
+SET @schema_name = DATABASE();
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'user_lender_status_query'
+      AND COLUMN_NAME = 'auto_credit'
+);
+SET @ddl = IF(
+    @column_exists = 0,
+    'ALTER TABLE user_lender_status_query ADD COLUMN auto_credit TINYINT(1) NULL COMMENT ''Whether lender recommends automatic credit application'' AFTER credit_contract_expire_time',
+    'SELECT ''skip: user_lender_status_query.auto_credit exists'' AS migration_info'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
