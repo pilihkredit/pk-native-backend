@@ -8,7 +8,6 @@ public interface AdjustEventConfigRepository {
     record AdjustEventConfigData(
             long id,
             String eventName,
-            String eventToken,
             String appToken,
             boolean enabled
     ) {

@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.attribution.port.AdjustConfigRepository;
 import com.pk.core.attribution.port.AdjustEventConfigRepository;
 import com.pk.core.attribution.port.AdjustEventRecordRepository;
-import com.pk.core.attribution.port.AppConfRepository;
 import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.callback.port.ServerEventCallbackParser;
 import com.pk.core.profile.ProfileDeviceData;
@@ -25,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 class AppsFlyerS2sReporterImplTest {
-    private AppConfRepository appConfRepository;
     private AdjustConfigRepository adjustConfigRepository;
     private AdjustEventConfigRepository adjustEventConfigRepository;
     private AdjustEventRecordRepository adjustEventRecordRepository;
@@ -34,13 +32,11 @@ class AppsFlyerS2sReporterImplTest {
 
     @BeforeEach
     void setUp() {
-        appConfRepository = mock(AppConfRepository.class);
         adjustConfigRepository = mock(AdjustConfigRepository.class);
         adjustEventConfigRepository = mock(AdjustEventConfigRepository.class);
         adjustEventRecordRepository = mock(AdjustEventRecordRepository.class);
         profileDeviceRepository = mock(ProfileDeviceRepository.class);
         reporter = new AppsFlyerS2sReporterImpl(
-                appConfRepository,
                 adjustConfigRepository,
                 adjustEventConfigRepository,
                 adjustEventRecordRepository,
@@ -51,8 +47,6 @@ class AppsFlyerS2sReporterImplTest {
 
     @Test
     void skipsWhenEventNotEnabled() {
-        when(appConfRepository.findConfigValue("reportEvent"))
-                .thenReturn(Optional.of("{\"reportSource\":\"af\"}"));
         when(adjustConfigRepository.findActiveByOsName("Android"))
                 .thenReturn(Optional.of(new AdjustConfigRepository.AdjustConfigData(
                         1L, "app-id", "dev-key", "https://api2.appsflyer.com/inappevent/app-id", 30000, "Android"
@@ -69,15 +63,13 @@ class AppsFlyerS2sReporterImplTest {
 
     @Test
     void insertsPendingRecordUsingDeviceAppsflyerId() {
-        when(appConfRepository.findConfigValue("reportEvent"))
-                .thenReturn(Optional.of("{\"reportSource\":\"af\"}"));
         when(adjustConfigRepository.findActiveByOsName("Android"))
                 .thenReturn(Optional.of(new AdjustConfigRepository.AdjustConfigData(
                         1L, "app-id", "dev-key", "https://example.invalid/inappevent/app-id", 1000, "Android"
                 )));
         when(adjustEventConfigRepository.findEnabledByEventNameAndAppToken("BASIC_AUTH_FINISH", "app-id"))
                 .thenReturn(Optional.of(new AdjustEventConfigRepository.AdjustEventConfigData(
-                        2L, "BASIC_AUTH_FINISH", "token-1", "app-id", true
+                        2L, "BASIC_AUTH_FINISH", "app-id", true
                 )));
         when(profileDeviceRepository.findByDeviceNo("DEVICE202506020001"))
                 .thenReturn(Optional.of(new ProfileDeviceData(

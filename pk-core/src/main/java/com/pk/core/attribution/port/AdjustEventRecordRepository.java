@@ -11,7 +11,6 @@ public interface AdjustEventRecordRepository {
             Long profileId,
             String deviceUuid,
             String eventName,
-            String eventToken,
             String appToken,
             String idfa,
             String idfv,

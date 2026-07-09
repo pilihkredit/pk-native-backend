@@ -5,14 +5,13 @@
         <constructor>
             <arg column="id" javaType="_long"/>
             <arg column="event_name" javaType="string"/>
-            <arg column="event_token" javaType="string"/>
             <arg column="app_token" javaType="string"/>
             <arg column="is_enabled" javaType="_boolean"/>
         </constructor>
     </resultMap>
 
     <select id="findEnabledByEventNameAndAppToken" resultMap="adjustEventConfigMap">
-        SELECT id, event_name, event_token, app_token, is_enabled
+        SELECT id, event_name, app_token, is_enabled
         FROM adjust_event_config
         WHERE event_name = #{eventName}
           AND app_token = #{appToken}

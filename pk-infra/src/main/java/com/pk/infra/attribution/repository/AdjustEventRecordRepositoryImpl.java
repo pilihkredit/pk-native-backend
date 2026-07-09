@@ -20,7 +20,6 @@ public class AdjustEventRecordRepositoryImpl implements AdjustEventRecordReposit
                 record.profileId(),
                 record.deviceUuid(),
                 record.eventName(),
-                record.eventToken(),
                 record.appToken(),
                 record.idfa(),
                 record.idfv(),

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.attribution.port.AdjustConfigRepository;
 import com.pk.core.attribution.port.AdjustEventConfigRepository;
 import com.pk.core.attribution.port.AdjustEventRecordRepository;
-import com.pk.core.attribution.port.AppConfRepository;
 import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.callback.port.ServerEventCallbackParser;
 import com.pk.core.profile.ProfileDeviceData;
@@ -34,7 +33,6 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
     private static final int STATUS_SUCCESS = 1;
     private static final int STATUS_FAILED = 2;
 
-    private final AppConfRepository appConfRepository;
     private final AdjustConfigRepository adjustConfigRepository;
     private final AdjustEventConfigRepository adjustEventConfigRepository;
     private final AdjustEventRecordRepository adjustEventRecordRepository;
@@ -43,14 +41,12 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
     private final HttpClient httpClient;
 
     public AppsFlyerS2sReporterImpl(
-            AppConfRepository appConfRepository,
             AdjustConfigRepository adjustConfigRepository,
             AdjustEventConfigRepository adjustEventConfigRepository,
             AdjustEventRecordRepository adjustEventRecordRepository,
             ProfileDeviceRepository profileDeviceRepository,
             ObjectMapper objectMapper
     ) {
-        this.appConfRepository = appConfRepository;
         this.adjustConfigRepository = adjustConfigRepository;
         this.adjustEventConfigRepository = adjustEventConfigRepository;
         this.adjustEventRecordRepository = adjustEventRecordRepository;
@@ -61,9 +57,6 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
 
     @Override
     public ReportResult report(long callbackEventId, ServerEventCallbackParser.ParsedServerEventCallback event) {
-        if (!isAfReportSource()) {
-            return ReportResult.skipped("reportSource is not af");
-        }
         String osName = normalizeOsName(event.systemPlatform());
         Optional<AdjustConfigRepository.AdjustConfigData> configOpt = adjustConfigRepository.findActiveByOsName(osName);
         if (configOpt.isEmpty()) {
@@ -75,7 +68,6 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
         if (eventConfigOpt.isEmpty()) {
             return ReportResult.skipped("event disabled or missing: " + event.eventType());
         }
-        AdjustEventConfigRepository.AdjustEventConfigData eventConfig = eventConfigOpt.get();
 
         DeviceIds deviceIds = resolveDeviceIds(event);
         if (isBlank(deviceIds.appsflyerId())) {
@@ -89,7 +81,6 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
                 resolveProfileId(event.deviceNo()),
                 event.deviceNo(),
                 event.eventType(),
-                eventConfig.eventToken(),
                 config.appToken(),
                 deviceIds.idfa(),
                 deviceIds.idfv(),
@@ -165,20 +156,6 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
         }
     }
 
-    private boolean isAfReportSource() {
-        return appConfRepository.findConfigValue("reportEvent")
-                .map(value -> {
-                    try {
-                        JsonNode root = objectMapper.readTree(value);
-                        String source = root.path("reportSource").asText("af");
-                        return "af".equalsIgnoreCase(source);
-                    } catch (Exception exception) {
-                        return true;
-                    }
-                })
-                .orElse(true);
-    }
-
     private DeviceIds resolveDeviceIds(ServerEventCallbackParser.ParsedServerEventCallback event) {
         String appsflyerId = null;
         String idfa = null;
@@ -200,7 +177,6 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
                 }
             }
         }
-        // Lender event push does not include appsflyer_id. Prefer device JSON, then advertise id.
         if (isBlank(appsflyerId)) {
             appsflyerId = firstNonBlank(event.adId(), gpsAdid);
         }

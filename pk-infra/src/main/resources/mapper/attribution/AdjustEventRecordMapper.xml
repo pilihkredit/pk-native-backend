@@ -3,10 +3,10 @@
 <mapper namespace="com.pk.infra.attribution.mapper.AdjustEventRecordMapper">
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO adjust_event_record (
-            callback_event_id, partner_user_id, profile_id, device_uuid, event_name, event_token, app_token,
+            callback_event_id, partner_user_id, profile_id, device_uuid, event_name, app_token,
             idfa, idfv, gps_adid, adid, event_timestamp, status, retry_count, extra_params
         ) VALUES (
-            #{callbackEventId}, #{partnerUserId}, #{profileId}, #{deviceUuid}, #{eventName}, #{eventToken}, #{appToken},
+            #{callbackEventId}, #{partnerUserId}, #{profileId}, #{deviceUuid}, #{eventName}, #{appToken},
             #{idfa}, #{idfv}, #{gpsAdid}, #{adid}, #{eventTimestamp}, #{status}, #{retryCount}, #{extraParams}
         )
     </insert>

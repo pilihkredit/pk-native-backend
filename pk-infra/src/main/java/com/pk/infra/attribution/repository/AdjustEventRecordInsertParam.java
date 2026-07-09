@@ -7,7 +7,6 @@ public class AdjustEventRecordInsertParam {
     private Long profileId;
     private String deviceUuid;
     private String eventName;
-    private String eventToken;
     private String appToken;
     private String idfa;
     private String idfv;
@@ -24,7 +23,6 @@ public class AdjustEventRecordInsertParam {
             Long profileId,
             String deviceUuid,
             String eventName,
-            String eventToken,
             String appToken,
             String idfa,
             String idfv,
@@ -40,7 +38,6 @@ public class AdjustEventRecordInsertParam {
         this.profileId = profileId;
         this.deviceUuid = deviceUuid;
         this.eventName = eventName;
-        this.eventToken = eventToken;
         this.appToken = appToken;
         this.idfa = idfa;
         this.idfv = idfv;
@@ -78,10 +75,6 @@ public class AdjustEventRecordInsertParam {
 
     public String getEventName() {
         return eventName;
-    }
-
-    public String getEventToken() {
-        return eventToken;
     }
 
     public String getAppToken() {
