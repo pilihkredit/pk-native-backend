@@ -1,7 +1,7 @@
 package com.pk.core.loan.port;
 
 import com.pk.core.loan.LenderTrialTerm;
-import java.math.BigDecimal;
+import com.pk.core.loan.LoanTrialQuoteDetail;
 import java.util.List;
 
 public interface LenderLoanTrialPort {
@@ -9,7 +9,7 @@ public interface LenderLoanTrialPort {
 
     record LenderLoanTrialCommand(
             String applyId,
-            BigDecimal applyAmt,
+            java.math.BigDecimal applyAmt,
             String productCode,
             String repayMethod,
             Long couponId
@@ -17,13 +17,7 @@ public interface LenderLoanTrialPort {
     }
 
     record LenderLoanTrialResult(
-            BigDecimal applyAmt,
-            BigDecimal payAmount,
-            BigDecimal schdAmount,
-            BigDecimal interest,
-            Integer loanTerm,
-            BigDecimal loanPrincipal,
-            Integer totalDays,
+            LoanTrialQuoteDetail quote,
             List<LenderTrialTerm> termInfo,
             String requestJson,
             String rawResponseJson

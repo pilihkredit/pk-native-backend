@@ -3,6 +3,10 @@ package com.pk.adapter.pendanaan;
 import com.pk.core.external.LenderInteractionLog;
 import com.pk.core.external.LenderInteractionContext;
 import com.pk.core.external.port.LenderInteractionLogRepository;
+import com.pk.core.logging.PlatformStructuredLogger;
+import com.pk.core.logging.StructuredLogEntry;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +21,7 @@ final class PendanaanInteractionSupport {
     static void log(
             LenderInteractionLogRepository repository,
             PendanaanProperties.Logging logging,
+            PlatformStructuredLogger structuredLogger,
             String interactionNo,
             String businessType,
             String businessId,
@@ -60,6 +65,26 @@ final class PendanaanInteractionSupport {
                     durationMs,
                     PendanaanHttpSupport.formatLogBody(redactedResponse, logging.maxBodyBytes())
             );
+        }
+        if (structuredLogger != null && !success) {
+            Map<String, Object> extra = new LinkedHashMap<>();
+            extra.put("provider", PROVIDER_CODE);
+            extra.put("interactionNo", interactionNo);
+            extra.put("businessType", businessType);
+            extra.put("businessId", businessId);
+            extra.put("responseMsg", responseMsg);
+            if (logging != null && logging.enabled()) {
+                extra.put("requestBody", PendanaanHttpSupport.formatLogBody(redactedRequest, logging.maxBodyBytes()));
+                extra.put("responseBody", PendanaanHttpSupport.formatLogBody(redactedResponse, logging.maxBodyBytes()));
+            }
+            structuredLogger.log(StructuredLogEntry.builder("ERROR", "Pendanaan")
+                    .uri(endpoint)
+                    .method(method)
+                    .status(httpStatus)
+                    .durationMs((long) durationMs)
+                    .code(responseCode)
+                    .extra(extra)
+                    .build());
         }
         repository.insert(new LenderInteractionLog(
                 PROVIDER_CODE,

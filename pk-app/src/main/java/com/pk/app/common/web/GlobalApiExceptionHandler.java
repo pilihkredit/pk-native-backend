@@ -2,6 +2,7 @@ package com.pk.app.common.web;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.infra.logging.StructuredLogWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ValidationException;
 import org.slf4j.Logger;
@@ -19,21 +20,28 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import jakarta.validation.ConstraintViolationException;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalApiExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
 
+    private final StructuredLogWriter structuredLogWriter;
+
+    public GlobalApiExceptionHandler(StructuredLogWriter structuredLogWriter) {
+        this.structuredLogWriter = structuredLogWriter;
+    }
+
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiResponse<Void>> handleApiException(ApiException exception, HttpServletRequest request) {
         ValidationFailureLogger.logApiException(log, exception, request);
         if (shouldLogApiException(exception)) {
-            log.error(
-                    "API failure traceId={} code={} method={} path={}",
+            structuredLogWriter.logError(
+                    "api.error",
                     RequestTrace.resolveTraceId(request),
-                    exception.apiCode().code(),
-                    request.getMethod(),
                     request.getRequestURI(),
+                    request.getMethod(),
+                    Map.of("code", exception.apiCode().code()),
                     exception
             );
         }
@@ -96,11 +104,12 @@ public class GlobalApiExceptionHandler {
                     request
             );
         }
-        log.error(
-                "Unhandled API exception traceId={} method={} path={}",
+        structuredLogWriter.logError(
+                "api.error",
                 RequestTrace.resolveTraceId(request),
-                request.getMethod(),
                 request.getRequestURI(),
+                request.getMethod(),
+                null,
                 exception
         );
         return failure(

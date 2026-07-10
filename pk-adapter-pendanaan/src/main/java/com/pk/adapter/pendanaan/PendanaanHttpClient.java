@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.external.port.LenderInteractionLogRepository;
+import com.pk.core.logging.PlatformStructuredLogger;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,18 +18,21 @@ public class PendanaanHttpClient {
     private final PendanaanOAuthTokenProvider tokenProvider;
     private final LenderInteractionLogRepository interactionLogRepository;
     private final ObjectMapper objectMapper;
+    private final PlatformStructuredLogger structuredLogger;
     private final HttpClient httpClient;
 
     public PendanaanHttpClient(
             PendanaanProperties properties,
             PendanaanOAuthTokenProvider tokenProvider,
             LenderInteractionLogRepository interactionLogRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            PlatformStructuredLogger structuredLogger
     ) {
         this.properties = properties;
         this.tokenProvider = tokenProvider;
         this.interactionLogRepository = interactionLogRepository;
         this.objectMapper = objectMapper;
+        this.structuredLogger = structuredLogger;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(properties.connectTimeoutMs()))
                 .build();
@@ -168,6 +172,7 @@ public class PendanaanHttpClient {
         PendanaanInteractionSupport.log(
                 interactionLogRepository,
                 properties.logging(),
+                structuredLogger,
                 interactionNo,
                 businessType,
                 businessId,

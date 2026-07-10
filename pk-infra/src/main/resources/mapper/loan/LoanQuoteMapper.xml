@@ -1,20 +1,321 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.loan.mapper.LoanQuoteMapper">
-<resultMap id="quoteMap" type="com.pk.core.loan.port.LoanQuoteRepository$LoanQuoteRecord">
-<constructor><arg column="id" javaType="_long"/><arg column="quote_no" javaType="string"/>
-<arg column="credit_application_id" javaType="_long"/><arg column="mobile_no" javaType="string"/><arg column="product_snapshot_id" javaType="java.lang.Long"/>
-<arg column="product_code" javaType="string"/><arg column="repay_method" javaType="string"/>
-<arg column="apply_amt" javaType="java.math.BigDecimal"/><arg column="loan_principal" javaType="java.math.BigDecimal"/>
-<arg column="pay_amount" javaType="java.math.BigDecimal"/><arg column="schd_amount" javaType="java.math.BigDecimal"/>
-<arg column="interest" javaType="java.math.BigDecimal"/><arg column="total_days" javaType="java.lang.Integer"/>
-<arg column="fee_json" javaType="string"/><arg column="last_lender_request_json" javaType="string"/><arg column="last_lender_response_json" javaType="string"/><arg column="raw_response_json" javaType="string"/>
-<arg column="quoted_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>
+<resultMap id="quoteMap" type="com.pk.infra.loan.repository.LoanQuoteRow">
+<id column="id" property="id"/>
+<result column="quote_no" property="quoteNo"/>
+<result column="credit_application_id" property="creditApplicationId"/>
+<result column="mobile_no" property="mobileNo"/>
+<result column="product_snapshot_id" property="productSnapshotId"/>
+<result column="apply_id" property="applyId"/>
+<result column="credit_apply_no" property="creditApplyNo"/>
+<result column="user_id" property="userId"/>
+<result column="product_code" property="productCode"/>
+<result column="repay_method" property="repayMethod"/>
+<result column="apply_amt" property="applyAmt"/>
+<result column="loan_term" property="loanTerm"/>
+<result column="loan_principal" property="loanPrincipal"/>
+<result column="show_loan_principal" property="showLoanPrincipal"/>
+<result column="pay_amount" property="payAmount"/>
+<result column="hand_fee" property="handFee"/>
+<result column="schd_amount" property="schdAmount"/>
+<result column="should_amount" property="shouldAmount"/>
+<result column="interest" property="interest"/>
+<result column="day_rate" property="dayRate"/>
+<result column="show_day_rate" property="showDayRate"/>
+<result column="total_days" property="totalDays"/>
+<result column="fee1_name" property="fee1Name"/>
+<result column="fee1" property="fee1"/>
+<result column="fee2_name" property="fee2Name"/>
+<result column="fee2" property="fee2"/>
+<result column="fee3_name" property="fee3Name"/>
+<result column="fee3" property="fee3"/>
+<result column="tax" property="tax"/>
+<result column="tax_rate_percent" property="taxRatePercent"/>
+<result column="ppn_amount" property="ppnAmount"/>
+<result column="should_stamp_duty" property="shouldStampDuty"/>
+<result column="should_principal" property="shouldPrincipal"/>
+<result column="should_interest" property="shouldInterest"/>
+<result column="should_fee1" property="shouldFee1"/>
+<result column="should_fee2" property="shouldFee2"/>
+<result column="should_fee3" property="shouldFee3"/>
+<result column="should_fee1_tax" property="shouldFee1Tax"/>
+<result column="should_fee2_tax" property="shouldFee2Tax"/>
+<result column="should_fee3_tax" property="shouldFee3Tax"/>
+<result column="reduction_amount" property="reductionAmount"/>
+<result column="ad_reduction_amt" property="adReductionAmt"/>
+<result column="ad_reduction_ratio" property="adReductionRatio"/>
+<result column="ad_reduction_end_date" property="adReductionEndDate"/>
+<result column="reduction_stamp_duty" property="reductionStampDuty"/>
+<result column="reduction_principal" property="reductionPrincipal"/>
+<result column="reduction_interest" property="reductionInterest"/>
+<result column="reduction_fee1" property="reductionFee1"/>
+<result column="reduction_fee2" property="reductionFee2"/>
+<result column="reduction_fee3" property="reductionFee3"/>
+<result column="reduction_fee1_tax" property="reductionFee1Tax"/>
+<result column="reduction_fee2_tax" property="reductionFee2Tax"/>
+<result column="reduction_fee3_tax" property="reductionFee3Tax"/>
+<result column="after_service_fee_status" property="afterServiceFeeStatus"/>
+<result column="fee_prepay_type" property="feePrepayType"/>
+<result column="lending_date" property="lendingDate"/>
+<result column="first_repay_date" property="firstRepayDate"/>
+<result column="last_repay_date" property="lastRepayDate"/>
+<result column="uneven_bills_flag" property="unevenBillsFlag"/>
+<result column="last_lender_request_json" property="lastLenderRequestJson"/>
+<result column="last_lender_response_json" property="lastLenderResponseJson"/>
+<result column="raw_response_json" property="rawResponseJson"/>
+<result column="quoted_at" property="quotedAt" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+</resultMap>
 <insert id="insertQuote" useGeneratedKeys="true" keyProperty="id" keyColumn="id">INSERT INTO loan_quote
-(quote_no,credit_application_id,mobile_no,product_snapshot_id,product_code,repay_method,apply_amt,loan_principal,pay_amount,schd_amount,interest,total_days,fee_json,last_lender_request_json,last_lender_response_json,raw_response_json,quoted_at)
-VALUES (#{quoteNo},#{creditApplicationId},#{mobileNo},#{productSnapshotId},#{productCode},#{repayMethod},#{applyAmt},#{loanPrincipal},#{payAmount},#{schdAmount},#{interest},#{totalDays},#{feeJson},#{lastLenderRequestJson},#{lastLenderResponseJson},#{rawResponseJson},#{quotedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})</insert>
-<insert id="insertTerm">INSERT INTO loan_quote_term (quote_id,mobile_no,term_no,due_date,schd_amount,schd_principal,schd_interest,fee_json)
-VALUES (#{quoteId},#{mobileNo},#{termNo},#{dueDate,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},#{schdAmount},#{schdPrincipal},#{schdInterest},#{feeJson})</insert>
+(quote_no,
+credit_application_id,
+mobile_no,
+product_snapshot_id,
+apply_id,
+credit_apply_no,
+user_id,
+product_code,
+repay_method,
+apply_amt,
+loan_term,
+loan_principal,
+show_loan_principal,
+pay_amount,
+hand_fee,
+schd_amount,
+should_amount,
+interest,
+day_rate,
+show_day_rate,
+total_days,
+fee1_name,
+fee1,
+fee2_name,
+fee2,
+fee3_name,
+fee3,
+tax,
+tax_rate_percent,
+ppn_amount,
+should_stamp_duty,
+should_principal,
+should_interest,
+should_fee1,
+should_fee2,
+should_fee3,
+should_fee1_tax,
+should_fee2_tax,
+should_fee3_tax,
+reduction_amount,
+ad_reduction_amt,
+ad_reduction_ratio,
+ad_reduction_end_date,
+reduction_stamp_duty,
+reduction_principal,
+reduction_interest,
+reduction_fee1,
+reduction_fee2,
+reduction_fee3,
+reduction_fee1_tax,
+reduction_fee2_tax,
+reduction_fee3_tax,
+after_service_fee_status,
+fee_prepay_type,
+lending_date,
+first_repay_date,
+last_repay_date,
+uneven_bills_flag,
+last_lender_request_json,
+last_lender_response_json,
+raw_response_json,
+quoted_at)
+VALUES (#{quoteNo},
+#{creditApplicationId},
+#{mobileNo},
+#{productSnapshotId},
+#{applyId},
+#{creditApplyNo},
+#{userId},
+#{productCode},
+#{repayMethod},
+#{applyAmt},
+#{loanTerm},
+#{loanPrincipal},
+#{showLoanPrincipal},
+#{payAmount},
+#{handFee},
+#{schdAmount},
+#{shouldAmount},
+#{interest},
+#{dayRate},
+#{showDayRate},
+#{totalDays},
+#{fee1Name},
+#{fee1},
+#{fee2Name},
+#{fee2},
+#{fee3Name},
+#{fee3},
+#{tax},
+#{taxRatePercent},
+#{ppnAmount},
+#{shouldStampDuty},
+#{shouldPrincipal},
+#{shouldInterest},
+#{shouldFee1},
+#{shouldFee2},
+#{shouldFee3},
+#{shouldFee1Tax},
+#{shouldFee2Tax},
+#{shouldFee3Tax},
+#{reductionAmount},
+#{adReductionAmt},
+#{adReductionRatio},
+#{adReductionEndDate},
+#{reductionStampDuty},
+#{reductionPrincipal},
+#{reductionInterest},
+#{reductionFee1},
+#{reductionFee2},
+#{reductionFee3},
+#{reductionFee1Tax},
+#{reductionFee2Tax},
+#{reductionFee3Tax},
+#{afterServiceFeeStatus},
+#{feePrepayType},
+#{lendingDate},
+#{firstRepayDate},
+#{lastRepayDate},
+#{unevenBillsFlag},
+#{lastLenderRequestJson},
+#{lastLenderResponseJson},
+#{rawResponseJson},
+#{quotedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})</insert>
+<insert id="insertTerm">INSERT INTO loan_quote_term (quote_id,
+mobile_no,
+term_no,
+value_date,
+due_date,
+grace_date,
+schd_amount,
+schd_principal,
+show_loan_principal,
+schd_interest,
+show_interest,
+should_amount,
+should_principal,
+should_interest,
+fee1,
+fee2,
+fee3,
+fee1_tax,
+fee2_tax,
+fee3_tax,
+stamp_duty,
+should_stamp_duty,
+reduction_amount,
+reduction_principal,
+reduction_interest,
+reduction_fee1,
+reduction_fee2,
+reduction_fee3,
+reduction_fee1_tax,
+reduction_fee2_tax,
+reduction_fee3_tax,
+reduction_stamp_duty)
+VALUES (#{quoteId},
+#{mobileNo},
+#{termNo},
+#{valueDate,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+#{dueDate,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+#{graceDate,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+#{schdAmount},
+#{schdPrincipal},
+#{showLoanPrincipal},
+#{schdInterest},
+#{showInterest},
+#{shouldAmount},
+#{shouldPrincipal},
+#{shouldInterest},
+#{fee1},
+#{fee2},
+#{fee3},
+#{fee1Tax},
+#{fee2Tax},
+#{fee3Tax},
+#{stampDuty},
+#{shouldStampDuty},
+#{reductionAmount},
+#{reductionPrincipal},
+#{reductionInterest},
+#{reductionFee1},
+#{reductionFee2},
+#{reductionFee3},
+#{reductionFee1Tax},
+#{reductionFee2Tax},
+#{reductionFee3Tax},
+#{reductionStampDuty})</insert>
 <select id="countTermsByQuoteId" resultType="int">SELECT COUNT(*) FROM loan_quote_term WHERE quote_id=#{quoteId}</select>
-<select id="findByQuoteNo" resultMap="quoteMap">SELECT id,quote_no,credit_application_id,mobile_no,product_snapshot_id,product_code,repay_method,apply_amt,loan_principal,pay_amount,schd_amount,interest,total_days,fee_json,last_lender_request_json,last_lender_response_json,raw_response_json,quoted_at FROM loan_quote WHERE quote_no=#{quoteNo}</select>
+<select id="findByQuoteNo" resultMap="quoteMap">SELECT id,quote_no,
+credit_application_id,
+mobile_no,
+product_snapshot_id,
+apply_id,
+credit_apply_no,
+user_id,
+product_code,
+repay_method,
+apply_amt,
+loan_term,
+loan_principal,
+show_loan_principal,
+pay_amount,
+hand_fee,
+schd_amount,
+should_amount,
+interest,
+day_rate,
+show_day_rate,
+total_days,
+fee1_name,
+fee1,
+fee2_name,
+fee2,
+fee3_name,
+fee3,
+tax,
+tax_rate_percent,
+ppn_amount,
+should_stamp_duty,
+should_principal,
+should_interest,
+should_fee1,
+should_fee2,
+should_fee3,
+should_fee1_tax,
+should_fee2_tax,
+should_fee3_tax,
+reduction_amount,
+ad_reduction_amt,
+ad_reduction_ratio,
+ad_reduction_end_date,
+reduction_stamp_duty,
+reduction_principal,
+reduction_interest,
+reduction_fee1,
+reduction_fee2,
+reduction_fee3,
+reduction_fee1_tax,
+reduction_fee2_tax,
+reduction_fee3_tax,
+after_service_fee_status,
+fee_prepay_type,
+lending_date,
+first_repay_date,
+last_repay_date,
+uneven_bills_flag,
+last_lender_request_json,
+last_lender_response_json,
+raw_response_json,
+quoted_at FROM loan_quote WHERE quote_no=#{quoteNo}</select>
 </mapper>

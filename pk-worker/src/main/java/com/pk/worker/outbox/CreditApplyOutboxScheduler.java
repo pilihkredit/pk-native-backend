@@ -1,5 +1,6 @@
 package com.pk.worker.outbox;
 
+import com.pk.core.logging.PlatformStructuredLogger;
 import com.pk.core.outbox.OutboxEvent;
 import com.pk.core.outbox.OutboxEventTypes;
 import com.pk.core.outbox.port.OutboxEventRepository;
@@ -7,6 +8,9 @@ import com.pk.infra.credit.CreditApplyHandler;
 import com.pk.infra.credit.CreditApplyJob;
 import com.pk.infra.credit.CreditApplyOutboxPublisher;
 import com.pk.infra.credit.CreditApplyProperties;
+import com.pk.infra.logging.LoggingRuntimeContext;
+import com.pk.infra.logging.OutboxStructuredLogging;
+import com.pk.infra.logging.TaskTraceSupport;
 import com.pk.worker.config.WorkerOutboxProperties;
 import java.time.Instant;
 import java.util.List;
@@ -24,23 +28,33 @@ public class CreditApplyOutboxScheduler {
     private final CreditApplyOutboxPublisher creditApplyOutboxPublisher;
     private final CreditApplyHandler creditApplyHandler;
     private final CreditApplyProperties creditApplyProperties;
+    private final PlatformStructuredLogger structuredLogger;
+    private final LoggingRuntimeContext loggingRuntimeContext;
 
     public CreditApplyOutboxScheduler(
             WorkerOutboxProperties workerOutboxProperties,
             OutboxEventRepository outboxEventRepository,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
             CreditApplyHandler creditApplyHandler,
-            CreditApplyProperties creditApplyProperties
+            CreditApplyProperties creditApplyProperties,
+            PlatformStructuredLogger structuredLogger,
+            LoggingRuntimeContext loggingRuntimeContext
     ) {
         this.workerOutboxProperties = workerOutboxProperties;
         this.outboxEventRepository = outboxEventRepository;
         this.creditApplyOutboxPublisher = creditApplyOutboxPublisher;
         this.creditApplyHandler = creditApplyHandler;
         this.creditApplyProperties = creditApplyProperties;
+        this.structuredLogger = structuredLogger;
+        this.loggingRuntimeContext = loggingRuntimeContext;
     }
 
     @Scheduled(fixedDelayString = "${pk.worker.outbox.poll-interval-ms:5000}")
     public void poll() {
+        TaskTraceSupport.run(loggingRuntimeContext, "outbox.credit-apply", this::pollInternal);
+    }
+
+    private void pollInternal() {
         if (!workerOutboxProperties.enabled()) {
             return;
         }
@@ -62,6 +76,7 @@ public class CreditApplyOutboxScheduler {
             int nextRetry = event.retryCount() + 1;
             if (nextRetry >= creditApplyProperties.maxRetries()) {
                 log.warn("Credit apply outbox event {} failed after {} attempts", event.eventNo(), nextRetry, exception);
+                OutboxStructuredLogging.logTerminalFailure(structuredLogger, event, nextRetry, exception);
                 outboxEventRepository.markTerminalFailure(event.id(), nextRetry);
                 return;
             }

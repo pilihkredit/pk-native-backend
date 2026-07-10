@@ -1,5 +1,6 @@
 package com.pk.worker.outbox;
 
+import com.pk.core.logging.PlatformStructuredLogger;
 import com.pk.core.outbox.OutboxEvent;
 import com.pk.core.outbox.OutboxEventTypes;
 import com.pk.core.outbox.port.OutboxEventRepository;
@@ -7,6 +8,9 @@ import com.pk.infra.loan.LoanApplyHandler;
 import com.pk.infra.loan.LoanApplyJob;
 import com.pk.infra.loan.LoanApplyOutboxPublisher;
 import com.pk.infra.loan.LoanApplyProperties;
+import com.pk.infra.logging.LoggingRuntimeContext;
+import com.pk.infra.logging.OutboxStructuredLogging;
+import com.pk.infra.logging.TaskTraceSupport;
 import com.pk.worker.config.WorkerOutboxProperties;
 import java.time.Instant;
 import java.util.List;
@@ -26,23 +30,33 @@ public class LoanApplyOutboxScheduler {
     private final LoanApplyOutboxPublisher loanApplyOutboxPublisher;
     private final LoanApplyHandler loanApplyHandler;
     private final LoanApplyProperties loanApplyProperties;
+    private final PlatformStructuredLogger structuredLogger;
+    private final LoggingRuntimeContext loggingRuntimeContext;
 
     public LoanApplyOutboxScheduler(
             WorkerOutboxProperties workerOutboxProperties,
             OutboxEventRepository outboxEventRepository,
             LoanApplyOutboxPublisher loanApplyOutboxPublisher,
             LoanApplyHandler loanApplyHandler,
-            LoanApplyProperties loanApplyProperties
+            LoanApplyProperties loanApplyProperties,
+            PlatformStructuredLogger structuredLogger,
+            LoggingRuntimeContext loggingRuntimeContext
     ) {
         this.workerOutboxProperties = workerOutboxProperties;
         this.outboxEventRepository = outboxEventRepository;
         this.loanApplyOutboxPublisher = loanApplyOutboxPublisher;
         this.loanApplyHandler = loanApplyHandler;
         this.loanApplyProperties = loanApplyProperties;
+        this.structuredLogger = structuredLogger;
+        this.loggingRuntimeContext = loggingRuntimeContext;
     }
 
     @Scheduled(fixedDelayString = "${pk.worker.outbox.poll-interval-ms:5000}")
     public void poll() {
+        TaskTraceSupport.run(loggingRuntimeContext, "outbox.loan-apply", this::pollInternal);
+    }
+
+    private void pollInternal() {
         if (!workerOutboxProperties.enabled()) {
             return;
         }
@@ -64,6 +78,7 @@ public class LoanApplyOutboxScheduler {
             int nextRetry = event.retryCount() + 1;
             if (nextRetry >= loanApplyProperties.maxRetries()) {
                 log.warn("Loan apply outbox event {} failed after {} attempts", event.eventNo(), nextRetry, exception);
+                OutboxStructuredLogging.logTerminalFailure(structuredLogger, event, nextRetry, exception);
                 outboxEventRepository.markTerminalFailure(event.id(), nextRetry);
                 return;
             }

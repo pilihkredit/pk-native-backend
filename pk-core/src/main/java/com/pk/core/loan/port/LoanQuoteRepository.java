@@ -1,5 +1,7 @@
 package com.pk.core.loan.port;
 
+import com.pk.core.loan.LenderTrialTerm;
+import com.pk.core.loan.LoanTrialQuoteDetail;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -17,15 +19,7 @@ public interface LoanQuoteRepository {
             long creditApplicationId,
             String mobileNo,
             Long productSnapshotId,
-            String productCode,
-            String repayMethod,
-            BigDecimal applyAmt,
-            BigDecimal loanPrincipal,
-            BigDecimal payAmount,
-            BigDecimal schdAmount,
-            BigDecimal interest,
-            Integer totalDays,
-            String feeJson,
+            LoanTrialQuoteDetail quote,
             String lastLenderRequestJson,
             String lastLenderResponseJson,
             String rawResponseJson,
@@ -35,12 +29,7 @@ public interface LoanQuoteRepository {
 
     record LoanQuoteTermInsert(
             String mobileNo,
-            int termNo,
-            Instant dueDate,
-            BigDecimal schdAmount,
-            BigDecimal schdPrincipal,
-            BigDecimal schdInterest,
-            String feeJson
+            LenderTrialTerm term
     ) {
     }
 
@@ -50,19 +39,38 @@ public interface LoanQuoteRepository {
             long creditApplicationId,
             String mobileNo,
             Long productSnapshotId,
-            String productCode,
-            String repayMethod,
-            BigDecimal applyAmt,
-            BigDecimal loanPrincipal,
-            BigDecimal payAmount,
-            BigDecimal schdAmount,
-            BigDecimal interest,
-            Integer totalDays,
-            String feeJson,
+            LoanTrialQuoteDetail quote,
             String lastLenderRequestJson,
             String lastLenderResponseJson,
             String rawResponseJson,
             Instant quotedAt
     ) {
+        public String productCode() {
+            return quote.productCode();
+        }
+
+        public String repayMethod() {
+            return quote.repayMethod();
+        }
+
+        public BigDecimal applyAmt() {
+            return quote.applyAmt();
+        }
+
+        public BigDecimal loanPrincipal() {
+            return quote.loanPrincipal();
+        }
+
+        public BigDecimal payAmount() {
+            return quote.payAmount();
+        }
+
+        public BigDecimal schdAmount() {
+            return quote.schdAmount();
+        }
+
+        public BigDecimal interest() {
+            return quote.interest();
+        }
     }
 }

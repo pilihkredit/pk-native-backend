@@ -19,6 +19,11 @@ management:
         include: health
 
 pk:
+  logging:
+    sls:
+      enabled: ${PK_SLS_ENABLED:true}
+      endpoint: ${PK_SLS_ENDPOINT:ap-southeast-5.log.aliyuncs.com}
+      project: ${PK_SLS_PROJECT:pk-backend-prod}
   lender:
     config:
       source: db

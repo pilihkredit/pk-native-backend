@@ -1,21 +1,20 @@
 package com.pk.app.common.web;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.logging.StructuredLogEntry;
+import com.pk.infra.logging.StructuredLogWriter;
 import jakarta.validation.constraints.NotBlank;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -26,25 +25,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 class GlobalApiExceptionHandlerTest {
+    private final StructuredLogWriter structuredLogWriter = mock(StructuredLogWriter.class);
     private final MockMvc mockMvc = MockMvcBuilders
             .standaloneSetup(new TestController())
-            .setControllerAdvice(new GlobalApiExceptionHandler())
+            .setControllerAdvice(new GlobalApiExceptionHandler(structuredLogWriter))
             .build();
-    private ListAppender<ILoggingEvent> logAppender;
-
-    @BeforeEach
-    void setUpLogging() {
-        Logger logger = (Logger) LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
-        logAppender = new ListAppender<>();
-        logAppender.start();
-        logger.addAppender(logAppender);
-    }
-
-    @AfterEach
-    void tearDownLogging() {
-        Logger logger = (Logger) LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
-        logger.detachAppender(logAppender);
-    }
 
     @Test
     void mapsApiExceptionDetailToClientMessage() throws Exception {
@@ -63,11 +48,6 @@ class GlobalApiExceptionHandlerTest {
                 .andExpect(jsonPath("$.msg").value("Invalid loan amount"))
                 .andExpect(jsonPath("$.data").doesNotExist())
                 .andExpect(jsonPath("$.traceId").value("trace-api"));
-
-        assertThat(logAppender.list)
-                .anyMatch(event -> event.getLevel() == Level.WARN
-                        && event.getFormattedMessage().contains("trace-api")
-                        && event.getFormattedMessage().contains("K000145"));
     }
 
     @Test
@@ -77,6 +57,15 @@ class GlobalApiExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("999998"))
                 .andExpect(jsonPath("$.msg").value("Service unavailable"))
                 .andExpect(jsonPath("$.traceId").value("trace-service"));
+
+        verify(structuredLogWriter).logError(
+                org.mockito.ArgumentMatchers.eq("api.error"),
+                org.mockito.ArgumentMatchers.eq("trace-service"),
+                org.mockito.ArgumentMatchers.eq("/test/service-unavailable"),
+                org.mockito.ArgumentMatchers.eq("GET"),
+                any(),
+                any()
+        );
     }
 
     @Test
@@ -86,11 +75,6 @@ class GlobalApiExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("K000001"))
                 .andExpect(jsonPath("$.msg").value("name: is required"))
                 .andExpect(jsonPath("$.traceId").value("trace-validation"));
-
-        assertThat(logAppender.list)
-                .anyMatch(event -> event.getLevel() == Level.WARN
-                        && event.getFormattedMessage().contains("trace-validation")
-                        && event.getFormattedMessage().contains("name"));
     }
 
     @Test
@@ -110,10 +94,14 @@ class GlobalApiExceptionHandlerTest {
                 .andExpect(jsonPath("$.msg").value("Internal server error"))
                 .andExpect(jsonPath("$.traceId").value("trace-unknown"));
 
-        assertThat(logAppender.list)
-                .anyMatch(event -> event.getLevel() == Level.ERROR
-                        && event.getFormattedMessage().contains("trace-unknown")
-                        && event.getThrowableProxy() != null);
+        verify(structuredLogWriter).logError(
+                org.mockito.ArgumentMatchers.eq("api.error"),
+                org.mockito.ArgumentMatchers.eq("trace-unknown"),
+                org.mockito.ArgumentMatchers.eq("/test/unknown"),
+                org.mockito.ArgumentMatchers.eq("GET"),
+                any(),
+                any()
+        );
     }
 
     @Validated

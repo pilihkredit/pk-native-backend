@@ -14,6 +14,7 @@ import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.loan.LoanApplicationStatus;
+import com.pk.core.loan.LoanTrialQuoteDetail;
 import com.pk.core.loan.port.LoanApplicationRepository;
 import com.pk.core.loan.port.LoanQuoteRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
@@ -250,48 +251,82 @@ class LoanApplyFacadeTest {
     }
 
     private static LoanQuoteRepository.LoanQuoteRecord freshQuote() {
-        return new LoanQuoteRepository.LoanQuoteRecord(
-                10L,
-                "QUOTE-1",
-                100L,
-                "81234567890",
-                55L,
-                "PD001",
-                "RP001",
-                new BigDecimal("1500000"),
-                new BigDecimal("1500000"),
-                new BigDecimal("1455000"),
-                new BigDecimal("1600000"),
-                new BigDecimal("100000"),
-                30,
-                null,
-                "{}",
-                "{}",
-                "{}",
-                Instant.now()
-        );
+        return quoteRecord(Instant.now());
     }
 
     private static LoanQuoteRepository.LoanQuoteRecord expiredQuote() {
+        return quoteRecord(Instant.now().minus(Duration.ofHours(1)));
+    }
+
+    private static LoanQuoteRepository.LoanQuoteRecord quoteRecord(Instant quotedAt) {
         return new LoanQuoteRepository.LoanQuoteRecord(
                 10L,
                 "QUOTE-1",
                 100L,
                 "81234567890",
                 55L,
-                "PD001",
-                "RP001",
-                new BigDecimal("1500000"),
-                new BigDecimal("1500000"),
-                new BigDecimal("1455000"),
-                new BigDecimal("1600000"),
-                new BigDecimal("100000"),
-                30,
-                null,
+                new LoanTrialQuoteDetail(
+                        "APPLY-1",
+                        "CA-1",
+                        "USR-1",
+                        new BigDecimal("1500000"),
+                        "PD001",
+                        "RP001",
+                        6,
+                        new BigDecimal("1500000"),
+                        new BigDecimal("1500000"),
+                        new BigDecimal("1455000"),
+                        null,
+                        new BigDecimal("1600000"),
+                        new BigDecimal("1600000"),
+                        new BigDecimal("100000"),
+                        null,
+                        null,
+                        30L,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                ),
                 "{}",
                 "{}",
                 "{}",
-                Instant.now().minus(Duration.ofHours(1))
+                quotedAt
         );
     }
 

@@ -1,8 +1,12 @@
 package com.pk.worker.outbox;
 
+import com.pk.core.logging.PlatformStructuredLogger;
 import com.pk.core.outbox.OutboxEvent;
 import com.pk.core.outbox.OutboxEventTypes;
 import com.pk.core.outbox.port.OutboxEventRepository;
+import com.pk.infra.logging.LoggingRuntimeContext;
+import com.pk.infra.logging.OutboxStructuredLogging;
+import com.pk.infra.logging.TaskTraceSupport;
 import com.pk.infra.profile.ProfileSyncHandler;
 import com.pk.infra.profile.ProfileSyncJob;
 import com.pk.infra.profile.ProfileSyncOutboxPublisher;
@@ -24,23 +28,33 @@ public class ProfileSyncOutboxScheduler {
     private final ProfileSyncOutboxPublisher profileSyncOutboxPublisher;
     private final ProfileSyncHandler profileSyncHandler;
     private final ProfileSyncProperties profileSyncProperties;
+    private final PlatformStructuredLogger structuredLogger;
+    private final LoggingRuntimeContext loggingRuntimeContext;
 
     public ProfileSyncOutboxScheduler(
             WorkerOutboxProperties workerOutboxProperties,
             OutboxEventRepository outboxEventRepository,
             ProfileSyncOutboxPublisher profileSyncOutboxPublisher,
             ProfileSyncHandler profileSyncHandler,
-            ProfileSyncProperties profileSyncProperties
+            ProfileSyncProperties profileSyncProperties,
+            PlatformStructuredLogger structuredLogger,
+            LoggingRuntimeContext loggingRuntimeContext
     ) {
         this.workerOutboxProperties = workerOutboxProperties;
         this.outboxEventRepository = outboxEventRepository;
         this.profileSyncOutboxPublisher = profileSyncOutboxPublisher;
         this.profileSyncHandler = profileSyncHandler;
         this.profileSyncProperties = profileSyncProperties;
+        this.structuredLogger = structuredLogger;
+        this.loggingRuntimeContext = loggingRuntimeContext;
     }
 
     @Scheduled(fixedDelayString = "${pk.worker.outbox.poll-interval-ms:5000}")
     public void poll() {
+        TaskTraceSupport.run(loggingRuntimeContext, "outbox.profile-sync", this::pollInternal);
+    }
+
+    private void pollInternal() {
         if (!workerOutboxProperties.enabled()) {
             return;
         }
@@ -62,6 +76,7 @@ public class ProfileSyncOutboxScheduler {
             int nextRetry = event.retryCount() + 1;
             if (nextRetry >= profileSyncProperties.maxRetries()) {
                 log.warn("Profile sync outbox event {} failed after {} attempts", event.eventNo(), nextRetry, exception);
+                OutboxStructuredLogging.logTerminalFailure(structuredLogger, event, nextRetry, exception);
                 outboxEventRepository.markTerminalFailure(event.id(), nextRetry);
                 return;
             }

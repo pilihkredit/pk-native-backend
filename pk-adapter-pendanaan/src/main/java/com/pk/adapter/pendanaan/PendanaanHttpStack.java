@@ -2,6 +2,7 @@ package com.pk.adapter.pendanaan;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.external.port.LenderInteractionLogRepository;
+import com.pk.core.logging.PlatformStructuredLogger;
 import org.springframework.lang.Nullable;
 
 final class PendanaanHttpStack {
@@ -15,7 +16,8 @@ final class PendanaanHttpStack {
     static PendanaanHttpStack create(
             PendanaanProperties properties,
             LenderInteractionLogRepository interactionLogRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            @Nullable PlatformStructuredLogger structuredLogger
     ) {
         if (!properties.httpEnabled() || !properties.httpCredentialsPresent()) {
             return new PendanaanHttpStack(null);
@@ -23,13 +25,15 @@ final class PendanaanHttpStack {
         PendanaanOAuthTokenProvider tokenProvider = new PendanaanOAuthTokenProvider(
                 properties,
                 interactionLogRepository,
-                objectMapper
+                objectMapper,
+                structuredLogger
         );
         return new PendanaanHttpStack(new PendanaanHttpClient(
                 properties,
                 tokenProvider,
                 interactionLogRepository,
-                objectMapper
+                objectMapper,
+                structuredLogger
         ));
     }
 

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="pkService" source="spring.application.name" defaultValue="pk-app"/>
+    <springProperty scope="context" name="pkEnvironment" source="pk.environment" defaultValue="local"/>
+    <springProperty scope="context" name="slsEnabled" source="pk.logging.sls.enabled" defaultValue="false"/>
+    <springProperty scope="context" name="slsEndpoint" source="pk.logging.sls.endpoint" defaultValue=""/>
+    <springProperty scope="context" name="slsProject" source="pk.logging.sls.project" defaultValue=""/>
+    <springProperty scope="context" name="slsLogstore" source="pk.logging.sls.logstore" defaultValue=""/>
+    <springProperty scope="context" name="slsAccessKeyId" source="pk.logging.sls.access-key-id" defaultValue=""/>
+    <springProperty scope="context" name="slsAccessKeySecret" source="pk.logging.sls.access-key-secret" defaultValue=""/>
+    <springProperty scope="context" name="slsTopic" source="pk.logging.sls.topic" defaultValue=""/>
+    <springProperty scope="context" name="slsSource" source="pk.logging.sls.source" defaultValue=""/>
+
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <fieldName>timestamp</fieldName>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+                <logLevel>
+                    <fieldName>level</fieldName>
+                </logLevel>
+                <pattern>
+                    <pattern>{"service":"${pkService}","environment":"${pkEnvironment}"}</pattern>
+                </pattern>
+                <mdc>
+                    <includeMdcKeyName>traceId</includeMdcKeyName>
+                </mdc>
+                <message/>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <appender name="STRUCTURED_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="STRUCTURED_SLS" class="com.aliyun.openservices.log.logback.LoghubAppender">
+        <endpoint>${slsEndpoint}</endpoint>
+        <accessKeyId>${slsAccessKeyId}</accessKeyId>
+        <accessKeySecret>${slsAccessKeySecret}</accessKeySecret>
+        <project>${slsProject}</project>
+        <logStore>${slsLogstore}</logStore>
+        <topic>${slsTopic}</topic>
+        <source>${slsSource}</source>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="SLS_JSON" class="com.aliyun.openservices.log.logback.LoghubAppender">
+        <endpoint>${slsEndpoint}</endpoint>
+        <accessKeyId>${slsAccessKeyId}</accessKeyId>
+        <accessKeySecret>${slsAccessKeySecret}</accessKeySecret>
+        <project>${slsProject}</project>
+        <logStore>${slsLogstore}</logStore>
+        <topic>${slsTopic}</topic>
+        <source>${slsSource}</source>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <fieldName>timestamp</fieldName>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+                <logLevel>
+                    <fieldName>level</fieldName>
+                </logLevel>
+                <pattern>
+                    <pattern>{"service":"${pkService}","environment":"${pkEnvironment}"}</pattern>
+                </pattern>
+                <mdc>
+                    <includeMdcKeyName>traceId</includeMdcKeyName>
+                </mdc>
+                <message/>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <logger name="pk.structured" level="INFO" additivity="false">
+        <appender-ref ref="STRUCTURED_CONSOLE"/>
+        <if condition='property("slsEnabled").equals("true")'>
+            <then>
+                <appender-ref ref="STRUCTURED_SLS"/>
+            </then>
+        </if>
+    </logger>
+
+    <if condition='property("slsEnabled").equals("true")'>
+        <then>
+            <root level="INFO">
+                <appender-ref ref="CONSOLE_JSON"/>
+                <appender-ref ref="SLS_JSON"/>
+            </root>
+        </then>
+        <else>
+            <root level="INFO">
+                <appender-ref ref="CONSOLE_JSON"/>
+            </root>
+        </else>
+    </if>
+</configuration>

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.external.port.LenderInteractionLogRepository;
+import com.pk.core.logging.PlatformStructuredLogger;
 import com.pk.core.tracking.LenderTrackingEvent;
 import com.pk.core.tracking.port.LenderTrackingPort;
 import java.net.URI;
@@ -21,16 +22,19 @@ public class PendanaanTrackingAdapter implements LenderTrackingPort {
     private final PendanaanProperties properties;
     private final LenderInteractionLogRepository interactionLogRepository;
     private final ObjectMapper objectMapper;
+    private final PlatformStructuredLogger structuredLogger;
     private final HttpClient httpClient;
 
     public PendanaanTrackingAdapter(
             PendanaanProperties properties,
             LenderInteractionLogRepository interactionLogRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            PlatformStructuredLogger structuredLogger
     ) {
         this.properties = properties;
         this.interactionLogRepository = interactionLogRepository;
         this.objectMapper = objectMapper;
+        this.structuredLogger = structuredLogger;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(properties.connectTimeoutMs()))
                 .build();
@@ -141,6 +145,7 @@ public class PendanaanTrackingAdapter implements LenderTrackingPort {
         PendanaanInteractionSupport.log(
                 interactionLogRepository,
                 properties.logging(),
+                structuredLogger,
                 interactionNo,
                 BUSINESS_TYPE,
                 businessId,

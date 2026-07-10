@@ -1,19 +1,19 @@
 package com.pk.app.common.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import com.pk.core.logging.StructuredLogEntry;
+import com.pk.infra.logging.StructuredLogWriter;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -23,32 +23,25 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 class ApiLoggingFilterTest {
-    private ListAppender<ILoggingEvent> logAppender;
-    private MockMvc mockMvc;
+    private final StructuredLogWriter structuredLogWriter = mock(StructuredLogWriter.class);
+    private final MockMvc mockMvc;
 
-    @BeforeEach
-    void setUp() {
-        Logger logger = (Logger) LoggerFactory.getLogger(ApiLoggingFilter.class);
-        logAppender = new ListAppender<>();
-        logAppender.start();
-        logger.addAppender(logAppender);
-
+    ApiLoggingFilterTest() {
         ApiProperties apiProperties = new ApiProperties();
         ApiLoggingProperties loggingProperties = new ApiLoggingProperties();
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new TestController())
-                .addFilter(new ApiLoggingFilter(apiProperties, loggingProperties))
+                .addFilter(new ApiLoggingFilter(
+                        apiProperties,
+                        loggingProperties,
+                        structuredLogWriter,
+                        new ObjectMapper()
+                ))
                 .build();
     }
 
-    @AfterEach
-    void tearDown() {
-        Logger logger = (Logger) LoggerFactory.getLogger(ApiLoggingFilter.class);
-        logger.detachAppender(logAppender);
-    }
-
     @Test
-    void logsRequestAndResponseBodiesForApiPaths() throws Exception {
+    void logsStructuredAccessEventForApiPaths() throws Exception {
         mockMvc.perform(
                         post("/api/v1/echo")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -57,15 +50,16 @@ class ApiLoggingFilterTest {
                 )
                 .andExpect(status().isOk());
 
-        assertThat(logAppender.list)
-                .extracting(ILoggingEvent::getFormattedMessage)
-                .anyMatch(message -> message.contains("API request")
-                        && message.contains("path=/api/v1/echo")
-                        && message.contains("traceId=trace-echo")
-                        && message.contains("body={\"name\":\"alice\"}"))
-                .anyMatch(message -> message.contains("API response")
-                        && message.contains("status=200")
-                        && message.contains("body={\"code\":\"000000\""));
+        ArgumentCaptor<StructuredLogEntry> captor = ArgumentCaptor.forClass(StructuredLogEntry.class);
+        verify(structuredLogWriter).log(captor.capture());
+        StructuredLogEntry entry = captor.getValue();
+        assertThat(entry.message()).isEqualTo("api.access");
+        assertThat(entry.traceId()).isEqualTo("trace-echo");
+        assertThat(entry.uri()).isEqualTo("/api/v1/echo");
+        assertThat(entry.method()).isEqualTo("POST");
+        assertThat(entry.status()).isEqualTo(200);
+        assertThat(entry.code()).isEqualTo("000000");
+        assertThat(entry.durationMs()).isNotNull();
     }
 
     @Test
@@ -73,7 +67,7 @@ class ApiLoggingFilterTest {
         mockMvc.perform(get("/actuator/health").header("X-Trace-Id", "trace-health"))
                 .andExpect(status().isNotFound());
 
-        assertThat(logAppender.list).isEmpty();
+        verify(structuredLogWriter, org.mockito.Mockito.never()).log(any());
     }
 
     @Test
@@ -81,11 +75,9 @@ class ApiLoggingFilterTest {
         mockMvc.perform(get("/api/v1/greet").param("name", "bob").header("X-Trace-Id", "trace-get"))
                 .andExpect(status().isOk());
 
-        assertThat(logAppender.list)
-                .extracting(ILoggingEvent::getFormattedMessage)
-                .anyMatch(message -> message.contains("API request")
-                        && message.contains("method=GET")
-                        && message.contains("query=name=bob"));
+        ArgumentCaptor<StructuredLogEntry> captor = ArgumentCaptor.forClass(StructuredLogEntry.class);
+        verify(structuredLogWriter).log(captor.capture());
+        assertThat(captor.getValue().extra()).containsEntry("query", "name=bob");
     }
 
     @RestController

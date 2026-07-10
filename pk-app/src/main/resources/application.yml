@@ -8,7 +8,14 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
+  metrics:
+    tags:
+      service: ${spring.application.name}
+      environment: ${pk.environment}
+
+logging:
+  config: classpath:logback-spring.xml
 
 server:
   port: ${PK_APP_PORT:8831}
@@ -21,6 +28,16 @@ mybatis:
 
 pk:
   environment: ${SPRING_PROFILES_ACTIVE:local}
+  logging:
+    sls:
+      enabled: ${PK_SLS_ENABLED:false}
+      endpoint: ${PK_SLS_ENDPOINT:}
+      project: ${PK_SLS_PROJECT:}
+      logstore: ${PK_SLS_LOGSTORE:${spring.application.name}}
+      access-key-id: ${PK_SLS_ACCESS_KEY_ID:}
+      access-key-secret: ${PK_SLS_ACCESS_KEY_SECRET:}
+      topic: ${PK_SLS_TOPIC:}
+      source: ${PK_SLS_SOURCE:}
   api:
     v1-prefix: ${PK_API_V1_PREFIX:/api/v1}
     logging:

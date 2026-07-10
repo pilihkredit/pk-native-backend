@@ -2,7 +2,6 @@ package com.pk.infra.loan;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -10,6 +9,7 @@ import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.loan.LenderTrialTerm;
+import com.pk.core.loan.LoanTrialQuoteDetail;
 import com.pk.core.loan.port.LenderLoanTrialPort;
 import com.pk.core.loan.port.LoanQuoteRepository;
 import java.math.BigDecimal;
@@ -80,15 +80,7 @@ class LoanTrialFacadeTest {
                     insert.creditApplicationId(),
                     insert.mobileNo(),
                     insert.productSnapshotId(),
-                    insert.productCode(),
-                    insert.repayMethod(),
-                    insert.applyAmt(),
-                    insert.loanPrincipal(),
-                    insert.payAmount(),
-                    insert.schdAmount(),
-                    insert.interest(),
-                    insert.totalDays(),
-                    insert.feeJson(),
+                    insert.quote(),
                     insert.lastLenderRequestJson(),
                     insert.lastLenderResponseJson(),
                     insert.rawResponseJson(),
@@ -110,6 +102,8 @@ class LoanTrialFacadeTest {
 
         assertThat(result.quoteNo()).startsWith("QUOTE");
         assertThat(result.expiresAt()).isGreaterThan(Instant.now().toEpochMilli());
+        assertThat(result.quote().loanPrincipal()).isEqualByComparingTo("1455000");
+        assertThat(result.quote().totalDays()).isEqualTo(180L);
         assertThat(result.termInfo()).hasSize(1);
         assertThat(result.termInfo().getFirst().termNoDisplay()).isEqualTo("Cicilan ke-1");
         assertThat(result.termInfo().getFirst().schdAmountDisplay()).isEqualTo("Rp 295.000");
@@ -120,10 +114,15 @@ class LoanTrialFacadeTest {
         verify(loanQuoteRepository).insert(insertCaptor.capture(), any());
         assertThat(insertCaptor.getValue().productSnapshotId()).isEqualTo(501L);
         assertThat(insertCaptor.getValue().mobileNo()).isEqualTo("81234567890");
+        assertThat(insertCaptor.getValue().quote().loanTerm()).isEqualTo(6);
+        assertThat(insertCaptor.getValue().quote().handFee()).isEqualByComparingTo("45000");
         assertThat(insertCaptor.getValue().lastLenderRequestJson()).contains("APPLY-1");
         assertThat(insertCaptor.getValue().lastLenderResponseJson()).contains("loanTerm");
         verify(loanQuoteRepository).insert(any(), termCaptor.capture());
-        assertThat(termCaptor.getValue()).allSatisfy(term -> assertThat(term.mobileNo()).isEqualTo("81234567890"));
+        assertThat(termCaptor.getValue()).allSatisfy(term -> {
+            assertThat(term.mobileNo()).isEqualTo("81234567890");
+            assertThat(term.term().shouldAmount()).isEqualByComparingTo("295000");
+        });
         verify(lenderLoanTrialPort).trial(any(LenderLoanTrialPort.LenderLoanTrialCommand.class));
     }
 
@@ -167,20 +166,95 @@ class LoanTrialFacadeTest {
     }
 
     private static LenderLoanTrialPort.LenderLoanTrialResult lenderTrialResult() {
-        return new LenderLoanTrialPort.LenderLoanTrialResult(
+        LoanTrialQuoteDetail quote = new LoanTrialQuoteDetail(
+                "APPLY-1",
+                "CA-1",
+                "USR-1",
                 new BigDecimal("1500000"),
-                new BigDecimal("1455000"),
-                new BigDecimal("1770000"),
-                new BigDecimal("270000"),
+                "PD001",
+                "RP001",
                 6,
                 new BigDecimal("1455000"),
-                180,
+                new BigDecimal("1455000"),
+                new BigDecimal("1455000"),
+                new BigDecimal("45000"),
+                new BigDecimal("1770000"),
+                new BigDecimal("1770000"),
+                new BigDecimal("270000"),
+                new BigDecimal("0.003"),
+                new BigDecimal("0.003"),
+                180L,
+                "Admin Fee",
+                BigDecimal.ZERO,
+                "Service Fee",
+                BigDecimal.ZERO,
+                "Insurance Fee",
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                "0.5",
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                new BigDecimal("1500000"),
+                new BigDecimal("270000"),
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                null,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                "N",
+                0,
+                1747200000000L,
+                1749792000000L,
+                1757472000000L,
+                false
+        );
+        return new LenderLoanTrialPort.LenderLoanTrialResult(
+                quote,
                 List.of(new LenderTrialTerm(
                         1,
+                        Instant.parse("2025-05-14T00:00:00Z"),
                         Instant.parse("2025-06-13T00:00:00Z"),
+                        Instant.parse("2025-06-20T00:00:00Z"),
                         new BigDecimal("295000"),
                         new BigDecimal("250000"),
-                        new BigDecimal("45000")
+                        new BigDecimal("250000"),
+                        new BigDecimal("45000"),
+                        new BigDecimal("45000"),
+                        new BigDecimal("295000"),
+                        new BigDecimal("250000"),
+                        new BigDecimal("45000"),
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO
                 )),
                 "{\"applyId\":\"APPLY-1\",\"applyAmt\":1500000}",
                 "{\"loanTerm\":6}"

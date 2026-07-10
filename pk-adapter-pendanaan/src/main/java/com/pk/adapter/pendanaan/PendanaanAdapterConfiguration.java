@@ -5,6 +5,7 @@ import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.callback.port.LoanCallbackParser;
 import com.pk.core.callback.port.ServerEventCallbackParser;
 import com.pk.core.credit.port.LenderCreditPort;
+import com.pk.core.logging.PlatformStructuredLogger;
 import com.pk.core.external.port.LenderInteractionLogRepository;
 import com.pk.core.home.port.LenderUserStatusPort;
 import com.pk.core.loan.port.LenderLoanApplyPort;
@@ -23,6 +24,7 @@ import com.pk.core.repay.port.LenderRepayPlanPort;
 import com.pk.core.repay.port.LenderRepayTrialPort;
 import com.pk.core.repay.port.LenderRepayVaPort;
 import com.pk.core.tracking.port.LenderTrackingPort;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -53,9 +55,10 @@ public class PendanaanAdapterConfiguration {
     PendanaanHttpStack pendanaanHttpStack(
             PendanaanProperties properties,
             LenderInteractionLogRepository interactionLogRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            @Autowired(required = false) PlatformStructuredLogger structuredLogger
     ) {
-        return PendanaanHttpStack.create(properties, interactionLogRepository, objectMapper);
+        return PendanaanHttpStack.create(properties, interactionLogRepository, objectMapper, structuredLogger);
     }
 
     @Bean
@@ -199,10 +202,11 @@ public class PendanaanAdapterConfiguration {
             PendanaanHttpStack httpStack,
             PendanaanProperties properties,
             LenderInteractionLogRepository interactionLogRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            @Autowired(required = false) PlatformStructuredLogger structuredLogger
     ) {
         if (httpStack.enabled()) {
-            return new PendanaanTrackingAdapter(properties, interactionLogRepository, objectMapper);
+            return new PendanaanTrackingAdapter(properties, interactionLogRepository, objectMapper, structuredLogger);
         }
         return new FakePendanaanTrackingAdapter();
     }
