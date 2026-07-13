@@ -50,5 +50,30 @@ class StructuredLogWriterTest {
         assertThat(json.get("status").asInt()).isEqualTo(200);
         assertThat(json.get("durationMs").asLong()).isEqualTo(120L);
         assertThat(json.get("code").asText()).isEqualTo("000000");
+        assertThat(json.has("mobileNo")).isFalse();
+    }
+
+    @Test
+    void includesMobileNoFromLogContextWhenPresent() throws Exception {
+        ch.qos.logback.classic.Logger logger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("pk.structured");
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
+                new ch.qos.logback.core.read.ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
+        try {
+            com.pk.core.logging.LogContext.putMobileNo("81234567890");
+            writer.log(StructuredLogEntry.builder("INFO", "api.access")
+                    .traceId("trace-2")
+                    .build());
+        } finally {
+            com.pk.core.logging.LogContext.clear();
+            logger.detachAppender(appender);
+        }
+
+        assertThat(appender.list).hasSize(1);
+        JsonNode json = objectMapper.readTree(appender.list.get(0).getFormattedMessage());
+        assertThat(json.get("mobileNo").asText()).isEqualTo("81234567890");
     }
 }

@@ -26,6 +26,7 @@
                 </pattern>
                 <mdc>
                     <includeMdcKeyName>traceId</includeMdcKeyName>
+                    <includeMdcKeyName>mobileNo</includeMdcKeyName>
                 </mdc>
                 <message/>
                 <stackTrace/>
@@ -61,6 +62,7 @@
                 </pattern>
                 <mdc>
                     <includeMdcKeyName>traceId</includeMdcKeyName>
+                    <includeMdcKeyName>mobileNo</includeMdcKeyName>
                 </mdc>
                 <message/>
                 <stackTrace/>

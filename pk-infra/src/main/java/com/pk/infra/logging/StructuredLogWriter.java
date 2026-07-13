@@ -56,6 +56,7 @@ public class StructuredLogWriter implements PlatformStructuredLogger {
             root.put("durationMs", entry.durationMs());
         }
         putIfPresent(root, "code", entry.code());
+        putIfPresent(root, "mobileNo", LogContext.mobileNo());
         if (entry.extra() != null && !entry.extra().isEmpty()) {
             root.set("extra", objectMapper.valueToTree(entry.extra()));
         }

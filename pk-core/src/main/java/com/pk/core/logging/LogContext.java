@@ -6,6 +6,7 @@ public final class LogContext {
     public static final String TRACE_ID = "traceId";
     public static final String SERVICE = "service";
     public static final String ENVIRONMENT = "environment";
+    public static final String MOBILE_NO = "mobileNo";
 
     private LogContext() {
     }
@@ -28,8 +29,18 @@ public final class LogContext {
         }
     }
 
+    public static void putMobileNo(String mobileNo) {
+        if (mobileNo != null && !mobileNo.isBlank()) {
+            MDC.put(MOBILE_NO, mobileNo.trim());
+        }
+    }
+
     public static String traceId() {
         return MDC.get(TRACE_ID);
+    }
+
+    public static String mobileNo() {
+        return MDC.get(MOBILE_NO);
     }
 
     public static void clear() {
