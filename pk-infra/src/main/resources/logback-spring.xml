@@ -39,19 +39,6 @@
         </encoder>
     </appender>
 
-    <appender name="STRUCTURED_SLS" class="com.aliyun.openservices.log.logback.LoghubAppender">
-        <endpoint>${slsEndpoint}</endpoint>
-        <accessKeyId>${slsAccessKeyId}</accessKeyId>
-        <accessKeySecret>${slsAccessKeySecret}</accessKeySecret>
-        <project>${slsProject}</project>
-        <logStore>${slsLogstore}</logStore>
-        <topic>${slsTopic}</topic>
-        <source>${slsSource}</source>
-        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%msg%n</pattern>
-        </encoder>
-    </appender>
-
     <appender name="SLS_JSON" class="com.aliyun.openservices.log.logback.LoghubAppender">
         <endpoint>${slsEndpoint}</endpoint>
         <accessKeyId>${slsAccessKeyId}</accessKeyId>
@@ -81,13 +68,13 @@
         </encoder>
     </appender>
 
-    <logger name="pk.structured" level="INFO" additivity="false">
+    <!--
+      API access logs (ApiLoggingFilter -> StructuredLogWriter) use logger "pk.structured".
+      Keep a readable raw-JSON console line, and propagate to root so the same request
+      also appears in CONSOLE_JSON / SLS_JSON (same channel as startup logs).
+    -->
+    <logger name="pk.structured" level="INFO" additivity="true">
         <appender-ref ref="STRUCTURED_CONSOLE"/>
-        <if condition='property("slsEnabled").equals("true")'>
-            <then>
-                <appender-ref ref="STRUCTURED_SLS"/>
-            </then>
-        </if>
     </logger>
 
     <if condition='property("slsEnabled").equals("true")'>
