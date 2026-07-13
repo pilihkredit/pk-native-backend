@@ -74,6 +74,10 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
                     redactOcrFields
             );
             Map<String, Object> extra = new LinkedHashMap<>();
+            Map<String, String> requestHeaders = ApiHttpPayloadFormatter.formatHeaders(request);
+            if (!requestHeaders.isEmpty()) {
+                extra.put("requestHeaders", requestHeaders);
+            }
             String query = ApiHttpPayloadFormatter.formatQueryString(request);
             if (!query.isBlank()) {
                 extra.put("query", query);

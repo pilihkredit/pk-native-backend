@@ -47,6 +47,8 @@ class ApiLoggingFilterTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"name\":\"alice\"}")
                                 .header("X-Trace-Id", "trace-echo")
+                                .header("Authorization", "Bearer secret-token")
+                                .header("X-Device-No", "device-1")
                 )
                 .andExpect(status().isOk());
 
@@ -60,6 +62,16 @@ class ApiLoggingFilterTest {
         assertThat(entry.status()).isEqualTo(200);
         assertThat(entry.code()).isEqualTo("000000");
         assertThat(entry.durationMs()).isNotNull();
+        assertThat(entry.extra()).containsKey("requestHeaders");
+        assertThat(entry.extra().get("requestBody")).isEqualTo("{\"name\":\"alice\"}");
+        assertThat(entry.extra()).containsKey("responseBody");
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, String> headers =
+                (java.util.Map<String, String>) entry.extra().get("requestHeaders");
+        assertThat(headers)
+                .containsEntry("X-Device-No", "device-1")
+                .containsEntry("Authorization", "Bearer ***");
+        assertThat(String.valueOf(entry.extra().get("responseBody"))).contains("alice");
     }
 
     @Test
@@ -77,7 +89,7 @@ class ApiLoggingFilterTest {
 
         ArgumentCaptor<StructuredLogEntry> captor = ArgumentCaptor.forClass(StructuredLogEntry.class);
         verify(structuredLogWriter).log(captor.capture());
-        assertThat(captor.getValue().extra()).containsEntry("query", "name=bob");
+        assertThat(captor.getValue().extra().get("query")).isEqualTo("name=bob");
     }
 
     @RestController
