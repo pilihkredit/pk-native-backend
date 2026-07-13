@@ -31,9 +31,6 @@ public class CreditLenderStatusApplier {
             String source,
             String limitSource
     ) {
-        if (CreditApplicationStatus.isTerminal(record.status())) {
-            return;
-        }
         creditLenderStatusQueryRepository.upsert(new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
                 record.applyId(),
                 record.profileId(),
@@ -54,10 +51,12 @@ public class CreditLenderStatusApplier {
                 Instant.now()
         ));
         if (!hasExternalStatus(status.externalStatus())) {
-            creditApplicationRepository.scheduleNextPoll(
-                    record.id(),
-                    Instant.now().plusSeconds(creditApplyProperties.pollIntervalSeconds())
-            );
+            if (!CreditApplicationStatus.isTerminal(record.status())) {
+                creditApplicationRepository.scheduleNextPoll(
+                        record.id(),
+                        Instant.now().plusSeconds(creditApplyProperties.pollIntervalSeconds())
+                );
+            }
             return;
         }
         String nextStatus = CreditExternalStatusMapper.mapLenderStatus(status.externalStatus());

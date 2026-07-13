@@ -80,7 +80,7 @@ class CreditLenderStatusApplierTest {
     }
 
     @Test
-    void skipsWhenApplicationIsAlreadyTerminal() {
+    void appliesLenderResultEvenWhenApplicationIsAlreadyTerminal() {
         CreditApplicationRepository.CreditApplicationRecord record = new CreditApplicationRepository.CreditApplicationRecord(
                 1L,
                 "APPLY-1",
@@ -98,8 +98,21 @@ class CreditLenderStatusApplierTest {
 
         applier.apply(record, lenderStatus("REFUSED"), "CREDIT_STATUS_API", "LENDER_API");
 
-        verify(creditLenderStatusQueryRepository, never()).upsert(any());
-        verify(creditApplicationRepository, never()).updateStatus(any(Long.class), any(), any(), any());
+        verify(creditLenderStatusQueryRepository).upsert(any());
+        verify(creditApplicationRepository).updateStatus(
+                1L,
+                CreditApplicationStatus.REJECTED,
+                "REFUSED",
+                null
+        );
+        verify(creditStatusHistoryRepository).insert(
+                1L,
+                record.mobileNo(),
+                CreditApplicationStatus.APPROVED,
+                CreditApplicationStatus.REJECTED,
+                "REFUSED",
+                "CREDIT_STATUS_API"
+        );
     }
 
     private static CreditApplicationRepository.CreditApplicationRecord processingRecord() {
