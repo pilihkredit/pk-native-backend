@@ -134,7 +134,7 @@ class CreditApplyFacadeTest {
     }
 
     @Test
-    void skipsLenderSyncWhenStatusIsTerminal() {
+    void syncsFromLenderEvenWhenStatusIsTerminal() {
         CreditApplicationRepository.CreditApplicationRecord record = new CreditApplicationRepository.CreditApplicationRecord(
                 1L,
                 "APPLY-1",
@@ -151,13 +151,15 @@ class CreditApplyFacadeTest {
         );
         when(creditApplicationRepository.findLatestByProfileId(1L))
                 .thenReturn(java.util.Optional.of(record));
+        when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+                .thenReturn(java.util.Optional.of(record));
         when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(java.util.Optional.empty());
 
         CreditApplyFacade.StatusResult result = facade.getStatus(1L);
 
         assertThat(result.status()).isEqualTo(CreditApplicationStatus.APPROVED);
-        verify(creditStatusPollHandler, never()).syncFromLenderForApi(any());
+        verify(creditStatusPollHandler).syncFromLenderForApi(record);
     }
 
     @Test

@@ -123,12 +123,10 @@ public class CreditApplyFacade {
         CreditApplicationRepository.CreditApplicationRecord record = creditApplicationRepository
                 .findLatestByProfileId(profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
-        if (!CreditApplicationStatus.isTerminal(record.status())) {
-            creditStatusPollHandler.syncFromLenderForApi(record);
-            record = creditApplicationRepository
-                    .findByApplyIdAndProfileId(record.applyId(), profileId)
-                    .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
-        }
+        creditStatusPollHandler.syncFromLenderForApi(record);
+        record = creditApplicationRepository
+                .findByApplyIdAndProfileId(record.applyId(), profileId)
+                .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         var query = creditLenderStatusQueryRepository
                 .findByApplyIdAndProfileId(record.applyId(), profileId)
                 .orElse(null);
