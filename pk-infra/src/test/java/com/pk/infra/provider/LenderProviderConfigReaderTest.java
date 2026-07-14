@@ -10,6 +10,7 @@ class LenderProviderConfigReaderTest {
     void mapsProviderRowToSpringProperties() {
         LenderProviderConfigRecord record = new LenderProviderConfigRecord(
                 "pendanaan",
+                "Pendanaan Test",
                 "http://gateway.test.ptnadmin.com/ktaid",
                 "https://api.example.com/api/v1",
                 """
@@ -24,6 +25,7 @@ class LenderProviderConfigReaderTest {
         Map<String, Object> properties = LenderProviderConfigReader.toSpringProperties(record);
 
         assertThat(properties)
+                .containsEntry("pk.lender.config.provider-name", "Pendanaan Test")
                 .containsEntry("pk.lender.pendanaan.mode", "http")
                 .containsEntry("pk.lender.pendanaan.base-url", "http://gateway.test.ptnadmin.com/ktaid")
                 .containsEntry("pk.lender.pendanaan.client-id", "client-id")
@@ -37,6 +39,7 @@ class LenderProviderConfigReaderTest {
     void defaultsModeToHttpWhenConfigJsonOmitsMode() {
         LenderProviderConfigRecord record = new LenderProviderConfigRecord(
                 "pendanaan",
+                "Pendanaan Test",
                 "http://example.com",
                 "https://api.example.com/api/v1",
                 "{\"app_name\":\"KtaKilatPlus\"}",

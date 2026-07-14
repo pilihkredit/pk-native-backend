@@ -19,6 +19,8 @@ class ApiResponseTest {
         assertThat(response.msg()).isEqualTo("requestId: must not be blank");
         assertThat(response.data()).isNull();
         assertThat(response.traceId()).isEqualTo("trace-789");
+        assertThat(response.lenderProvider()).isNull();
+        assertThat(response.lenderProviderName()).isNull();
     }
 
     @Test
@@ -36,5 +38,17 @@ class ApiResponseTest {
         assertThatThrownBy(() -> ApiResponse.failure(ApiCode.SUCCESS, "trace-789"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Success code cannot be used for failure responses");
+    }
+
+    @Test
+    void withLenderProviderCopiesEnvelopeFields() {
+        ApiResponse<String> enriched = ApiResponse.success("ok", "trace-1")
+                .withLenderProvider("pendanaan", "Pendanaan Test");
+
+        assertThat(enriched.code()).isEqualTo(ApiCode.SUCCESS.code());
+        assertThat(enriched.data()).isEqualTo("ok");
+        assertThat(enriched.traceId()).isEqualTo("trace-1");
+        assertThat(enriched.lenderProvider()).isEqualTo("pendanaan");
+        assertThat(enriched.lenderProviderName()).isEqualTo("Pendanaan Test");
     }
 }

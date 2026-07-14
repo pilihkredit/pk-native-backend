@@ -1,6 +1,7 @@
 package com.pk.app.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.app.common.web.ActiveLenderProvider;
 import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
 import com.pk.app.common.web.ValidationFailureMessages;
@@ -17,9 +18,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class ApiExceptionResponseWriter {
     private final ObjectMapper objectMapper;
+    private final ActiveLenderProvider activeLenderProvider;
 
-    public ApiExceptionResponseWriter(ObjectMapper objectMapper) {
+    public ApiExceptionResponseWriter(ObjectMapper objectMapper, ActiveLenderProvider activeLenderProvider) {
         this.objectMapper = objectMapper;
+        this.activeLenderProvider = activeLenderProvider;
     }
 
     public void write(HttpServletRequest request, HttpServletResponse response, ApiException exception) throws IOException {
@@ -27,11 +30,11 @@ public class ApiExceptionResponseWriter {
         response.setStatus(status.value());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        ApiResponse<Void> body = ApiResponse.failure(
+        ApiResponse<Void> body = activeLenderProvider.enrich(ApiResponse.failure(
                 exception.apiCode(),
                 ValidationFailureMessages.forApiException(exception),
                 RequestTrace.resolveTraceId(request)
-        );
+        ));
         objectMapper.writeValue(response.getOutputStream(), body);
     }
 

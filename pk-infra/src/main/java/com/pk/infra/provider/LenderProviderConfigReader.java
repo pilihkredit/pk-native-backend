@@ -17,6 +17,7 @@ public final class LenderProviderConfigReader {
     private static final String LOAD_SQL = """
             SELECT
                 p.provider_code,
+                p.provider_name,
                 p.base_url,
                 p.callback_base_url,
                 p.config_json,
@@ -63,6 +64,7 @@ public final class LenderProviderConfigReader {
         Map<String, Object> properties = new LinkedHashMap<>();
         String mode = LenderProviderConfigJson.readText(record.configJson(), "mode")
                 .orElse("http");
+        putIfPresent(properties, "pk.lender.config.provider-name", record.providerName());
         properties.put("pk.lender.pendanaan.mode", mode);
         putIfPresent(properties, "pk.lender.pendanaan.base-url", record.baseUrl());
         putIfPresent(properties, "pk.lender.pendanaan.client-id", record.clientId());
@@ -90,6 +92,7 @@ public final class LenderProviderConfigReader {
                 }
                 return Optional.of(new LenderProviderConfigRecord(
                         resultSet.getString("provider_code"),
+                        resultSet.getString("provider_name"),
                         resultSet.getString("base_url"),
                         resultSet.getString("callback_base_url"),
                         resultSet.getString("config_json"),

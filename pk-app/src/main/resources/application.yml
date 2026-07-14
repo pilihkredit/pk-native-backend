@@ -80,6 +80,7 @@ pk:
     config:
       source: ${PK_LENDER_CONFIG_SOURCE:db}
       provider-code: ${PK_LENDER_CONFIG_PROVIDER_CODE:pendanaan}
+      provider-name: ${PK_LENDER_CONFIG_PROVIDER_NAME:}
     pendanaan:
       connect-timeout-ms: ${PK_LENDER_PENDANAAN_CONNECT_TIMEOUT_MS:10000}
       read-timeout-ms: ${PK_LENDER_PENDANAAN_READ_TIMEOUT_MS:30000}
