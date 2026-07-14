@@ -46,9 +46,13 @@ class RepayVaFacadeTest {
 
         RepayVaFacade.VaListResult result = facade.listVas(1L, "U10001");
 
-        assertThat(result.vaList()).hasSize(1);
-        assertThat(result.vaList().getFirst().disabled()).isFalse();
-        assertThat(result.vaList().getFirst().bankCode()).isEqualTo("BCA");
+        assertThat(result.partnerUserId()).isEqualTo("U10001");
+        assertThat(result.userId()).isEqualTo("USR-1");
+        assertThat(result.defaultVa()).isNotNull();
+        assertThat(result.defaultVa().vaNo()).isEqualTo("8801234567890");
+        assertThat(result.vas()).hasSize(1);
+        assertThat(result.vas().getFirst().disabled()).isFalse();
+        assertThat(result.vas().getFirst().bankCode()).isEqualTo("BCA");
         verify(repayVaSnapshotRepository)
                 .replaceSnapshots(anyLong(), anyString(), any(), any(), any(), any(Instant.class));
     }

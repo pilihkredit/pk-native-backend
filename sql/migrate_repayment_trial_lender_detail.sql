@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS repayment_trial_va_channel (
     owner_id BIGINT UNSIGNED NOT NULL COMMENT 'Snapshot id or order id',
     va_role VARCHAR(32) NOT NULL COMMENT 'DEFAULT / SPARE / DISABLED_DEFAULT',
     bank_channel VARCHAR(64) NULL COMMENT 'Bank channel',
-    instruction VARCHAR(1024) NULL COMMENT 'Channel instruction',
+    instruction TEXT NULL COMMENT 'Channel instruction',
     default_channel TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Default channel flag',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',

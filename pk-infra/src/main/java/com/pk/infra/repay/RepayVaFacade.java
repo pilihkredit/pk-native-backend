@@ -27,7 +27,7 @@ public class RepayVaFacade {
     public VaListResult listVas(long profileId, String partnerUserId) {
         LenderRepayVaPort.LenderRepayVaListResult lenderResult = lenderRepayVaPort.listVas(partnerUserId);
         persistSnapshots(profileId, lenderResult);
-        return new VaListResult(lenderResult.vas().stream().map(this::toVaInfo).toList());
+        return toListResult(lenderResult);
     }
 
     public VaDefaultResult setDefaultVa(long profileId, String partnerUserId, VaDefaultCommand command) {
@@ -85,7 +85,21 @@ public class RepayVaFacade {
         }
     }
 
+    private VaListResult toListResult(LenderRepayVaPort.LenderRepayVaListResult lenderResult) {
+        return new VaListResult(
+                lenderResult.partnerUserId(),
+                lenderResult.userId(),
+                toVaInfo(lenderResult.defaultVa()),
+                lenderResult.vas() == null
+                        ? List.of()
+                        : lenderResult.vas().stream().map(this::toVaInfo).toList()
+        );
+    }
+
     private VaInfoResult toVaInfo(LenderRepayVa va) {
+        if (va == null) {
+            return null;
+        }
         List<VaChannelResult> channels = va.bankChannels() == null
                 ? List.of()
                 : va.bankChannels().stream()
@@ -111,7 +125,12 @@ public class RepayVaFacade {
     public record VaDefaultCommand(String vaNo, String bankChannel) {
     }
 
-    public record VaListResult(List<VaInfoResult> vaList) {
+    public record VaListResult(
+            String partnerUserId,
+            String userId,
+            VaInfoResult defaultVa,
+            List<VaInfoResult> vas
+    ) {
     }
 
     public record VaInfoResult(
