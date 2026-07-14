@@ -28,6 +28,14 @@ CREATE TABLE pk_api_credential (
     KEY idx_pk_api_credential_provider_status (provider_code, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='External PK API credential references';
 
+CREATE TABLE app_config (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    `key` VARCHAR(128) NOT NULL COMMENT 'Config key',
+    `value` JSON NOT NULL COMMENT 'Config value JSON',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_app_config_key (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Application configuration key-value store';
+
 CREATE TABLE ref_bank (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',

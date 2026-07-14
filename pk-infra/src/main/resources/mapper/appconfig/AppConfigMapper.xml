@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.appconfig.mapper.AppConfigMapper">
+
+    <resultMap id="appConfigMap" type="com.pk.core.appconfig.port.AppConfigRepository$AppConfigRecord">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="config_key" javaType="string"/>
+            <arg column="config_value" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findByKey" resultMap="appConfigMap">
+        SELECT id,
+               `key` AS config_key,
+               CAST(`value` AS CHAR) AS config_value
+        FROM app_config
+        WHERE `key` = #{key}
+    </select>
+</mapper>
