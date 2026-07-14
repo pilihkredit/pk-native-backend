@@ -25,7 +25,11 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> {
-                    authorize.requestMatchers("/actuator/health", "/actuator/info").permitAll();
+                    authorize.requestMatchers(
+                                    "/actuator/health",
+                                    "/actuator/info",
+                                    "/actuator/prometheus")
+                            .permitAll();
                     publicApiEndpointRegistry.publicEndpoints().forEach(endpoint -> {
                         if (endpoint.httpMethod() == null) {
                             authorize.requestMatchers(endpoint.pattern()).permitAll();

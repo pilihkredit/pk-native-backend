@@ -40,7 +40,26 @@
         </encoder>
     </appender>
 
-    <appender name="SLS_JSON" class="com.aliyun.openservices.log.logback.LoghubAppender">
+    <!--
+      Platform access logs (ApiLoggingFilter -> StructuredLogWriter) already emit the
+      standard schema as the log message. Encode with %msg and flatten into SLS fields
+      so uri/status/durationMs/code are indexable top-level columns.
+    -->
+    <appender name="SLS_STRUCTURED" class="com.pk.infra.logging.LoghubAppenderLogOnly">
+        <endpoint>${slsEndpoint}</endpoint>
+        <accessKeyId>${slsAccessKeyId}</accessKeyId>
+        <accessKeySecret>${slsAccessKeySecret}</accessKeySecret>
+        <project>${slsProject}</project>
+        <logStore>${slsLogstore}</logStore>
+        <topic>${slsTopic}</topic>
+        <source>${slsSource}</source>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%msg</pattern>
+        </encoder>
+    </appender>
+
+    <!-- General application logs: flatten composite JSON (timestamp/level/service/...). -->
+    <appender name="SLS_JSON" class="com.pk.infra.logging.LoghubAppenderLogOnly">
         <endpoint>${slsEndpoint}</endpoint>
         <accessKeyId>${slsAccessKeyId}</accessKeyId>
         <accessKeySecret>${slsAccessKeySecret}</accessKeySecret>
@@ -70,23 +89,21 @@
         </encoder>
     </appender>
 
-    <!--
-      API access logs (ApiLoggingFilter -> StructuredLogWriter) use logger "pk.structured".
-      Keep a readable raw-JSON console line, and propagate to root so the same request
-      also appears in CONSOLE_JSON / SLS_JSON (same channel as startup logs).
-    -->
-    <logger name="pk.structured" level="INFO" additivity="true">
-        <appender-ref ref="STRUCTURED_CONSOLE"/>
-    </logger>
-
     <if condition='property("slsEnabled").equals("true")'>
         <then>
+            <logger name="pk.structured" level="INFO" additivity="false">
+                <appender-ref ref="STRUCTURED_CONSOLE"/>
+                <appender-ref ref="SLS_STRUCTURED"/>
+            </logger>
             <root level="INFO">
                 <appender-ref ref="CONSOLE_JSON"/>
                 <appender-ref ref="SLS_JSON"/>
             </root>
         </then>
         <else>
+            <logger name="pk.structured" level="INFO" additivity="true">
+                <appender-ref ref="STRUCTURED_CONSOLE"/>
+            </logger>
             <root level="INFO">
                 <appender-ref ref="CONSOLE_JSON"/>
             </root>
