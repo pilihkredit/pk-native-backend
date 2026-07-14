@@ -60,7 +60,7 @@ class RepayTrialFacadeTest {
                     insert.totalBillCount(),
                     insert.totalShouldAmount(),
                     insert.totalReductionAmount(),
-                    insert.defaultVaJson(),
+                    insert.totalPaidAmount(),
                     insert.rawResponseJson(),
                     Instant.now()
             );
@@ -72,8 +72,8 @@ class RepayTrialFacadeTest {
         );
 
         assertThat(result.trialNo()).startsWith("RT");
-        assertThat(result.repayAmountDisplay()).isEqualTo("Rp 295.000");
-        assertThat(result.principalDisplay()).isEqualTo("Rp 250.000");
+        assertThat(result.lender().shouldAmount()).isEqualByComparingTo("295000");
+        assertThat(result.lender().shouldPrincipal()).isEqualByComparingTo("250000");
         assertThat(result.expiresAt()).isGreaterThan(Instant.now().toEpochMilli());
     }
 
@@ -96,7 +96,7 @@ class RepayTrialFacadeTest {
                         1,
                         new BigDecimal("295000"),
                         BigDecimal.ZERO,
-                        null,
+                        BigDecimal.ZERO,
                         "{}",
                         Instant.now()
                 ));
@@ -106,7 +106,7 @@ class RepayTrialFacadeTest {
                 new RepayTrialFacade.TrialCommand("REQ-2", "LOAN-1", null, null)
         );
 
-        assertThat(result.repayAmount()).isEqualByComparingTo("295000");
+        assertThat(result.lender().shouldAmount()).isEqualByComparingTo("295000");
     }
 
     @Test
@@ -125,7 +125,7 @@ class RepayTrialFacadeTest {
                     insert.totalBillCount(),
                     insert.totalShouldAmount(),
                     insert.totalReductionAmount(),
-                    insert.defaultVaJson(),
+                    insert.totalPaidAmount(),
                     insert.rawResponseJson(),
                     Instant.now()
             );
@@ -183,41 +183,33 @@ class RepayTrialFacadeTest {
     }
 
     private static LenderRepayTrialResult lenderTrialResult() {
+        BigDecimal zero = BigDecimal.ZERO;
+        BigDecimal shouldAmount = new BigDecimal("295000");
+        BigDecimal shouldPrincipal = new BigDecimal("250000");
+        BigDecimal shouldInterest = new BigDecimal("45000");
         return new LenderRepayTrialResult(
                 "LOAN-1",
                 "LN-1",
                 "BN-1",
                 "NORMAL",
-                null,
-                null,
-                null,
-                null,
+                null, null, null, null,
                 new BigDecimal("1500000"),
+                null, null, null, null, null,
+                shouldAmount,
+                null, null, null, null, null, null, null, null, null, null, null, null,
+                shouldAmount,
                 null,
-                null,
-                null,
-                null,
-                null,
-                new BigDecimal("295000"),
-                new BigDecimal("295000"),
-                new BigDecimal("250000"),
-                new BigDecimal("45000"),
-                new BigDecimal("0"),
-                new BigDecimal("0"),
-                new BigDecimal("0"),
-                new BigDecimal("0"),
-                new BigDecimal("0"),
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
+                shouldPrincipal,
+                shouldInterest,
+                null, null, null, null, null, null, null, null, null,
+                zero, zero, zero, zero, zero,
+                zero,
+                null, null, null, null, null, null, null, null, null, null, null,
+                null, null,
+                zero,
+                null, null, null,
+                null, null, null, null,
+                null, null,
                 List.of(),
                 "{}"
         );

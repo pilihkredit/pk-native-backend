@@ -1,5 +1,7 @@
 package com.pk.core.repay.port;
 
+import com.pk.core.repay.LenderRepayTrialResult;
+import com.pk.core.repay.LenderRepayVa;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -17,19 +19,19 @@ public interface RepaymentTrialSnapshotRepository {
             Integer totalBillCount,
             BigDecimal totalShouldAmount,
             BigDecimal totalReductionAmount,
-            String defaultVaJson,
+            BigDecimal totalPaidAmount,
+            LenderRepayVa defaultVa,
+            LenderRepayVa spareVa,
+            LenderRepayVa disabledDefaultVa,
             String rawResponseJson
     ) {
     }
 
     record TrialOrderInsert(
             long loanApplicationId,
-            String loanApplyId,
             boolean settle,
             String termNosJson,
-            BigDecimal shouldAmount,
-            String billStatus,
-            String termInfoJson
+            LenderRepayTrialResult bill
     ) {
     }
 
@@ -41,7 +43,7 @@ public interface RepaymentTrialSnapshotRepository {
             Integer totalBillCount,
             BigDecimal totalShouldAmount,
             BigDecimal totalReductionAmount,
-            String defaultVaJson,
+            BigDecimal totalPaidAmount,
             String rawResponseJson,
             Instant createdAt
     ) {

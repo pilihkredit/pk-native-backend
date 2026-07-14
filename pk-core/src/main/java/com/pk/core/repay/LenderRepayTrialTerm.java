@@ -2,6 +2,7 @@ package com.pk.core.repay;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 public record LenderRepayTrialTerm(
         String billNo,
@@ -9,20 +10,41 @@ public record LenderRepayTrialTerm(
         int termNo,
         String advSetteFlag,
         BigDecimal schdAmount,
+        BigDecimal schdStampDuty,
+        BigDecimal schdPrincipal,
+        BigDecimal schdInterest,
+        BigDecimal schdAllFee,
+        BigDecimal schdAllTaxFee,
+        BigDecimal schdFee1,
+        BigDecimal schdFee2,
+        BigDecimal schdFee3,
+        BigDecimal schdFee1Tax,
+        BigDecimal schdFee2Tax,
+        BigDecimal schdFee3Tax,
+        BigDecimal prePenInterest,
+        BigDecimal penInterest,
+        BigDecimal initLateFee,
         Instant dueDate,
         Integer overdueDays,
         Instant graceDate,
         String termStatus,
         Long daysOfDueDate,
         BigDecimal shouldAmount,
+        BigDecimal shouldStampDuty,
         BigDecimal shouldPrincipal,
         BigDecimal shouldInterest,
+        BigDecimal shouldFee1,
+        BigDecimal shouldFee2,
+        BigDecimal shouldFee3,
+        BigDecimal shouldFee1Tax,
+        BigDecimal shouldFee2Tax,
+        BigDecimal shouldFee3Tax,
         BigDecimal shouldPenInterest,
         BigDecimal shouldInitLateFee,
         String partRepayFlag,
         BigDecimal paidAmount,
         BigDecimal couponDiscount,
         BigDecimal reductionAmount,
-        String termDetailJson
+        List<LenderRepayTrialDiscountInfo> discountInfos
 ) {
 }

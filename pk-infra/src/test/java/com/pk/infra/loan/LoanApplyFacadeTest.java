@@ -319,8 +319,6 @@ class LoanApplyFacadeTest {
                         null,
                         null,
                         null,
-                        null,
-                        null,
                         null
                 ),
                 "{}",

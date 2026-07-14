@@ -118,17 +118,17 @@ public class RepayTrialFacade {
                         1,
                         lenderResult.shouldAmount(),
                         lenderResult.reductionAmount(),
-                        serializeVa(lenderResult.defaultVa()),
+                        lenderResult.paidAmount(),
+                        lenderResult.defaultVa(),
+                        lenderResult.spareVa(),
+                        lenderResult.disabledDefaultVa(),
                         lenderResult.rawResponseJson()
                 ),
                 List.of(new RepaymentTrialSnapshotRepository.TrialOrderInsert(
                         loan.loanApplicationId(),
-                        lenderResult.loanApplyId(),
                         settle,
                         serializeTermNos(termNos),
-                        lenderResult.shouldAmount(),
-                        lenderResult.billStatus(),
-                        serializeTermInfo(lenderResult)
+                        lenderResult
                 ))
         );
     }
@@ -151,12 +151,9 @@ public class RepayTrialFacade {
                     .orElseThrow(() -> new ApiException(ApiCode.SERVICE_UNAVAILABLE));
             orderInserts.add(new RepaymentTrialSnapshotRepository.TrialOrderInsert(
                     loan.loanApplicationId(),
-                    billTrial.loanApplyId(),
                     sourceOrder.settle(),
                     serializeTermNos(sourceOrder.termNos()),
-                    billTrial.shouldAmount(),
-                    billTrial.billStatus(),
-                    serializeTermInfo(billTrial)
+                    billTrial
             ));
         }
         repaymentTrialSnapshotRepository.insert(
@@ -167,7 +164,10 @@ public class RepayTrialFacade {
                         lenderResult.totalBillCount(),
                         lenderResult.totalShouldAmount(),
                         lenderResult.totalReductionAmount(),
-                        serializeVa(lenderResult.defaultVa()),
+                        lenderResult.totalPaidAmount(),
+                        lenderResult.defaultVa(),
+                        lenderResult.spareVa(),
+                        lenderResult.disabledDefaultVa(),
                         lenderResult.rawResponseJson()
                 ),
                 orderInserts
@@ -175,31 +175,10 @@ public class RepayTrialFacade {
     }
 
     private TrialResult toTrialResult(String trialNo, long expiresAt, LenderRepayTrialResult lenderResult) {
-        BigDecimal penalty = lenderResult.shouldPenalty();
-        if (penalty == null) {
-            penalty = lenderResult.shouldPenInterest();
-        }
-        return new TrialResult(
-                trialNo,
-                expiresAt,
-                lenderResult.shouldAmount(),
-                DisplayFormatters.formatIdrAmount(lenderResult.shouldAmount()),
-                lenderResult.shouldPrincipal(),
-                DisplayFormatters.formatIdrAmount(lenderResult.shouldPrincipal()),
-                lenderResult.shouldInterest(),
-                DisplayFormatters.formatIdrAmount(lenderResult.shouldInterest()),
-                penalty,
-                DisplayFormatters.formatIdrAmount(penalty),
-                lenderResult.shouldFee(),
-                DisplayFormatters.formatIdrAmount(lenderResult.shouldFee())
-        );
+        return new TrialResult(trialNo, expiresAt, lenderResult);
     }
 
     private BillTrialSummary toBillTrialSummary(LenderRepayTrialResult trial, Instant createdAt) {
-        BigDecimal penalty = trial.shouldPenalty();
-        if (penalty == null) {
-            penalty = trial.shouldPenInterest();
-        }
         return new BillTrialSummary(
                 trial.loanApplyId(),
                 trial.billNo(),
@@ -207,7 +186,7 @@ public class RepayTrialFacade {
                 DisplayFormatters.formatIdrAmount(trial.shouldAmount()),
                 trial.shouldPrincipal(),
                 trial.shouldInterest(),
-                penalty,
+                trial.shouldPenalty() != null ? trial.shouldPenalty() : trial.shouldPenInterest(),
                 trial.shouldFee()
         );
     }
@@ -216,28 +195,9 @@ public class RepayTrialFacade {
         return new VaSummary(va.vaNo(), va.bankCode(), va.bankName(), va.defaultFlag());
     }
 
-    private String serializeVa(LenderRepayVa va) {
-        if (va == null) {
-            return null;
-        }
-        try {
-            return objectMapper.writeValueAsString(va);
-        } catch (Exception exception) {
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, exception);
-        }
-    }
-
     private String serializeTermNos(List<Integer> termNos) {
         try {
             return objectMapper.writeValueAsString(termNos == null ? List.of() : termNos);
-        } catch (Exception exception) {
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, exception);
-        }
-    }
-
-    private String serializeTermInfo(LenderRepayTrialResult lenderResult) {
-        try {
-            return objectMapper.writeValueAsString(lenderResult.termInfo());
         } catch (Exception exception) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, exception);
         }
@@ -299,16 +259,7 @@ public class RepayTrialFacade {
     public record TrialResult(
             String trialNo,
             long expiresAt,
-            BigDecimal repayAmount,
-            String repayAmountDisplay,
-            BigDecimal principal,
-            String principalDisplay,
-            BigDecimal interest,
-            String interestDisplay,
-            BigDecimal penalty,
-            String penaltyDisplay,
-            BigDecimal fee,
-            String feeDisplay
+            LenderRepayTrialResult lender
     ) {
     }
 
