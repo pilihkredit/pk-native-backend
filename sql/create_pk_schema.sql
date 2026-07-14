@@ -36,6 +36,18 @@ CREATE TABLE app_config (
     UNIQUE KEY uk_app_config_key (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Application configuration key-value store';
 
+INSERT INTO app_config (`key`, `value`)
+VALUES (
+    'auth.otp',
+    JSON_OBJECT(
+        'otpDailyLimit', 10,
+        'otpResendIntervalSeconds', 60,
+        'otpDailyLimitZone', 'Asia/Jakarta'
+    )
+)
+ON DUPLICATE KEY UPDATE
+    `value` = VALUES(`value`);
+
 CREATE TABLE ref_bank (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',

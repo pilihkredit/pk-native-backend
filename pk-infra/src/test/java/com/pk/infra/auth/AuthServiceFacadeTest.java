@@ -9,8 +9,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.appconfig.port.AppConfigRepository;
 import com.pk.core.auth.OtpChallenge;
 import com.pk.core.auth.SmsSendResult;
 import com.pk.core.auth.UserProfileSummary;
@@ -26,7 +28,6 @@ import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.auth.port.UserPasswordCredentialRepository;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,7 @@ class AuthServiceFacadeTest {
     private PasswordHasher passwordHasher;
     private SmsSendLogRepository smsSendLogRepository;
     private SmsSender smsSender;
+    private AuthOtpConfigLoader authOtpConfigLoader;
     private AuthServiceFacade facade;
 
     @BeforeEach
@@ -49,13 +51,12 @@ class AuthServiceFacadeTest {
         passwordHasher = mock(PasswordHasher.class);
         smsSendLogRepository = mock(SmsSendLogRepository.class);
         smsSender = mock(SmsSender.class);
+        authOtpConfigLoader = defaultOtpConfigLoader();
         AuthProperties properties = new AuthProperties();
         properties.setOtpTtl(Duration.ofMinutes(5));
-        properties.setOtpResendInterval(Duration.ofSeconds(60));
-        properties.setOtpDailyLimit(10);
-        properties.setOtpDailyLimitZone(ZoneId.of("Asia/Jakarta"));
         facade = new AuthServiceFacade(
                 properties,
+                authOtpConfigLoader,
                 mock(SessionStore.class),
                 otpChallengeStore,
                 mock(RefreshTokenStore.class),
@@ -69,6 +70,20 @@ class AuthServiceFacadeTest {
         when(smsSendLogRepository.countSince(eq("8123456789"), any(Instant.class))).thenReturn(0L);
         when(smsSendLogRepository.insert(any())).thenReturn(1L);
         when(smsSender.send(eq("8123456789"), any())).thenReturn(SmsSendResult.success("local", "local-1"));
+    }
+
+    private static AuthOtpConfigLoader defaultOtpConfigLoader() {
+        AppConfigRepository repository = mock(AppConfigRepository.class);
+        when(repository.findByKey(AuthOtpConfigLoader.CONFIG_KEY)).thenReturn(Optional.of(
+                new AppConfigRepository.AppConfigRecord(
+                        1L,
+                        AuthOtpConfigLoader.CONFIG_KEY,
+                        """
+                        {"otpDailyLimit":10,"otpResendIntervalSeconds":60,"otpDailyLimitZone":"Asia/Jakarta"}
+                        """
+                )
+        ));
+        return new AuthOtpConfigLoader(repository, new ObjectMapper());
     }
 
     @Test
@@ -123,6 +138,7 @@ class AuthServiceFacadeTest {
 
         AuthServiceFacade verifyFacade = new AuthServiceFacade(
                 properties,
+                defaultOtpConfigLoader(),
                 sessionStore,
                 otpChallengeStore,
                 refreshTokenStore,
@@ -273,6 +289,7 @@ class AuthServiceFacadeTest {
 
         AuthServiceFacade verifyFacade = new AuthServiceFacade(
                 properties,
+                defaultOtpConfigLoader(),
                 sessionStore,
                 otpChallengeStore,
                 refreshTokenStore,

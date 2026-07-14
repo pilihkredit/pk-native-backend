@@ -7,6 +7,8 @@ import com.pk.core.auth.port.PasswordHasher;
 import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.auth.port.UserPasswordCredentialRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.appconfig.port.AppConfigRepository;
 import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSender;
 import org.springframework.context.annotation.Bean;
@@ -31,8 +33,14 @@ public class AuthStoreConfiguration {
     }
 
     @Bean
+    AuthOtpConfigLoader authOtpConfigLoader(AppConfigRepository appConfigRepository, ObjectMapper objectMapper) {
+        return new AuthOtpConfigLoader(appConfigRepository, objectMapper);
+    }
+
+    @Bean
     AuthServiceFacade authServiceFacade(
             AuthProperties authProperties,
+            AuthOtpConfigLoader authOtpConfigLoader,
             SessionStore sessionStore,
             OtpChallengeStore otpChallengeStore,
             RefreshTokenStore refreshTokenStore,
@@ -45,6 +53,7 @@ public class AuthStoreConfiguration {
     ) {
         return new AuthServiceFacade(
                 authProperties,
+                authOtpConfigLoader,
                 sessionStore,
                 otpChallengeStore,
                 refreshTokenStore,

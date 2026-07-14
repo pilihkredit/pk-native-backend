@@ -30,6 +30,7 @@ public class AuthServiceFacade {
     private static final String SMS_PURPOSE_OTP = "OTP";
 
     private final AuthProperties authProperties;
+    private final AuthOtpConfigLoader authOtpConfigLoader;
     private final SessionStore sessionStore;
     private final OtpChallengeStore otpChallengeStore;
     private final RefreshTokenStore refreshTokenStore;
@@ -42,6 +43,7 @@ public class AuthServiceFacade {
 
     public AuthServiceFacade(
             AuthProperties authProperties,
+            AuthOtpConfigLoader authOtpConfigLoader,
             SessionStore sessionStore,
             OtpChallengeStore otpChallengeStore,
             RefreshTokenStore refreshTokenStore,
@@ -53,6 +55,7 @@ public class AuthServiceFacade {
             SmsSender smsSender
     ) {
         this.authProperties = authProperties;
+        this.authOtpConfigLoader = authOtpConfigLoader;
         this.sessionStore = sessionStore;
         this.otpChallengeStore = otpChallengeStore;
         this.refreshTokenStore = refreshTokenStore;
@@ -70,11 +73,12 @@ public class AuthServiceFacade {
         if (deviceNo.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
+        AuthOtpConfigLoader.AuthOtpConfig otpConfig = authOtpConfigLoader.load();
         Optional<Duration> wait = otpChallengeStore.timeUntilResendAllowed(deviceNo);
         if (wait.isPresent()) {
             throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
         }
-        enforceDailySmsLimit(mobileNo);
+        enforceDailySmsLimit(mobileNo, otpConfig);
 
         String otpToken = OtpCodeGenerator.token();
         String otpCode = OtpCodeGenerator.sixDigits();
@@ -102,22 +106,22 @@ public class AuthServiceFacade {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
 
-        otpChallengeStore.markSent(deviceNo, authProperties.otpResendInterval());
+        otpChallengeStore.markSent(deviceNo, otpConfig.otpResendInterval());
         return new OtpSendResult(
                 otpToken,
                 authProperties.otpTtl().toSeconds(),
-                authProperties.otpResendInterval().toSeconds(),
+                otpConfig.otpResendInterval().toSeconds(),
                 otpCode
         );
     }
 
-    private void enforceDailySmsLimit(String mobileNo) {
-        Instant startOfDay = ZonedDateTime.now(authProperties.otpDailyLimitZone())
+    private void enforceDailySmsLimit(String mobileNo, AuthOtpConfigLoader.AuthOtpConfig otpConfig) {
+        Instant startOfDay = ZonedDateTime.now(otpConfig.otpDailyLimitZone())
                 .toLocalDate()
-                .atStartOfDay(authProperties.otpDailyLimitZone())
+                .atStartOfDay(otpConfig.otpDailyLimitZone())
                 .toInstant();
         long sentToday = smsSendLogRepository.countSince(mobileNo, startOfDay);
-        if (sentToday >= authProperties.otpDailyLimit()) {
+        if (sentToday >= otpConfig.otpDailyLimit()) {
             throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
         }
     }
