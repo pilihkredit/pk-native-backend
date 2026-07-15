@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.debug.mapper.DebugTrackingReadMapper">
+    <resultMap id="eventTypeCountRecordMap" type="com.pk.infra.debug.mapper.DebugTrackingReadMapper$EventTypeCountRecord">
+        <constructor>
+            <arg column="event_type" javaType="string"/>
+            <arg column="cnt" javaType="_long"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="trackingEventRecordMap" type="com.pk.infra.debug.mapper.DebugTrackingReadMapper$TrackingEventRecord">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="event_timestamp" javaType="java.lang.Long"/>
+            <arg column="uid" javaType="string"/>
+            <arg column="event_type" javaType="string"/>
+            <arg column="url" javaType="string"/>
+            <arg column="extend_json" javaType="string"/>
+            <arg column="trace_id" javaType="string"/>
+            <arg column="client_no" javaType="string"/>
+            <arg column="client_manufacture" javaType="string"/>
+            <arg column="client_model" javaType="string"/>
+            <arg column="client_category" javaType="string"/>
+            <arg column="client_os" javaType="string"/>
+            <arg column="client_os_version" javaType="string"/>
+            <arg column="ai" javaType="string"/>
+            <arg column="av" javaType="string"/>
+            <arg column="wv" javaType="string"/>
+            <arg column="bn" javaType="string"/>
+            <arg column="bv" javaType="string"/>
+            <arg column="android_id" javaType="string"/>
+            <arg column="gaid" javaType="string"/>
+            <arg column="idfv" javaType="string"/>
+            <arg column="idfa" javaType="string"/>
+            <arg column="ip" javaType="string"/>
+            <arg column="event_datetime" javaType="string"/>
+            <arg column="payload_json" javaType="string"/>
+            <arg column="partner_user_id" javaType="string"/>
+            <arg column="profile_id" javaType="java.lang.Long"/>
+            <arg column="source" javaType="string"/>
+            <arg column="created_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <select id="countByClientNo" resultType="_long">
+        SELECT COUNT(*)
+        FROM tracking_event
+        WHERE client_no = #{clientNo}
+    </select>
+
+    <select id="countEventTypesByClientNo" resultMap="eventTypeCountRecordMap">
+        SELECT event_type, COUNT(*) AS cnt
+        FROM tracking_event
+        WHERE client_no = #{clientNo}
+        GROUP BY event_type
+        ORDER BY cnt DESC, event_type ASC
+    </select>
+
+    <select id="findByClientNo" resultMap="trackingEventRecordMap">
+        SELECT id, event_timestamp, uid, event_type, url, CAST(extend_json AS CHAR) AS extend_json,
+               trace_id, client_no, client_manufacture, client_model, client_category,
+               client_os, client_os_version, ai, av, wv, bn, bv, android_id, gaid, idfv, idfa,
+               ip, event_datetime, CAST(payload_json AS CHAR) AS payload_json,
+               partner_user_id, profile_id, source, created_at
+        FROM tracking_event
+        WHERE client_no = #{clientNo}
+        ORDER BY event_timestamp DESC, id DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

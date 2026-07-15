@@ -1213,7 +1213,8 @@ CREATE TABLE tracking_event (
     KEY idx_tracking_event_trace (trace_id, event_timestamp),
     KEY idx_tracking_event_uid (uid, event_timestamp),
     KEY idx_tracking_event_type (event_type, event_timestamp),
-    KEY idx_tracking_event_partner (partner_user_id, event_timestamp)
+    KEY idx_tracking_event_partner (partner_user_id, event_timestamp),
+    KEY idx_tracking_event_client_no (client_no, event_timestamp)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Client tracking events (Open Platform aligned payload)';
 
 CREATE TABLE recon_job (
