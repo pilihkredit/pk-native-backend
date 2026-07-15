@@ -31,12 +31,14 @@ public class DebugTrackingEventsController {
     @GetMapping
     public ApiResponse<DebugTrackingEventsResponse> query(
             @RequestHeader(value = "X-Debug-Token", required = false) String debugToken,
-            @RequestParam("clientNo") String clientNo,
+            @RequestParam(value = "clientNo", required = false) String clientNo,
+            @RequestParam(value = "mobileNo", required = false) String mobileNo,
+            @RequestParam(value = "userId", required = false) String userId,
             @RequestParam(value = "limit", required = false) Integer limit,
             HttpServletRequest request
     ) {
         return ApiResponse.success(
-                applicationService.query(debugToken, clientNo, limit),
+                applicationService.query(debugToken, clientNo, mobileNo, userId, limit),
                 RequestTrace.resolveTraceId(request)
         );
     }

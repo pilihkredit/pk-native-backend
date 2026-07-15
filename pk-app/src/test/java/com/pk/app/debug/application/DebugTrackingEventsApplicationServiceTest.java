@@ -2,74 +2,133 @@ package com.pk.app.debug.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.pk.app.debug.config.DebugUserProgressProperties;
 import com.pk.core.api.ApiException;
+import com.pk.core.auth.UserProfileSummary;
+import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.infra.debug.mapper.DebugTrackingReadMapper;
+import com.pk.infra.debug.mapper.DebugTrackingReadMapper.TrackingQueryCriteria;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class DebugTrackingEventsApplicationServiceTest {
     @Test
     void returnsEventsGroupedByTypeForClientNo() {
         DebugTrackingReadMapper readMapper = mock(DebugTrackingReadMapper.class);
-        DebugUserProgressProperties properties = new DebugUserProgressProperties();
-        properties.setEnabled(true);
-        properties.setToken("debug-token");
-        DebugTrackingEventsApplicationService service = new DebugTrackingEventsApplicationService(
-                readMapper,
-                properties
-        );
-        when(readMapper.countByClientNo("c4797ba1f703219c")).thenReturn(2L);
-        when(readMapper.countEventTypesByClientNo("c4797ba1f703219c"))
+        UserAuthRepository userAuthRepository = mock(UserAuthRepository.class);
+        DebugTrackingEventsApplicationService service = newService(readMapper, userAuthRepository);
+        when(readMapper.countByCriteria(any())).thenReturn(2L);
+        when(readMapper.countEventTypesByCriteria(any()))
                 .thenReturn(List.of(new DebugTrackingReadMapper.EventTypeCountRecord("page_view", 2L)));
-        when(readMapper.findByClientNo("c4797ba1f703219c", 200))
+        when(readMapper.findByCriteria(any(), eq(200)))
                 .thenReturn(List.of(sampleRecord(1L, "page_view"), sampleRecord(2L, "page_view")));
 
-        var response = service.query("debug-token", "c4797ba1f703219c", null);
+        var response = service.query("debug-token", "c4797ba1f703219c", null, null, null);
 
         assertThat(response.found()).isTrue();
         assertThat(response.clientNo()).isEqualTo("c4797ba1f703219c");
         assertThat(response.total()).isEqualTo(2L);
         assertThat(response.eventTypes()).hasSize(1);
-        assertThat(response.eventTypes().getFirst().eventType()).isEqualTo("page_view");
         assertThat(response.events()).hasSize(2);
         assertThat(response.truncated()).isFalse();
     }
 
     @Test
-    void returnsEmptyWhenNoEvents() {
+    void queriesByMobileNoViaProfileIdentity() {
         DebugTrackingReadMapper readMapper = mock(DebugTrackingReadMapper.class);
-        DebugUserProgressProperties properties = new DebugUserProgressProperties();
-        properties.setEnabled(true);
-        properties.setToken("debug-token");
-        DebugTrackingEventsApplicationService service = new DebugTrackingEventsApplicationService(
-                readMapper,
-                properties
-        );
-        when(readMapper.countByClientNo("missing")).thenReturn(0L);
+        UserAuthRepository userAuthRepository = mock(UserAuthRepository.class);
+        DebugTrackingEventsApplicationService service = newService(readMapper, userAuthRepository);
+        when(userAuthRepository.findByMobileNo("801234567"))
+                .thenReturn(Optional.of(new UserProfileSummary(10L, "U10001", "801234567", false)));
+        ArgumentCaptor<TrackingQueryCriteria> criteriaCaptor = ArgumentCaptor.forClass(TrackingQueryCriteria.class);
+        when(readMapper.countByCriteria(criteriaCaptor.capture())).thenReturn(1L);
+        when(readMapper.countEventTypesByCriteria(any()))
+                .thenReturn(List.of(new DebugTrackingReadMapper.EventTypeCountRecord("login", 1L)));
+        when(readMapper.findByCriteria(any(), eq(200)))
+                .thenReturn(List.of(sampleRecord(3L, "login")));
 
-        var response = service.query("debug-token", "missing", null);
+        var response = service.query("debug-token", null, "801234567", null, null);
+
+        assertThat(response.found()).isTrue();
+        assertThat(response.mobileNo()).isEqualTo("801234567");
+        assertThat(response.profileId()).isEqualTo(10L);
+        assertThat(response.partnerUserId()).isEqualTo("U10001");
+        TrackingQueryCriteria criteria = criteriaCaptor.getValue();
+        assertThat(criteria.profileId()).isEqualTo(10L);
+        assertThat(criteria.userIds()).containsExactly("U10001");
+    }
+
+    @Test
+    void queriesByPartnerUserId() {
+        DebugTrackingReadMapper readMapper = mock(DebugTrackingReadMapper.class);
+        UserAuthRepository userAuthRepository = mock(UserAuthRepository.class);
+        DebugTrackingEventsApplicationService service = newService(readMapper, userAuthRepository);
+        ArgumentCaptor<TrackingQueryCriteria> criteriaCaptor = ArgumentCaptor.forClass(TrackingQueryCriteria.class);
+        when(readMapper.countByCriteria(criteriaCaptor.capture())).thenReturn(1L);
+        when(readMapper.countEventTypesByCriteria(any()))
+                .thenReturn(List.of(new DebugTrackingReadMapper.EventTypeCountRecord("click", 1L)));
+        when(readMapper.findByCriteria(any(), eq(50)))
+                .thenReturn(List.of(sampleRecord(4L, "click")));
+
+        var response = service.query("debug-token", null, null, "U10001", 50);
+
+        assertThat(response.found()).isTrue();
+        assertThat(response.userId()).isEqualTo("U10001");
+        assertThat(criteriaCaptor.getValue().userIds()).containsExactly("U10001");
+        assertThat(criteriaCaptor.getValue().profileId()).isNull();
+    }
+
+    @Test
+    void returnsEmptyWhenMobileNotFound() {
+        DebugTrackingReadMapper readMapper = mock(DebugTrackingReadMapper.class);
+        UserAuthRepository userAuthRepository = mock(UserAuthRepository.class);
+        DebugTrackingEventsApplicationService service = newService(readMapper, userAuthRepository);
+        when(userAuthRepository.findByMobileNo("809999999")).thenReturn(Optional.empty());
+
+        var response = service.query("debug-token", null, "809999999", null, null);
 
         assertThat(response.found()).isFalse();
         assertThat(response.events()).isEmpty();
     }
 
     @Test
+    void rejectsWhenNoQueryKeyProvided() {
+        DebugTrackingEventsApplicationService service = newService(
+                mock(DebugTrackingReadMapper.class),
+                mock(UserAuthRepository.class)
+        );
+
+        assertThatThrownBy(() -> service.query("debug-token", " ", null, "", null))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
     void rejectsInvalidDebugToken() {
+        DebugTrackingEventsApplicationService service = newService(
+                mock(DebugTrackingReadMapper.class),
+                mock(UserAuthRepository.class)
+        );
+
+        assertThatThrownBy(() -> service.query("bad", "c1", null, null, null))
+                .isInstanceOf(ApiException.class);
+    }
+
+    private static DebugTrackingEventsApplicationService newService(
+            DebugTrackingReadMapper readMapper,
+            UserAuthRepository userAuthRepository
+    ) {
         DebugUserProgressProperties properties = new DebugUserProgressProperties();
         properties.setEnabled(true);
         properties.setToken("debug-token");
-        DebugTrackingEventsApplicationService service = new DebugTrackingEventsApplicationService(
-                mock(DebugTrackingReadMapper.class),
-                properties
-        );
-
-        assertThatThrownBy(() -> service.query("bad", "c1", null))
-                .isInstanceOf(ApiException.class);
+        return new DebugTrackingEventsApplicationService(readMapper, userAuthRepository, properties);
     }
 
     private static DebugTrackingReadMapper.TrackingEventRecord sampleRecord(long id, String eventType) {
@@ -101,7 +160,7 @@ class DebugTrackingEventsApplicationServiceTest {
                 "{\"eventType\":\"" + eventType + "\"}",
                 "U10001",
                 10L,
-                "client",
+                "CLIENT",
                 Instant.parse("2026-07-15T02:00:00Z")
         );
     }

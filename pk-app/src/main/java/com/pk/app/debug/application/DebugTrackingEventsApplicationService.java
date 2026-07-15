@@ -4,8 +4,14 @@ import com.pk.app.debug.config.DebugUserProgressProperties;
 import com.pk.app.debug.dto.DebugTrackingEventsResponse;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.auth.UserProfileSummary;
+import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.infra.debug.mapper.DebugTrackingReadMapper;
+import com.pk.infra.debug.mapper.DebugTrackingReadMapper.TrackingQueryCriteria;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,40 +20,108 @@ public class DebugTrackingEventsApplicationService {
     static final int MAX_LIMIT = 500;
 
     private final DebugTrackingReadMapper readMapper;
+    private final UserAuthRepository userAuthRepository;
     private final DebugUserProgressProperties properties;
 
     public DebugTrackingEventsApplicationService(
             DebugTrackingReadMapper readMapper,
+            UserAuthRepository userAuthRepository,
             DebugUserProgressProperties properties
     ) {
         this.readMapper = readMapper;
+        this.userAuthRepository = userAuthRepository;
         this.properties = properties;
     }
 
-    public DebugTrackingEventsResponse query(String debugToken, String clientNo, Integer limit) {
+    public DebugTrackingEventsResponse query(
+            String debugToken,
+            String clientNo,
+            String mobileNo,
+            String userId,
+            Integer limit
+    ) {
         validateToken(debugToken);
-        if (clientNo == null || clientNo.isBlank()) {
+        String normalizedClientNo = blankToNull(clientNo);
+        String normalizedMobileNo = blankToNull(mobileNo);
+        String normalizedUserId = blankToNull(userId);
+        if (normalizedClientNo == null && normalizedMobileNo == null && normalizedUserId == null) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        String normalized = clientNo.trim();
+
+        Long profileId = null;
+        String partnerUserId = null;
+        Set<String> userIds = new LinkedHashSet<>();
+
+        if (normalizedMobileNo != null) {
+            Optional<UserProfileSummary> user = userAuthRepository.findByMobileNo(normalizedMobileNo);
+            if (user.isEmpty()) {
+                return DebugTrackingEventsResponse.empty(
+                        normalizedClientNo,
+                        normalizedMobileNo,
+                        normalizedUserId,
+                        null,
+                        null
+                );
+            }
+            profileId = user.get().profileId();
+            partnerUserId = user.get().partnerUserId();
+            if (partnerUserId != null && !partnerUserId.isBlank()) {
+                userIds.add(partnerUserId.trim());
+            }
+        }
+
+        if (normalizedUserId != null) {
+            userIds.add(normalizedUserId);
+            Long parsedProfileId = parseProfileId(normalizedUserId);
+            if (parsedProfileId != null) {
+                profileId = profileId == null ? parsedProfileId : profileId;
+                Optional<UserProfileSummary> byProfile = userAuthRepository.findByProfileId(parsedProfileId);
+                if (byProfile.isPresent()) {
+                    partnerUserId = partnerUserId == null ? byProfile.get().partnerUserId() : partnerUserId;
+                    if (byProfile.get().partnerUserId() != null && !byProfile.get().partnerUserId().isBlank()) {
+                        userIds.add(byProfile.get().partnerUserId().trim());
+                    }
+                }
+            }
+        }
+
+        TrackingQueryCriteria criteria = new TrackingQueryCriteria(
+                normalizedClientNo,
+                profileId,
+                List.copyOf(userIds)
+        );
+        if (normalizedClientNo == null && !criteria.hasUserScope()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+
         int resolvedLimit = resolveLimit(limit);
-        long total = readMapper.countByClientNo(normalized);
+        long total = readMapper.countByCriteria(criteria);
         if (total == 0L) {
-            return DebugTrackingEventsResponse.empty(normalized);
+            return DebugTrackingEventsResponse.empty(
+                    normalizedClientNo,
+                    normalizedMobileNo,
+                    normalizedUserId,
+                    profileId,
+                    partnerUserId
+            );
         }
         List<DebugTrackingEventsResponse.EventTypeSummary> eventTypes = readMapper
-                .countEventTypesByClientNo(normalized)
+                .countEventTypesByCriteria(criteria)
                 .stream()
                 .map(row -> new DebugTrackingEventsResponse.EventTypeSummary(row.eventType(), row.count()))
                 .toList();
         List<DebugTrackingEventsResponse.TrackingEventInfo> events = readMapper
-                .findByClientNo(normalized, resolvedLimit)
+                .findByCriteria(criteria, resolvedLimit)
                 .stream()
                 .map(DebugTrackingEventsApplicationService::toEventInfo)
                 .toList();
         return new DebugTrackingEventsResponse(
                 true,
-                normalized,
+                normalizedClientNo,
+                normalizedMobileNo,
+                normalizedUserId,
+                profileId,
+                partnerUserId,
                 total,
                 events.size(),
                 total > events.size(),
@@ -72,6 +146,25 @@ public class DebugTrackingEventsApplicationService {
         return Math.min(limit, MAX_LIMIT);
     }
 
+    private static String blankToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static Long parseProfileId(String userId) {
+        if (!userId.chars().allMatch(Character::isDigit)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(userId);
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
     private static DebugTrackingEventsResponse.TrackingEventInfo toEventInfo(
             DebugTrackingReadMapper.TrackingEventRecord record
     ) {
@@ -83,6 +176,7 @@ public class DebugTrackingEventsApplicationService {
                 record.url(),
                 record.uid(),
                 record.traceId(),
+                record.clientNo(),
                 record.clientManufacture(),
                 record.clientModel(),
                 record.clientCategory(),

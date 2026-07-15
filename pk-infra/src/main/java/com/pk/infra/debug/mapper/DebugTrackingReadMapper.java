@@ -7,14 +7,24 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface DebugTrackingReadMapper {
-    long countByClientNo(@Param("clientNo") String clientNo);
+    long countByCriteria(@Param("criteria") TrackingQueryCriteria criteria);
 
-    List<EventTypeCountRecord> countEventTypesByClientNo(@Param("clientNo") String clientNo);
+    List<EventTypeCountRecord> countEventTypesByCriteria(@Param("criteria") TrackingQueryCriteria criteria);
 
-    List<TrackingEventRecord> findByClientNo(
-            @Param("clientNo") String clientNo,
+    List<TrackingEventRecord> findByCriteria(
+            @Param("criteria") TrackingQueryCriteria criteria,
             @Param("limit") int limit
     );
+
+    record TrackingQueryCriteria(
+            String clientNo,
+            Long profileId,
+            List<String> userIds
+    ) {
+        public boolean hasUserScope() {
+            return profileId != null || (userIds != null && !userIds.isEmpty());
+        }
+    }
 
     record EventTypeCountRecord(
             String eventType,

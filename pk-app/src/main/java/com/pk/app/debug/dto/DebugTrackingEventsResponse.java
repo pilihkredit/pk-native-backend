@@ -6,14 +6,36 @@ import java.util.List;
 public record DebugTrackingEventsResponse(
         boolean found,
         String clientNo,
+        String mobileNo,
+        String userId,
+        Long profileId,
+        String partnerUserId,
         long total,
         int returned,
         boolean truncated,
         List<EventTypeSummary> eventTypes,
         List<TrackingEventInfo> events
 ) {
-    public static DebugTrackingEventsResponse empty(String clientNo) {
-        return new DebugTrackingEventsResponse(false, clientNo, 0L, 0, false, List.of(), List.of());
+    public static DebugTrackingEventsResponse empty(
+            String clientNo,
+            String mobileNo,
+            String userId,
+            Long profileId,
+            String partnerUserId
+    ) {
+        return new DebugTrackingEventsResponse(
+                false,
+                clientNo,
+                mobileNo,
+                userId,
+                profileId,
+                partnerUserId,
+                0L,
+                0,
+                false,
+                List.of(),
+                List.of()
+        );
     }
 
     public record EventTypeSummary(
@@ -30,6 +52,7 @@ public record DebugTrackingEventsResponse(
             String url,
             String uid,
             String traceId,
+            String clientNo,
             String clientManufacture,
             String clientModel,
             String clientCategory,
