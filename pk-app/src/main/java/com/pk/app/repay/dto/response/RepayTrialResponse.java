@@ -179,7 +179,7 @@ public record RepayTrialResponse(
                 lender.shouldPrincipal(),
                 DisplayFormatters.formatIdrAmount(lender.shouldPrincipal()),
                 lender.shouldInterest(),
-                DisplayFormatters.formatIdrAmount(lender.shouldInterest()),
+                DisplayFormatters.formatIdrAmount(sum(lender.shouldInterest(), lender.shouldFee1())),
                 lender.fee1Name(),
                 lender.shouldFee1(),
                 DisplayFormatters.formatIdrAmount(lender.shouldFee1()),
@@ -252,5 +252,11 @@ public record RepayTrialResponse(
 
     private static Long toMillis(Instant instant) {
         return instant == null ? null : instant.toEpochMilli();
+    }
+
+    private static BigDecimal sum(BigDecimal left, BigDecimal right) {
+        BigDecimal a = left == null ? BigDecimal.ZERO : left;
+        BigDecimal b = right == null ? BigDecimal.ZERO : right;
+        return a.add(b);
     }
 }
