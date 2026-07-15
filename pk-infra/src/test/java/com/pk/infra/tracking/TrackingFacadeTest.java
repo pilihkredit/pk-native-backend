@@ -3,6 +3,7 @@ package com.pk.infra.tracking;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -11,10 +12,8 @@ import com.pk.core.tracking.port.LenderTrackingPort;
 import com.pk.core.tracking.port.TrackingEventRepository;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,119 +21,82 @@ class TrackingFacadeTest {
     private InMemoryTrackingEventRepository repository;
     private RecordingLenderTrackingPort lenderTrackingPort;
     private TrackingFacade facade;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryTrackingEventRepository();
         lenderTrackingPort = new RecordingLenderTrackingPort();
-        facade = new TrackingFacade(repository, lenderTrackingPort, new ObjectMapper());
+        facade = new TrackingFacade(repository, lenderTrackingPort, objectMapper);
     }
 
     @Test
-    void acceptsValidEventsAndPersistsBatch() {
-        TrackingFacade.IngestResult result = facade.ingest(
-                10L,
-                "partner-1",
-                "device-1",
-                "192.168.1.10",
-                List.of(validEvent("EVT-1"), validEvent("EVT-2"))
-        );
+    void acceptsValidEventPersistsAndForwardsToLender() throws Exception {
+        facade.ingest(10L, "partner-1", "192.168.1.10", validEvent(null));
 
-        assertThat(result.acceptedCount()).isEqualTo(2);
-        assertThat(result.rejectedCount()).isEqualTo(0);
-        assertThat(lenderTrackingPort.submitted).hasSize(2);
-        assertThat(lenderTrackingPort.submitted.getFirst().uid()).isEqualTo("partner-1");
-        assertThat(lenderTrackingPort.submitted.getFirst().clientNo()).isEqualTo("device-1");
-        assertThat(lenderTrackingPort.submitted.getFirst().ip()).isEqualTo("192.168.1.10");
-        assertThat(lenderTrackingPort.submitted.getFirst().datetime()).isEqualTo("2025-06-21 17:00:00");
-        assertThat(repository.inserted).hasSize(2);
-    }
-
-    @Test
-    void dedupesWithinBatchAndAgainstDatabase() {
-        repository.existingIds.add("EVT-EXISTING");
-
-        TrackingFacade.IngestResult result = facade.ingest(
-                10L,
-                "partner-1",
-                "device-1",
-                "192.168.1.10",
-                List.of(
-                        validEvent("EVT-1"),
-                        validEvent("EVT-1"),
-                        validEvent("EVT-EXISTING"),
-                        invalidEvent()
-                )
-        );
-
-        assertThat(result.acceptedCount()).isEqualTo(1);
-        assertThat(result.rejectedCount()).isEqualTo(3);
         assertThat(lenderTrackingPort.submitted).hasSize(1);
-        assertThat(lenderTrackingPort.submitted.getFirst().eventType()).isEqualTo("loan_page_enter");
+        LenderTrackingEvent forwarded = lenderTrackingPort.submitted.getFirst();
+        assertThat(forwarded.uid()).isEqualTo("partner-1");
+        assertThat(forwarded.clientNo()).isEqualTo("device-1");
+        assertThat(forwarded.ip()).isEqualTo("192.168.1.10");
+        assertThat(forwarded.datetime()).isEqualTo("2025-06-21 17:00:00");
+        assertThat(forwarded.timestamp()).isEqualTo(1_750_500_000_000L);
+
         assertThat(repository.inserted).hasSize(1);
-        assertThat(repository.inserted.getFirst().eventId()).isEqualTo("EVT-1");
+        TrackingEventRepository.TrackingEventInsert saved = repository.inserted.getFirst();
+        assertThat(saved.eventTimestamp()).isEqualTo(1_750_500_000_000L);
+        assertThat(saved.uid()).isEqualTo("partner-1");
+        assertThat(saved.eventType()).isEqualTo("loan_page_enter");
+        assertThat(saved.clientManufacture()).isEqualTo("Apple");
+        assertThat(saved.ip()).isEqualTo("192.168.1.10");
+        assertThat(saved.eventDatetime()).isEqualTo("2025-06-21 17:00:00");
+        assertThat(saved.partnerUserId()).isEqualTo("partner-1");
+        assertThat(saved.profileId()).isEqualTo(10L);
+        assertThat(saved.source()).isEqualTo("CLIENT");
+
+        JsonNode payload = objectMapper.readTree(saved.payloadJson());
+        assertThat(payload.get("timestamp").asLong()).isEqualTo(1_750_500_000_000L);
+        assertThat(payload.get("uid").asText()).isEqualTo("partner-1");
+        assertThat(payload.get("eventType").asText()).isEqualTo("loan_page_enter");
+        assertThat(payload.get("clientNo").asText()).isEqualTo("device-1");
+        assertThat(payload.get("ip").asText()).isEqualTo("192.168.1.10");
+        assertThat(payload.get("datetime").asText()).isEqualTo("2025-06-21 17:00:00");
+        assertThat(payload.get("extend").get("applyId").asText()).isEqualTo("APPLY-1");
+    }
+
+    @Test
+    void prefersRequestUidOverPartnerUserId() {
+        facade.ingest(10L, "partner-1", "192.168.1.10", validEvent("uid-from-client"));
+
+        assertThat(lenderTrackingPort.submitted.getFirst().uid()).isEqualTo("uid-from-client");
+        assertThat(repository.inserted.getFirst().uid()).isEqualTo("uid-from-client");
     }
 
     @Test
     void acceptsEventsWithoutAuthenticatedUser() {
-        TrackingFacade.IngestResult result = facade.ingest(
-                null,
-                null,
-                "device-1",
-                "192.168.1.10",
-                List.of(validEvent("EVT-ANON-1"))
-        );
+        facade.ingest(null, null, "192.168.1.10", validEvent(""));
 
-        assertThat(result.acceptedCount()).isEqualTo(1);
-        assertThat(lenderTrackingPort.submitted).hasSize(1);
         assertThat(lenderTrackingPort.submitted.getFirst().uid()).isEmpty();
         assertThat(repository.inserted.getFirst().profileId()).isNull();
         assertThat(repository.inserted.getFirst().partnerUserId()).isNull();
     }
 
     @Test
-    void rejectsEmptyOrOversizedBatch() {
-        assertThatThrownBy(() -> facade.ingest(1L, "partner", "device", "192.168.1.10", List.of()))
+    void rejectsInvalidEvent() {
+        assertThatThrownBy(() -> facade.ingest(1L, "partner", "1.1.1.1", invalidEvent()))
                 .isInstanceOf(ApiException.class)
                 .extracting(exception -> ((ApiException) exception).apiCode())
                 .isEqualTo(ApiCode.INVALID_REQUEST_PARAMETERS);
 
-        List<TrackingFacade.TrackingEventCommand> tooMany = java.util.stream.IntStream.rangeClosed(1, 51)
-                .mapToObj(i -> validEvent("EVT-" + i))
-                .toList();
-        assertThatThrownBy(() -> facade.ingest(1L, "partner", "device", "192.168.1.10", tooMany))
-                .isInstanceOf(ApiException.class)
-                .extracting(exception -> ((ApiException) exception).apiCode())
-                .isEqualTo(ApiCode.INVALID_REQUEST_PARAMETERS);
-    }
-
-    @Test
-    void returnsZeroAcceptedWhenAllEventsInvalid() {
-        TrackingFacade.IngestResult result = facade.ingest(
-                10L,
-                "partner-1",
-                "device-1",
-                "192.168.1.10",
-                List.of(invalidEvent())
-        );
-
-        assertThat(result.acceptedCount()).isEqualTo(0);
-        assertThat(result.rejectedCount()).isEqualTo(1);
         assertThat(lenderTrackingPort.submitted).isEmpty();
         assertThat(repository.inserted).isEmpty();
     }
 
     @Test
-    void doesNotPersistWhenLenderRejectsEvents() {
+    void doesNotPersistWhenLenderRejectsEvent() {
         lenderTrackingPort.fail = true;
 
-        assertThatThrownBy(() -> facade.ingest(
-                10L,
-                "partner-1",
-                "device-1",
-                "192.168.1.10",
-                List.of(validEvent("EVT-1"))
-        ))
+        assertThatThrownBy(() -> facade.ingest(10L, "partner-1", "192.168.1.10", validEvent(null)))
                 .isInstanceOf(ApiException.class)
                 .extracting(exception -> ((ApiException) exception).apiCode())
                 .isEqualTo(ApiCode.SERVICE_UNAVAILABLE);
@@ -143,15 +105,15 @@ class TrackingFacadeTest {
         assertThat(repository.inserted).isEmpty();
     }
 
-    private static TrackingFacade.TrackingEventCommand validEvent(String eventId) {
+    private static TrackingFacade.TrackingEventCommand validEvent(String uid) {
         return new TrackingFacade.TrackingEventCommand(
-                eventId,
-                "loan_page_enter",
                 1_750_500_000_000L,
-                "trace-1",
+                uid,
+                "loan_page_enter",
                 "/loan",
                 Map.of("applyId", "APPLY-1"),
-                null,
+                "trace-1",
+                "device-1",
                 "Apple",
                 "iPhone 7",
                 "phone",
@@ -171,12 +133,12 @@ class TrackingFacadeTest {
 
     private static TrackingFacade.TrackingEventCommand invalidEvent() {
         return new TrackingFacade.TrackingEventCommand(
-                "",
-                "loan_page_enter",
                 1_750_500_000_000L,
-                "trace-1",
-                "/loan",
                 null,
+                "loan_page_enter",
+                "",
+                null,
+                "trace-1",
                 null,
                 null,
                 null,
@@ -196,26 +158,11 @@ class TrackingFacadeTest {
     }
 
     private static final class InMemoryTrackingEventRepository implements TrackingEventRepository {
-        private final Set<String> existingIds = new HashSet<>();
         private final List<TrackingEventInsert> inserted = new ArrayList<>();
 
         @Override
-        public Set<String> findExistingEventIds(Collection<String> eventIds) {
-            Set<String> found = new HashSet<>();
-            for (String eventId : eventIds) {
-                if (existingIds.contains(eventId)) {
-                    found.add(eventId);
-                }
-            }
-            return found;
-        }
-
-        @Override
-        public void insertBatch(Collection<TrackingEventInsert> events) {
-            for (TrackingEventInsert event : events) {
-                inserted.add(event);
-                existingIds.add(event.eventId());
-            }
+        public void insert(TrackingEventInsert event) {
+            inserted.add(event);
         }
     }
 

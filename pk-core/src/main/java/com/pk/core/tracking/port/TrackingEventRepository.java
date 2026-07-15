@@ -1,24 +1,35 @@
 package com.pk.core.tracking.port;
 
-import java.time.Instant;
-import java.util.Collection;
-import java.util.Set;
-
 public interface TrackingEventRepository {
-    Set<String> findExistingEventIds(Collection<String> eventIds);
-
-    void insertBatch(Collection<TrackingEventInsert> events);
+    void insert(TrackingEventInsert event);
 
     record TrackingEventInsert(
-            String eventId,
+            Long eventTimestamp,
+            String uid,
+            String eventType,
+            String url,
+            String extendJson,
             String traceId,
+            String clientNo,
+            String clientManufacture,
+            String clientModel,
+            String clientCategory,
+            String clientOs,
+            String clientOsVersion,
+            String ai,
+            String av,
+            String wv,
+            String bn,
+            String bv,
+            String androidId,
+            String gaid,
+            String idfv,
+            String idfa,
+            String ip,
+            String eventDatetime,
+            String payloadJson,
             String partnerUserId,
             Long profileId,
-            String eventType,
-            Instant eventTime,
-            String url,
-            String deviceNo,
-            String extendJson,
             String source
     ) {
     }

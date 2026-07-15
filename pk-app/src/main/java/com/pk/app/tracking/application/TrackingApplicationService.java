@@ -1,10 +1,8 @@
 package com.pk.app.tracking.application;
 
-import com.pk.app.tracking.dto.request.TrackingEventsRequest;
-import com.pk.app.tracking.dto.response.TrackingEventsResponse;
+import com.pk.app.tracking.dto.request.TrackingEventRequest;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.infra.tracking.TrackingFacade;
-import java.util.List;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,46 +13,40 @@ public class TrackingApplicationService {
         this.trackingFacade = trackingFacade;
     }
 
-    public TrackingEventsResponse ingest(
+    public void ingest(
             AuthenticatedPrincipal principal,
-            String deviceNo,
             String clientIp,
-            TrackingEventsRequest request
+            TrackingEventRequest request
     ) {
         Long profileId = principal == null ? null : principal.profileId();
         String partnerUserId = principal == null ? null : principal.partnerUserId();
-        List<TrackingFacade.TrackingEventCommand> commands = request.events().stream()
-                .map(item -> new TrackingFacade.TrackingEventCommand(
-                        item.eventId(),
-                        item.eventType(),
-                        item.eventTime(),
-                        item.traceId(),
-                        item.url(),
-                        item.extend(),
-                        item.clientNo(),
-                        item.clientManufacture(),
-                        item.clientModel(),
-                        item.clientCategory(),
-                        item.clientOs(),
-                        item.clientOsVersion(),
-                        item.ai(),
-                        item.av(),
-                        item.wv(),
-                        item.bn(),
-                        item.bv(),
-                        item.androidId(),
-                        item.gaid(),
-                        item.idfv(),
-                        item.idfa()
-                ))
-                .toList();
-        TrackingFacade.IngestResult result = trackingFacade.ingest(
+        trackingFacade.ingest(
                 profileId,
                 partnerUserId,
-                deviceNo,
                 clientIp,
-                commands
+                new TrackingFacade.TrackingEventCommand(
+                        request.timestamp(),
+                        request.uid(),
+                        request.eventType(),
+                        request.url(),
+                        request.extend(),
+                        request.traceId(),
+                        request.clientNo(),
+                        request.clientManufacture(),
+                        request.clientModel(),
+                        request.clientCategory(),
+                        request.clientOs(),
+                        request.clientOsVersion(),
+                        request.ai(),
+                        request.av(),
+                        request.wv(),
+                        request.bn(),
+                        request.bv(),
+                        request.androidId(),
+                        request.gaid(),
+                        request.idfv(),
+                        request.idfa()
+                )
         );
-        return new TrackingEventsResponse(result.acceptedCount(), result.rejectedCount());
     }
 }

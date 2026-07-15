@@ -2,6 +2,7 @@ package com.pk.infra.tracking;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.tracking.LenderTrackingEvent;
@@ -10,15 +11,10 @@ import com.pk.core.tracking.port.TrackingEventRepository;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class TrackingFacade {
-    public static final int MAX_BATCH_SIZE = 50;
     private static final String SOURCE_CLIENT = "CLIENT";
     private static final ZoneId LENDER_DATETIME_ZONE = ZoneId.of("Asia/Jakarta");
     private static final DateTimeFormatter LENDER_DATETIME_FORMATTER =
@@ -38,89 +34,23 @@ public class TrackingFacade {
         this.objectMapper = objectMapper;
     }
 
-    public IngestResult ingest(
-            Long profileId,
-            String partnerUserId,
-            String deviceNo,
-            String clientIp,
-            List<TrackingEventCommand> events
-    ) {
-        if (events == null || events.isEmpty() || events.size() > MAX_BATCH_SIZE) {
+    public void ingest(Long profileId, String partnerUserId, String clientIp, TrackingEventCommand event) {
+        if (!isValid(event)) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
 
-        List<TrackingEventCommand> validEvents = new ArrayList<>();
-        int rejectedCount = 0;
-        Set<String> seenInBatch = new HashSet<>();
-        for (TrackingEventCommand event : events) {
-            if (!isValid(event) || !seenInBatch.add(event.eventId())) {
-                rejectedCount++;
-                continue;
-            }
-            validEvents.add(event);
-        }
+        String uid = resolveUid(event.uid(), partnerUserId);
+        String datetime = LENDER_DATETIME_FORMATTER.format(Instant.ofEpochMilli(event.timestamp()));
+        String ip = clientIp == null ? "" : clientIp;
 
-        if (validEvents.isEmpty()) {
-            return new IngestResult(0, rejectedCount);
-        }
-
-        Set<String> candidateIds = new LinkedHashSet<>();
-        for (TrackingEventCommand event : validEvents) {
-            candidateIds.add(event.eventId());
-        }
-        Set<String> existingIds = trackingEventRepository.findExistingEventIds(candidateIds);
-
-        List<TrackingEventRepository.TrackingEventInsert> inserts = new ArrayList<>();
-        for (TrackingEventCommand event : validEvents) {
-            if (existingIds.contains(event.eventId())) {
-                rejectedCount++;
-                continue;
-            }
-            inserts.add(toInsert(event, profileId, partnerUserId, deviceNo));
-        }
-
-        if (!inserts.isEmpty()) {
-            lenderTrackingPort.submitEvents(toLenderEvents(inserts, validEvents, partnerUserId, deviceNo, clientIp));
-            trackingEventRepository.insertBatch(inserts);
-        }
-
-        return new IngestResult(inserts.size(), rejectedCount);
-    }
-
-    private List<LenderTrackingEvent> toLenderEvents(
-            List<TrackingEventRepository.TrackingEventInsert> inserts,
-            List<TrackingEventCommand> validEvents,
-            String partnerUserId,
-            String deviceNo,
-            String clientIp
-    ) {
-        Set<String> acceptedIds = new HashSet<>();
-        for (TrackingEventRepository.TrackingEventInsert insert : inserts) {
-            acceptedIds.add(insert.eventId());
-        }
-        List<LenderTrackingEvent> lenderEvents = new ArrayList<>();
-        for (TrackingEventCommand event : validEvents) {
-            if (acceptedIds.contains(event.eventId())) {
-                lenderEvents.add(toLenderEvent(event, partnerUserId, deviceNo, clientIp));
-            }
-        }
-        return lenderEvents;
-    }
-
-    private LenderTrackingEvent toLenderEvent(
-            TrackingEventCommand event,
-            String partnerUserId,
-            String deviceNo,
-            String clientIp
-    ) {
-        return new LenderTrackingEvent(
-                event.eventTime(),
-                partnerUserId == null ? "" : partnerUserId,
+        LenderTrackingEvent lenderEvent = new LenderTrackingEvent(
+                event.timestamp(),
+                uid,
                 event.eventType(),
                 event.url(),
                 event.extend(),
                 event.traceId(),
-                firstPresent(event.clientNo(), deviceNo),
+                event.clientNo(),
                 event.clientManufacture(),
                 event.clientModel(),
                 event.clientCategory(),
@@ -135,29 +65,77 @@ public class TrackingFacade {
                 event.gaid(),
                 event.idfv(),
                 event.idfa(),
-                clientIp,
-                LENDER_DATETIME_FORMATTER.format(Instant.ofEpochMilli(event.eventTime()))
+                ip,
+                datetime
         );
-    }
 
-    private TrackingEventRepository.TrackingEventInsert toInsert(
-            TrackingEventCommand event,
-            Long profileId,
-            String partnerUserId,
-            String deviceNo
-    ) {
-        return new TrackingEventRepository.TrackingEventInsert(
-                event.eventId(),
+        String payloadJson = toPayloadJson(lenderEvent);
+        TrackingEventRepository.TrackingEventInsert insert = new TrackingEventRepository.TrackingEventInsert(
+                event.timestamp(),
+                uid,
+                event.eventType(),
+                event.url(),
+                serializeExtend(event.extend()),
                 event.traceId(),
+                event.clientNo(),
+                event.clientManufacture(),
+                event.clientModel(),
+                event.clientCategory(),
+                event.clientOs(),
+                event.clientOsVersion(),
+                event.ai(),
+                event.av(),
+                event.wv(),
+                event.bn(),
+                event.bv(),
+                event.androidId(),
+                event.gaid(),
+                event.idfv(),
+                event.idfa(),
+                ip,
+                datetime,
+                payloadJson,
                 partnerUserId,
                 profileId,
-                event.eventType(),
-                Instant.ofEpochMilli(event.eventTime()),
-                event.url(),
-                deviceNo,
-                serializeExtend(event.extend()),
                 SOURCE_CLIENT
         );
+
+        lenderTrackingPort.submitEvents(List.of(lenderEvent));
+        trackingEventRepository.insert(insert);
+    }
+
+    private String toPayloadJson(LenderTrackingEvent event) {
+        ObjectNode node = objectMapper.createObjectNode();
+        put(node, "timestamp", event.timestamp());
+        put(node, "uid", event.uid());
+        put(node, "eventType", event.eventType());
+        put(node, "url", event.url());
+        if (event.extend() != null && !event.extend().isEmpty()) {
+            node.set("extend", objectMapper.valueToTree(event.extend()));
+        }
+        put(node, "traceId", event.traceId());
+        put(node, "clientNo", event.clientNo());
+        put(node, "clientManufacture", event.clientManufacture());
+        put(node, "clientModel", event.clientModel());
+        put(node, "clientCategory", event.clientCategory());
+        put(node, "clientOs", event.clientOs());
+        put(node, "clientOsVersion", event.clientOsVersion());
+        put(node, "ai", event.ai());
+        put(node, "av", event.av());
+        put(node, "wv", event.wv());
+        put(node, "bn", event.bn());
+        put(node, "bv", event.bv());
+        put(node, "androidId", event.androidId());
+        put(node, "gaid", event.gaid());
+        put(node, "idfv", event.idfv());
+        put(node, "idfa", event.idfa());
+        put(node, "ip", event.ip());
+        put(node, "datetime", event.datetime());
+        try {
+            return objectMapper.writeValueAsString(node);
+        } catch (JsonProcessingException exception) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
     }
 
     private String serializeExtend(Map<String, Object> extend) {
@@ -173,32 +151,59 @@ public class TrackingFacade {
 
     private static boolean isValid(TrackingEventCommand event) {
         return event != null
-                && isPresent(event.eventId(), 128)
+                && event.timestamp() != null
+                && event.timestamp() > 0
                 && isPresent(event.eventType(), 128)
+                && isPresent(event.url(), 512)
                 && isPresent(event.traceId(), 64)
-                && event.eventTime() != null
-                && event.eventTime() > 0
-                && (event.url() == null || event.url().length() <= 512);
+                && isPresent(event.clientNo(), 128)
+                && isPresent(event.clientManufacture(), 64)
+                && isPresent(event.clientModel(), 128)
+                && isPresent(event.clientCategory(), 32)
+                && isPresent(event.clientOs(), 32)
+                && isPresent(event.clientOsVersion(), 64)
+                && isPresent(event.ai(), 128)
+                && isPresent(event.av(), 64)
+                && (event.uid() == null || event.uid().length() <= 128)
+                && (event.wv() == null || event.wv().length() <= 64)
+                && (event.bn() == null || event.bn().length() <= 64)
+                && (event.bv() == null || event.bv().length() <= 64)
+                && (event.androidId() == null || event.androidId().length() <= 128)
+                && (event.gaid() == null || event.gaid().length() <= 128)
+                && (event.idfv() == null || event.idfv().length() <= 128)
+                && (event.idfa() == null || event.idfa().length() <= 128);
     }
 
     private static boolean isPresent(String value, int maxLength) {
         return value != null && !value.isBlank() && value.length() <= maxLength;
     }
 
-    private static String firstPresent(String first, String second) {
-        if (first != null && !first.isBlank()) {
-            return first;
+    private static String resolveUid(String requestUid, String partnerUserId) {
+        if (requestUid != null && !requestUid.isBlank()) {
+            return requestUid.trim();
         }
-        return second;
+        return partnerUserId == null ? "" : partnerUserId;
+    }
+
+    private static void put(ObjectNode node, String field, String value) {
+        if (value != null) {
+            node.put(field, value);
+        }
+    }
+
+    private static void put(ObjectNode node, String field, Long value) {
+        if (value != null) {
+            node.put(field, value);
+        }
     }
 
     public record TrackingEventCommand(
-            String eventId,
+            Long timestamp,
+            String uid,
             String eventType,
-            Long eventTime,
-            String traceId,
             String url,
             Map<String, Object> extend,
+            String traceId,
             String clientNo,
             String clientManufacture,
             String clientModel,
@@ -215,8 +220,5 @@ public class TrackingFacade {
             String idfv,
             String idfa
     ) {
-    }
-
-    public record IngestResult(int acceptedCount, int rejectedCount) {
     }
 }

@@ -1,9 +1,63 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.tracking.mapper.TrackingEventMapper">
-<select id="findExistingEventIds" resultType="string">SELECT event_id FROM tracking_event WHERE event_id IN
-<foreach collection="eventIds" item="eventId" open="(" separator="," close=")">#{eventId}</foreach></select>
-<insert id="insertBatch">INSERT INTO tracking_event (event_id,trace_id,partner_user_id,profile_id,event_type,event_time,url,device_no,extend_json,source) VALUES
-<foreach collection="events" item="event" separator=",">
-(#{event.eventId},#{event.traceId},#{event.partnerUserId},#{event.profileId},#{event.eventType},#{event.eventTime,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},#{event.url},#{event.deviceNo},#{event.extendJson},#{event.source})</foreach></insert>
+    <insert id="insert">
+        INSERT INTO tracking_event (
+            event_timestamp,
+            uid,
+            event_type,
+            url,
+            extend_json,
+            trace_id,
+            client_no,
+            client_manufacture,
+            client_model,
+            client_category,
+            client_os,
+            client_os_version,
+            ai,
+            av,
+            wv,
+            bn,
+            bv,
+            android_id,
+            gaid,
+            idfv,
+            idfa,
+            ip,
+            event_datetime,
+            payload_json,
+            partner_user_id,
+            profile_id,
+            source
+        ) VALUES (
+            #{eventTimestamp},
+            #{uid},
+            #{eventType},
+            #{url},
+            #{extendJson},
+            #{traceId},
+            #{clientNo},
+            #{clientManufacture},
+            #{clientModel},
+            #{clientCategory},
+            #{clientOs},
+            #{clientOsVersion},
+            #{ai},
+            #{av},
+            #{wv},
+            #{bn},
+            #{bv},
+            #{androidId},
+            #{gaid},
+            #{idfv},
+            #{idfa},
+            #{ip},
+            #{eventDatetime},
+            #{payloadJson},
+            #{partnerUserId},
+            #{profileId},
+            #{source}
+        )
+    </insert>
 </mapper>

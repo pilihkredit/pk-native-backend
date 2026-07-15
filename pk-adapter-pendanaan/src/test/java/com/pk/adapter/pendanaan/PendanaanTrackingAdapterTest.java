@@ -36,7 +36,7 @@ class PendanaanTrackingAdapterTest {
         List<String> bodies = new ArrayList<>();
         server = startServer(204, "", bodies);
         RecordingInteractionLogRepository logs = new RecordingInteractionLogRepository();
-        PendanaanTrackingAdapter adapter = new PendanaanTrackingAdapter(properties(server), logs, objectMapper);
+        PendanaanTrackingAdapter adapter = new PendanaanTrackingAdapter(properties(server), logs, objectMapper, null);
 
         adapter.submitEvents(List.of(sampleEvent()));
 
@@ -57,7 +57,7 @@ class PendanaanTrackingAdapterTest {
     void throwsServiceUnavailableWhenLenderReturnsNon2xx() throws Exception {
         server = startServer(500, "error", new ArrayList<>());
         RecordingInteractionLogRepository logs = new RecordingInteractionLogRepository();
-        PendanaanTrackingAdapter adapter = new PendanaanTrackingAdapter(properties(server), logs, objectMapper);
+        PendanaanTrackingAdapter adapter = new PendanaanTrackingAdapter(properties(server), logs, objectMapper, null);
 
         assertThatThrownBy(() -> adapter.submitEvents(List.of(sampleEvent())))
                 .isInstanceOf(ApiException.class)
