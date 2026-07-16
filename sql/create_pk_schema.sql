@@ -182,7 +182,7 @@ CREATE TABLE ocr_vendor_call_log (
     channel VARCHAR(64) NOT NULL DEFAULT 'advanceAi' COMMENT 'OCR vendor channel',
     trace_id VARCHAR(64) NULL COMMENT 'Trace identifier',
     client_request_id VARCHAR(64) NULL COMMENT 'Client request id when available',
-    status VARCHAR(32) NOT NULL COMMENT 'SUCCESS / VENDOR_ERROR / BIZ_REJECT / TIMEOUT / EXCEPTION',
+    status VARCHAR(32) NOT NULL COMMENT 'SUCCESS / VENDOR_ERROR / TIMEOUT / EXCEPTION',
     api_code VARCHAR(32) NULL COMMENT 'Platform API error code',
     vendor_code VARCHAR(64) NULL COMMENT 'Vendor response code',
     vendor_message VARCHAR(512) NULL COMMENT 'Vendor response message',

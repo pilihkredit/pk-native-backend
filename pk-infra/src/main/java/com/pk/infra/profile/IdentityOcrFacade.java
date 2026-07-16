@@ -13,12 +13,9 @@ import com.pk.core.profile.ProfileIdentityData;
 import com.pk.core.profile.ocr.OcrCallContext;
 import com.pk.core.profile.ocr.OcrCallContextHolder;
 import com.pk.core.profile.ocr.OcrSessionState;
-import com.pk.core.profile.ocr.OcrVendorCallStatus;
-import com.pk.core.profile.ocr.OcrVendorOperationType;
 import com.pk.core.profile.port.AdvanceAiOcrPort;
 import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.OcrSessionStore;
-import com.pk.core.profile.port.OcrVendorCallLogWriter;
 import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
@@ -31,7 +28,6 @@ import com.pk.infra.ocr.OcrFieldParser;
 import com.pk.infra.ocr.OcrImageSupport;
 import com.pk.infra.ocr.OcrProperties;
 import com.pk.infra.ocr.OcrSensitiveJsonSupport;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -49,7 +45,6 @@ public class IdentityOcrFacade {
     private final ProfileVersionRepository profileVersionRepository;
     private final UserProfileBindingRepository userProfileBindingRepository;
     private final OnboardingProgressFacade onboardingProgressFacade;
-    private final OcrVendorCallLogWriter callLogWriter;
     private final OcrSensitiveJsonSupport sensitiveJsonSupport;
     private final OcrProperties ocrProperties;
     private final ObjectMapper objectMapper;
@@ -65,7 +60,6 @@ public class IdentityOcrFacade {
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
             OnboardingProgressFacade onboardingProgressFacade,
-            OcrVendorCallLogWriter callLogWriter,
             OcrSensitiveJsonSupport sensitiveJsonSupport,
             OcrProperties ocrProperties,
             ObjectMapper objectMapper
@@ -80,7 +74,6 @@ public class IdentityOcrFacade {
         this.profileVersionRepository = profileVersionRepository;
         this.userProfileBindingRepository = userProfileBindingRepository;
         this.onboardingProgressFacade = onboardingProgressFacade;
-        this.callLogWriter = callLogWriter;
         this.sensitiveJsonSupport = sensitiveJsonSupport;
         this.ocrProperties = ocrProperties;
         this.objectMapper = objectMapper;
@@ -189,21 +182,6 @@ public class IdentityOcrFacade {
         ));
         try {
             AdvanceAiOcrPort.LivenessResult result = advanceAiOcrPort.livenessCheck(livenessId.trim());
-            boolean passed = result.livenessScore() >= ocrProperties.livenessThreshold();
-            if (!passed) {
-                writeBizRejectLog(
-                        profileId,
-                        partnerUserId,
-                        normalizedMobileNo,
-                        clientRequestId,
-                        traceId,
-                        OcrVendorOperationType.LIVENESS_CHECK,
-                        ApiCode.OCR_LIVENESS_FAILED.code(),
-                        BigDecimal.valueOf(result.livenessScore()),
-                        BigDecimal.valueOf(ocrProperties.livenessThreshold())
-                );
-                throw new ApiException(ApiCode.OCR_LIVENESS_FAILED);
-            }
             OcrSessionState current = ocrSessionStore.find(profileId)
                     .orElseThrow(() -> new ApiException(ApiCode.OCR_SESSION_INVALID));
             if (!current.ocrCheckCompleted()) {
@@ -290,21 +268,6 @@ public class IdentityOcrFacade {
         AdvanceAiOcrPort.FaceCompareResult compareResult;
         try {
             compareResult = advanceAiOcrPort.compareFaces(idCardImage, faceImage);
-            boolean passed = compareResult.similarity() >= ocrProperties.faceThreshold();
-            if (!passed) {
-                writeBizRejectLog(
-                        profileId,
-                        partnerUserId,
-                        normalizedMobileNo,
-                        command.requestId().trim(),
-                        traceId,
-                        OcrVendorOperationType.FACE_COMPARE,
-                        ApiCode.OCR_FACE_RECOGNITION_FAILED.code(),
-                        BigDecimal.valueOf(compareResult.similarity()),
-                        BigDecimal.valueOf(ocrProperties.faceThreshold())
-                );
-                throw new ApiException(ApiCode.OCR_FACE_RECOGNITION_FAILED);
-            }
         } finally {
             OcrCallContextHolder.clear();
         }
@@ -618,43 +581,6 @@ public class IdentityOcrFacade {
                 partnerUserId
         );
         userProfileBindingRepository.updateKycStatus(profileId, progress.kycStatus());
-    }
-
-    private void writeBizRejectLog(
-            long profileId,
-            String partnerUserId,
-            String mobileNo,
-            String clientRequestId,
-            String traceId,
-            OcrVendorOperationType operationType,
-            String apiCode,
-            BigDecimal score,
-            BigDecimal threshold
-    ) {
-        String resolvedTraceId = firstNonBlank(traceId, LogContext.traceId());
-        String resolvedClientRequestId = firstNonBlank(clientRequestId, resolvedTraceId);
-        callLogWriter.write(new OcrVendorCallLogWriter.OcrVendorCallLogEntry(
-                profileId,
-                partnerUserId,
-                mobileNo,
-                operationType,
-                OCR_CHANNEL,
-                resolvedTraceId,
-                resolvedClientRequestId,
-                OcrVendorCallStatus.BIZ_REJECT,
-                apiCode,
-                null,
-                null,
-                score,
-                threshold,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        ));
     }
 
     private String storeDevImage(String mobileNo, BiometricImageKind kind, String imageBase64) {

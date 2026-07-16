@@ -142,7 +142,6 @@ public class ProfileInfraConfiguration {
             com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
             com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
             OnboardingProgressFacade onboardingProgressFacade,
-            com.pk.core.profile.port.OcrVendorCallLogWriter callLogWriter,
             com.pk.infra.ocr.OcrSensitiveJsonSupport ocrSensitiveJsonSupport,
             com.pk.infra.ocr.OcrProperties ocrProperties,
             ObjectMapper objectMapper
@@ -158,7 +157,6 @@ public class ProfileInfraConfiguration {
                 profileVersionRepository,
                 userProfileBindingRepository,
                 onboardingProgressFacade,
-                callLogWriter,
                 ocrSensitiveJsonSupport,
                 ocrProperties,
                 objectMapper
