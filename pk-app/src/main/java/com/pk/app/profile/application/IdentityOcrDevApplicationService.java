@@ -1,6 +1,7 @@
 package com.pk.app.profile.application;
 
 import com.pk.app.common.web.ClientRequestHeaders;
+import com.pk.app.common.web.RequestTrace;
 import com.pk.app.profile.dto.request.IdentityOcrDevLenderSyncRequest;
 import com.pk.app.profile.dto.response.IdentityOcrDevLenderSyncResponse;
 import com.pk.app.profile.support.DevIdentityOcrDefaults;
@@ -36,6 +37,7 @@ public class IdentityOcrDevApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         ClientRequestHeaders.ResolvedClientHeaders headers = ClientRequestHeaders.require(httpRequest);
+        RequestTrace.resolveClientRequestId(httpRequest, request.requestId());
         boolean captureOcrFromIdCard = hasText(request.idCardBase64()) && !hasText(request.rawOcrDetail());
         IdentityOcrFacade.DevLenderSyncResult result = identityOcrFacade.devSyncIdentityToLender(
                 principal.profileId(),

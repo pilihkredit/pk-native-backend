@@ -23,12 +23,12 @@ abstract class AbstractEncryptedBiometricImageStore implements BiometricImageSto
     }
 
     @Override
-    public String store(long profileId, BiometricImageKind kind, byte[] imageBytes) {
+    public String store(String mobileNo, BiometricImageKind kind, byte[] imageBytes) {
         if (imageBytes == null || imageBytes.length == 0) {
             throw new IllegalArgumentException("imageBytes must not be empty");
         }
         byte[] encryptedBlob = EncryptedBiometricImageSupport.pack(sensitiveFieldEncryptor.encryptBytes(imageBytes));
-        String objectKey = objectKey(profileId, kind);
+        String objectKey = objectKey(mobileNo, kind);
         writeEncryptedObject(objectKey, encryptedBlob);
         return buildRef(objectKey);
     }
@@ -49,8 +49,21 @@ abstract class AbstractEncryptedBiometricImageStore implements BiometricImageSto
         return encryptionKeyRef;
     }
 
-    protected String objectKey(long profileId, BiometricImageKind kind) {
-        return pathPrefix + "/" + environment + "/profile/" + profileId + "/" + kind.objectName() + ".enc";
+    protected String objectKey(String mobileNo, BiometricImageKind kind) {
+        return pathPrefix + "/" + environment + "/mobile/" + sanitizeMobilePathSegment(mobileNo)
+                + "/" + kind.objectName() + ".enc";
+    }
+
+    /** Keep path-safe digits/letters only; reject empty after sanitize. */
+    protected static String sanitizeMobilePathSegment(String mobileNo) {
+        if (mobileNo == null || mobileNo.isBlank()) {
+            throw new IllegalArgumentException("mobileNo is required for biometric image path");
+        }
+        String sanitized = mobileNo.trim().replaceAll("[^0-9A-Za-z]", "");
+        if (sanitized.isBlank()) {
+            throw new IllegalArgumentException("mobileNo is required for biometric image path");
+        }
+        return sanitized;
     }
 
     protected abstract void writeEncryptedObject(String objectKey, byte[] encryptedBlob);

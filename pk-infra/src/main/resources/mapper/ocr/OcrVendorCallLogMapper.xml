@@ -7,12 +7,12 @@
             profile_id, partner_user_id, mobile_no, operation_type, channel,
             trace_id, client_request_id, status, api_code, vendor_code, vendor_message,
             score, threshold, endpoint, http_status, duration_ms,
-            request_json, response_json, request_image_encrypted_ref, response_image_encrypted_ref
+            request_json, response_json, id_card_image_encrypted_ref, liveness_image_encrypted_ref
         ) VALUES (
             #{profileId}, #{partnerUserId}, #{mobileNo}, #{operationType}, #{channel},
             #{traceId}, #{clientRequestId}, #{status}, #{apiCode}, #{vendorCode}, #{vendorMessage},
             #{score}, #{threshold}, #{endpoint}, #{httpStatus}, #{durationMs},
-            #{requestJson}, #{responseJson}, #{requestImageEncryptedRef}, #{responseImageEncryptedRef}
+            #{requestJson}, #{responseJson}, #{idCardImageEncryptedRef}, #{livenessImageEncryptedRef}
         )
     </insert>
 </mapper>

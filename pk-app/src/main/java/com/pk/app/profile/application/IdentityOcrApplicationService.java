@@ -1,6 +1,7 @@
 package com.pk.app.profile.application;
 
 import com.pk.app.common.web.ClientRequestHeaders;
+import com.pk.app.common.web.RequestTrace;
 import com.pk.app.profile.dto.request.IdentityOcrCheckRequest;
 import com.pk.app.profile.dto.request.IdentityOcrFaceRecognitionRequest;
 import com.pk.app.profile.dto.request.IdentityOcrLicenseTokenRequest;
@@ -34,24 +35,38 @@ public class IdentityOcrApplicationService {
 
     public IdentityOcrLicenseTokenResponse getLicenseToken(
             AuthenticatedPrincipal principal,
-            IdentityOcrLicenseTokenRequest request
+            IdentityOcrLicenseTokenRequest request,
+            HttpServletRequest httpRequest
     ) {
         requirePrincipal(principal);
+        String traceId = RequestTrace.resolveTraceId(httpRequest);
+        String clientRequestId = RequestTrace.resolveClientRequestId(httpRequest, null);
         IdentityOcrFacade.LicenseTokenResult result = identityOcrFacade.getLicenseToken(
                 principal.profileId(),
-                request == null ? null : request.licenseEffectiveSeconds()
+                principal.partnerUserId(),
+                principal.mobileNo(),
+                request == null ? null : request.licenseEffectiveSeconds(),
+                clientRequestId,
+                traceId
         );
         return new IdentityOcrLicenseTokenResponse(result.licenseToken(), result.effectiveSeconds());
     }
 
     public IdentityOcrCheckResponse ocrCheck(
             AuthenticatedPrincipal principal,
-            IdentityOcrCheckRequest request
+            IdentityOcrCheckRequest request,
+            HttpServletRequest httpRequest
     ) {
         requirePrincipal(principal);
+        String traceId = RequestTrace.resolveTraceId(httpRequest);
+        String clientRequestId = RequestTrace.resolveClientRequestId(httpRequest, null);
         IdentityOcrFacade.OcrCheckResult result = identityOcrFacade.ocrCheck(
                 principal.profileId(),
-                request.imageBase64()
+                principal.partnerUserId(),
+                principal.mobileNo(),
+                request.imageBase64(),
+                clientRequestId,
+                traceId
         );
         return new IdentityOcrCheckResponse(
                 result.ocrName(),
@@ -74,12 +89,19 @@ public class IdentityOcrApplicationService {
 
     public IdentityOcrLivenessCheckResponse livenessCheck(
             AuthenticatedPrincipal principal,
-            IdentityOcrLivenessCheckRequest request
+            IdentityOcrLivenessCheckRequest request,
+            HttpServletRequest httpRequest
     ) {
         requirePrincipal(principal);
+        String traceId = RequestTrace.resolveTraceId(httpRequest);
+        String clientRequestId = RequestTrace.resolveClientRequestId(httpRequest, null);
         IdentityOcrFacade.LivenessCheckResult result = identityOcrFacade.livenessCheck(
                 principal.profileId(),
-                request.livenessId()
+                principal.partnerUserId(),
+                principal.mobileNo(),
+                request.livenessId(),
+                clientRequestId,
+                traceId
         );
         return new IdentityOcrLivenessCheckResponse(
                 result.livenessScore(),
@@ -95,6 +117,8 @@ public class IdentityOcrApplicationService {
     ) {
         requirePrincipal(principal);
         ClientRequestHeaders.ResolvedClientHeaders headers = ClientRequestHeaders.require(httpRequest);
+        String traceId = RequestTrace.resolveTraceId(httpRequest);
+        RequestTrace.resolveClientRequestId(httpRequest, request.requestId());
         IdentityOcrFacade.FaceRecognitionResult result = identityOcrFacade.faceRecognition(
                 principal.profileId(),
                 principal.partnerUserId(),
@@ -104,7 +128,8 @@ public class IdentityOcrApplicationService {
                         request.faceImageBase64(),
                         request.idCardImageBase64(),
                         ProfileDeviceSupport.resolveLenderDevice(request.device(), headers, pendanaanProperties)
-                )
+                ),
+                traceId
         );
         return new IdentityOcrFaceRecognitionResponse(
                 result.requestId(),
@@ -119,6 +144,15 @@ public class IdentityOcrApplicationService {
     private static void requirePrincipal(AuthenticatedPrincipal principal) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        if (principal.profileId() <= 0) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST, "profileId is required");
+        }
+        if (principal.partnerUserId() == null || principal.partnerUserId().isBlank()) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST, "partnerUserId is required");
+        }
+        if (principal.mobileNo() == null || principal.mobileNo().isBlank()) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST, "mobileNo is required");
         }
     }
 }

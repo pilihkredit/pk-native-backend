@@ -43,7 +43,7 @@ public class IdentityOcrController {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                identityOcrApplicationService.getLicenseToken(principal, request),
+                identityOcrApplicationService.getLicenseToken(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }
@@ -58,7 +58,7 @@ public class IdentityOcrController {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                identityOcrApplicationService.ocrCheck(principal, request),
+                identityOcrApplicationService.ocrCheck(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }
@@ -73,7 +73,7 @@ public class IdentityOcrController {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                identityOcrApplicationService.livenessCheck(principal, request),
+                identityOcrApplicationService.livenessCheck(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

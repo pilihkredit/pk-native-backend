@@ -43,8 +43,8 @@ public class OcrVendorCallLogWriterImpl implements OcrVendorCallLogWriter {
             param.setDurationMs(entry.durationMs());
             param.setRequestJson(entry.requestJson());
             param.setResponseJson(entry.responseJson());
-            param.setRequestImageEncryptedRef(entry.requestImageEncryptedRef());
-            param.setResponseImageEncryptedRef(entry.responseImageEncryptedRef());
+            param.setIdCardImageEncryptedRef(entry.idCardImageEncryptedRef());
+            param.setLivenessImageEncryptedRef(entry.livenessImageEncryptedRef());
             mapper.insert(param);
         } catch (Exception exception) {
             log.warn(

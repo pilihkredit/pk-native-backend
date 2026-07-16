@@ -82,6 +82,16 @@ class TrackingFacadeTest {
     }
 
     @Test
+    void fillsUidFromPartnerUserIdWhenRequestUidBlank() {
+        facade.ingest(10L, "partner-1", "192.168.1.10", validEvent(""));
+
+        assertThat(lenderTrackingPort.submitted.getFirst().uid()).isEqualTo("partner-1");
+        assertThat(repository.inserted.getFirst().uid()).isEqualTo("partner-1");
+        assertThat(repository.inserted.getFirst().profileId()).isEqualTo(10L);
+        assertThat(repository.inserted.getFirst().partnerUserId()).isEqualTo("partner-1");
+    }
+
+    @Test
     void rejectsInvalidEvent() {
         assertThatThrownBy(() -> facade.ingest(1L, "partner", "1.1.1.1", invalidEvent()))
                 .isInstanceOf(ApiException.class)

@@ -72,7 +72,13 @@ public class ProfileSyncHandler {
                     job.device(),
                     job.profileId()
             );
-            persistLenderAudit(job.profileId(), job.module(), auditRequestJson, result.responseDataJson());
+            persistLenderAudit(
+                    job.profileId(),
+                    mobileNo,
+                    job.module(),
+                    auditRequestJson,
+                    result.responseDataJson()
+            );
         }
         return result;
     }
@@ -106,6 +112,7 @@ public class ProfileSyncHandler {
 
     private void persistLenderAudit(
             long profileId,
+            String mobileNo,
             ProfileSyncModule module,
             String requestDataJson,
             String responseDataJson
@@ -128,8 +135,8 @@ public class ProfileSyncHandler {
             );
             case IDENTITY -> profileIdentityRepository.updateLastLenderAudit(
                     profileId,
-                    ocrSensitiveJsonSupport.sanitizeForStorage(requestDataJson, profileId),
-                    ocrSensitiveJsonSupport.sanitizeForStorage(responseDataJson, profileId)
+                    ocrSensitiveJsonSupport.sanitizeForStorage(requestDataJson, mobileNo),
+                    ocrSensitiveJsonSupport.sanitizeForStorage(responseDataJson, mobileNo)
             );
         }
     }

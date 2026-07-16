@@ -38,8 +38,10 @@ public class TrackingFacade {
         if (!isValid(event)) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-
-        String uid = resolveUid(event.uid(), partnerUserId);
+        String normalizedPartnerUserId = partnerUserId == null || partnerUserId.isBlank()
+                ? null
+                : partnerUserId.trim();
+        String uid = resolveUid(event.uid(), normalizedPartnerUserId);
         String datetime = LENDER_DATETIME_FORMATTER.format(Instant.ofEpochMilli(event.timestamp()));
         String ip = clientIp == null ? "" : clientIp;
 
@@ -95,7 +97,7 @@ public class TrackingFacade {
                 ip,
                 datetime,
                 payloadJson,
-                partnerUserId,
+                normalizedPartnerUserId,
                 profileId,
                 SOURCE_CLIENT
         );
@@ -182,6 +184,7 @@ public class TrackingFacade {
         if (requestUid != null && !requestUid.isBlank()) {
             return requestUid.trim();
         }
+        // Logged-in: fill from partner user id; anonymous may remain blank.
         return partnerUserId == null ? "" : partnerUserId;
     }
 

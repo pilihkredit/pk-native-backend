@@ -2,6 +2,7 @@ package com.pk.app.tracking.controller;
 
 import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
+import com.pk.app.security.JwtAuthenticationFilter;
 import com.pk.app.security.SecurityContextSupport;
 import com.pk.app.tracking.application.TrackingApplicationService;
 import com.pk.app.tracking.dto.request.TrackingEventRequest;
@@ -30,7 +31,13 @@ public class TrackingController {
             HttpServletRequest httpRequest
     ) {
         AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
-        trackingApplicationService.ingest(principal, resolveClientIp(httpRequest), request);
+        boolean bearerTokenPresent = JwtAuthenticationFilter.resolveBearerToken(httpRequest) != null;
+        trackingApplicationService.ingest(
+                principal,
+                bearerTokenPresent,
+                resolveClientIp(httpRequest),
+                request
+        );
         return ApiResponse.success(null, RequestTrace.resolveTraceId(httpRequest));
     }
 

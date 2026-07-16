@@ -21,8 +21,8 @@ public class OcrVendorCallLogInsertParam {
     private Integer durationMs;
     private String requestJson;
     private String responseJson;
-    private String requestImageEncryptedRef;
-    private String responseImageEncryptedRef;
+    private String idCardImageEncryptedRef;
+    private String livenessImageEncryptedRef;
 
     public Long getProfileId() {
         return profileId;
@@ -168,19 +168,19 @@ public class OcrVendorCallLogInsertParam {
         this.responseJson = responseJson;
     }
 
-    public String getRequestImageEncryptedRef() {
-        return requestImageEncryptedRef;
+    public String getIdCardImageEncryptedRef() {
+        return idCardImageEncryptedRef;
     }
 
-    public void setRequestImageEncryptedRef(String requestImageEncryptedRef) {
-        this.requestImageEncryptedRef = requestImageEncryptedRef;
+    public void setIdCardImageEncryptedRef(String idCardImageEncryptedRef) {
+        this.idCardImageEncryptedRef = idCardImageEncryptedRef;
     }
 
-    public String getResponseImageEncryptedRef() {
-        return responseImageEncryptedRef;
+    public String getLivenessImageEncryptedRef() {
+        return livenessImageEncryptedRef;
     }
 
-    public void setResponseImageEncryptedRef(String responseImageEncryptedRef) {
-        this.responseImageEncryptedRef = responseImageEncryptedRef;
+    public void setLivenessImageEncryptedRef(String livenessImageEncryptedRef) {
+        this.livenessImageEncryptedRef = livenessImageEncryptedRef;
     }
 }

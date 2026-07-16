@@ -26,8 +26,8 @@ public interface OcrVendorCallLogWriter {
             Integer durationMs,
             String requestJson,
             String responseJson,
-            String requestImageEncryptedRef,
-            String responseImageEncryptedRef
+            String idCardImageEncryptedRef,
+            String livenessImageEncryptedRef
     ) {
     }
 }

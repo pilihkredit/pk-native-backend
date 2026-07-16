@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.logging.LogContext;
 import com.pk.core.profile.ocr.OcrCallContext;
 import com.pk.core.profile.ocr.OcrCallContextHolder;
 import com.pk.core.profile.ocr.OcrVendorCallStatus;
@@ -19,9 +20,13 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
+    private static final Logger log = LoggerFactory.getLogger(AdvanceAiOcrClient.class);
+
     private final OcrProperties properties;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
@@ -213,15 +218,14 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
             OcrVendorOperationType operationType
     ) {
         String endpoint = AdvanceAiHttpSupport.resolveEndpoint(properties, pathOrUrl);
-        Long profileId = currentProfileId();
+        String mobileNo = currentMobileNo();
         String requestJson;
         try {
             requestJson = objectMapper.writeValueAsString(requestData);
         } catch (Exception exception) {
             requestJson = String.valueOf(requestData);
         }
-        String sanitizedRequest = sensitiveJsonSupport.sanitizeForStorage(requestJson, profileId);
-        long startedAt = System.currentTimeMillis();
+        String sanitizedRequest = sensitiveJsonSupport.sanitizeForStorage(requestJson, mobileNo);
         String responseText = "";
         Integer httpStatus = null;
         OcrVendorCallStatus status = OcrVendorCallStatus.EXCEPTION;
@@ -230,6 +234,7 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         String apiCode = null;
         BigDecimal score = null;
         boolean success = false;
+        long vendorDurationMs = 0L;
         try {
             OcrHttpLogger.logRequest(operation, "POST", endpoint, OcrLogSupport.redactPayload(requestJson));
             HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -240,10 +245,16 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                 builder.header("X-ACCESS-TOKEN", accessToken);
             }
             builder.POST(HttpRequest.BodyPublishers.ofString(requestJson));
-            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            httpStatus = response.statusCode();
-            responseText = response.body() == null ? "" : response.body();
-            if (response.statusCode() >= 400) {
+            HttpRequest httpRequest = builder.build();
+            long vendorStartedAt = System.currentTimeMillis();
+            try {
+                HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                httpStatus = response.statusCode();
+                responseText = response.body() == null ? "" : response.body();
+            } finally {
+                vendorDurationMs = System.currentTimeMillis() - vendorStartedAt;
+            }
+            if (httpStatus >= 400) {
                 status = OcrVendorCallStatus.VENDOR_ERROR;
                 apiCode = ApiCode.OCR_SERVICE_ERROR.code();
                 throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
@@ -270,15 +281,15 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
             apiCode = ApiCode.OCR_SERVICE_ERROR.code();
             throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
         } finally {
-            long durationMs = System.currentTimeMillis() - startedAt;
             OcrHttpLogger.logResponse(
                     operation,
                     endpoint,
-                    durationMs,
+                    vendorDurationMs,
                     success,
                     OcrLogSupport.redactPayload(responseText)
             );
             if (operationType != null) {
+                String sanitizedResponse = sensitiveJsonSupport.sanitizeForStorage(responseText, mobileNo);
                 persistCallLog(
                         operationType,
                         status,
@@ -289,11 +300,11 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                         null,
                         endpoint,
                         httpStatus,
-                        (int) durationMs,
+                        (int) vendorDurationMs,
                         sanitizedRequest,
-                        sensitiveJsonSupport.sanitizeForStorage(responseText, profileId),
+                        sanitizedResponse,
                         null,
-                        null
+                        extractEncryptedRef(sanitizedResponse, "detectionResult")
                 );
             }
         }
@@ -307,9 +318,8 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
             String accessToken
     ) {
         String endpoint = AdvanceAiHttpSupport.resolveEndpoint(properties, pathOrUrl);
-        Long profileId = currentProfileId();
-        String sanitizedRequest = sensitiveJsonSupport.describeMultipartRequest(form, profileId);
-        long startedAt = System.currentTimeMillis();
+        String mobileNo = currentMobileNo();
+        String sanitizedRequest = sensitiveJsonSupport.describeMultipartRequest(form, mobileNo);
         String responseText = "";
         Integer httpStatus = null;
         OcrVendorCallStatus status = OcrVendorCallStatus.EXCEPTION;
@@ -318,7 +328,12 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         String apiCode = null;
         BigDecimal score = null;
         boolean success = false;
-        String requestImageRef = extractFirstEncryptedRef(sanitizedRequest);
+        long vendorDurationMs = 0L;
+        String idCardImageRef = firstNonBlank(
+                extractEncryptedRef(sanitizedRequest, "ocrImage"),
+                extractEncryptedRef(sanitizedRequest, "firstImage")
+        );
+        String livenessImageRef = extractEncryptedRef(sanitizedRequest, "secondImage");
         try {
             OcrHttpLogger.logRequest(operation, "POST", endpoint, OcrLogSupport.describeMultipart(form));
             AdvanceAiHttpSupport.MultipartBody multipart = AdvanceAiHttpSupport.buildMultipartBody(form);
@@ -329,10 +344,15 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                     .header("Content-Type", "multipart/form-data; boundary=" + multipart.boundary())
                     .POST(HttpRequest.BodyPublishers.ofByteArray(multipart.body()))
                     .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            httpStatus = response.statusCode();
-            responseText = response.body() == null ? "" : response.body();
-            if (response.statusCode() >= 400) {
+            long vendorStartedAt = System.currentTimeMillis();
+            try {
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                httpStatus = response.statusCode();
+                responseText = response.body() == null ? "" : response.body();
+            } finally {
+                vendorDurationMs = System.currentTimeMillis() - vendorStartedAt;
+            }
+            if (httpStatus >= 400) {
                 status = OcrVendorCallStatus.VENDOR_ERROR;
                 apiCode = ApiCode.OCR_SERVICE_ERROR.code();
                 throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
@@ -359,11 +379,10 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
             apiCode = ApiCode.OCR_SERVICE_ERROR.code();
             throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
         } finally {
-            long durationMs = System.currentTimeMillis() - startedAt;
             OcrHttpLogger.logResponse(
                     operation,
                     endpoint,
-                    durationMs,
+                    vendorDurationMs,
                     success,
                     OcrLogSupport.redactPayload(responseText)
             );
@@ -377,11 +396,11 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                     null,
                     endpoint,
                     httpStatus,
-                    (int) durationMs,
+                    (int) vendorDurationMs,
                     sanitizedRequest,
-                    sensitiveJsonSupport.sanitizeForStorage(responseText, profileId),
-                    requestImageRef,
-                    null
+                    sensitiveJsonSupport.sanitizeForStorage(responseText, mobileNo),
+                    idCardImageRef,
+                    livenessImageRef
             );
         }
     }
@@ -399,18 +418,37 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
             Integer durationMs,
             String requestJson,
             String responseJson,
-            String requestImageEncryptedRef,
-            String responseImageEncryptedRef
+            String idCardImageEncryptedRef,
+            String livenessImageEncryptedRef
     ) {
         OcrCallContext context = OcrCallContextHolder.get();
+        Long profileId = context == null ? null : context.profileId();
+        String partnerUserId = context == null ? null : context.partnerUserId();
+        String mobileNo = context == null ? null : context.mobileNo();
+        if (profileId == null || mobileNo == null || mobileNo.isBlank()) {
+            log.warn(
+                    "OCR vendor call log missing login identity operation={} profileId={} mobileNo={}",
+                    operationType,
+                    profileId,
+                    mobileNo
+            );
+        }
+        String traceId = context == null ? null : context.traceId();
+        if (traceId == null || traceId.isBlank()) {
+            traceId = LogContext.traceId();
+        }
+        String clientRequestId = context == null ? null : context.clientRequestId();
+        if (clientRequestId == null || clientRequestId.isBlank()) {
+            clientRequestId = traceId;
+        }
         callLogWriter.write(new OcrVendorCallLogWriter.OcrVendorCallLogEntry(
-                context == null ? null : context.profileId(),
-                context == null ? null : context.partnerUserId(),
-                context == null ? null : context.mobileNo(),
+                profileId,
+                partnerUserId,
+                mobileNo,
                 operationType,
                 "advanceAi",
-                context == null ? null : context.traceId(),
-                context == null ? null : context.clientRequestId(),
+                traceId,
+                clientRequestId,
                 status,
                 apiCode,
                 vendorCode,
@@ -422,32 +460,69 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                 durationMs,
                 requestJson,
                 responseJson,
-                requestImageEncryptedRef,
-                responseImageEncryptedRef
+                idCardImageEncryptedRef,
+                livenessImageEncryptedRef
         ));
     }
 
-    private static Long currentProfileId() {
+    private static String currentMobileNo() {
         OcrCallContext context = OcrCallContextHolder.get();
-        return context == null ? null : context.profileId();
+        return context == null ? null : context.mobileNo();
     }
 
-    private String extractFirstEncryptedRef(String sanitizedRequest) {
-        if (sanitizedRequest == null || sanitizedRequest.isBlank()) {
+    private String extractEncryptedRef(String json, String fieldName) {
+        if (json == null || json.isBlank() || fieldName == null || fieldName.isBlank()) {
             return null;
         }
         try {
-            JsonNode root = objectMapper.readTree(sanitizedRequest);
-            if (!root.isObject()) {
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode target = findField(root, fieldName);
+            if (target == null) {
                 return null;
             }
-            for (JsonNode child : root) {
-                if (child != null && child.hasNonNull("encryptedRef")) {
-                    return child.get("encryptedRef").asText();
-                }
+            if (target.hasNonNull("encryptedRef")) {
+                String ref = target.get("encryptedRef").asText();
+                return ref == null || ref.isBlank() || "store-failed".equals(ref) ? null : ref;
             }
+            return null;
         } catch (Exception ignored) {
             return null;
+        }
+    }
+
+    private static JsonNode findField(JsonNode node, String fieldName) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        if (node.isObject()) {
+            if (node.has(fieldName)) {
+                return node.get(fieldName);
+            }
+            for (JsonNode child : node) {
+                JsonNode found = findField(child, fieldName);
+                if (found != null) {
+                    return found;
+                }
+            }
+        } else if (node.isArray()) {
+            for (JsonNode child : node) {
+                JsonNode found = findField(child, fieldName);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
         }
         return null;
     }

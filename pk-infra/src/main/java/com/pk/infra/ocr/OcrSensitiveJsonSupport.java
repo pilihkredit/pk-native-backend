@@ -24,6 +24,7 @@ public class OcrSensitiveJsonSupport {
             "id_card",
             "idcard",
             "idno",
+            "idnumber",
             "ocridno",
             "ktpidnumber",
             "id_card_number",
@@ -63,28 +64,28 @@ public class OcrSensitiveJsonSupport {
         this.biometricImageStore = biometricImageStore;
     }
 
-    public String sanitizeForStorage(String json, Long profileId) {
+    public String sanitizeForStorage(String json, String mobileNo) {
         if (json == null || json.isBlank()) {
             return json;
         }
         try {
             JsonNode root = objectMapper.readTree(json);
-            sanitizeNode(root, profileId);
+            sanitizeNode(root, mobileNo);
             return objectMapper.writeValueAsString(root);
         } catch (Exception exception) {
             return json;
         }
     }
 
-    public String sanitizeMapForStorage(Map<String, ?> requestData, Long profileId) {
+    public String sanitizeMapForStorage(Map<String, ?> requestData, String mobileNo) {
         try {
-            return sanitizeForStorage(objectMapper.writeValueAsString(requestData), profileId);
+            return sanitizeForStorage(objectMapper.writeValueAsString(requestData), mobileNo);
         } catch (Exception exception) {
             return "{}";
         }
     }
 
-    public String describeMultipartRequest(Map<String, byte[]> form, Long profileId) {
+    public String describeMultipartRequest(Map<String, byte[]> form, String mobileNo) {
         ObjectNode node = objectMapper.createObjectNode();
         if (form == null) {
             return node.toString();
@@ -94,10 +95,10 @@ public class OcrSensitiveJsonSupport {
             byte[] bytes = entry.getValue() == null ? new byte[0] : entry.getValue();
             ObjectNode field = objectMapper.createObjectNode();
             field.put("bytes", bytes.length);
-            if (isImageField(key) && profileId != null && bytes.length > 0) {
+            if (isImageField(key) && hasMobile(mobileNo) && bytes.length > 0) {
                 try {
                     BiometricImageKind kind = resolveImageKind(key);
-                    String ref = biometricImageStore.store(profileId, kind, bytes);
+                    String ref = biometricImageStore.store(mobileNo, kind, bytes);
                     field.put("encryptedRef", ref);
                 } catch (Exception ignored) {
                     field.put("encryptedRef", "store-failed");
@@ -108,7 +109,7 @@ public class OcrSensitiveJsonSupport {
         return node.toString();
     }
 
-    private void sanitizeNode(JsonNode node, Long profileId) {
+    private void sanitizeNode(JsonNode node, String mobileNo) {
         if (node == null || node.isNull()) {
             return;
         }
@@ -128,10 +129,10 @@ public class OcrSensitiveJsonSupport {
                     if (isTextEncryptField(field)) {
                         objectNode.set(field, encryptTextNode(value));
                     } else if (isImageField(field) && looksLikeBase64Image(value)) {
-                        objectNode.set(field, encryptOrStoreImage(value, field, profileId));
+                        objectNode.set(field, encryptOrStoreImage(value, field, mobileNo));
                     }
                 } else {
-                    sanitizeNode(child, profileId);
+                    sanitizeNode(child, mobileNo);
                 }
             }
             return;
@@ -139,7 +140,7 @@ public class OcrSensitiveJsonSupport {
         if (node.isArray()) {
             ArrayNode arrayNode = (ArrayNode) node;
             for (JsonNode child : arrayNode) {
-                sanitizeNode(child, profileId);
+                sanitizeNode(child, mobileNo);
             }
         }
     }
@@ -154,11 +155,11 @@ public class OcrSensitiveJsonSupport {
         return node;
     }
 
-    private JsonNode encryptOrStoreImage(String base64, String field, Long profileId) {
-        if (profileId != null) {
+    private JsonNode encryptOrStoreImage(String base64, String field, String mobileNo) {
+        if (hasMobile(mobileNo)) {
             try {
                 byte[] bytes = OcrImageSupport.decodeBase64Image(base64, Integer.MAX_VALUE);
-                String ref = biometricImageStore.store(profileId, resolveImageKind(field), bytes);
+                String ref = biometricImageStore.store(mobileNo, resolveImageKind(field), bytes);
                 ObjectNode node = objectMapper.createObjectNode();
                 node.put("encryptedRef", ref);
                 return node;
@@ -167,6 +168,10 @@ public class OcrSensitiveJsonSupport {
             }
         }
         return encryptTextNode(base64);
+    }
+
+    private static boolean hasMobile(String mobileNo) {
+        return mobileNo != null && !mobileNo.isBlank();
     }
 
     private static boolean isTextEncryptField(String field) {

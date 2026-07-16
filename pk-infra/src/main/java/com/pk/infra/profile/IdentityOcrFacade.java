@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.credit.port.ProfileVersionRepository;
+import com.pk.core.logging.LogContext;
 import com.pk.core.profile.BiometricImageKind;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileIdentityData;
@@ -85,8 +86,22 @@ public class IdentityOcrFacade {
         this.objectMapper = objectMapper;
     }
 
-    public LicenseTokenResult getLicenseToken(long profileId, Long licenseEffectiveSeconds) {
-        OcrCallContextHolder.set(OcrCallContext.of(profileId));
+    public LicenseTokenResult getLicenseToken(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            Long licenseEffectiveSeconds,
+            String clientRequestId,
+            String traceId
+    ) {
+        String normalizedMobileNo = requireMobile(mobileNo);
+        OcrCallContextHolder.set(OcrCallContext.of(
+                profileId,
+                partnerUserId,
+                normalizedMobileNo,
+                clientRequestId,
+                traceId
+        ));
         try {
             AdvanceAiOcrPort.LicenseTokenResult result = advanceAiOcrPort.getLicenseToken(licenseEffectiveSeconds);
             ocrSessionStore.save(profileId, new OcrSessionState(
@@ -105,9 +120,23 @@ public class IdentityOcrFacade {
         }
     }
 
-    public OcrCheckResult ocrCheck(long profileId, String imageBase64) {
+    public OcrCheckResult ocrCheck(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            String imageBase64,
+            String clientRequestId,
+            String traceId
+    ) {
+        String normalizedMobileNo = requireMobile(mobileNo);
         byte[] imageBytes = OcrImageSupport.decodeBase64Image(imageBase64, ocrProperties.maxImageBytes());
-        OcrCallContextHolder.set(OcrCallContext.of(profileId));
+        OcrCallContextHolder.set(OcrCallContext.of(
+                profileId,
+                partnerUserId,
+                normalizedMobileNo,
+                clientRequestId,
+                traceId
+        ));
         String ocrResponseJson;
         try {
             ocrResponseJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
@@ -120,7 +149,11 @@ public class IdentityOcrFacade {
             throw new ApiException(ApiCode.OCR_NO_RESULT);
         }
         String rawJson = ocrResponseJson;
-        String idCardImageEncryptedRef = biometricImageStore.store(profileId, BiometricImageKind.ID_CARD, imageBytes);
+        String idCardImageEncryptedRef = biometricImageStore.store(
+                normalizedMobileNo,
+                BiometricImageKind.ID_CARD,
+                imageBytes
+        );
         OcrSessionState current = ocrSessionStore.find(profileId).orElse(emptySession());
         ocrSessionStore.save(profileId, new OcrSessionState(
                 current.licenseObtained(),
@@ -135,54 +168,69 @@ public class IdentityOcrFacade {
         return toOcrCheckResult(parsed);
     }
 
-    public LivenessCheckResult livenessCheck(long profileId, String livenessId) {
+    public LivenessCheckResult livenessCheck(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            String livenessId,
+            String clientRequestId,
+            String traceId
+    ) {
         if (isBlank(livenessId)) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "livenessId is required");
         }
-        OcrCallContextHolder.set(OcrCallContext.of(profileId));
-        AdvanceAiOcrPort.LivenessResult result;
+        String normalizedMobileNo = requireMobile(mobileNo);
+        OcrCallContextHolder.set(OcrCallContext.of(
+                profileId,
+                partnerUserId,
+                normalizedMobileNo,
+                clientRequestId,
+                traceId
+        ));
         try {
-            result = advanceAiOcrPort.livenessCheck(livenessId.trim());
+            AdvanceAiOcrPort.LivenessResult result = advanceAiOcrPort.livenessCheck(livenessId.trim());
+            boolean passed = result.livenessScore() >= ocrProperties.livenessThreshold();
+            if (!passed) {
+                writeBizRejectLog(
+                        profileId,
+                        partnerUserId,
+                        normalizedMobileNo,
+                        clientRequestId,
+                        traceId,
+                        OcrVendorOperationType.LIVENESS_CHECK,
+                        ApiCode.OCR_LIVENESS_FAILED.code(),
+                        BigDecimal.valueOf(result.livenessScore()),
+                        BigDecimal.valueOf(ocrProperties.livenessThreshold())
+                );
+                throw new ApiException(ApiCode.OCR_LIVENESS_FAILED);
+            }
+            OcrSessionState current = ocrSessionStore.find(profileId)
+                    .orElseThrow(() -> new ApiException(ApiCode.OCR_SESSION_INVALID));
+            if (!current.ocrCheckCompleted()) {
+                throw new ApiException(ApiCode.OCR_SESSION_INVALID);
+            }
+            ocrSessionStore.save(profileId, new OcrSessionState(
+                    current.licenseObtained(),
+                    current.ocrCheckCompleted(),
+                    true,
+                    result.livenessScore(),
+                    current.ocrRawJson(),
+                    current.parsed(),
+                    current.idCardImageEncryptedRef(),
+                    Instant.now()
+            ));
+            return new LivenessCheckResult(result.livenessScore(), true, ocrProperties.livenessThreshold());
         } finally {
             OcrCallContextHolder.clear();
         }
-        boolean passed = result.livenessScore() >= ocrProperties.livenessThreshold();
-        if (!passed) {
-            writeBizRejectLog(
-                    profileId,
-                    null,
-                    null,
-                    null,
-                    OcrVendorOperationType.LIVENESS_CHECK,
-                    ApiCode.OCR_LIVENESS_FAILED.code(),
-                    BigDecimal.valueOf(result.livenessScore()),
-                    BigDecimal.valueOf(ocrProperties.livenessThreshold())
-            );
-            throw new ApiException(ApiCode.OCR_LIVENESS_FAILED);
-        }
-        OcrSessionState current = ocrSessionStore.find(profileId)
-                .orElseThrow(() -> new ApiException(ApiCode.OCR_SESSION_INVALID));
-        if (!current.ocrCheckCompleted()) {
-            throw new ApiException(ApiCode.OCR_SESSION_INVALID);
-        }
-        ocrSessionStore.save(profileId, new OcrSessionState(
-                current.licenseObtained(),
-                current.ocrCheckCompleted(),
-                true,
-                result.livenessScore(),
-                current.ocrRawJson(),
-                current.parsed(),
-                current.idCardImageEncryptedRef(),
-                Instant.now()
-        ));
-        return new LivenessCheckResult(result.livenessScore(), true, ocrProperties.livenessThreshold());
     }
 
     public FaceRecognitionResult faceRecognition(
             long profileId,
             String partnerUserId,
             String mobileNo,
-            FaceRecognitionCommand command
+            FaceRecognitionCommand command,
+            String traceId
     ) {
         String normalizedMobileNo = normalizeMobile(mobileNo);
         if (isBlank(command.requestId())) {
@@ -219,7 +267,11 @@ public class IdentityOcrFacade {
         byte[] idCardImage;
         if (!isBlank(command.idCardImageBase64())) {
             idCardImage = OcrImageSupport.decodeBase64Image(command.idCardImageBase64(), ocrProperties.maxImageBytes());
-            idCardImageEncryptedRef = biometricImageStore.store(profileId, BiometricImageKind.ID_CARD, idCardImage);
+            idCardImageEncryptedRef = biometricImageStore.store(
+                    normalizedMobileNo,
+                    BiometricImageKind.ID_CARD,
+                    idCardImage
+            );
         } else {
             idCardImageEncryptedRef = session.idCardImageEncryptedRef();
             if (isBlank(idCardImageEncryptedRef)) {
@@ -228,35 +280,40 @@ public class IdentityOcrFacade {
             idCardImage = biometricImageStore.load(idCardImageEncryptedRef);
         }
 
-        OcrCallContextHolder.set(new OcrCallContext(
+        OcrCallContextHolder.set(OcrCallContext.of(
                 profileId,
                 partnerUserId,
                 normalizedMobileNo,
                 command.requestId().trim(),
-                null
+                traceId
         ));
         AdvanceAiOcrPort.FaceCompareResult compareResult;
         try {
             compareResult = advanceAiOcrPort.compareFaces(idCardImage, faceImage);
+            boolean passed = compareResult.similarity() >= ocrProperties.faceThreshold();
+            if (!passed) {
+                writeBizRejectLog(
+                        profileId,
+                        partnerUserId,
+                        normalizedMobileNo,
+                        command.requestId().trim(),
+                        traceId,
+                        OcrVendorOperationType.FACE_COMPARE,
+                        ApiCode.OCR_FACE_RECOGNITION_FAILED.code(),
+                        BigDecimal.valueOf(compareResult.similarity()),
+                        BigDecimal.valueOf(ocrProperties.faceThreshold())
+                );
+                throw new ApiException(ApiCode.OCR_FACE_RECOGNITION_FAILED);
+            }
         } finally {
             OcrCallContextHolder.clear();
         }
-        boolean passed = compareResult.similarity() >= ocrProperties.faceThreshold();
-        if (!passed) {
-            writeBizRejectLog(
-                    profileId,
-                    partnerUserId,
-                    normalizedMobileNo,
-                    command.requestId().trim(),
-                    OcrVendorOperationType.FACE_COMPARE,
-                    ApiCode.OCR_FACE_RECOGNITION_FAILED.code(),
-                    BigDecimal.valueOf(compareResult.similarity()),
-                    BigDecimal.valueOf(ocrProperties.faceThreshold())
-            );
-            throw new ApiException(ApiCode.OCR_FACE_RECOGNITION_FAILED);
-        }
 
-        String faceImageEncryptedRef = biometricImageStore.store(profileId, BiometricImageKind.FACE, faceImage);
+        String faceImageEncryptedRef = biometricImageStore.store(
+                normalizedMobileNo,
+                BiometricImageKind.FACE,
+                faceImage
+        );
         String faceBase64 = OcrImageSupport.encodeBase64(faceImage);
         String idCardBase64 = OcrImageSupport.encodeBase64(idCardImage);
         ProfileSyncPayload.IdentityProfilePayload payload = buildIdentityPayload(parsed, session, faceBase64, idCardBase64);
@@ -270,7 +327,7 @@ public class IdentityOcrFacade {
         );
         String ocrResultJson = sensitiveJsonSupport.sanitizeForStorage(
                 buildOcrResultJson(parsed, lenderRawOcrDetail(session.ocrRawJson())),
-                profileId
+                normalizedMobileNo
         );
         profileIdentityRepository.upsert(new ProfileIdentityData(
                 profileId,
@@ -331,7 +388,12 @@ public class IdentityOcrFacade {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "requestId is required");
         }
         ProfileSyncPayloadLoader.validateDevice(command.device());
-        DevLenderSyncCommand resolvedCommand = resolveDevLenderSyncCommand(profileId, command);
+        DevLenderSyncCommand resolvedCommand = resolveDevLenderSyncCommand(
+                profileId,
+                partnerUserId,
+                normalizedMobileNo,
+                command
+        );
         String ocrName = requireText(resolvedCommand.ocrName(), "ocrName");
         String ocrIdNo = requireText(resolvedCommand.ocrIdNo(), "ocrIdNo");
         ProfileSyncPayload.IdentityProfilePayload payload = buildDevIdentityPayload(resolvedCommand);
@@ -359,7 +421,12 @@ public class IdentityOcrFacade {
         return new DevLenderSyncResult(resolvedCommand.requestId().trim(), lenderResponse);
     }
 
-    private DevLenderSyncCommand resolveDevLenderSyncCommand(long profileId, DevLenderSyncCommand command) {
+    private DevLenderSyncCommand resolveDevLenderSyncCommand(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            DevLenderSyncCommand command
+    ) {
         if (!isBlank(command.rawOcrDetail())) {
             return command;
         }
@@ -367,7 +434,13 @@ public class IdentityOcrFacade {
             return command;
         }
         byte[] imageBytes = OcrImageSupport.decodeBase64Image(command.idCardBase64(), ocrProperties.maxImageBytes());
-        OcrCallContextHolder.set(OcrCallContext.of(profileId));
+        OcrCallContextHolder.set(OcrCallContext.of(
+                profileId,
+                partnerUserId,
+                requireMobile(mobileNo),
+                command.requestId(),
+                LogContext.traceId()
+        ));
         String ocrResponseJson;
         try {
             ocrResponseJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
@@ -430,14 +503,14 @@ public class IdentityOcrFacade {
                 List.of("identity"),
                 "IDENTITY_DEV_LENDER_SYNC"
         );
-        String idCardImageEncryptedRef = storeDevImage(profileId, BiometricImageKind.ID_CARD, command.idCardBase64());
-        String facePhotoImageEncryptedRef = storeDevImage(profileId, BiometricImageKind.FACE, command.faceBase64());
+        String idCardImageEncryptedRef = storeDevImage(mobileNo, BiometricImageKind.ID_CARD, command.idCardBase64());
+        String facePhotoImageEncryptedRef = storeDevImage(mobileNo, BiometricImageKind.FACE, command.faceBase64());
         String ocrResultJson = sensitiveJsonSupport.sanitizeForStorage(
                 buildOcrResultJson(
                         toDevParsedFields(command),
                         lenderRawOcrDetail(buildDevRawOcrDetail(command))
                 ),
-                profileId
+                mobileNo
         );
         profileIdentityRepository.upsert(new ProfileIdentityData(
                 profileId,
@@ -552,19 +625,22 @@ public class IdentityOcrFacade {
             String partnerUserId,
             String mobileNo,
             String clientRequestId,
+            String traceId,
             OcrVendorOperationType operationType,
             String apiCode,
             BigDecimal score,
             BigDecimal threshold
     ) {
+        String resolvedTraceId = firstNonBlank(traceId, LogContext.traceId());
+        String resolvedClientRequestId = firstNonBlank(clientRequestId, resolvedTraceId);
         callLogWriter.write(new OcrVendorCallLogWriter.OcrVendorCallLogEntry(
                 profileId,
                 partnerUserId,
                 mobileNo,
                 operationType,
                 OCR_CHANNEL,
-                null,
-                clientRequestId,
+                resolvedTraceId,
+                resolvedClientRequestId,
                 OcrVendorCallStatus.BIZ_REJECT,
                 apiCode,
                 null,
@@ -581,12 +657,13 @@ public class IdentityOcrFacade {
         ));
     }
 
-    private String storeDevImage(long profileId, BiometricImageKind kind, String imageBase64) {
+    private String storeDevImage(String mobileNo, BiometricImageKind kind, String imageBase64) {
+        String normalizedMobileNo = requireMobile(mobileNo);
         if (isBlank(imageBase64)) {
-            return "missing://profile/" + profileId + "/" + kind.objectName();
+            return "missing://mobile/" + normalizedMobileNo + "/" + kind.objectName();
         }
         byte[] imageBytes = OcrImageSupport.decodeBase64Image(imageBase64, ocrProperties.maxImageBytes());
-        return biometricImageStore.store(profileId, kind, imageBytes);
+        return biometricImageStore.store(normalizedMobileNo, kind, imageBytes);
     }
 
     private String buildOcrResultJson(OcrSessionState.OcrParsedFields parsed, String rawOcrDetail) {
@@ -694,6 +771,14 @@ public class IdentityOcrFacade {
 
     private static String normalizeMobile(String mobileNo) {
         return mobileNo == null ? "" : mobileNo.trim();
+    }
+
+    private static String requireMobile(String mobileNo) {
+        String normalized = normalizeMobile(mobileNo);
+        if (normalized.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "mobileNo is required");
+        }
+        return normalized;
     }
 
     private static boolean isBlank(String value) {

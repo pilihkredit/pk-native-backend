@@ -19,19 +19,19 @@ class LocalEncryptedBiometricImageStoreTest {
         BiometricImageStore store = createStore(tempDir);
         byte[] original = new byte[] {(byte) 0xFF, 0x00, 0x10, 0x20, 0x30};
 
-        String ref = store.store(42L, BiometricImageKind.ID_CARD, original);
+        String ref = store.store("81234567890", BiometricImageKind.ID_CARD, original);
         byte[] restored = store.load(ref);
 
         assertThat(ref).startsWith("local://");
         assertThat(restored).isEqualTo(original);
-        assertThat(Files.readAllBytes(tempDir.resolve("pk-biometric/test/profile/42/id-card.enc")))
+        assertThat(Files.readAllBytes(tempDir.resolve("pk-biometric/test/mobile/81234567890/id-card.enc")))
                 .isNotEqualTo(original);
     }
 
     @Test
     void deletesEncryptedImage() {
         BiometricImageStore store = createStore(tempDir);
-        String ref = store.store(7L, BiometricImageKind.FACE, new byte[] {1, 2, 3});
+        String ref = store.store("81234567890", BiometricImageKind.FACE, new byte[] {1, 2, 3});
 
         store.delete(ref);
 
