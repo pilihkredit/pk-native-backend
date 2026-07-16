@@ -4,7 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.profile.ocr.OcrCallContext;
+import com.pk.core.profile.ocr.OcrCallContextHolder;
+import com.pk.core.profile.ocr.OcrVendorCallStatus;
+import com.pk.core.profile.ocr.OcrVendorOperationType;
 import com.pk.core.profile.port.AdvanceAiOcrPort;
+import com.pk.core.profile.port.OcrVendorCallLogWriter;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -19,16 +25,22 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
     private final OcrProperties properties;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final OcrVendorCallLogWriter callLogWriter;
+    private final OcrSensitiveJsonSupport sensitiveJsonSupport;
     private final HttpClient httpClient;
 
     public AdvanceAiOcrClient(
             OcrProperties properties,
             StringRedisTemplate redisTemplate,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            OcrVendorCallLogWriter callLogWriter,
+            OcrSensitiveJsonSupport sensitiveJsonSupport
     ) {
         this.properties = properties;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
+        this.callLogWriter = callLogWriter;
+        this.sensitiveJsonSupport = sensitiveJsonSupport;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(properties.connectTimeoutMs()))
                 .build();
@@ -41,7 +53,13 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                 : licenseEffectiveSeconds;
         String token = refreshAccessToken();
         Map<String, Object> requestData = Map.of("licenseEffectiveSeconds", effectiveSeconds);
-        JsonNode response = postJson("license-token", properties.licenseUrl(), requestData, token);
+        JsonNode response = postJson(
+                OcrVendorOperationType.LICENSE_TOKEN,
+                "license-token",
+                properties.licenseUrl(),
+                requestData,
+                token
+        );
         String code = text(response, "code");
         if (!"SUCCESS".equals(code)) {
             throw new ApiException(ApiCode.OCR_SERVICE_ERROR, "OCR license token failed");
@@ -58,7 +76,13 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
     public String ocrCheckIdCard(byte[] imageBytes) {
         String token = requireAccessToken();
         Map<String, byte[]> form = Map.of("ocrImage", imageBytes);
-        JsonNode response = postMultipart("ocr-check", properties.ocrCheckUrl(), form, token);
+        JsonNode response = postMultipart(
+                OcrVendorOperationType.OCR_CHECK,
+                "ocr-check",
+                properties.ocrCheckUrl(),
+                form,
+                token
+        );
         String code = text(response, "code");
         if ("SUCCESS".equals(code)) {
             JsonNode data = response.get("data");
@@ -84,7 +108,13 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                 "livenessId", livenessId,
                 "resultType", "IMAGE_BASE64"
         );
-        JsonNode response = postJson("liveness-check", properties.livenessDetectionUrl(), requestData, token);
+        JsonNode response = postJson(
+                OcrVendorOperationType.LIVENESS_CHECK,
+                "liveness-check",
+                properties.livenessDetectionUrl(),
+                requestData,
+                token
+        );
         String code = text(response, "code");
         if (!"SUCCESS".equals(code)) {
             throw new ApiException(ApiCode.OCR_LIVENESS_FAILED);
@@ -101,7 +131,13 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         Map<String, byte[]> form = new HashMap<>();
         form.put("firstImage", idCardImage);
         form.put("secondImage", faceImage);
-        JsonNode response = postMultipart("face-compare", properties.faceRecognitionUrl(), form, token);
+        JsonNode response = postMultipart(
+                OcrVendorOperationType.FACE_COMPARE,
+                "face-compare",
+                properties.faceRecognitionUrl(),
+                form,
+                token
+        );
         String code = text(response, "code");
         if (!"SUCCESS".equals(code)) {
             String message = text(response, "message");
@@ -146,7 +182,8 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                     "signature", signature,
                     "timestamp", String.valueOf(timestamp)
             );
-            JsonNode response = postJson("access-token", properties.accessTokenUrl(), requestData, null);
+            // Access token is infrastructure; do not write business audit rows.
+            JsonNode response = postJsonInternal("access-token", properties.accessTokenUrl(), requestData, null, null);
             if (!"SUCCESS".equals(text(response, "code"))) {
                 return null;
             }
@@ -158,20 +195,43 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         }
     }
 
-    private JsonNode postJson(String operation, String pathOrUrl, Map<String, Object> requestData, String accessToken) {
+    private JsonNode postJson(
+            OcrVendorOperationType operationType,
+            String operation,
+            String pathOrUrl,
+            Map<String, Object> requestData,
+            String accessToken
+    ) {
+        return postJsonInternal(operation, pathOrUrl, requestData, accessToken, operationType);
+    }
+
+    private JsonNode postJsonInternal(
+            String operation,
+            String pathOrUrl,
+            Map<String, Object> requestData,
+            String accessToken,
+            OcrVendorOperationType operationType
+    ) {
         String endpoint = AdvanceAiHttpSupport.resolveEndpoint(properties, pathOrUrl);
+        Long profileId = currentProfileId();
         String requestJson;
         try {
             requestJson = objectMapper.writeValueAsString(requestData);
         } catch (Exception exception) {
             requestJson = String.valueOf(requestData);
         }
-        String sanitizedRequest = OcrLogSupport.redactPayload(requestJson);
+        String sanitizedRequest = sensitiveJsonSupport.sanitizeForStorage(requestJson, profileId);
         long startedAt = System.currentTimeMillis();
         String responseText = "";
+        Integer httpStatus = null;
+        OcrVendorCallStatus status = OcrVendorCallStatus.EXCEPTION;
+        String vendorCode = null;
+        String vendorMessage = null;
+        String apiCode = null;
+        BigDecimal score = null;
         boolean success = false;
         try {
-            OcrHttpLogger.logRequest(operation, "POST", endpoint, sanitizedRequest);
+            OcrHttpLogger.logRequest(operation, "POST", endpoint, OcrLogSupport.redactPayload(requestJson));
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
                     .timeout(Duration.ofMillis(properties.readTimeoutMs()))
@@ -181,16 +241,33 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
             }
             builder.POST(HttpRequest.BodyPublishers.ofString(requestJson));
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            httpStatus = response.statusCode();
             responseText = response.body() == null ? "" : response.body();
             if (response.statusCode() >= 400) {
+                status = OcrVendorCallStatus.VENDOR_ERROR;
+                apiCode = ApiCode.OCR_SERVICE_ERROR.code();
                 throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
             }
             JsonNode result = parseResponseBody(responseText);
-            success = "SUCCESS".equals(text(result, "code"));
+            vendorCode = text(result, "code");
+            vendorMessage = text(result, "message");
+            score = extractScore(result);
+            success = "SUCCESS".equals(vendorCode);
+            status = success ? OcrVendorCallStatus.SUCCESS : OcrVendorCallStatus.VENDOR_ERROR;
             return result;
         } catch (ApiException exception) {
+            apiCode = exception.apiCode().code();
+            if (status == OcrVendorCallStatus.EXCEPTION) {
+                status = OcrVendorCallStatus.VENDOR_ERROR;
+            }
             throw exception;
+        } catch (java.net.http.HttpTimeoutException exception) {
+            status = OcrVendorCallStatus.TIMEOUT;
+            apiCode = ApiCode.OCR_SERVICE_ERROR.code();
+            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
         } catch (Exception exception) {
+            status = OcrVendorCallStatus.EXCEPTION;
+            apiCode = ApiCode.OCR_SERVICE_ERROR.code();
             throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
         } finally {
             long durationMs = System.currentTimeMillis() - startedAt;
@@ -201,14 +278,47 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                     success,
                     OcrLogSupport.redactPayload(responseText)
             );
+            if (operationType != null) {
+                persistCallLog(
+                        operationType,
+                        status,
+                        apiCode,
+                        vendorCode,
+                        vendorMessage,
+                        score,
+                        null,
+                        endpoint,
+                        httpStatus,
+                        (int) durationMs,
+                        sanitizedRequest,
+                        sensitiveJsonSupport.sanitizeForStorage(responseText, profileId),
+                        null,
+                        null
+                );
+            }
         }
     }
 
-    private JsonNode postMultipart(String operation, String pathOrUrl, Map<String, byte[]> form, String accessToken) {
+    private JsonNode postMultipart(
+            OcrVendorOperationType operationType,
+            String operation,
+            String pathOrUrl,
+            Map<String, byte[]> form,
+            String accessToken
+    ) {
         String endpoint = AdvanceAiHttpSupport.resolveEndpoint(properties, pathOrUrl);
+        Long profileId = currentProfileId();
+        String sanitizedRequest = sensitiveJsonSupport.describeMultipartRequest(form, profileId);
         long startedAt = System.currentTimeMillis();
         String responseText = "";
+        Integer httpStatus = null;
+        OcrVendorCallStatus status = OcrVendorCallStatus.EXCEPTION;
+        String vendorCode = null;
+        String vendorMessage = null;
+        String apiCode = null;
+        BigDecimal score = null;
         boolean success = false;
+        String requestImageRef = extractFirstEncryptedRef(sanitizedRequest);
         try {
             OcrHttpLogger.logRequest(operation, "POST", endpoint, OcrLogSupport.describeMultipart(form));
             AdvanceAiHttpSupport.MultipartBody multipart = AdvanceAiHttpSupport.buildMultipartBody(form);
@@ -220,16 +330,33 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                     .POST(HttpRequest.BodyPublishers.ofByteArray(multipart.body()))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            httpStatus = response.statusCode();
             responseText = response.body() == null ? "" : response.body();
             if (response.statusCode() >= 400) {
+                status = OcrVendorCallStatus.VENDOR_ERROR;
+                apiCode = ApiCode.OCR_SERVICE_ERROR.code();
                 throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
             }
             JsonNode result = parseResponseBody(responseText);
-            success = "SUCCESS".equals(text(result, "code"));
+            vendorCode = text(result, "code");
+            vendorMessage = text(result, "message");
+            score = extractScore(result);
+            success = "SUCCESS".equals(vendorCode);
+            status = success ? OcrVendorCallStatus.SUCCESS : OcrVendorCallStatus.VENDOR_ERROR;
             return result;
         } catch (ApiException exception) {
+            apiCode = exception.apiCode().code();
+            if (status == OcrVendorCallStatus.EXCEPTION) {
+                status = OcrVendorCallStatus.VENDOR_ERROR;
+            }
             throw exception;
+        } catch (java.net.http.HttpTimeoutException exception) {
+            status = OcrVendorCallStatus.TIMEOUT;
+            apiCode = ApiCode.OCR_SERVICE_ERROR.code();
+            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
         } catch (Exception exception) {
+            status = OcrVendorCallStatus.EXCEPTION;
+            apiCode = ApiCode.OCR_SERVICE_ERROR.code();
             throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
         } finally {
             long durationMs = System.currentTimeMillis() - startedAt;
@@ -240,7 +367,106 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
                     success,
                     OcrLogSupport.redactPayload(responseText)
             );
+            persistCallLog(
+                    operationType,
+                    status,
+                    apiCode,
+                    vendorCode,
+                    vendorMessage,
+                    score,
+                    null,
+                    endpoint,
+                    httpStatus,
+                    (int) durationMs,
+                    sanitizedRequest,
+                    sensitiveJsonSupport.sanitizeForStorage(responseText, profileId),
+                    requestImageRef,
+                    null
+            );
         }
+    }
+
+    private void persistCallLog(
+            OcrVendorOperationType operationType,
+            OcrVendorCallStatus status,
+            String apiCode,
+            String vendorCode,
+            String vendorMessage,
+            BigDecimal score,
+            BigDecimal threshold,
+            String endpoint,
+            Integer httpStatus,
+            Integer durationMs,
+            String requestJson,
+            String responseJson,
+            String requestImageEncryptedRef,
+            String responseImageEncryptedRef
+    ) {
+        OcrCallContext context = OcrCallContextHolder.get();
+        callLogWriter.write(new OcrVendorCallLogWriter.OcrVendorCallLogEntry(
+                context == null ? null : context.profileId(),
+                context == null ? null : context.partnerUserId(),
+                context == null ? null : context.mobileNo(),
+                operationType,
+                "advanceAi",
+                context == null ? null : context.traceId(),
+                context == null ? null : context.clientRequestId(),
+                status,
+                apiCode,
+                vendorCode,
+                vendorMessage,
+                score,
+                threshold,
+                endpoint,
+                httpStatus,
+                durationMs,
+                requestJson,
+                responseJson,
+                requestImageEncryptedRef,
+                responseImageEncryptedRef
+        ));
+    }
+
+    private static Long currentProfileId() {
+        OcrCallContext context = OcrCallContextHolder.get();
+        return context == null ? null : context.profileId();
+    }
+
+    private String extractFirstEncryptedRef(String sanitizedRequest) {
+        if (sanitizedRequest == null || sanitizedRequest.isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(sanitizedRequest);
+            if (!root.isObject()) {
+                return null;
+            }
+            for (JsonNode child : root) {
+                if (child != null && child.hasNonNull("encryptedRef")) {
+                    return child.get("encryptedRef").asText();
+                }
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
+        return null;
+    }
+
+    private static BigDecimal extractScore(JsonNode result) {
+        if (result == null) {
+            return null;
+        }
+        JsonNode data = result.get("data");
+        if (data == null || data.isNull()) {
+            return null;
+        }
+        if (data.has("livenessScore")) {
+            return BigDecimal.valueOf(data.path("livenessScore").asDouble());
+        }
+        if (data.has("similarity")) {
+            return BigDecimal.valueOf(data.path("similarity").asDouble());
+        }
+        return null;
     }
 
     private JsonNode parseResponseBody(String responseText) {

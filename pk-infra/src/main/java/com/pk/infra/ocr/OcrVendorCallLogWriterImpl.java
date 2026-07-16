@@ -1,0 +1,66 @@
+package com.pk.infra.ocr;
+
+import com.pk.core.profile.port.OcrVendorCallLogWriter;
+import com.pk.infra.ocr.mapper.OcrVendorCallLogInsertParam;
+import com.pk.infra.ocr.mapper.OcrVendorCallLogMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Persist OCR vendor call audits. Insert failures are swallowed so business flow continues.
+ */
+public class OcrVendorCallLogWriterImpl implements OcrVendorCallLogWriter {
+    private static final Logger log = LoggerFactory.getLogger(OcrVendorCallLogWriterImpl.class);
+
+    private final OcrVendorCallLogMapper mapper;
+
+    public OcrVendorCallLogWriterImpl(OcrVendorCallLogMapper mapper) {
+        this.mapper = mapper;
+    }
+
+    @Override
+    public void write(OcrVendorCallLogEntry entry) {
+        if (entry == null) {
+            return;
+        }
+        try {
+            OcrVendorCallLogInsertParam param = new OcrVendorCallLogInsertParam();
+            param.setProfileId(entry.profileId());
+            param.setPartnerUserId(entry.partnerUserId());
+            param.setMobileNo(entry.mobileNo());
+            param.setOperationType(entry.operationType() == null ? null : entry.operationType().name());
+            param.setChannel(entry.channel() == null || entry.channel().isBlank() ? "advanceAi" : entry.channel());
+            param.setTraceId(entry.traceId());
+            param.setClientRequestId(entry.clientRequestId());
+            param.setStatus(entry.status() == null ? null : entry.status().name());
+            param.setApiCode(entry.apiCode());
+            param.setVendorCode(entry.vendorCode());
+            param.setVendorMessage(truncate(entry.vendorMessage(), 512));
+            param.setScore(entry.score());
+            param.setThreshold(entry.threshold());
+            param.setEndpoint(entry.endpoint());
+            param.setHttpStatus(entry.httpStatus());
+            param.setDurationMs(entry.durationMs());
+            param.setRequestJson(entry.requestJson());
+            param.setResponseJson(entry.responseJson());
+            param.setRequestImageEncryptedRef(entry.requestImageEncryptedRef());
+            param.setResponseImageEncryptedRef(entry.responseImageEncryptedRef());
+            mapper.insert(param);
+        } catch (Exception exception) {
+            log.warn(
+                    "Failed to persist ocr_vendor_call_log operation={} status={} profileId={}",
+                    entry.operationType(),
+                    entry.status(),
+                    entry.profileId(),
+                    exception
+            );
+        }
+    }
+
+    private static String truncate(String value, int max) {
+        if (value == null || value.length() <= max) {
+            return value;
+        }
+        return value.substring(0, max);
+    }
+}

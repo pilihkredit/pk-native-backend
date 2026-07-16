@@ -2,8 +2,12 @@ package com.pk.infra.ocr;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.profile.port.AdvanceAiOcrPort;
+import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.OcrSessionStore;
+import com.pk.core.profile.port.OcrVendorCallLogWriter;
+import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.infra.auth.AuthInfraConfiguration;
+import com.pk.infra.ocr.mapper.OcrVendorCallLogMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -16,13 +20,35 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @EnableConfigurationProperties(OcrProperties.class)
 public class OcrInfraConfiguration {
     @Bean
+    OcrVendorCallLogWriter ocrVendorCallLogWriter(OcrVendorCallLogMapper mapper) {
+        return new OcrVendorCallLogWriterImpl(mapper);
+    }
+
+    @Bean
+    OcrSensitiveJsonSupport ocrSensitiveJsonSupport(
+            ObjectMapper objectMapper,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
+            BiometricImageStore biometricImageStore
+    ) {
+        return new OcrSensitiveJsonSupport(objectMapper, sensitiveFieldEncryptor, biometricImageStore);
+    }
+
+    @Bean
     @ConditionalOnProperty(prefix = "pk.ocr", name = "enabled", havingValue = "true")
     AdvanceAiOcrPort advanceAiOcrPort(
             OcrProperties ocrProperties,
             StringRedisTemplate redisTemplate,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            OcrVendorCallLogWriter ocrVendorCallLogWriter,
+            OcrSensitiveJsonSupport ocrSensitiveJsonSupport
     ) {
-        return new AdvanceAiOcrClient(ocrProperties, redisTemplate, objectMapper);
+        return new AdvanceAiOcrClient(
+                ocrProperties,
+                redisTemplate,
+                objectMapper,
+                ocrVendorCallLogWriter,
+                ocrSensitiveJsonSupport
+        );
     }
 
     @Bean

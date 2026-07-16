@@ -11,6 +11,7 @@ import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
 import com.pk.infra.auth.MobileNumberValidator;
+import com.pk.infra.ocr.OcrSensitiveJsonSupport;
 
 public class ProfileSyncHandler {
     private final LenderProfileSyncPort lenderProfileSyncPort;
@@ -21,6 +22,7 @@ public class ProfileSyncHandler {
     private final ProfileBankCardRepository profileBankCardRepository;
     private final ProfileIdentityRepository profileIdentityRepository;
     private final LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder;
+    private final OcrSensitiveJsonSupport ocrSensitiveJsonSupport;
 
     public ProfileSyncHandler(
             LenderProfileSyncPort lenderProfileSyncPort,
@@ -30,7 +32,8 @@ public class ProfileSyncHandler {
             ProfileContactRepository profileContactRepository,
             ProfileBankCardRepository profileBankCardRepository,
             ProfileIdentityRepository profileIdentityRepository,
-            LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder
+            LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder,
+            OcrSensitiveJsonSupport ocrSensitiveJsonSupport
     ) {
         this.lenderProfileSyncPort = lenderProfileSyncPort;
         this.profileSyncPayloadLoader = profileSyncPayloadLoader;
@@ -40,6 +43,7 @@ public class ProfileSyncHandler {
         this.profileBankCardRepository = profileBankCardRepository;
         this.profileIdentityRepository = profileIdentityRepository;
         this.lenderSyncAuditRequestBuilder = lenderSyncAuditRequestBuilder;
+        this.ocrSensitiveJsonSupport = ocrSensitiveJsonSupport;
     }
 
     public LenderProfileSyncPort.LenderProfileSyncResult sync(ProfileSyncJob job) {
@@ -124,8 +128,8 @@ public class ProfileSyncHandler {
             );
             case IDENTITY -> profileIdentityRepository.updateLastLenderAudit(
                     profileId,
-                    requestDataJson,
-                    responseDataJson
+                    ocrSensitiveJsonSupport.sanitizeForStorage(requestDataJson, profileId),
+                    ocrSensitiveJsonSupport.sanitizeForStorage(responseDataJson, profileId)
             );
         }
     }

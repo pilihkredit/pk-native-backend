@@ -47,16 +47,15 @@
     </resultMap>
 
     <select id="findLatestIdentityAssetByProfileId" resultMap="identityAssetRecordMap">
-        SELECT id,
+        SELECT profile_id AS id,
                full_name,
                id_card_image_encrypted_ref,
                face_photo_image_encrypted_ref,
                ocr_channel,
                ocr_result_json,
                created_at
-        FROM user_identity_asset
+        FROM user_profile_identity
         WHERE profile_id = #{profileId}
-        ORDER BY id DESC
         LIMIT 1
     </select>
 

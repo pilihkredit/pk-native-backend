@@ -16,6 +16,15 @@
             <arg column="last_request_id" javaType="string"/>
             <arg column="last_lender_request_json" javaType="string"/>
             <arg column="last_lender_response_json" javaType="string"/>
+            <arg column="profile_version_id" javaType="java.lang.Long"/>
+            <arg column="mother_name_ciphertext" javaType="string"/>
+            <arg column="mother_name_nonce" javaType="_byte[]"/>
+            <arg column="mother_name_tag" javaType="_byte[]"/>
+            <arg column="id_card_image_encrypted_ref" javaType="string"/>
+            <arg column="face_photo_image_encrypted_ref" javaType="string"/>
+            <arg column="encryption_key_ref" javaType="string"/>
+            <arg column="ocr_channel" javaType="string"/>
+            <arg column="ocr_result_json" javaType="string"/>
         </constructor>
     </resultMap>
 
@@ -23,7 +32,11 @@
         SELECT profile_id, mobile_no, full_name,
                id_no_ciphertext, id_no_nonce, id_no_tag,
                id_no_hash, module_status, last_request_id,
-               last_lender_request_json, last_lender_response_json
+               last_lender_request_json, last_lender_response_json,
+               profile_version_id,
+               mother_name_ciphertext, mother_name_nonce, mother_name_tag,
+               id_card_image_encrypted_ref, face_photo_image_encrypted_ref,
+               encryption_key_ref, ocr_channel, ocr_result_json
         FROM user_profile_identity
         WHERE profile_id = #{profileId}
     </select>
@@ -32,11 +45,19 @@
         INSERT INTO user_profile_identity (
             profile_id, mobile_no, full_name,
             id_no_ciphertext, id_no_nonce, id_no_tag,
-            id_no_hash, module_status, last_request_id
+            id_no_hash, module_status, last_request_id,
+            profile_version_id,
+            mother_name_ciphertext, mother_name_nonce, mother_name_tag,
+            id_card_image_encrypted_ref, face_photo_image_encrypted_ref,
+            encryption_key_ref, ocr_channel, ocr_result_json
         ) VALUES (
             #{profileId}, #{mobileNo}, #{fullName},
             #{idNoCiphertext}, #{idNoNonce}, #{idNoTag},
-            #{idNoHash}, #{moduleStatus}, #{lastRequestId}
+            #{idNoHash}, #{moduleStatus}, #{lastRequestId},
+            #{profileVersionId},
+            #{motherNameCiphertext}, #{motherNameNonce}, #{motherNameTag},
+            #{idCardImageEncryptedRef}, #{facePhotoImageEncryptedRef},
+            #{encryptionKeyRef}, #{ocrChannel}, #{ocrResultJson}
         )
         ON DUPLICATE KEY UPDATE
             mobile_no = VALUES(mobile_no),
@@ -46,7 +67,16 @@
             id_no_tag = VALUES(id_no_tag),
             id_no_hash = VALUES(id_no_hash),
             module_status = VALUES(module_status),
-            last_request_id = VALUES(last_request_id)
+            last_request_id = VALUES(last_request_id),
+            profile_version_id = COALESCE(VALUES(profile_version_id), profile_version_id),
+            mother_name_ciphertext = COALESCE(VALUES(mother_name_ciphertext), mother_name_ciphertext),
+            mother_name_nonce = COALESCE(VALUES(mother_name_nonce), mother_name_nonce),
+            mother_name_tag = COALESCE(VALUES(mother_name_tag), mother_name_tag),
+            id_card_image_encrypted_ref = COALESCE(VALUES(id_card_image_encrypted_ref), id_card_image_encrypted_ref),
+            face_photo_image_encrypted_ref = COALESCE(VALUES(face_photo_image_encrypted_ref), face_photo_image_encrypted_ref),
+            encryption_key_ref = COALESCE(VALUES(encryption_key_ref), encryption_key_ref),
+            ocr_channel = COALESCE(VALUES(ocr_channel), ocr_channel),
+            ocr_result_json = COALESCE(VALUES(ocr_result_json), ocr_result_json)
     </insert>
 
     <update id="updateLastLenderAudit">

@@ -11,6 +11,15 @@ public record ProfileIdentityRow(
         String moduleStatus,
         String lastRequestId,
         String lastLenderRequestJson,
-        String lastLenderResponseJson
+        String lastLenderResponseJson,
+        Long profileVersionId,
+        String motherNameCiphertext,
+        byte[] motherNameNonce,
+        byte[] motherNameTag,
+        String idCardImageEncryptedRef,
+        String facePhotoImageEncryptedRef,
+        String encryptionKeyRef,
+        String ocrChannel,
+        String ocrResultJson
 ) {
 }

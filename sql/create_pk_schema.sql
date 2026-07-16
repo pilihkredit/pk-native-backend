@@ -142,38 +142,6 @@ CREATE TABLE user_profile_version (
     KEY idx_user_profile_version_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Immutable user profile snapshot versions';
 
-CREATE TABLE user_identity_asset (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
-    profile_version_id BIGINT UNSIGNED NOT NULL COMMENT 'Profile version identifier',
-    id_card_hash CHAR(64) NOT NULL COMMENT 'Identity card number hash',
-    id_card_ciphertext TEXT NOT NULL COMMENT 'AES-256-GCM encrypted identity card number ciphertext',
-    id_card_nonce VARBINARY(12) NOT NULL COMMENT 'AES-GCM nonce for identity card number',
-    id_card_tag VARBINARY(16) NOT NULL COMMENT 'AES-GCM authentication tag for identity card number',
-    full_name VARCHAR(128) NOT NULL COMMENT 'Full legal name',
-    mother_name_ciphertext TEXT NULL COMMENT 'AES-256-GCM encrypted mother name ciphertext',
-    mother_name_nonce VARBINARY(12) NULL COMMENT 'AES-GCM nonce for mother name',
-    mother_name_tag VARBINARY(16) NULL COMMENT 'AES-GCM authentication tag for mother name',
-    id_card_image_encrypted_ref VARCHAR(512) NOT NULL COMMENT 'Encrypted identity card image storage reference',
-    face_photo_image_encrypted_ref VARCHAR(512) NOT NULL COMMENT 'Encrypted face photo image storage reference',
-    encryption_key_ref VARCHAR(256) NOT NULL COMMENT 'KMS reference for AES data encryption key',
-    identity_data_retention_until DATETIME(3) NULL COMMENT 'Planned retention end time for identity card number and mother name',
-    identity_data_deleted_at DATETIME(3) NULL COMMENT 'Identity card number and mother name deletion or anonymization time',
-    biometric_image_retention_until DATETIME(3) NULL COMMENT 'Planned retention end time for identity card and face images',
-    biometric_image_deleted_at DATETIME(3) NULL COMMENT 'Identity card and face image hard deletion time',
-    ocr_channel VARCHAR(64) NULL COMMENT 'OCR channel code',
-    ocr_result_json JSON NULL COMMENT 'OCR result JSON',
-    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
-    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (id),
-    KEY idx_user_identity_asset_profile_version (profile_version_id),
-    KEY idx_user_identity_asset_mobile_no (mobile_no),
-    KEY idx_user_identity_asset_id_card_hash (id_card_hash),
-    KEY idx_user_identity_asset_identity_retention (identity_data_retention_until),
-    KEY idx_user_identity_asset_biometric_retention (biometric_image_retention_until)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User identity assets and OCR results';
-
 CREATE TABLE user_profile_identity (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
     mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
@@ -184,14 +152,56 @@ CREATE TABLE user_profile_identity (
     id_no_nonce VARBINARY(12) NOT NULL COMMENT 'AES-GCM nonce for EKTP number',
     id_no_tag VARBINARY(16) NOT NULL COMMENT 'AES-GCM authentication tag for EKTP number',
     id_no_hash CHAR(64) NOT NULL COMMENT 'SHA-256 hash of EKTP number',
+    profile_version_id BIGINT UNSIGNED NULL COMMENT 'Latest profile version identifier',
+    mother_name_ciphertext TEXT NULL COMMENT 'AES-256-GCM encrypted mother name ciphertext',
+    mother_name_nonce VARBINARY(12) NULL COMMENT 'AES-GCM nonce for mother name',
+    mother_name_tag VARBINARY(16) NULL COMMENT 'AES-GCM authentication tag for mother name',
+    id_card_image_encrypted_ref VARCHAR(512) NULL COMMENT 'Encrypted identity card image storage reference',
+    face_photo_image_encrypted_ref VARCHAR(512) NULL COMMENT 'Encrypted face photo image storage reference',
+    encryption_key_ref VARCHAR(256) NULL COMMENT 'KMS reference for AES data encryption key',
+    identity_data_retention_until DATETIME(3) NULL COMMENT 'Planned retention end time for identity card number and mother name',
+    biometric_image_retention_until DATETIME(3) NULL COMMENT 'Planned retention end time for identity card and face images',
+    ocr_channel VARCHAR(64) NULL COMMENT 'OCR channel code',
+    ocr_result_json JSON NULL COMMENT 'Latest OCR result JSON (sensitive fields encrypted in-place)',
     last_lender_request_json JSON NULL COMMENT 'Last lender user/info/upsert request audit JSON',
     last_lender_response_json JSON NULL COMMENT 'Last lender user/info/upsert response data JSON',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (profile_id),
     KEY idx_user_profile_identity_id_no_hash (id_no_hash),
-    KEY idx_user_profile_identity_mobile_no (mobile_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User identity module state';
+    KEY idx_user_profile_identity_mobile_no (mobile_no),
+    KEY idx_user_profile_identity_profile_version (profile_version_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest user identity recognition result and lender audit';
+
+CREATE TABLE ocr_vendor_call_log (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier',
+    partner_user_id VARCHAR(64) NULL COMMENT 'Partner user identifier',
+    mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number',
+    operation_type VARCHAR(32) NOT NULL COMMENT 'LICENSE_TOKEN / OCR_CHECK / LIVENESS_CHECK / FACE_COMPARE',
+    channel VARCHAR(64) NOT NULL DEFAULT 'advanceAi' COMMENT 'OCR vendor channel',
+    trace_id VARCHAR(64) NULL COMMENT 'Trace identifier',
+    client_request_id VARCHAR(64) NULL COMMENT 'Client request id when available',
+    status VARCHAR(32) NOT NULL COMMENT 'SUCCESS / VENDOR_ERROR / BIZ_REJECT / TIMEOUT / EXCEPTION',
+    api_code VARCHAR(32) NULL COMMENT 'Platform API error code',
+    vendor_code VARCHAR(64) NULL COMMENT 'Vendor response code',
+    vendor_message VARCHAR(512) NULL COMMENT 'Vendor response message',
+    score DECIMAL(18,6) NULL COMMENT 'Liveness score or face similarity',
+    threshold DECIMAL(18,6) NULL COMMENT 'Business threshold used for pass/fail',
+    endpoint VARCHAR(512) NULL COMMENT 'Vendor endpoint',
+    http_status INT NULL COMMENT 'HTTP status code',
+    duration_ms INT UNSIGNED NULL COMMENT 'Vendor call duration in milliseconds',
+    request_json JSON NULL COMMENT 'Vendor request JSON (sensitive fields encrypted in-place)',
+    response_json JSON NULL COMMENT 'Vendor response JSON (sensitive fields encrypted in-place)',
+    request_image_encrypted_ref VARCHAR(512) NULL COMMENT 'Encrypted request image reference when applicable',
+    response_image_encrypted_ref VARCHAR(512) NULL COMMENT 'Encrypted response image reference when applicable',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
+    PRIMARY KEY (id),
+    KEY idx_ocr_vendor_call_log_profile_created (profile_id, created_at),
+    KEY idx_ocr_vendor_call_log_created_op_status (created_at, operation_type, status),
+    KEY idx_ocr_vendor_call_log_op_status_created (operation_type, status, created_at),
+    KEY idx_ocr_vendor_call_log_trace (trace_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='OCR vendor call audit log (success and failure)';
 
 CREATE TABLE user_profile_contacts (
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',

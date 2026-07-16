@@ -22,6 +22,7 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
 
     @Override
     public void upsert(ProfileIdentityData data) {
+        EncryptedField motherName = data.motherName();
         profileIdentityMapper.upsert(new ProfileIdentityRow(
                 data.profileId(),
                 data.mobileNo(),
@@ -33,7 +34,16 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
                 data.moduleStatus(),
                 data.lastRequestId(),
                 null,
-                null
+                null,
+                data.profileVersionId(),
+                motherName == null ? null : motherName.ciphertextBase64(),
+                motherName == null ? null : motherName.nonce(),
+                motherName == null ? null : motherName.tag(),
+                data.idCardImageEncryptedRef(),
+                data.facePhotoImageEncryptedRef(),
+                data.encryptionKeyRef(),
+                data.ocrChannel(),
+                data.ocrResultJson()
         ));
     }
 
@@ -43,6 +53,14 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
     }
 
     private ProfileIdentityData toData(ProfileIdentityRow row) {
+        EncryptedField motherName = null;
+        if (row.motherNameCiphertext() != null && !row.motherNameCiphertext().isBlank()) {
+            motherName = new EncryptedField(
+                    row.motherNameCiphertext(),
+                    row.motherNameNonce(),
+                    row.motherNameTag()
+            );
+        }
         return new ProfileIdentityData(
                 row.profileId(),
                 row.mobileNo(),
@@ -52,7 +70,14 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
                 row.moduleStatus(),
                 row.lastRequestId(),
                 row.lastLenderRequestJson(),
-                row.lastLenderResponseJson()
+                row.lastLenderResponseJson(),
+                row.profileVersionId(),
+                motherName,
+                row.idCardImageEncryptedRef(),
+                row.facePhotoImageEncryptedRef(),
+                row.encryptionKeyRef(),
+                row.ocrChannel(),
+                row.ocrResultJson()
         );
     }
 }

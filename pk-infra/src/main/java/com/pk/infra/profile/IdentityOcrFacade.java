@@ -9,23 +9,28 @@ import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.profile.BiometricImageKind;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileIdentityData;
+import com.pk.core.profile.ocr.OcrCallContext;
+import com.pk.core.profile.ocr.OcrCallContextHolder;
 import com.pk.core.profile.ocr.OcrSessionState;
+import com.pk.core.profile.ocr.OcrVendorCallStatus;
+import com.pk.core.profile.ocr.OcrVendorOperationType;
 import com.pk.core.profile.port.AdvanceAiOcrPort;
 import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.OcrSessionStore;
+import com.pk.core.profile.port.OcrVendorCallLogWriter;
 import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
-import com.pk.infra.profile.mapper.UserIdentityAssetMapper;
-import com.pk.infra.profile.repository.UserIdentityAssetInsertParam;
 import com.pk.infra.ocr.AdvanceAiLenderRawOcrDetailSupport;
 import com.pk.infra.ocr.AdvanceAiRawOcrDetailBuilder;
 import com.pk.infra.ocr.OcrFieldParser;
 import com.pk.infra.ocr.OcrImageSupport;
 import com.pk.infra.ocr.OcrProperties;
+import com.pk.infra.ocr.OcrSensitiveJsonSupport;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -43,7 +48,8 @@ public class IdentityOcrFacade {
     private final ProfileVersionRepository profileVersionRepository;
     private final UserProfileBindingRepository userProfileBindingRepository;
     private final OnboardingProgressFacade onboardingProgressFacade;
-    private final UserIdentityAssetMapper userIdentityAssetMapper;
+    private final OcrVendorCallLogWriter callLogWriter;
+    private final OcrSensitiveJsonSupport sensitiveJsonSupport;
     private final OcrProperties ocrProperties;
     private final ObjectMapper objectMapper;
 
@@ -58,7 +64,8 @@ public class IdentityOcrFacade {
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
             OnboardingProgressFacade onboardingProgressFacade,
-            UserIdentityAssetMapper userIdentityAssetMapper,
+            OcrVendorCallLogWriter callLogWriter,
+            OcrSensitiveJsonSupport sensitiveJsonSupport,
             OcrProperties ocrProperties,
             ObjectMapper objectMapper
     ) {
@@ -72,29 +79,41 @@ public class IdentityOcrFacade {
         this.profileVersionRepository = profileVersionRepository;
         this.userProfileBindingRepository = userProfileBindingRepository;
         this.onboardingProgressFacade = onboardingProgressFacade;
-        this.userIdentityAssetMapper = userIdentityAssetMapper;
+        this.callLogWriter = callLogWriter;
+        this.sensitiveJsonSupport = sensitiveJsonSupport;
         this.ocrProperties = ocrProperties;
         this.objectMapper = objectMapper;
     }
 
     public LicenseTokenResult getLicenseToken(long profileId, Long licenseEffectiveSeconds) {
-        AdvanceAiOcrPort.LicenseTokenResult result = advanceAiOcrPort.getLicenseToken(licenseEffectiveSeconds);
-        ocrSessionStore.save(profileId, new OcrSessionState(
-                true,
-                false,
-                false,
-                null,
-                null,
-                null,
-                null,
-                Instant.now()
-        ));
-        return new LicenseTokenResult(result.licenseToken(), result.effectiveSeconds());
+        OcrCallContextHolder.set(OcrCallContext.of(profileId));
+        try {
+            AdvanceAiOcrPort.LicenseTokenResult result = advanceAiOcrPort.getLicenseToken(licenseEffectiveSeconds);
+            ocrSessionStore.save(profileId, new OcrSessionState(
+                    true,
+                    false,
+                    false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    Instant.now()
+            ));
+            return new LicenseTokenResult(result.licenseToken(), result.effectiveSeconds());
+        } finally {
+            OcrCallContextHolder.clear();
+        }
     }
 
     public OcrCheckResult ocrCheck(long profileId, String imageBase64) {
         byte[] imageBytes = OcrImageSupport.decodeBase64Image(imageBase64, ocrProperties.maxImageBytes());
-        String ocrResponseJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
+        OcrCallContextHolder.set(OcrCallContext.of(profileId));
+        String ocrResponseJson;
+        try {
+            ocrResponseJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
+        } finally {
+            OcrCallContextHolder.clear();
+        }
         JsonNode ocrData = AdvanceAiLenderRawOcrDetailSupport.extractDataNode(objectMapper, ocrResponseJson);
         OcrSessionState.OcrParsedFields parsed = OcrFieldParser.parse(ocrData);
         if (parsed == null || isBlank(parsed.ocrName()) || isBlank(parsed.ocrIdNo())) {
@@ -120,9 +139,25 @@ public class IdentityOcrFacade {
         if (isBlank(livenessId)) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "livenessId is required");
         }
-        AdvanceAiOcrPort.LivenessResult result = advanceAiOcrPort.livenessCheck(livenessId.trim());
+        OcrCallContextHolder.set(OcrCallContext.of(profileId));
+        AdvanceAiOcrPort.LivenessResult result;
+        try {
+            result = advanceAiOcrPort.livenessCheck(livenessId.trim());
+        } finally {
+            OcrCallContextHolder.clear();
+        }
         boolean passed = result.livenessScore() >= ocrProperties.livenessThreshold();
         if (!passed) {
+            writeBizRejectLog(
+                    profileId,
+                    null,
+                    null,
+                    null,
+                    OcrVendorOperationType.LIVENESS_CHECK,
+                    ApiCode.OCR_LIVENESS_FAILED.code(),
+                    BigDecimal.valueOf(result.livenessScore()),
+                    BigDecimal.valueOf(ocrProperties.livenessThreshold())
+            );
             throw new ApiException(ApiCode.OCR_LIVENESS_FAILED);
         }
         OcrSessionState current = ocrSessionStore.find(profileId)
@@ -193,9 +228,31 @@ public class IdentityOcrFacade {
             idCardImage = biometricImageStore.load(idCardImageEncryptedRef);
         }
 
-        AdvanceAiOcrPort.FaceCompareResult compareResult = advanceAiOcrPort.compareFaces(idCardImage, faceImage);
+        OcrCallContextHolder.set(new OcrCallContext(
+                profileId,
+                partnerUserId,
+                normalizedMobileNo,
+                command.requestId().trim(),
+                null
+        ));
+        AdvanceAiOcrPort.FaceCompareResult compareResult;
+        try {
+            compareResult = advanceAiOcrPort.compareFaces(idCardImage, faceImage);
+        } finally {
+            OcrCallContextHolder.clear();
+        }
         boolean passed = compareResult.similarity() >= ocrProperties.faceThreshold();
         if (!passed) {
+            writeBizRejectLog(
+                    profileId,
+                    partnerUserId,
+                    normalizedMobileNo,
+                    command.requestId().trim(),
+                    OcrVendorOperationType.FACE_COMPARE,
+                    ApiCode.OCR_FACE_RECOGNITION_FAILED.code(),
+                    BigDecimal.valueOf(compareResult.similarity()),
+                    BigDecimal.valueOf(ocrProperties.faceThreshold())
+            );
             throw new ApiException(ApiCode.OCR_FACE_RECOGNITION_FAILED);
         }
 
@@ -205,6 +262,16 @@ public class IdentityOcrFacade {
         ProfileSyncPayload.IdentityProfilePayload payload = buildIdentityPayload(parsed, session, faceBase64, idCardBase64);
 
         EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(parsed.ocrIdNo().trim());
+        long profileVersionId = profileVersionRepository.createSnapshot(
+                profileId,
+                normalizedMobileNo,
+                List.of("identity"),
+                "IDENTITY_OCR"
+        );
+        String ocrResultJson = sensitiveJsonSupport.sanitizeForStorage(
+                buildOcrResultJson(parsed, lenderRawOcrDetail(session.ocrRawJson())),
+                profileId
+        );
         profileIdentityRepository.upsert(new ProfileIdentityData(
                 profileId,
                 normalizedMobileNo,
@@ -214,17 +281,15 @@ public class IdentityOcrFacade {
                 MODULE_COMPLETED,
                 command.requestId().trim(),
                 null,
-                null
-        ));
-        persistIdentityAsset(
-                profileId,
-                normalizedMobileNo,
-                parsed,
-                session,
-                encryptedIdNo,
+                null,
+                profileVersionId,
+                null,
                 idCardImageEncryptedRef,
-                faceImageEncryptedRef
-        );
+                faceImageEncryptedRef,
+                biometricImageStore.encryptionKeyRef(),
+                OCR_CHANNEL,
+                ocrResultJson
+        ));
         userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
 
         var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
@@ -266,7 +331,7 @@ public class IdentityOcrFacade {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "requestId is required");
         }
         ProfileSyncPayloadLoader.validateDevice(command.device());
-        DevLenderSyncCommand resolvedCommand = resolveDevLenderSyncCommand(command);
+        DevLenderSyncCommand resolvedCommand = resolveDevLenderSyncCommand(profileId, command);
         String ocrName = requireText(resolvedCommand.ocrName(), "ocrName");
         String ocrIdNo = requireText(resolvedCommand.ocrIdNo(), "ocrIdNo");
         ProfileSyncPayload.IdentityProfilePayload payload = buildDevIdentityPayload(resolvedCommand);
@@ -294,7 +359,7 @@ public class IdentityOcrFacade {
         return new DevLenderSyncResult(resolvedCommand.requestId().trim(), lenderResponse);
     }
 
-    private DevLenderSyncCommand resolveDevLenderSyncCommand(DevLenderSyncCommand command) {
+    private DevLenderSyncCommand resolveDevLenderSyncCommand(long profileId, DevLenderSyncCommand command) {
         if (!isBlank(command.rawOcrDetail())) {
             return command;
         }
@@ -302,7 +367,13 @@ public class IdentityOcrFacade {
             return command;
         }
         byte[] imageBytes = OcrImageSupport.decodeBase64Image(command.idCardBase64(), ocrProperties.maxImageBytes());
-        String ocrResponseJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
+        OcrCallContextHolder.set(OcrCallContext.of(profileId));
+        String ocrResponseJson;
+        try {
+            ocrResponseJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
+        } finally {
+            OcrCallContextHolder.clear();
+        }
         JsonNode ocrData = AdvanceAiLenderRawOcrDetailSupport.extractDataNode(objectMapper, ocrResponseJson);
         OcrSessionState.OcrParsedFields parsed = OcrFieldParser.parse(ocrData);
         if (parsed == null || isBlank(parsed.ocrName()) || isBlank(parsed.ocrIdNo())) {
@@ -353,6 +424,21 @@ public class IdentityOcrFacade {
             String ocrIdNo
     ) {
         EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(ocrIdNo);
+        long profileVersionId = profileVersionRepository.createSnapshot(
+                profileId,
+                mobileNo,
+                List.of("identity"),
+                "IDENTITY_DEV_LENDER_SYNC"
+        );
+        String idCardImageEncryptedRef = storeDevImage(profileId, BiometricImageKind.ID_CARD, command.idCardBase64());
+        String facePhotoImageEncryptedRef = storeDevImage(profileId, BiometricImageKind.FACE, command.faceBase64());
+        String ocrResultJson = sensitiveJsonSupport.sanitizeForStorage(
+                buildOcrResultJson(
+                        toDevParsedFields(command),
+                        lenderRawOcrDetail(buildDevRawOcrDetail(command))
+                ),
+                profileId
+        );
         profileIdentityRepository.upsert(new ProfileIdentityData(
                 profileId,
                 mobileNo,
@@ -362,45 +448,17 @@ public class IdentityOcrFacade {
                 MODULE_COMPLETED,
                 command.requestId().trim(),
                 null,
-                null
-        ));
-        persistDevIdentityAsset(profileId, mobileNo, command, encryptedIdNo, ocrName);
-        userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
-        refreshKycStatus(profileId, partnerUserId);
-    }
-
-    private void persistDevIdentityAsset(
-            long profileId,
-            String mobileNo,
-            DevLenderSyncCommand command,
-            EncryptedField encryptedIdNo,
-            String ocrName
-    ) {
-        long profileVersionId = profileVersionRepository.createSnapshot(
-                profileId,
-                mobileNo,
-                List.of("identity"),
-                "IDENTITY_DEV_LENDER_SYNC"
-        );
-        String ocrResultJson = buildOcrResultJson(
-                toDevParsedFields(command),
-                lenderRawOcrDetail(buildDevRawOcrDetail(command))
-        );
-        userIdentityAssetMapper.insert(new UserIdentityAssetInsertParam(
-                profileId,
-                mobileNo,
+                null,
                 profileVersionId,
-                EktpValidator.hash(requireText(command.ocrIdNo(), "ocrIdNo")),
-                encryptedIdNo.ciphertextBase64(),
-                encryptedIdNo.nonce(),
-                encryptedIdNo.tag(),
-                ocrName,
-                storeDevImage(profileId, BiometricImageKind.ID_CARD, command.idCardBase64()),
-                storeDevImage(profileId, BiometricImageKind.FACE, command.faceBase64()),
+                null,
+                idCardImageEncryptedRef,
+                facePhotoImageEncryptedRef,
                 biometricImageStore.encryptionKeyRef(),
                 OCR_CHANNEL,
                 ocrResultJson
         ));
+        userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
+        refreshKycStatus(profileId, partnerUserId);
     }
 
     private JsonNode buildLenderSyncFailureNode(ApiException exception) {
@@ -489,36 +547,37 @@ public class IdentityOcrFacade {
         userProfileBindingRepository.updateKycStatus(profileId, progress.kycStatus());
     }
 
-    private void persistIdentityAsset(
+    private void writeBizRejectLog(
             long profileId,
+            String partnerUserId,
             String mobileNo,
-            OcrSessionState.OcrParsedFields parsed,
-            OcrSessionState session,
-            EncryptedField encryptedIdNo,
-            String idCardImageEncryptedRef,
-            String facePhotoImageEncryptedRef
+            String clientRequestId,
+            OcrVendorOperationType operationType,
+            String apiCode,
+            BigDecimal score,
+            BigDecimal threshold
     ) {
-        long profileVersionId = profileVersionRepository.createSnapshot(
+        callLogWriter.write(new OcrVendorCallLogWriter.OcrVendorCallLogEntry(
                 profileId,
+                partnerUserId,
                 mobileNo,
-                List.of("identity"),
-                "IDENTITY_OCR"
-        );
-        String ocrResultJson = buildOcrResultJson(parsed, lenderRawOcrDetail(session.ocrRawJson()));
-        userIdentityAssetMapper.insert(new UserIdentityAssetInsertParam(
-                profileId,
-                mobileNo,
-                profileVersionId,
-                EktpValidator.hash(parsed.ocrIdNo()),
-                encryptedIdNo.ciphertextBase64(),
-                encryptedIdNo.nonce(),
-                encryptedIdNo.tag(),
-                parsed.ocrName().trim(),
-                idCardImageEncryptedRef,
-                facePhotoImageEncryptedRef,
-                biometricImageStore.encryptionKeyRef(),
+                operationType,
                 OCR_CHANNEL,
-                ocrResultJson
+                null,
+                clientRequestId,
+                OcrVendorCallStatus.BIZ_REJECT,
+                apiCode,
+                null,
+                null,
+                score,
+                threshold,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         ));
     }
 

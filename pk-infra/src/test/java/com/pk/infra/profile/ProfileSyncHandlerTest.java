@@ -14,11 +14,14 @@ import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
+import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.DeviceExtendedAttributes;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
+import com.pk.core.profile.port.BiometricImageStore;
+import com.pk.infra.ocr.OcrSensitiveJsonSupport;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -28,12 +31,21 @@ class ProfileSyncHandlerTest {
     @Test
     void persistsLenderAuditAfterSuccessfulSync() {
         LenderProfileSyncPort lenderProfileSyncPort = mock(LenderProfileSyncPort.class);
-        ProfileSyncPayloadLoader profileSyncPayloadLoader = mock(ProfileSyncPayloadLoader.class);
         UserProfileBindingRepository userProfileBindingRepository = mock(UserProfileBindingRepository.class);
         ProfilePersonalRepository profilePersonalRepository = mock(ProfilePersonalRepository.class);
         ProfileContactRepository profileContactRepository = mock(ProfileContactRepository.class);
         ProfileBankCardRepository profileBankCardRepository = mock(ProfileBankCardRepository.class);
         ProfileIdentityRepository profileIdentityRepository = mock(ProfileIdentityRepository.class);
+        ProfileSyncPayloadLoader profileSyncPayloadLoader = new ProfileSyncPayloadLoader(
+                profilePersonalRepository,
+                profileContactRepository,
+                mock(SensitiveFieldEncryptor.class)
+        );
+        OcrSensitiveJsonSupport ocrSensitiveJsonSupport = new OcrSensitiveJsonSupport(
+                new ObjectMapper(),
+                mock(SensitiveFieldEncryptor.class),
+                mock(BiometricImageStore.class)
+        );
         LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder = new LenderSyncAuditRequestBuilder(
                 profilePersonalRepository,
                 profileContactRepository,
@@ -70,7 +82,8 @@ class ProfileSyncHandlerTest {
                 profileContactRepository,
                 profileBankCardRepository,
                 profileIdentityRepository,
-                lenderSyncAuditRequestBuilder
+                lenderSyncAuditRequestBuilder,
+                ocrSensitiveJsonSupport
         );
 
         handler.sync(new ProfileSyncJob(
