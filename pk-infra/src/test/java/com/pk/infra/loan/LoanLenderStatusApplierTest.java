@@ -102,6 +102,7 @@ class LoanLenderStatusApplierTest {
                 new BigDecimal("1500000"),
                 null,
                 null,
+                null,
                 "{\"loanApplyId\":\"LOAN-1\"}",
                 "{\"applyStatus\":\"" + externalStatus + "\"}"
         );
@@ -115,6 +116,7 @@ class LoanLenderStatusApplierTest {
                 new BigDecimal("1500000"),
                 new BigDecimal("1450000"),
                 1782864000000L,
+                1749200000000L,
                 null,
                 null
         );

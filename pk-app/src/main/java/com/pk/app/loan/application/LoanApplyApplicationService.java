@@ -85,11 +85,13 @@ public class LoanApplyApplicationService {
         return new LoanStatusResponse(
                 result.loanApplyId(),
                 result.status(),
+                result.applyStatus(),
                 result.loanApplyNo(),
                 result.billNo(),
                 result.applyAmt(),
                 result.payAmount(),
-                result.payTime()
+                result.payTime(),
+                result.freezeEndTime()
         );
     }
 

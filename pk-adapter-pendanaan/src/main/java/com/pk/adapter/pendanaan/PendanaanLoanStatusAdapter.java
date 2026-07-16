@@ -33,6 +33,7 @@ public class PendanaanLoanStatusAdapter implements LenderLoanStatusPort {
                 decimalOrNull(data.get("applyAmt")),
                 decimalOrNull(data.get("payAmount")),
                 longOrNull(data.get("payTime")),
+                longOrNull(data.get("freezeEndTime")),
                 requestBody,
                 serializeResponseData(data)
         );

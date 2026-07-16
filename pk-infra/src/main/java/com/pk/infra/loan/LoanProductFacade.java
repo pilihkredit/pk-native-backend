@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public class LoanProductFacade {
+    static final String FRONTEND_PRODUCT_NAME = "KTA Kilat Plus";
+
     private final CreditApplicationRepository creditApplicationRepository;
     private final ProductListResolver productListResolver;
 
@@ -123,7 +125,7 @@ public class LoanProductFacade {
     private static ProductResult toProduct(LenderLoanProduct product) {
         return new ProductResult(
                 product.productCode(),
-                product.productName(),
+                FRONTEND_PRODUCT_NAME,
                 product.minAmount(),
                 product.maxAmount(),
                 product.comprehensiveRate(),

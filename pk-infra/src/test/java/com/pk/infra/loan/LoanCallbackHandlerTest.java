@@ -120,7 +120,8 @@ class LoanCallbackHandlerTest {
                 "BN-001",
                 new BigDecimal("1500000"),
                 new BigDecimal("1455000"),
-                1749792000000L
+                1749792000000L,
+                null
         );
     }
 }

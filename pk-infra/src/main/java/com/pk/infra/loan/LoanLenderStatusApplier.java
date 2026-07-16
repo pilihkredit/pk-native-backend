@@ -88,6 +88,7 @@ public class LoanLenderStatusApplier {
                 status.applyAmt(),
                 status.payAmount(),
                 status.payTime() == null ? null : Instant.ofEpochMilli(status.payTime()),
+                status.freezeEndTime(),
                 status.requestJson(),
                 status.responseDataJson(),
                 Instant.now()

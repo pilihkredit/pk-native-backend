@@ -1,5 +1,7 @@
 package com.pk.core.profile;
 
+import java.time.Instant;
+
 public record ProfileIdentityData(
         long profileId,
         String mobileNo,
@@ -11,10 +13,11 @@ public record ProfileIdentityData(
         String lastLenderRequestJson,
         String lastLenderResponseJson,
         Long profileVersionId,
-        EncryptedField motherName,
         String idCardImageEncryptedRef,
         String facePhotoImageEncryptedRef,
         String encryptionKeyRef,
+        Instant identityDataRetentionUntil,
+        Instant biometricImageRetentionUntil,
         String ocrChannel,
         String ocrResultJson
 ) {
@@ -40,6 +43,7 @@ public record ProfileIdentityData(
                 lastRequestId,
                 lastLenderRequestJson,
                 lastLenderResponseJson,
+                null,
                 null,
                 null,
                 null,

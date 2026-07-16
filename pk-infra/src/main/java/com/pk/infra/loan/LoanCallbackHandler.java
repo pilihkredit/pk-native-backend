@@ -48,6 +48,7 @@ public class LoanCallbackHandler {
                 parsed.applyAmt(),
                 parsed.payAmount(),
                 parsed.payTime(),
+                parsed.freezeEndTime(),
                 null,
                 null
         );

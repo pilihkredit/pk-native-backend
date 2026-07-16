@@ -16,6 +16,7 @@ import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.loan.LoanApplicationStatus;
 import com.pk.core.loan.LoanTrialQuoteDetail;
 import com.pk.core.loan.port.LoanApplicationRepository;
+import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.loan.port.LoanQuoteRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
@@ -49,6 +50,8 @@ class LoanApplyFacadeTest {
     @Mock
     private LoanApplicationRepository loanApplicationRepository;
     @Mock
+    private LoanLenderStatusQueryRepository loanLenderStatusQueryRepository;
+    @Mock
     private LoanStatusHistoryRepository loanStatusHistoryRepository;
     @Mock
     private LoanApplyHandler loanApplyHandler;
@@ -75,6 +78,7 @@ class LoanApplyFacadeTest {
                 loanProductFacade,
                 profileVersionRepository,
                 loanApplicationRepository,
+                loanLenderStatusQueryRepository,
                 loanStatusHistoryRepository,
                 loanApplyHandler,
                 loanApplyProperties,
@@ -88,11 +92,14 @@ class LoanApplyFacadeTest {
         LoanApplicationRepository.LoanApplicationRecord record = existingLoan();
         when(loanApplicationRepository.findByLoanApplyIdAndProfileId("LOAN-1", 1L))
                 .thenReturn(Optional.of(record));
+        when(loanLenderStatusQueryRepository.findByLoanApplyIdAndProfileId("LOAN-1", 1L))
+                .thenReturn(Optional.empty());
 
         LoanApplyFacade.StatusResult result = facade.getStatus(1L, "LOAN-1");
 
         assertThat(result.loanApplyId()).isEqualTo("LOAN-1");
         assertThat(result.status()).isEqualTo(LoanApplicationStatus.PROCESSING);
+        assertThat(result.applyStatus()).isEqualTo("PROCESSING");
         verify(loanStatusPollHandler).syncFromLenderForApi(record);
     }
 
@@ -121,10 +128,28 @@ class LoanApplyFacadeTest {
         );
         when(loanApplicationRepository.findByLoanApplyIdAndProfileId("LOAN-1", 1L))
                 .thenReturn(Optional.of(record));
+        when(loanLenderStatusQueryRepository.findByLoanApplyIdAndProfileId("LOAN-1", 1L))
+                .thenReturn(Optional.of(new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
+                        "LOAN-1",
+                        1L,
+                        "81234567890",
+                        "USR-1",
+                        "LN-1",
+                        "SUCCESS",
+                        "BN-1",
+                        new BigDecimal("1500000"),
+                        new BigDecimal("1455000"),
+                        Instant.parse("2026-07-01T00:00:00Z"),
+                        null,
+                        "{}",
+                        "{}",
+                        Instant.parse("2026-07-01T00:00:00Z")
+                )));
 
         LoanApplyFacade.StatusResult result = facade.getStatus(1L, "LOAN-1");
 
         assertThat(result.status()).isEqualTo(LoanApplicationStatus.DISBURSED);
+        assertThat(result.applyStatus()).isEqualTo("SUCCESS");
         verify(loanStatusPollHandler, never()).syncFromLenderForApi(any());
     }
 

@@ -28,7 +28,8 @@ class PendanaanLoanCallbackParserTest {
                   "billNo": "BN-001",
                   "applyAmt": 1500000,
                   "payAmount": 1455000,
-                  "payTime": 1749792000000
+                  "payTime": 1749792000000,
+                  "freezeEndTime": null
                 }
                 """;
 
@@ -41,6 +42,28 @@ class PendanaanLoanCallbackParserTest {
         assertThat(parsed.applyAmt()).isEqualByComparingTo(new BigDecimal("1500000"));
         assertThat(parsed.payAmount()).isEqualByComparingTo(new BigDecimal("1455000"));
         assertThat(parsed.payTime()).isEqualTo(1749792000000L);
+        assertThat(parsed.freezeEndTime()).isNull();
+    }
+
+    @Test
+    void parsesRefusedCallbackWithFreezeEndTime() {
+        String json = """
+                {
+                  "loanApplyId": "LOAN-002",
+                  "loanApplyNo": "LN-002",
+                  "applyStatus": "REFUSED",
+                  "billNo": null,
+                  "applyAmt": 800000,
+                  "payAmount": null,
+                  "payTime": null,
+                  "freezeEndTime": 1749200000000
+                }
+                """;
+
+        LoanCallbackParser.ParsedLoanCallback parsed = parser.parse(json);
+
+        assertThat(parsed.externalStatus()).isEqualTo("REFUSED");
+        assertThat(parsed.freezeEndTime()).isEqualTo(1749200000000L);
     }
 
     @Test

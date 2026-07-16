@@ -25,7 +25,8 @@ public class PendanaanLoanCallbackParser implements LoanCallbackParser {
                     textOrNull(root.get("billNo")),
                     decimalOrNull(root.get("applyAmt")),
                     decimalOrNull(root.get("payAmount")),
-                    longOrNull(root.get("payTime"))
+                    longOrNull(root.get("payTime")),
+                    longOrNull(root.get("freezeEndTime"))
             );
         } catch (ApiException exception) {
             throw exception;

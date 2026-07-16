@@ -12,6 +12,7 @@ public interface LenderLoanStatusPort {
             BigDecimal applyAmt,
             BigDecimal payAmount,
             Long payTime,
+            Long freezeEndTime,
             String requestJson,
             String responseDataJson
     ) {

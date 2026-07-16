@@ -22,7 +22,6 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
 
     @Override
     public void upsert(ProfileIdentityData data) {
-        EncryptedField motherName = data.motherName();
         profileIdentityMapper.upsert(new ProfileIdentityRow(
                 data.profileId(),
                 data.mobileNo(),
@@ -36,12 +35,11 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
                 null,
                 null,
                 data.profileVersionId(),
-                motherName == null ? null : motherName.ciphertextBase64(),
-                motherName == null ? null : motherName.nonce(),
-                motherName == null ? null : motherName.tag(),
                 data.idCardImageEncryptedRef(),
                 data.facePhotoImageEncryptedRef(),
                 data.encryptionKeyRef(),
+                data.identityDataRetentionUntil(),
+                data.biometricImageRetentionUntil(),
                 data.ocrChannel(),
                 data.ocrResultJson()
         ));
@@ -52,15 +50,12 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
         profileIdentityMapper.updateLastLenderAudit(profileId, requestJson, responseJson);
     }
 
+    @Override
+    public void scheduleRetentionAfterAccountClosure(long profileId, java.time.Instant retentionUntil) {
+        profileIdentityMapper.scheduleRetentionAfterAccountClosure(profileId, retentionUntil);
+    }
+
     private ProfileIdentityData toData(ProfileIdentityRow row) {
-        EncryptedField motherName = null;
-        if (row.motherNameCiphertext() != null && !row.motherNameCiphertext().isBlank()) {
-            motherName = new EncryptedField(
-                    row.motherNameCiphertext(),
-                    row.motherNameNonce(),
-                    row.motherNameTag()
-            );
-        }
         return new ProfileIdentityData(
                 row.profileId(),
                 row.mobileNo(),
@@ -72,10 +67,11 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
                 row.lastLenderRequestJson(),
                 row.lastLenderResponseJson(),
                 row.profileVersionId(),
-                motherName,
                 row.idCardImageEncryptedRef(),
                 row.facePhotoImageEncryptedRef(),
                 row.encryptionKeyRef(),
+                row.identityDataRetentionUntil(),
+                row.biometricImageRetentionUntil(),
                 row.ocrChannel(),
                 row.ocrResultJson()
         );

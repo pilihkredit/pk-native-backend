@@ -20,44 +20,11 @@ PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SET @col_exists = (
     SELECT COUNT(*) FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'user_profile_identity' AND COLUMN_NAME = 'mother_name_ciphertext'
-);
-SET @ddl = IF(
-    @col_exists = 0,
-    'ALTER TABLE user_profile_identity ADD COLUMN mother_name_ciphertext TEXT NULL COMMENT ''AES-256-GCM encrypted mother name ciphertext'' AFTER profile_version_id',
-    'SELECT ''skip: user_profile_identity.mother_name_ciphertext exists'' AS migration_info'
-);
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @col_exists = (
-    SELECT COUNT(*) FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'user_profile_identity' AND COLUMN_NAME = 'mother_name_nonce'
-);
-SET @ddl = IF(
-    @col_exists = 0,
-    'ALTER TABLE user_profile_identity ADD COLUMN mother_name_nonce VARBINARY(12) NULL COMMENT ''AES-GCM nonce for mother name'' AFTER mother_name_ciphertext',
-    'SELECT ''skip: user_profile_identity.mother_name_nonce exists'' AS migration_info'
-);
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @col_exists = (
-    SELECT COUNT(*) FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'user_profile_identity' AND COLUMN_NAME = 'mother_name_tag'
-);
-SET @ddl = IF(
-    @col_exists = 0,
-    'ALTER TABLE user_profile_identity ADD COLUMN mother_name_tag VARBINARY(16) NULL COMMENT ''AES-GCM authentication tag for mother name'' AFTER mother_name_nonce',
-    'SELECT ''skip: user_profile_identity.mother_name_tag exists'' AS migration_info'
-);
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @col_exists = (
-    SELECT COUNT(*) FROM information_schema.COLUMNS
     WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'user_profile_identity' AND COLUMN_NAME = 'id_card_image_encrypted_ref'
 );
 SET @ddl = IF(
     @col_exists = 0,
-    'ALTER TABLE user_profile_identity ADD COLUMN id_card_image_encrypted_ref VARCHAR(512) NULL COMMENT ''Encrypted identity card image storage reference'' AFTER mother_name_tag',
+    'ALTER TABLE user_profile_identity ADD COLUMN id_card_image_encrypted_ref VARCHAR(512) NULL COMMENT ''Encrypted identity card image storage reference'' AFTER profile_version_id',
     'SELECT ''skip: user_profile_identity.id_card_image_encrypted_ref exists'' AS migration_info'
 );
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -90,7 +57,7 @@ SET @col_exists = (
 );
 SET @ddl = IF(
     @col_exists = 0,
-    'ALTER TABLE user_profile_identity ADD COLUMN identity_data_retention_until DATETIME(3) NULL COMMENT ''Planned retention end time for identity card number and mother name'' AFTER encryption_key_ref',
+    'ALTER TABLE user_profile_identity ADD COLUMN identity_data_retention_until DATETIME(3) NULL COMMENT ''Retention end time for identity card number (account closure + 5 years)'' AFTER encryption_key_ref',
     'SELECT ''skip: user_profile_identity.identity_data_retention_until exists'' AS migration_info'
 );
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -101,7 +68,7 @@ SET @col_exists = (
 );
 SET @ddl = IF(
     @col_exists = 0,
-    'ALTER TABLE user_profile_identity ADD COLUMN biometric_image_retention_until DATETIME(3) NULL COMMENT ''Planned retention end time for identity card and face images'' AFTER identity_data_retention_until',
+    'ALTER TABLE user_profile_identity ADD COLUMN biometric_image_retention_until DATETIME(3) NULL COMMENT ''Retention end time for identity card and face images (account closure + 5 years)'' AFTER identity_data_retention_until',
     'SELECT ''skip: user_profile_identity.biometric_image_retention_until exists'' AS migration_info'
 );
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -146,9 +113,6 @@ SET @ddl = IF(
          ) latest ON latest.profile_id = a.profile_id AND latest.max_id = a.id
      ) src ON src.profile_id = i.profile_id
      SET i.profile_version_id = COALESCE(i.profile_version_id, src.profile_version_id),
-         i.mother_name_ciphertext = COALESCE(i.mother_name_ciphertext, src.mother_name_ciphertext),
-         i.mother_name_nonce = COALESCE(i.mother_name_nonce, src.mother_name_nonce),
-         i.mother_name_tag = COALESCE(i.mother_name_tag, src.mother_name_tag),
          i.id_card_image_encrypted_ref = COALESCE(i.id_card_image_encrypted_ref, src.id_card_image_encrypted_ref),
          i.face_photo_image_encrypted_ref = COALESCE(i.face_photo_image_encrypted_ref, src.face_photo_image_encrypted_ref),
          i.encryption_key_ref = COALESCE(i.encryption_key_ref, src.encryption_key_ref),

@@ -11,6 +11,7 @@ import com.pk.core.loan.LoanAmountValidator;
 import com.pk.core.loan.LoanApplicationStatus;
 import com.pk.core.loan.LoanQuoteIntegrityValidator;
 import com.pk.core.loan.port.LoanApplicationRepository;
+import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.loan.port.LoanQuoteRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
@@ -33,6 +34,7 @@ public class LoanApplyFacade {
     private final LoanProductFacade loanProductFacade;
     private final ProfileVersionRepository profileVersionRepository;
     private final LoanApplicationRepository loanApplicationRepository;
+    private final LoanLenderStatusQueryRepository loanLenderStatusQueryRepository;
     private final LoanStatusHistoryRepository loanStatusHistoryRepository;
     private final LoanApplyHandler loanApplyHandler;
     private final LoanApplyProperties loanApplyProperties;
@@ -48,6 +50,7 @@ public class LoanApplyFacade {
             LoanProductFacade loanProductFacade,
             ProfileVersionRepository profileVersionRepository,
             LoanApplicationRepository loanApplicationRepository,
+            LoanLenderStatusQueryRepository loanLenderStatusQueryRepository,
             LoanStatusHistoryRepository loanStatusHistoryRepository,
             LoanApplyHandler loanApplyHandler,
             LoanApplyProperties loanApplyProperties,
@@ -62,6 +65,7 @@ public class LoanApplyFacade {
         this.loanProductFacade = loanProductFacade;
         this.profileVersionRepository = profileVersionRepository;
         this.loanApplicationRepository = loanApplicationRepository;
+        this.loanLenderStatusQueryRepository = loanLenderStatusQueryRepository;
         this.loanStatusHistoryRepository = loanStatusHistoryRepository;
         this.loanApplyHandler = loanApplyHandler;
         this.loanApplyProperties = loanApplyProperties;
@@ -198,7 +202,10 @@ public class LoanApplyFacade {
                     .findByLoanApplyIdAndProfileId(loanApplyId, profileId)
                     .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         }
-        return toStatusResult(record);
+        var query = loanLenderStatusQueryRepository
+                .findByLoanApplyIdAndProfileId(loanApplyId, profileId)
+                .orElse(null);
+        return toStatusResult(record, query);
     }
 
     private String enqueueOutbox(LoanApplyJob job) {
@@ -234,17 +241,29 @@ public class LoanApplyFacade {
         );
     }
 
-    private static StatusResult toStatusResult(LoanApplicationRepository.LoanApplicationRecord record) {
+    private static StatusResult toStatusResult(
+            LoanApplicationRepository.LoanApplicationRecord record,
+            LoanLenderStatusQueryRepository.LoanLenderStatusQueryData query
+    ) {
         Long payTime = record.payTime() == null ? null : record.payTime().toEpochMilli();
+        if (query != null && query.payTime() != null) {
+            payTime = query.payTime().toEpochMilli();
+        }
         return new StatusResult(
                 record.loanApplyId(),
                 LoanExternalStatusMapper.publicStatusOf(record),
-                record.externalLoanApplyNo(),
-                record.billNo(),
-                record.applyAmt(),
-                record.payAmount(),
-                payTime
+                firstNonBlank(query == null ? null : query.externalStatus(), record.externalStatus()),
+                firstNonBlank(query == null ? null : query.externalLoanApplyNo(), record.externalLoanApplyNo()),
+                firstNonBlank(query == null ? null : query.billNo(), record.billNo()),
+                query == null || query.applyAmt() == null ? record.applyAmt() : query.applyAmt(),
+                query == null || query.payAmount() == null ? record.payAmount() : query.payAmount(),
+                payTime,
+                query == null ? null : query.freezeEndTime()
         );
+    }
+
+    private static String firstNonBlank(String primary, String fallback) {
+        return primary == null || primary.isBlank() ? fallback : primary;
     }
 
     public record ApplyCommand(
@@ -268,11 +287,13 @@ public class LoanApplyFacade {
     public record StatusResult(
             String loanApplyId,
             String status,
+            String applyStatus,
             String loanApplyNo,
             String billNo,
             BigDecimal applyAmt,
             BigDecimal payAmount,
-            Long payTime
+            Long payTime,
+            Long freezeEndTime
     ) {
     }
 }

@@ -9,4 +9,6 @@ public interface ProfileIdentityRepository {
     void upsert(ProfileIdentityData data);
 
     void updateLastLenderAudit(long profileId, String requestJson, String responseJson);
+
+    void scheduleRetentionAfterAccountClosure(long profileId, java.time.Instant retentionUntil);
 }

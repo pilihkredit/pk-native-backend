@@ -1,5 +1,7 @@
 package com.pk.infra.profile.repository;
 
+import java.time.Instant;
+
 public record ProfileIdentityRow(
         long profileId,
         String mobileNo,
@@ -13,12 +15,11 @@ public record ProfileIdentityRow(
         String lastLenderRequestJson,
         String lastLenderResponseJson,
         Long profileVersionId,
-        String motherNameCiphertext,
-        byte[] motherNameNonce,
-        byte[] motherNameTag,
         String idCardImageEncryptedRef,
         String facePhotoImageEncryptedRef,
         String encryptionKeyRef,
+        Instant identityDataRetentionUntil,
+        Instant biometricImageRetentionUntil,
         String ocrChannel,
         String ocrResultJson
 ) {

@@ -12,7 +12,8 @@ public interface LoanCallbackParser {
             String billNo,
             BigDecimal applyAmt,
             BigDecimal payAmount,
-            Long payTime
+            Long payTime,
+            Long freezeEndTime
     ) {
     }
 }

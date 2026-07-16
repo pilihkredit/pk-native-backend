@@ -15,4 +15,9 @@ public interface ProfileIdentityMapper {
             @Param("requestJson") String requestJson,
             @Param("responseJson") String responseJson
     );
+
+    int scheduleRetentionAfterAccountClosure(
+            @Param("profileId") long profileId,
+            @Param("retentionUntil") java.time.Instant retentionUntil
+    );
 }

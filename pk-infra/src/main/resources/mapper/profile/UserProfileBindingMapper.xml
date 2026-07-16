@@ -12,4 +12,15 @@
         UPDATE user_profile SET kyc_status = #{kycStatus}, updated_at = CURRENT_TIMESTAMP(3)
         WHERE id = #{profileId} AND deleted_at IS NULL
     </update>
+    <update id="closeAccount">
+        UPDATE user_profile
+        SET deleted_at = #{closedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+            retention_until = #{retentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+            access_token = NULL,
+            refresh_token = NULL,
+            access_token_expires_at = NULL,
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{profileId}
+          AND deleted_at IS NULL
+    </update>
 </mapper>

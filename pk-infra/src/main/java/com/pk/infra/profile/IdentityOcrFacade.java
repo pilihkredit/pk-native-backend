@@ -303,10 +303,11 @@ public class IdentityOcrFacade {
                 null,
                 null,
                 profileVersionId,
-                null,
                 idCardImageEncryptedRef,
                 faceImageEncryptedRef,
                 biometricImageStore.encryptionKeyRef(),
+                null,
+                null,
                 OCR_CHANNEL,
                 ocrResultJson
         ));
@@ -486,10 +487,11 @@ public class IdentityOcrFacade {
                 null,
                 null,
                 profileVersionId,
-                null,
                 idCardImageEncryptedRef,
                 facePhotoImageEncryptedRef,
                 biometricImageStore.encryptionKeyRef(),
+                null,
+                null,
                 OCR_CHANNEL,
                 ocrResultJson
         ));
