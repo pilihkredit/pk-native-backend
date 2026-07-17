@@ -9,10 +9,12 @@ import com.pk.app.profile.application.ProfileApplicationService;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileInfoQueryRequest;
+import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileEnumsResponse;
+import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
 import com.pk.app.security.SecurityContextSupport;
 import com.pk.core.api.ApiCode;
@@ -123,6 +125,22 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileApplicationService.saveBankCard(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Save login log and sync to lender. */
+    @PostMapping("/login-log")
+    public ApiResponse<ProfileLoginLogSaveResponse> saveLoginLog(
+            @Valid @RequestBody ProfileLoginLogSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.saveLoginLog(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

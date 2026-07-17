@@ -68,7 +68,7 @@ public class LoanApplyApplicationService {
                         request.lat(),
                         request.lng(),
                         request.ip(),
-                        null,
+                        request.address(),
                         device.adId(),
                         device,
                         toAppList(request.riskDataInfo().appList())

@@ -15,6 +15,7 @@ public record LoanApplyRequest(
         BigDecimal lat,
         BigDecimal lng,
         @Size(max = 32) String ip,
+        @Size(max = 512) String address,
         @NotNull @Valid CreditRiskDataInfoRequest riskDataInfo
 ) {
 }

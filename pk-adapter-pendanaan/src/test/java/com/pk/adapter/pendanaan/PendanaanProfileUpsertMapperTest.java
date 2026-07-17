@@ -127,4 +127,24 @@ class PendanaanProfileUpsertMapperTest {
         assertThat(userInfo.get("device").get("systemVersion").asText()).isEqualTo("12");
         assertThat(userInfo.get("device").get("deviceOtherInfo").get("isRoot").asBoolean()).isFalse();
     }
+
+    @Test
+    void mapsLoginLogModuleToLenderLoginLogShape() {
+        ObjectNode userInfo = objectMapper.createObjectNode();
+        PendanaanProfileUpsertMapper.applyModule(
+                userInfo,
+                ProfileSyncModule.LOGIN_LOG,
+                new ProfileSyncPayload.LoginLogProfilePayload(
+                        2,
+                        "203.0.113.1",
+                        new java.math.BigDecimal("-6.2088"),
+                        new java.math.BigDecimal("106.8456")
+                )
+        );
+
+        assertThat(userInfo.get("loginLog").get("loginType").asInt()).isEqualTo(2);
+        assertThat(userInfo.get("loginLog").get("loginIp").asText()).isEqualTo("203.0.113.1");
+        assertThat(userInfo.get("loginLog").get("loginLat").asText()).isEqualTo("-6.2088");
+        assertThat(userInfo.get("loginLog").get("loginLng").asText()).isEqualTo("106.8456");
+    }
 }

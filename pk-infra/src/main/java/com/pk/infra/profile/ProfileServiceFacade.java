@@ -6,9 +6,11 @@ import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileBankCardData;
 import com.pk.core.profile.ProfileContactData;
 import com.pk.core.profile.ProfileContactsModuleData;
+import com.pk.core.profile.ProfileLoginLogData;
 import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
+import com.pk.core.profile.port.ProfileLoginLogRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
@@ -17,6 +19,7 @@ import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
 import com.pk.infra.auth.MobileNumberValidator;
 import com.pk.infra.reference.BankReferenceFacade;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +31,7 @@ public class ProfileServiceFacade {
     private final ProfilePersonalRepository profilePersonalRepository;
     private final ProfileContactRepository profileContactRepository;
     private final ProfileBankCardRepository profileBankCardRepository;
+    private final ProfileLoginLogRepository profileLoginLogRepository;
     private final UserDeviceWriter userDeviceWriter;
     private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private final ProfileEnumValidator profileEnumValidator;
@@ -40,6 +44,7 @@ public class ProfileServiceFacade {
             ProfilePersonalRepository profilePersonalRepository,
             ProfileContactRepository profileContactRepository,
             ProfileBankCardRepository profileBankCardRepository,
+            ProfileLoginLogRepository profileLoginLogRepository,
             UserDeviceWriter userDeviceWriter,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             ProfileEnumValidator profileEnumValidator,
@@ -51,6 +56,7 @@ public class ProfileServiceFacade {
         this.profilePersonalRepository = profilePersonalRepository;
         this.profileContactRepository = profileContactRepository;
         this.profileBankCardRepository = profileBankCardRepository;
+        this.profileLoginLogRepository = profileLoginLogRepository;
         this.userDeviceWriter = userDeviceWriter;
         this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
         this.profileEnumValidator = profileEnumValidator;
@@ -210,6 +216,74 @@ public class ProfileServiceFacade {
         refreshUserProfileMaster(profileId, partnerUserId);
 
         return toBankCardSaveResult(command.requestId(), normalizedCardNumber);
+    }
+
+    public LoginLogSaveResult saveLoginLog(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            LoginLogSaveCommand command
+    ) {
+        String normalizedMobileNo = normalizeMobile(mobileNo);
+        validateLoginLog(command);
+
+        var existing = profileLoginLogRepository.findByProfileId(profileId);
+        if (existing.isPresent() && command.requestId().equals(existing.get().lastRequestId())) {
+            return new LoginLogSaveResult(
+                    command.requestId(),
+                    MODULE_COMPLETED,
+                    existing.get().lastLenderResponseJson()
+            );
+        }
+
+        String normalizedLoginIp = command.loginIp().trim();
+        profileLoginLogRepository.upsert(new ProfileLoginLogData(
+                profileId,
+                normalizedMobileNo,
+                command.loginType(),
+                normalizedLoginIp,
+                command.loginLat(),
+                command.loginLng(),
+                MODULE_COMPLETED,
+                command.requestId(),
+                null,
+                null
+        ));
+
+        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
+
+        com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult syncResult =
+                profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
+                        profileId,
+                        partnerUserId,
+                        normalizedMobileNo,
+                        command.requestId(),
+                        ProfileSyncModule.LOGIN_LOG,
+                        command.device(),
+                        new ProfileSyncPayload.LoginLogProfilePayload(
+                                command.loginType(),
+                                normalizedLoginIp,
+                                command.loginLat(),
+                                command.loginLng()
+                        )
+                ));
+
+        return new LoginLogSaveResult(
+                command.requestId(),
+                MODULE_COMPLETED,
+                syncResult.responseDataJson()
+        );
+    }
+
+    private void validateLoginLog(LoginLogSaveCommand command) {
+        if (command.requestId() == null || command.requestId().isBlank() || command.requestId().length() > 64) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        LoginTypeValidator.validate(command.loginType());
+        if (command.loginIp() == null || command.loginIp().isBlank() || command.loginIp().trim().length() > 32) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        ProfileSyncPayloadLoader.validateDevice(command.device());
     }
 
     private void validateBankCard(BankCardSaveCommand command) {
@@ -378,5 +452,18 @@ public class ProfileServiceFacade {
     }
 
     public record BankCardSaveResult(String requestId, String verifyStatus, String cardNoMasked) {
+    }
+
+    public record LoginLogSaveCommand(
+            String requestId,
+            int loginType,
+            String loginIp,
+            BigDecimal loginLat,
+            BigDecimal loginLng,
+            LenderDeviceContext device
+    ) {
+    }
+
+    public record LoginLogSaveResult(String requestId, String moduleStatus, String lenderResponseJson) {
     }
 }

@@ -16,8 +16,10 @@ import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSender;
 import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.UserAuthRepository;
-import com.pk.core.auth.port.PasswordHasher;
-import com.pk.core.auth.port.UserPasswordCredentialRepository;
+import com.pk.core.profile.EncryptedField;
+import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -36,8 +38,7 @@ public class AuthServiceFacade {
     private final RefreshTokenStore refreshTokenStore;
     private final TokenIssuer tokenIssuer;
     private final UserAuthRepository userAuthRepository;
-    private final UserPasswordCredentialRepository userPasswordCredentialRepository;
-    private final PasswordHasher passwordHasher;
+    private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private final SmsSendLogRepository smsSendLogRepository;
     private final SmsSender smsSender;
 
@@ -49,8 +50,7 @@ public class AuthServiceFacade {
             RefreshTokenStore refreshTokenStore,
             TokenIssuer tokenIssuer,
             UserAuthRepository userAuthRepository,
-            UserPasswordCredentialRepository userPasswordCredentialRepository,
-            PasswordHasher passwordHasher,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
             SmsSendLogRepository smsSendLogRepository,
             SmsSender smsSender
     ) {
@@ -61,8 +61,7 @@ public class AuthServiceFacade {
         this.refreshTokenStore = refreshTokenStore;
         this.tokenIssuer = tokenIssuer;
         this.userAuthRepository = userAuthRepository;
-        this.userPasswordCredentialRepository = userPasswordCredentialRepository;
-        this.passwordHasher = passwordHasher;
+        this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
         this.smsSendLogRepository = smsSendLogRepository;
         this.smsSender = smsSender;
     }
@@ -135,7 +134,7 @@ public class AuthServiceFacade {
 
         boolean registered = userAuthRepository.findByMobileNo(mobileNo).isPresent();
         boolean passwordSet = userAuthRepository.findByMobileNo(mobileNo)
-                .map(profile -> userPasswordCredentialRepository.isPasswordSet(profile.profileId()))
+                .map(profile -> userAuthRepository.isPasswordSet(profile.profileId()))
                 .orElse(false);
         return new MobileCheckResult(registered, registered ? "EXISTING" : "NEW", passwordSet);
     }
@@ -150,10 +149,11 @@ public class AuthServiceFacade {
         if (!PasswordFormatValidator.isValid(password)) {
             throw new ApiException(ApiCode.INVALID_PASSWORD_FORMAT);
         }
-        if (userPasswordCredentialRepository.isPasswordSet(profileId)) {
+        if (userAuthRepository.isPasswordSet(profileId)) {
             throw new ApiException(ApiCode.PASSWORD_ALREADY_SET);
         }
-        userPasswordCredentialRepository.insert(profileId, passwordHasher.hash(password));
+        EncryptedField encryptedPassword = sensitiveFieldEncryptor.encrypt(password);
+        userAuthRepository.savePassword(profileId, encryptedPassword);
     }
 
     public PasswordLoginResult loginByPassword(String mobileNo, String password, String deviceNo) {
@@ -167,8 +167,8 @@ public class AuthServiceFacade {
 
         UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
                 .orElseThrow(() -> new ApiException(ApiCode.INVALID_MOBILE_OR_PASSWORD));
-        UserPasswordCredentialRepository.PasswordCredential credential = userPasswordCredentialRepository
-                .findByProfileId(profile.profileId())
+        UserAuthRepository.PasswordCredential credential = userAuthRepository
+                .findPasswordCredential(profile.profileId())
                 .orElseThrow(() -> new ApiException(ApiCode.PASSWORD_NOT_SET));
 
         Instant now = Instant.now();
@@ -176,27 +176,27 @@ public class AuthServiceFacade {
             throw new ApiException(ApiCode.PASSWORD_ACCOUNT_LOCKED);
         }
 
-        if (!passwordHasher.matches(password, credential.passwordHash())) {
+        if (!passwordMatches(password, credential.password())) {
             int nextAttempts = credential.failedAttempts() + 1;
             if (nextAttempts >= authProperties.passwordMaxFailedAttempts()) {
-                userPasswordCredentialRepository.recordFailedAttempt(
+                userAuthRepository.recordPasswordFailedAttempt(
                         profile.profileId(),
                         0,
                         now.plus(authProperties.passwordLockDuration())
                 );
             } else {
-                userPasswordCredentialRepository.recordFailedAttempt(profile.profileId(), nextAttempts, null);
+                userAuthRepository.recordPasswordFailedAttempt(profile.profileId(), nextAttempts, null);
             }
             throw new ApiException(ApiCode.INVALID_MOBILE_OR_PASSWORD);
         }
 
-        userPasswordCredentialRepository.resetFailedAttempts(profile.profileId());
+        userAuthRepository.resetPasswordFailedAttempts(profile.profileId());
         TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_PASSWORD);
         return new PasswordLoginResult(profile, tokenPair, true);
     }
 
     public boolean isPasswordSet(long profileId) {
-        return userPasswordCredentialRepository.isPasswordSet(profileId);
+        return userAuthRepository.isPasswordSet(profileId);
     }
 
     public OtpVerifyResult verifyOtp(String mobileNo, String otpToken, String otpCode, String deviceNo) {
@@ -231,7 +231,7 @@ public class AuthServiceFacade {
         UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
                 .orElseGet(() -> userAuthRepository.createByMobileNo(mobileNo));
         TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_OTP);
-        boolean passwordSet = userPasswordCredentialRepository.isPasswordSet(profile.profileId());
+        boolean passwordSet = userAuthRepository.isPasswordSet(profile.profileId());
         return new OtpVerifyResult(profile, tokenPair, passwordSet);
     }
 
@@ -266,6 +266,14 @@ public class AuthServiceFacade {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return principal;
+    }
+
+    private boolean passwordMatches(String rawPassword, EncryptedField encryptedPassword) {
+        String storedPassword = sensitiveFieldEncryptor.decrypt(encryptedPassword);
+        return MessageDigest.isEqual(
+                storedPassword.getBytes(StandardCharsets.UTF_8),
+                rawPassword.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     private TokenPair openSession(UserProfileSummary profile, String deviceId, String loginChannel) {

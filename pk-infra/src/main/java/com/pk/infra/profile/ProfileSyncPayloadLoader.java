@@ -34,6 +34,7 @@ public class ProfileSyncPayloadLoader {
             case CONTACT -> loadContacts(profileId);
             case BANK_CARD -> throw new IllegalStateException("Bank card payload must be supplied explicitly");
             case IDENTITY -> throw new IllegalStateException("Identity payload must be supplied explicitly");
+            case LOGIN_LOG -> throw new IllegalStateException("Login log payload must be supplied explicitly");
         };
     }
 

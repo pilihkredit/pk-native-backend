@@ -21,6 +21,7 @@ final class PendanaanProfileUpsertMapper {
             case CONTACT -> applyContact(userInfo, (ProfileSyncPayload.ContactProfilePayload) payload);
             case BANK_CARD -> applyBankCard(userInfo, (ProfileSyncPayload.BankCardProfilePayload) payload);
             case IDENTITY -> applyIdentity(userInfo, (ProfileSyncPayload.IdentityProfilePayload) payload);
+            case LOGIN_LOG -> applyLoginLog(userInfo, (ProfileSyncPayload.LoginLogProfilePayload) payload);
         }
     }
 
@@ -50,6 +51,18 @@ final class PendanaanProfileUpsertMapper {
         ObjectNode bankCard = userInfo.putObject("bankCard");
         bankCard.put("bankCode", payload.bankCode());
         bankCard.put("cardNumber", payload.cardNumber());
+    }
+
+    private static void applyLoginLog(ObjectNode userInfo, ProfileSyncPayload.LoginLogProfilePayload payload) {
+        ObjectNode loginLog = userInfo.putObject("loginLog");
+        loginLog.put("loginType", payload.loginType());
+        loginLog.put("loginIp", payload.loginIp());
+        if (payload.loginLat() != null) {
+            loginLog.put("loginLat", payload.loginLat());
+        }
+        if (payload.loginLng() != null) {
+            loginLog.put("loginLng", payload.loginLng());
+        }
     }
 
     private static void applyIdentity(ObjectNode userInfo, ProfileSyncPayload.IdentityProfilePayload payload) {

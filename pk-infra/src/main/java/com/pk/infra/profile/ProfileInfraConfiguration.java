@@ -56,12 +56,14 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
+            com.pk.core.profile.port.ProfileLoginLogRepository profileLoginLogRepository,
             ObjectMapper objectMapper
     ) {
         return new LenderSyncAuditRequestBuilder(
                 profilePersonalRepository,
                 profileContactRepository,
                 profileBankCardRepository,
+                profileLoginLogRepository,
                 objectMapper
         );
     }
@@ -83,6 +85,7 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
             com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
+            com.pk.core.profile.port.ProfileLoginLogRepository profileLoginLogRepository,
             LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder,
             com.pk.infra.ocr.OcrSensitiveJsonSupport ocrSensitiveJsonSupport
     ) {
@@ -94,6 +97,7 @@ public class ProfileInfraConfiguration {
                 profileContactRepository,
                 profileBankCardRepository,
                 profileIdentityRepository,
+                profileLoginLogRepository,
                 lenderSyncAuditRequestBuilder,
                 ocrSensitiveJsonSupport
         );
@@ -168,6 +172,7 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
+            com.pk.core.profile.port.ProfileLoginLogRepository profileLoginLogRepository,
             UserDeviceWriter userDeviceWriter,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             ProfileEnumValidator profileEnumValidator,
@@ -180,6 +185,7 @@ public class ProfileInfraConfiguration {
                 profilePersonalRepository,
                 profileContactRepository,
                 profileBankCardRepository,
+                profileLoginLogRepository,
                 userDeviceWriter,
                 sensitiveFieldEncryptor,
                 profileEnumValidator,

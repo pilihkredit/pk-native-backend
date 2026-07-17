@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileBankCardData;
 import com.pk.core.profile.ProfileContactData;
+import com.pk.core.profile.ProfileLoginLogData;
 import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
+import com.pk.core.profile.port.ProfileLoginLogRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import com.pk.core.profile.sync.DeviceExtendedAttributes;
 import com.pk.core.profile.sync.LenderDeviceContext;
@@ -22,17 +24,20 @@ public class LenderSyncAuditRequestBuilder {
     private final ProfilePersonalRepository profilePersonalRepository;
     private final ProfileContactRepository profileContactRepository;
     private final ProfileBankCardRepository profileBankCardRepository;
+    private final ProfileLoginLogRepository profileLoginLogRepository;
     private final ObjectMapper objectMapper;
 
     public LenderSyncAuditRequestBuilder(
             ProfilePersonalRepository profilePersonalRepository,
             ProfileContactRepository profileContactRepository,
             ProfileBankCardRepository profileBankCardRepository,
+            ProfileLoginLogRepository profileLoginLogRepository,
             ObjectMapper objectMapper
     ) {
         this.profilePersonalRepository = profilePersonalRepository;
         this.profileContactRepository = profileContactRepository;
         this.profileBankCardRepository = profileBankCardRepository;
+        this.profileLoginLogRepository = profileLoginLogRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -75,6 +80,7 @@ public class LenderSyncAuditRequestBuilder {
             case CONTACT -> applyContactAudit(userInfo, profileId);
             case BANK_CARD -> applyBankCardAudit(userInfo, profileId);
             case IDENTITY -> applyIdentityAudit(userInfo, (ProfileSyncPayload.IdentityProfilePayload) payload);
+            case LOGIN_LOG -> applyLoginLogAudit(userInfo, profileId);
         }
     }
 
@@ -109,6 +115,20 @@ public class LenderSyncAuditRequestBuilder {
         ObjectNode bankCard = userInfo.putObject("bankCard");
         bankCard.put("bankCode", data.bankCode());
         bankCard.set("cardNumber", toEncryptedJsonNode(data.cardNumber()));
+    }
+
+    private void applyLoginLogAudit(ObjectNode userInfo, long profileId) {
+        ProfileLoginLogData data = profileLoginLogRepository.findByProfileId(profileId)
+                .orElseThrow(() -> new IllegalStateException("login log module data is missing"));
+        ObjectNode loginLog = userInfo.putObject("loginLog");
+        loginLog.put("loginType", data.loginType());
+        loginLog.put("loginIp", data.loginIp());
+        if (data.loginLat() != null) {
+            loginLog.put("loginLat", data.loginLat());
+        }
+        if (data.loginLng() != null) {
+            loginLog.put("loginLng", data.loginLng());
+        }
     }
 
     private void applyIdentityAudit(ObjectNode userInfo, ProfileSyncPayload.IdentityProfilePayload payload) {

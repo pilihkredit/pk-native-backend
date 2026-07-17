@@ -4,5 +4,6 @@ public enum ProfileSyncModule {
     PERSONAL,
     CONTACT,
     BANK_CARD,
-    IDENTITY
+    IDENTITY,
+    LOGIN_LOG
 }

@@ -90,6 +90,12 @@ CREATE TABLE user_profile (
     access_token VARCHAR(2048) NULL COMMENT 'Latest issued JWT access token',
     refresh_token VARCHAR(128) NULL COMMENT 'Latest issued refresh token',
     access_token_expires_at DATETIME(3) NULL COMMENT 'Access token expiry time',
+    password_ciphertext TEXT NULL COMMENT 'AES-256-GCM encrypted login password ciphertext',
+    password_nonce VARBINARY(12) NULL COMMENT 'AES-GCM nonce for login password',
+    password_tag VARBINARY(16) NULL COMMENT 'AES-GCM authentication tag for login password',
+    password_set_at DATETIME(3) NULL COMMENT 'Password set time',
+    password_failed_attempts INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Consecutive failed password login attempts',
+    password_locked_until DATETIME(3) NULL COMMENT 'Password login lock expiry time',
     version INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Optimistic lock version',
     deleted_at DATETIME(3) NULL COMMENT 'Soft deletion time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
@@ -250,6 +256,23 @@ CREATE TABLE user_profile_bank_card (
     UNIQUE KEY uk_user_profile_bank_card_hash (card_no_hash),
     KEY idx_user_profile_bank_card_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bank card onboarding module';
+
+CREATE TABLE user_profile_login_log (
+    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    login_type INT NOT NULL COMMENT 'Lender loginType: 1 password, 2 OTP, 4 face, 5 gesture',
+    login_ip VARCHAR(32) NOT NULL COMMENT 'Login IP address',
+    login_lat DECIMAL(10,7) NULL COMMENT 'Login latitude',
+    login_lng DECIMAL(10,7) NULL COMMENT 'Login longitude',
+    module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Module status',
+    last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
+    last_lender_request_json JSON NULL COMMENT 'Last lender user/info/upsert request audit JSON',
+    last_lender_response_json JSON NULL COMMENT 'Last lender user/info/upsert response data JSON',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
+    PRIMARY KEY (profile_id),
+    KEY idx_user_profile_login_log_mobile_no (mobile_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User login log module';
 
 CREATE TABLE user_device (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
@@ -1295,19 +1318,6 @@ CREATE TABLE user_profile_personal (
     PRIMARY KEY (profile_id),
     KEY idx_user_profile_personal_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User personal basic information module';
-
-CREATE TABLE user_password_credential (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    password_hash VARCHAR(128) NOT NULL COMMENT 'BCrypt password hash',
-    password_set_at DATETIME(3) NOT NULL COMMENT 'Password set time',
-    failed_attempts INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Consecutive failed password login attempts',
-    locked_until DATETIME(3) NULL COMMENT 'Password login lock expiry time',
-    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
-    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_user_password_profile (profile_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User login password credential';
 
 -- ---------------------------------------------------------------------------
 -- Seed data (local / test Pendanaan provider; idempotent)

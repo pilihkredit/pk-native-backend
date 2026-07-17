@@ -13,6 +13,7 @@ import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileIdentityRepository;
+import com.pk.core.profile.port.ProfileLoginLogRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
@@ -36,6 +37,7 @@ class ProfileSyncHandlerTest {
         ProfileContactRepository profileContactRepository = mock(ProfileContactRepository.class);
         ProfileBankCardRepository profileBankCardRepository = mock(ProfileBankCardRepository.class);
         ProfileIdentityRepository profileIdentityRepository = mock(ProfileIdentityRepository.class);
+        ProfileLoginLogRepository profileLoginLogRepository = mock(ProfileLoginLogRepository.class);
         ProfileSyncPayloadLoader profileSyncPayloadLoader = new ProfileSyncPayloadLoader(
                 profilePersonalRepository,
                 profileContactRepository,
@@ -50,6 +52,7 @@ class ProfileSyncHandlerTest {
                 profilePersonalRepository,
                 profileContactRepository,
                 profileBankCardRepository,
+                profileLoginLogRepository,
                 new ObjectMapper()
         );
 
@@ -82,6 +85,7 @@ class ProfileSyncHandlerTest {
                 profileContactRepository,
                 profileBankCardRepository,
                 profileIdentityRepository,
+                profileLoginLogRepository,
                 lenderSyncAuditRequestBuilder,
                 ocrSensitiveJsonSupport
         );

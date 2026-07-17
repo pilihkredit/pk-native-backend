@@ -6,6 +6,7 @@ import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileIdentityRepository;
+import com.pk.core.profile.port.ProfileLoginLogRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.ProfileSyncModule;
@@ -21,6 +22,7 @@ public class ProfileSyncHandler {
     private final ProfileContactRepository profileContactRepository;
     private final ProfileBankCardRepository profileBankCardRepository;
     private final ProfileIdentityRepository profileIdentityRepository;
+    private final ProfileLoginLogRepository profileLoginLogRepository;
     private final LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder;
     private final OcrSensitiveJsonSupport ocrSensitiveJsonSupport;
 
@@ -32,6 +34,7 @@ public class ProfileSyncHandler {
             ProfileContactRepository profileContactRepository,
             ProfileBankCardRepository profileBankCardRepository,
             ProfileIdentityRepository profileIdentityRepository,
+            ProfileLoginLogRepository profileLoginLogRepository,
             LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder,
             OcrSensitiveJsonSupport ocrSensitiveJsonSupport
     ) {
@@ -42,6 +45,7 @@ public class ProfileSyncHandler {
         this.profileContactRepository = profileContactRepository;
         this.profileBankCardRepository = profileBankCardRepository;
         this.profileIdentityRepository = profileIdentityRepository;
+        this.profileLoginLogRepository = profileLoginLogRepository;
         this.lenderSyncAuditRequestBuilder = lenderSyncAuditRequestBuilder;
         this.ocrSensitiveJsonSupport = ocrSensitiveJsonSupport;
     }
@@ -137,6 +141,11 @@ public class ProfileSyncHandler {
                     profileId,
                     ocrSensitiveJsonSupport.sanitizeForStorage(requestDataJson, mobileNo),
                     ocrSensitiveJsonSupport.sanitizeForStorage(responseDataJson, mobileNo)
+            );
+            case LOGIN_LOG -> profileLoginLogRepository.updateLastLenderAudit(
+                    profileId,
+                    requestDataJson,
+                    responseDataJson
             );
         }
     }

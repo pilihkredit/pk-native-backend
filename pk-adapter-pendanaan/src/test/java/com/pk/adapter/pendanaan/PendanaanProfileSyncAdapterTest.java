@@ -100,4 +100,38 @@ class PendanaanProfileSyncAdapterTest {
         assertThat(root.get("userInfo").get("device").get("deviceNo").asText()).isEqualTo("device-1");
         assertThat(root.get("userInfo").has("job")).isFalse();
     }
+
+    @Test
+    void buildsLenderUpsertBodyWithLoginLogModule() throws Exception {
+        PendanaanHttpClient httpClient = mock(PendanaanHttpClient.class);
+        ObjectNode envelope = objectMapper.createObjectNode();
+        envelope.put("code", ApiCode.SUCCESS.code());
+        when(httpClient.postEnvelope(anyString(), anyString(), anyString(), anyString())).thenReturn(envelope);
+
+        PendanaanProfileSyncAdapter adapter = new PendanaanProfileSyncAdapter(httpClient, objectMapper);
+        adapter.syncModule(new LenderProfileSyncPort.LenderProfileSyncCommand(
+                "REQ-LOGIN-1",
+                "OPEN_USER_1",
+                "81234567890",
+                ProfileSyncModule.LOGIN_LOG,
+                new ProfileSyncPayload.LoginLogProfilePayload(2, "203.0.113.1", null, null),
+                sampleCommand().device()
+        ));
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(httpClient).postEnvelope(
+                eq(PendanaanProfileSyncAdapter.UPSERT_PATH),
+                bodyCaptor.capture(),
+                eq(PendanaanProfileSyncAdapter.BUSINESS_TYPE),
+                eq("OPEN_USER_1")
+        );
+
+        JsonNode root = objectMapper.readTree(bodyCaptor.getValue());
+        assertThat(root.get("requestId").asText()).isEqualTo("REQ-LOGIN-1");
+        assertThat(root.get("partnerUserId").asText()).isEqualTo("OPEN_USER_1");
+        assertThat(root.get("userInfo").get("mobileNo").asText()).isEqualTo("81234567890");
+        assertThat(root.get("userInfo").get("loginLog").get("loginType").asInt()).isEqualTo(2);
+        assertThat(root.get("userInfo").get("loginLog").get("loginIp").asText()).isEqualTo("203.0.113.1");
+        assertThat(root.get("userInfo").get("device").get("deviceNo").asText()).isEqualTo("device-1");
+    }
 }

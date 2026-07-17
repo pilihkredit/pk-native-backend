@@ -12,6 +12,19 @@
         </constructor>
     </resultMap>
 
+    <resultMap id="passwordCredentialMap"
+               type="com.pk.infra.auth.repository.PasswordCredentialRow">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="password_ciphertext" javaType="string"/>
+            <arg column="password_nonce" javaType="_byte[]"/>
+            <arg column="password_tag" javaType="_byte[]"/>
+            <arg column="password_failed_attempts" javaType="_int"/>
+            <arg column="password_locked_until" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
     <select id="findByMobileNo" resultMap="userProfileSummaryMap">
         SELECT id, partner_user_id, mobile_no, 0 AS newly_created
         FROM user_profile
@@ -70,6 +83,56 @@
         SET access_token = NULL,
             refresh_token = NULL,
             access_token_expires_at = NULL
+        WHERE id = #{profileId}
+          AND deleted_at IS NULL
+    </update>
+
+    <select id="countPasswordSet" resultType="int">
+        SELECT COUNT(1)
+        FROM user_profile
+        WHERE id = #{profileId}
+          AND deleted_at IS NULL
+          AND password_ciphertext IS NOT NULL
+    </select>
+
+    <select id="findPasswordCredential" resultMap="passwordCredentialMap">
+        SELECT id,
+               password_ciphertext,
+               password_nonce,
+               password_tag,
+               password_failed_attempts,
+               password_locked_until
+        FROM user_profile
+        WHERE id = #{profileId}
+          AND deleted_at IS NULL
+          AND password_ciphertext IS NOT NULL
+        LIMIT 1
+    </select>
+
+    <update id="savePassword">
+        UPDATE user_profile
+        SET password_ciphertext = #{passwordCiphertext},
+            password_nonce = #{passwordNonce},
+            password_tag = #{passwordTag},
+            password_set_at = NOW(3),
+            password_failed_attempts = 0,
+            password_locked_until = NULL
+        WHERE id = #{profileId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="recordPasswordFailedAttempt">
+        UPDATE user_profile
+        SET password_failed_attempts = #{failedAttempts},
+            password_locked_until = #{lockedUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE id = #{profileId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="resetPasswordFailedAttempts">
+        UPDATE user_profile
+        SET password_failed_attempts = 0,
+            password_locked_until = NULL
         WHERE id = #{profileId}
           AND deleted_at IS NULL
     </update>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileLoginLogMapper">
+    <resultMap id="loginLogRowMap" type="com.pk.infra.profile.repository.ProfileLoginLogRow">
+        <constructor>
+            <arg column="profile_id" javaType="_long"/>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="login_type" javaType="_int"/>
+            <arg column="login_ip" javaType="string"/>
+            <arg column="login_lat" javaType="java.math.BigDecimal"/>
+            <arg column="login_lng" javaType="java.math.BigDecimal"/>
+            <arg column="module_status" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+            <arg column="last_lender_request_json" javaType="string"/>
+            <arg column="last_lender_response_json" javaType="string"/>
+        </constructor>
+    </resultMap>
+    <sql id="loginLogColumns">
+        profile_id, mobile_no, login_type, login_ip, login_lat, login_lng, module_status, last_request_id,
+        last_lender_request_json, last_lender_response_json
+    </sql>
+    <select id="findByProfileId" resultMap="loginLogRowMap">
+        SELECT <include refid="loginLogColumns"/> FROM user_profile_login_log WHERE profile_id = #{profileId}
+    </select>
+    <insert id="upsert">
+        INSERT INTO user_profile_login_log (
+            profile_id, mobile_no, login_type, login_ip, login_lat, login_lng, module_status, last_request_id
+        ) VALUES (
+            #{profileId}, #{mobileNo}, #{loginType}, #{loginIp}, #{loginLat}, #{loginLng}, #{moduleStatus}, #{lastRequestId}
+        )
+        ON DUPLICATE KEY UPDATE
+            mobile_no = VALUES(mobile_no),
+            login_type = VALUES(login_type),
+            login_ip = VALUES(login_ip),
+            login_lat = VALUES(login_lat),
+            login_lng = VALUES(login_lng),
+            module_status = VALUES(module_status),
+            last_request_id = VALUES(last_request_id)
+    </insert>
+    <update id="updateLastLenderAudit">
+        UPDATE user_profile_login_log
+        SET last_lender_request_json = #{requestDataJson}, last_lender_response_json = #{responseDataJson}
+        WHERE profile_id = #{profileId}
+    </update>
+</mapper>

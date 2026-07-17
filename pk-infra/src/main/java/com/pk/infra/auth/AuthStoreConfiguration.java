@@ -3,14 +3,13 @@ package com.pk.infra.auth;
 import com.pk.core.auth.port.OtpChallengeStore;
 import com.pk.core.auth.port.RefreshTokenStore;
 import com.pk.core.auth.port.SessionStore;
-import com.pk.core.auth.port.PasswordHasher;
 import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.UserAuthRepository;
-import com.pk.core.auth.port.UserPasswordCredentialRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.appconfig.port.AppConfigRepository;
 import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSender;
+import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -46,8 +45,7 @@ public class AuthStoreConfiguration {
             RefreshTokenStore refreshTokenStore,
             TokenIssuer tokenIssuer,
             UserAuthRepository userAuthRepository,
-            UserPasswordCredentialRepository userPasswordCredentialRepository,
-            PasswordHasher passwordHasher,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
             SmsSendLogRepository smsSendLogRepository,
             SmsSender smsSender
     ) {
@@ -59,8 +57,7 @@ public class AuthStoreConfiguration {
                 refreshTokenStore,
                 tokenIssuer,
                 userAuthRepository,
-                userPasswordCredentialRepository,
-                passwordHasher,
+                sensitiveFieldEncryptor,
                 smsSendLogRepository,
                 smsSender
         );

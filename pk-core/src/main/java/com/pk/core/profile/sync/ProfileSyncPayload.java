@@ -50,4 +50,12 @@ public sealed interface ProfileSyncPayload {
             String expiryDate
     ) implements ProfileSyncPayload {
     }
+
+    record LoginLogProfilePayload(
+            int loginType,
+            String loginIp,
+            java.math.BigDecimal loginLat,
+            java.math.BigDecimal loginLng
+    ) implements ProfileSyncPayload {
+    }
 }

@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
+import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
+import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
 import com.pk.adapter.pendanaan.PendanaanProperties;
 import com.pk.core.api.ApiCode;
@@ -113,6 +115,34 @@ public class ProfileApplicationService {
                 result.requestId(),
                 result.verifyStatus(),
                 result.cardNoMasked()
+        );
+    }
+
+    public ProfileLoginLogSaveResponse saveLoginLog(
+            AuthenticatedPrincipal principal,
+            ProfileLoginLogSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        ProfileServiceFacade.LoginLogSaveResult result = profileServiceFacade.saveLoginLog(
+                principal.profileId(),
+                principal.partnerUserId(),
+                principal.mobileNo(),
+                new ProfileServiceFacade.LoginLogSaveCommand(
+                        request.requestId(),
+                        request.loginType(),
+                        request.loginIp(),
+                        request.loginLat(),
+                        request.loginLng(),
+                        resolveDevice(request.device(), httpRequest)
+                )
+        );
+        return new ProfileLoginLogSaveResponse(
+                result.requestId(),
+                result.moduleStatus(),
+                parseLenderResponse(result.lenderResponseJson())
         );
     }
 

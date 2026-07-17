@@ -16,6 +16,7 @@ import com.pk.core.profile.ProfileContactsModuleData;
 import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
+import com.pk.core.profile.port.ProfileLoginLogRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.LenderProfileSyncPort;
@@ -31,6 +32,7 @@ class ProfileServiceFacadeTest {
     private ProfilePersonalRepository profilePersonalRepository;
     private ProfileContactRepository profileContactRepository;
     private ProfileBankCardRepository profileBankCardRepository;
+    private ProfileLoginLogRepository profileLoginLogRepository;
     private UserDeviceWriter userDeviceWriter;
     private BankReferenceFacade bankReferenceFacade;
     private ProfileSyncOrchestrator profileSyncOrchestrator;
@@ -43,6 +45,7 @@ class ProfileServiceFacadeTest {
         profilePersonalRepository = mock(ProfilePersonalRepository.class);
         profileContactRepository = mock(ProfileContactRepository.class);
         profileBankCardRepository = mock(ProfileBankCardRepository.class);
+        profileLoginLogRepository = mock(ProfileLoginLogRepository.class);
         userDeviceWriter = mock(UserDeviceWriter.class);
         bankReferenceFacade = mock(BankReferenceFacade.class);
         profileSyncOrchestrator = mock(ProfileSyncOrchestrator.class);
@@ -73,6 +76,7 @@ class ProfileServiceFacadeTest {
                 profilePersonalRepository,
                 profileContactRepository,
                 profileBankCardRepository,
+                profileLoginLogRepository,
                 userDeviceWriter,
                 encryptor,
                 new ProfileEnumValidator(new PendanaanProfileEnumCatalog()),
@@ -91,6 +95,7 @@ class ProfileServiceFacadeTest {
         when(profilePersonalRepository.findByProfileId(10L)).thenReturn(Optional.empty());
         when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.empty());
         when(profileBankCardRepository.findByProfileId(10L)).thenReturn(Optional.empty());
+        when(profileLoginLogRepository.findByProfileId(10L)).thenReturn(Optional.empty());
         when(profileBankCardRepository.findByCardNoHash(any())).thenReturn(Optional.empty());
         when(bankReferenceFacade.isValidBankCode("BCA")).thenReturn(true);
         when(profileSyncOrchestrator.scheduleAfterSave(any())).thenReturn(
@@ -317,6 +322,75 @@ class ProfileServiceFacadeTest {
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.BANK_CARD_ALREADY_BOUND);
+    }
+
+    @Test
+    void savesLoginLogAndReturnsCompletedWithLenderResponse() {
+        var result = facade.saveLoginLog(10L, "U10001", "81234567890", sampleLoginLogCommand("req-login-1"));
+
+        assertThat(result.requestId()).isEqualTo("req-login-1");
+        assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
+        assertThat(result.lenderResponseJson()).contains("USR202506020001");
+        verify(profileLoginLogRepository).upsert(any());
+        verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
+        verify(profileSyncOrchestrator).scheduleAfterSave(any());
+        verify(onboardingProgressFacade, never()).getProgress(anyLong(), any());
+    }
+
+    @Test
+    void returnsCompletedWithoutRewriteForSameLoginLogRequestId() {
+        when(profileLoginLogRepository.findByProfileId(10L)).thenReturn(Optional.of(
+                new com.pk.core.profile.ProfileLoginLogData(
+                        10L,
+                        "81234567890",
+                        2,
+                        "203.0.113.1",
+                        null,
+                        null,
+                        "COMPLETED",
+                        "req-login-1",
+                        null,
+                        "{\"userId\":\"USR202506020001\"}"
+                )
+        ));
+
+        var result = facade.saveLoginLog(10L, "U10001", "81234567890", sampleLoginLogCommand("req-login-1"));
+
+        assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
+        assertThat(result.lenderResponseJson()).contains("USR202506020001");
+        verify(profileLoginLogRepository, never()).upsert(any());
+        verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
+    }
+
+    @Test
+    void rejectsInvalidLoginType() {
+        assertThatThrownBy(() -> facade.saveLoginLog(
+                10L,
+                "U10001",
+                "81234567890",
+                new ProfileServiceFacade.LoginLogSaveCommand(
+                        "req-login-2",
+                        3,
+                        "203.0.113.1",
+                        null,
+                        null,
+                        sampleDevice()
+                )
+        ))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.INVALID_REQUEST_PARAMETERS);
+    }
+
+    private static ProfileServiceFacade.LoginLogSaveCommand sampleLoginLogCommand(String requestId) {
+        return new ProfileServiceFacade.LoginLogSaveCommand(
+                requestId,
+                2,
+                "203.0.113.1",
+                null,
+                null,
+                sampleDevice()
+        );
     }
 
     private static ProfileServiceFacade.BankCardSaveCommand sampleBankCardCommand(String requestId) {

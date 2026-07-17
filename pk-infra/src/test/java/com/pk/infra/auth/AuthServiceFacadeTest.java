@@ -23,9 +23,9 @@ import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSendLogRepository.SmsSendLogEntry;
 import com.pk.core.auth.port.SmsSender;
 import com.pk.core.auth.port.TokenIssuer;
-import com.pk.core.auth.port.PasswordHasher;
 import com.pk.core.auth.port.UserAuthRepository;
-import com.pk.core.auth.port.UserPasswordCredentialRepository;
+import com.pk.core.profile.EncryptedField;
+import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -36,8 +36,7 @@ import org.mockito.ArgumentCaptor;
 class AuthServiceFacadeTest {
     private OtpChallengeStore otpChallengeStore;
     private UserAuthRepository userAuthRepository;
-    private UserPasswordCredentialRepository userPasswordCredentialRepository;
-    private PasswordHasher passwordHasher;
+    private SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private SmsSendLogRepository smsSendLogRepository;
     private SmsSender smsSender;
     private AuthOtpConfigLoader authOtpConfigLoader;
@@ -47,8 +46,7 @@ class AuthServiceFacadeTest {
     void setUp() {
         otpChallengeStore = mock(OtpChallengeStore.class);
         userAuthRepository = mock(UserAuthRepository.class);
-        userPasswordCredentialRepository = mock(UserPasswordCredentialRepository.class);
-        passwordHasher = mock(PasswordHasher.class);
+        sensitiveFieldEncryptor = mock(SensitiveFieldEncryptor.class);
         smsSendLogRepository = mock(SmsSendLogRepository.class);
         smsSender = mock(SmsSender.class);
         authOtpConfigLoader = defaultOtpConfigLoader();
@@ -62,8 +60,7 @@ class AuthServiceFacadeTest {
                 mock(RefreshTokenStore.class),
                 mock(TokenIssuer.class),
                 userAuthRepository,
-                userPasswordCredentialRepository,
-                passwordHasher,
+                sensitiveFieldEncryptor,
                 smsSendLogRepository,
                 smsSender
         );
@@ -125,7 +122,7 @@ class AuthServiceFacadeTest {
         ));
         when(userAuthRepository.findByMobileNo("8123456789"))
                 .thenReturn(Optional.of(new UserProfileSummary(7L, "UABC", "8123456789", false)));
-        when(userPasswordCredentialRepository.isPasswordSet(7L)).thenReturn(false);
+        when(userAuthRepository.isPasswordSet(7L)).thenReturn(false);
 
         AuthProperties properties = new AuthProperties();
         properties.setAccessTokenTtl(Duration.ofMinutes(15));
@@ -144,8 +141,7 @@ class AuthServiceFacadeTest {
                 refreshTokenStore,
                 tokenIssuer,
                 userAuthRepository,
-                userPasswordCredentialRepository,
-                passwordHasher,
+                sensitiveFieldEncryptor,
                 smsSendLogRepository,
                 smsSender
         );
@@ -203,7 +199,7 @@ class AuthServiceFacadeTest {
     void returnsExistingWhenMobileIsRegistered() {
         when(userAuthRepository.findByMobileNo("8123456789"))
                 .thenReturn(Optional.of(new UserProfileSummary(1L, "UABC", "8123456789", false)));
-        when(userPasswordCredentialRepository.isPasswordSet(1L)).thenReturn(true);
+        when(userAuthRepository.isPasswordSet(1L)).thenReturn(true);
 
         var result = facade.checkMobileRegistration("8123456789", "device-1");
 
@@ -225,12 +221,13 @@ class AuthServiceFacadeTest {
 
     @Test
     void setsPasswordWhenFormatIsValid() {
-        when(userPasswordCredentialRepository.isPasswordSet(1L)).thenReturn(false);
-        when(passwordHasher.hash("abc123")).thenReturn("hashed");
+        when(userAuthRepository.isPasswordSet(1L)).thenReturn(false);
+        EncryptedField encrypted = new EncryptedField("cipher", new byte[12], new byte[16]);
+        when(sensitiveFieldEncryptor.encrypt("abc123")).thenReturn(encrypted);
 
         facade.setPassword(1L, "abc123", "abc123");
 
-        verify(userPasswordCredentialRepository).insert(1L, "hashed");
+        verify(userAuthRepository).savePassword(1L, encrypted);
     }
 
     @Test
@@ -285,7 +282,7 @@ class AuthServiceFacadeTest {
         when(otpChallengeStore.findByToken("unused-token")).thenReturn(Optional.empty());
         when(userAuthRepository.findByMobileNo("8123456789"))
                 .thenReturn(Optional.of(new UserProfileSummary(7L, "UABC", "8123456789", false)));
-        when(userPasswordCredentialRepository.isPasswordSet(7L)).thenReturn(false);
+        when(userAuthRepository.isPasswordSet(7L)).thenReturn(false);
 
         AuthServiceFacade verifyFacade = new AuthServiceFacade(
                 properties,
@@ -295,8 +292,7 @@ class AuthServiceFacadeTest {
                 refreshTokenStore,
                 tokenIssuer,
                 userAuthRepository,
-                userPasswordCredentialRepository,
-                passwordHasher,
+                sensitiveFieldEncryptor,
                 smsSendLogRepository,
                 smsSender
         );
