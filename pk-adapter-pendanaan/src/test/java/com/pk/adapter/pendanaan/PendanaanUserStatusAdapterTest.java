@@ -33,6 +33,9 @@ class PendanaanUserStatusAdapterTest {
                   "userLoanLifeTimeStatus": 4,
                   "userLoanLifeTimeLastAction": 22,
                   "freezeEndTime": null,
+                  "firstLoan": true,
+                  "firstCreditApply": false,
+                  "firstLoanApply": false,
                   "onLoanCount": 0,
                   "creditContractExpireTime": 1780300800000,
                   "autoCredit": true
@@ -59,11 +62,15 @@ class PendanaanUserStatusAdapterTest {
         assertThat(result.userId()).isEqualTo("USR-1");
         assertThat(result.userLoanLifeTimeStatus()).isEqualTo(4);
         assertThat(result.userLoanLifeTimeLastAction()).isEqualTo(22);
+        assertThat(result.firstLoan()).isTrue();
+        assertThat(result.firstCreditApply()).isFalse();
+        assertThat(result.firstLoanApply()).isFalse();
         assertThat(result.onLoanCount()).isZero();
         assertThat(result.creditContractExpireTime()).isEqualTo(1780300800000L);
         assertThat(result.autoCredit()).isTrue();
         assertThat(result.requestJson()).contains("partnerUserId");
         assertThat(result.responseDataJson()).contains("\"autoCredit\":true");
+        assertThat(result.responseDataJson()).contains("\"firstLoan\":true");
         assertThat(result.responseDataJson()).contains("USR-1");
     }
 }

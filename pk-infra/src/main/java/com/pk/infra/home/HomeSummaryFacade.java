@@ -33,14 +33,20 @@ public class HomeSummaryFacade {
                 new LenderUserStatusPort.LenderUserStatusCommand(partnerUserId, device)
         );
         Instant queriedAt = Instant.now();
+        String resolvedPartnerUserId = lenderStatus.partnerUserId() == null
+                ? partnerUserId
+                : lenderStatus.partnerUserId();
         userLenderStatusQueryRepository.upsert(new UserLenderStatusQueryRepository.UserLenderStatusQueryData(
                 profileId,
                 mobileNo,
-                lenderStatus.partnerUserId() == null ? partnerUserId : lenderStatus.partnerUserId(),
+                resolvedPartnerUserId,
                 lenderStatus.userId(),
                 lenderStatus.userLoanLifeTimeStatus(),
                 lenderStatus.userLoanLifeTimeLastAction(),
                 lenderStatus.freezeEndTime(),
+                lenderStatus.firstLoan(),
+                lenderStatus.firstCreditApply(),
+                lenderStatus.firstLoanApply(),
                 lenderStatus.onLoanCount(),
                 lenderStatus.creditContractExpireTime(),
                 lenderStatus.autoCredit(),
@@ -49,11 +55,14 @@ public class HomeSummaryFacade {
                 queriedAt
         ));
         return new HomeSummaryResult(
-                lenderStatus.partnerUserId() == null ? partnerUserId : lenderStatus.partnerUserId(),
+                resolvedPartnerUserId,
                 lenderStatus.userId(),
                 lenderStatus.userLoanLifeTimeStatus(),
                 lenderStatus.userLoanLifeTimeLastAction(),
                 lenderStatus.freezeEndTime(),
+                lenderStatus.firstLoan(),
+                lenderStatus.firstCreditApply(),
+                lenderStatus.firstLoanApply(),
                 lenderStatus.onLoanCount(),
                 lenderStatus.creditContractExpireTime(),
                 lenderStatus.autoCredit()
@@ -84,6 +93,9 @@ public class HomeSummaryFacade {
             Integer userLoanLifeTimeStatus,
             Integer userLoanLifeTimeLastAction,
             Long freezeEndTime,
+            Boolean firstLoan,
+            Boolean firstCreditApply,
+            Boolean firstLoanApply,
             Integer onLoanCount,
             Long creditContractExpireTime,
             Boolean autoCredit

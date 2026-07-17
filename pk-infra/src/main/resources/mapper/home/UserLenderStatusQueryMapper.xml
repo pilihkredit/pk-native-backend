@@ -13,6 +13,12 @@
             <arg column="user_loan_life_time_status" javaType="java.lang.Integer"/>
             <arg column="user_loan_life_time_last_action" javaType="java.lang.Integer"/>
             <arg column="freeze_end_time" javaType="java.lang.Long"/>
+            <arg column="first_loan" javaType="java.lang.Boolean"
+                 typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
+            <arg column="first_credit_apply" javaType="java.lang.Boolean"
+                 typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
+            <arg column="first_loan_apply" javaType="java.lang.Boolean"
+                 typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
             <arg column="on_loan_count" javaType="java.lang.Integer"/>
             <arg column="credit_contract_expire_time" javaType="java.lang.Long"/>
             <arg column="auto_credit" javaType="java.lang.Boolean"
@@ -33,6 +39,9 @@
             user_loan_life_time_status,
             user_loan_life_time_last_action,
             freeze_end_time,
+            first_loan,
+            first_credit_apply,
+            first_loan_apply,
             on_loan_count,
             credit_contract_expire_time,
             auto_credit,
@@ -47,6 +56,9 @@
             #{userLoanLifeTimeStatus},
             #{userLoanLifeTimeLastAction},
             #{freezeEndTime},
+            #{firstLoan, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            #{firstCreditApply, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            #{firstLoanApply, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
             #{onLoanCount},
             #{creditContractExpireTime},
             #{autoCredit, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
@@ -61,6 +73,9 @@
             user_loan_life_time_status = VALUES(user_loan_life_time_status),
             user_loan_life_time_last_action = VALUES(user_loan_life_time_last_action),
             freeze_end_time = VALUES(freeze_end_time),
+            first_loan = VALUES(first_loan),
+            first_credit_apply = VALUES(first_credit_apply),
+            first_loan_apply = VALUES(first_loan_apply),
             on_loan_count = VALUES(on_loan_count),
             credit_contract_expire_time = VALUES(credit_contract_expire_time),
             auto_credit = VALUES(auto_credit),
@@ -72,7 +87,8 @@
     <select id="findByProfileId" resultMap="userLenderStatusQueryMap">
         SELECT profile_id, mobile_no, partner_user_id, lender_user_id,
                user_loan_life_time_status, user_loan_life_time_last_action,
-               freeze_end_time, on_loan_count, credit_contract_expire_time,
+               freeze_end_time, first_loan, first_credit_apply, first_loan_apply,
+               on_loan_count, credit_contract_expire_time,
                auto_credit, last_lender_request_json, last_lender_response_json, queried_at
         FROM user_lender_status_query
         WHERE profile_id = #{profileId}

@@ -42,6 +42,9 @@ class HomeApplicationServiceTest {
                         4,
                         22,
                         null,
+                        true,
+                        false,
+                        false,
                         0,
                         1780300800000L,
                         true
@@ -54,6 +57,9 @@ class HomeApplicationServiceTest {
         );
 
         assertThat(response.partnerUserId()).isEqualTo("U10001");
+        assertThat(response.firstLoan()).isTrue();
+        assertThat(response.firstCreditApply()).isFalse();
+        assertThat(response.firstLoanApply()).isFalse();
         assertThat(response.autoCredit()).isTrue();
         verify(userDeviceWriter).upsertFromRequest(
                 eq(10L),

@@ -42,6 +42,9 @@ class HomeSummaryFacadeTest {
                         4,
                         22,
                         null,
+                        true,
+                        false,
+                        false,
                         0,
                         1780300800000L,
                         true,
@@ -56,6 +59,9 @@ class HomeSummaryFacadeTest {
         assertThat(result.userId()).isEqualTo("USR-1");
         assertThat(result.userLoanLifeTimeStatus()).isEqualTo(4);
         assertThat(result.userLoanLifeTimeLastAction()).isEqualTo(22);
+        assertThat(result.firstLoan()).isTrue();
+        assertThat(result.firstCreditApply()).isFalse();
+        assertThat(result.firstLoanApply()).isFalse();
         assertThat(result.onLoanCount()).isZero();
         assertThat(result.creditContractExpireTime()).isEqualTo(1780300800000L);
         assertThat(result.autoCredit()).isTrue();

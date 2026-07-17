@@ -9,6 +9,9 @@ public record HomeSummaryResponse(
         Integer userLoanLifeTimeStatus,
         Integer userLoanLifeTimeLastAction,
         Long freezeEndTime,
+        Boolean firstLoan,
+        Boolean firstCreditApply,
+        Boolean firstLoanApply,
         Integer onLoanCount,
         Long creditContractExpireTime,
         Boolean autoCredit

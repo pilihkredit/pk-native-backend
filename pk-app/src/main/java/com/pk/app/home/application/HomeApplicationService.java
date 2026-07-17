@@ -77,6 +77,9 @@ public class HomeApplicationService {
                 result.userLoanLifeTimeStatus(),
                 result.userLoanLifeTimeLastAction(),
                 result.freezeEndTime(),
+                result.firstLoan(),
+                result.firstCreditApply(),
+                result.firstLoanApply(),
                 result.onLoanCount(),
                 result.creditContractExpireTime(),
                 result.autoCredit()
