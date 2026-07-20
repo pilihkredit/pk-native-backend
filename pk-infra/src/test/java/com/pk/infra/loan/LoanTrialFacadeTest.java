@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.loan.LenderTrialTerm;
@@ -135,11 +134,7 @@ class LoanTrialFacadeTest {
                 1L,
                 "partner-1",
                 "81234567890",
-                9L,
-                "CA-1",
-                CreditApplicationStatus.APPROVED,
-                "SUCCESS",
-                null
+                "CA-1"
         );
     }
 

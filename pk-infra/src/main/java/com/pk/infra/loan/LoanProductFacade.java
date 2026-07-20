@@ -2,7 +2,6 @@ package com.pk.infra.loan;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
-import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.display.DisplayFormatters;
 import com.pk.core.loan.LenderLoanProduct;
@@ -98,9 +97,6 @@ public class LoanProductFacade {
         CreditApplicationRepository.CreditApplicationRecord record = creditApplicationRepository
                 .findByApplyIdAndProfileId(resolvedApplyId, profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
-        if (!CreditApplicationStatus.APPROVED.equals(record.status())) {
-            throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
-        }
         return record;
     }
 

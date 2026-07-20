@@ -2,8 +2,6 @@ package com.pk.infra.credit.repository;
 
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.infra.credit.mapper.CreditApplicationMapper;
-import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
@@ -52,33 +50,13 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
     }
 
     @Override
-    public void updateStatus(long id, String status, String externalStatus, String lastErrorCode) {
-        creditApplicationMapper.updateStatus(id, status, externalStatus, lastErrorCode);
-    }
-
-    @Override
-    public void markSubmitted(long id, String externalCreditApplyNo, String externalStatus) {
-        creditApplicationMapper.markSubmitted(id, externalCreditApplyNo, externalStatus);
-    }
-
-    @Override
-    public void scheduleNextPoll(long id, Instant nextPollAt) {
-        creditApplicationMapper.scheduleNextPoll(id, nextPollAt);
-    }
-
-    @Override
-    public void updateFreezeEndAt(long id, Instant freezeEndAt) {
-        creditApplicationMapper.updateFreezeEndAt(id, freezeEndAt);
+    public void updateApplyNo(long id, String applyNo) {
+        creditApplicationMapper.updateApplyNo(id, applyNo);
     }
 
     @Override
     public void updateLastLenderAudit(long id, String requestJson, String responseJson) {
         creditApplicationMapper.updateLastLenderAudit(id, requestJson, responseJson);
-    }
-
-    @Override
-    public List<CreditApplicationRecord> findDueForPoll(int limit) {
-        return creditApplicationMapper.findDueForPoll(limit);
     }
 
     public static class CreditApplicationInsertParam {
@@ -87,8 +65,6 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
         private String providerCode;
         private long profileId;
         private String mobileNo;
-        private long profileVersionId;
-        private String status;
 
         public static CreditApplicationInsertParam from(CreditApplicationInsert insert) {
             CreditApplicationInsertParam param = new CreditApplicationInsertParam();
@@ -97,8 +73,6 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
             param.providerCode = insert.providerCode();
             param.profileId = insert.profileId();
             param.mobileNo = insert.mobileNo();
-            param.profileVersionId = insert.profileVersionId();
-            param.status = insert.status();
             return param;
         }
 
@@ -120,14 +94,6 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
 
         public String getMobileNo() {
             return mobileNo;
-        }
-
-        public long getProfileVersionId() {
-            return profileVersionId;
-        }
-
-        public String getStatus() {
-            return status;
         }
     }
 }

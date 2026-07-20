@@ -2,7 +2,6 @@ package com.pk.infra.loan;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
-import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.display.DisplayFormatters;
@@ -44,9 +43,6 @@ public class LoanTrialFacade {
         CreditApplicationRepository.CreditApplicationRecord creditRecord = creditApplicationRepository
                 .findByApplyIdAndProfileId(command.applyId(), profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
-        if (!CreditApplicationStatus.APPROVED.equals(creditRecord.status())) {
-            throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
-        }
 
         CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits = creditLenderStatusQueryRepository
                 .findByApplyIdAndProfileId(command.applyId(), profileId)

@@ -1,28 +1,22 @@
 package com.pk.infra.credit;
 
-import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.CreditStatusHistoryRepository;
 import com.pk.core.credit.port.LenderCreditPort;
 import java.time.Instant;
+import java.util.Objects;
 
 public class CreditLenderStatusApplier {
-    private final CreditApplicationRepository creditApplicationRepository;
     private final CreditStatusHistoryRepository creditStatusHistoryRepository;
     private final CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
-    private final CreditApplyProperties creditApplyProperties;
 
     public CreditLenderStatusApplier(
-            CreditApplicationRepository creditApplicationRepository,
             CreditStatusHistoryRepository creditStatusHistoryRepository,
-            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
-            CreditApplyProperties creditApplyProperties
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository
     ) {
-        this.creditApplicationRepository = creditApplicationRepository;
         this.creditStatusHistoryRepository = creditStatusHistoryRepository;
         this.creditLenderStatusQueryRepository = creditLenderStatusQueryRepository;
-        this.creditApplyProperties = creditApplyProperties;
     }
 
     public void apply(
@@ -31,6 +25,10 @@ public class CreditLenderStatusApplier {
             String source,
             String limitSource
     ) {
+        String previousExternal = creditLenderStatusQueryRepository.findByApplyId(record.applyId())
+                .map(CreditLenderStatusQueryRepository.CreditLenderStatusQueryData::externalStatus)
+                .orElse(null);
+
         creditLenderStatusQueryRepository.upsert(new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
                 record.applyId(),
                 record.profileId(),
@@ -50,45 +48,23 @@ public class CreditLenderStatusApplier {
                 status.responseDataJson(),
                 Instant.now()
         ));
+
         if (!hasExternalStatus(status.externalStatus())) {
-            if (!CreditApplicationStatus.isTerminal(record.status())) {
-                creditApplicationRepository.scheduleNextPoll(
-                        record.id(),
-                        Instant.now().plusSeconds(creditApplyProperties.pollIntervalSeconds())
-                );
-            }
             return;
         }
-        String nextStatus = CreditExternalStatusMapper.mapLenderStatus(status.externalStatus());
-        if (!nextStatus.equals(record.status())) {
-            creditApplicationRepository.updateStatus(
-                    record.id(),
-                    nextStatus,
-                    status.externalStatus(),
-                    null
-            );
+
+        String fromMapped = previousExternal == null
+                ? null
+                : CreditExternalStatusMapper.mapLenderStatus(previousExternal);
+        String nextMapped = CreditExternalStatusMapper.mapLenderStatus(status.externalStatus());
+        if (!Objects.equals(fromMapped, nextMapped)) {
             creditStatusHistoryRepository.insert(
                     record.id(),
                     record.mobileNo(),
-                    record.status(),
-                    nextStatus,
+                    fromMapped,
+                    nextMapped,
                     status.externalStatus(),
                     source
-            );
-        }
-        if (status.creditApplyNo() != null && !status.creditApplyNo().isBlank()) {
-            creditApplicationRepository.markSubmitted(record.id(), status.creditApplyNo(), status.externalStatus());
-        }
-        if (CreditApplicationStatus.REJECTED.equals(nextStatus) && status.freezeEndTime() != null) {
-            creditApplicationRepository.updateFreezeEndAt(
-                    record.id(),
-                    Instant.ofEpochMilli(status.freezeEndTime())
-            );
-        }
-        if (!CreditApplicationStatus.isTerminal(nextStatus)) {
-            creditApplicationRepository.scheduleNextPoll(
-                    record.id(),
-                    Instant.now().plusSeconds(creditApplyProperties.pollIntervalSeconds())
             );
         }
     }

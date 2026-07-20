@@ -56,13 +56,6 @@ public class CreditCallbackHandler {
                 null,
                 callbackEvent.payloadJson()
         );
-        if (callbackEvent.payloadJson() != null && !callbackEvent.payloadJson().isBlank()) {
-            creditApplicationRepository.updateLastLenderAudit(
-                    application.get().id(),
-                    null,
-                    callbackEvent.payloadJson()
-            );
-        }
         creditLenderStatusApplier.apply(application.get(), status, SOURCE, LIMIT_SOURCE);
         callbackEventRepository.markProcessed(callbackEvent.id(), now);
     }

@@ -13,19 +13,14 @@
             <arg column="profile_id" javaType="_long"/>
             <arg column="partner_user_id" javaType="string"/>
             <arg column="mobile_no" javaType="string"/>
-            <arg column="profile_version_id" javaType="_long"/>
-            <arg column="external_credit_apply_no" javaType="string"/>
-            <arg column="status" javaType="string"/>
-            <arg column="external_status" javaType="string"/>
-            <arg column="freeze_end_at" javaType="java.time.Instant"
-                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="apply_no" javaType="string"/>
         </constructor>
     </resultMap>
 
     <sql id="creditApplicationColumns">
-        id, apply_id, request_id, provider_code, profile_id, mobile_no, profile_version_id,
+        id, apply_id, request_id, provider_code, profile_id, mobile_no,
         (SELECT up.partner_user_id FROM user_profile up WHERE up.id = profile_id) AS partner_user_id,
-        external_credit_apply_no, status, external_status, freeze_end_at
+        apply_no
     </sql>
 
     <select id="findById" resultMap="creditApplicationRecordMap">
@@ -67,19 +62,13 @@
             request_id,
             provider_code,
             profile_id,
-            mobile_no,
-            profile_version_id,
-            status,
-            submitted_at
+            mobile_no
         ) VALUES (
             #{applyId},
             #{requestId},
             #{providerCode},
             #{profileId},
-            #{mobileNo},
-            #{profileVersionId},
-            #{status},
-            CURRENT_TIMESTAMP(3)
+            #{mobileNo}
         )
     </insert>
 
@@ -89,40 +78,9 @@
         WHERE apply_id = #{applyId}
     </select>
 
-    <update id="updateStatus">
+    <update id="updateApplyNo">
         UPDATE credit_application
-        SET status = #{status},
-            external_status = #{externalStatus},
-            last_error_code = #{lastErrorCode},
-            finalized_at = CASE
-                WHEN #{status} IN ('APPROVED', 'REJECTED', 'FAILED', 'CANCEL')
-                    THEN CURRENT_TIMESTAMP(3)
-                ELSE finalized_at
-            END
-        WHERE id = #{id}
-    </update>
-
-    <update id="markSubmitted">
-        UPDATE credit_application
-        SET status = CASE
-                WHEN status IN ('INIT', 'SUBMITTING') THEN 'PROCESSING'
-                ELSE status
-            END,
-            external_credit_apply_no = #{externalCreditApplyNo},
-            external_status = #{externalStatus},
-            submitted_at = COALESCE(submitted_at, CURRENT_TIMESTAMP(3))
-        WHERE id = #{id}
-    </update>
-
-    <update id="scheduleNextPoll">
-        UPDATE credit_application
-        SET next_poll_at = #{nextPollAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
-        WHERE id = #{id}
-    </update>
-
-    <update id="updateFreezeEndAt">
-        UPDATE credit_application
-        SET freeze_end_at = #{freezeEndAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        SET apply_no = #{applyNo}
         WHERE id = #{id}
     </update>
 
@@ -132,14 +90,4 @@
             last_lender_response_json = #{responseJson}
         WHERE id = #{id}
     </update>
-
-    <select id="findDueForPoll" resultMap="creditApplicationRecordMap">
-        SELECT <include refid="creditApplicationColumns"/>
-        FROM credit_application
-        WHERE status = 'PROCESSING'
-          AND next_poll_at IS NOT NULL
-          AND next_poll_at &lt;= CURRENT_TIMESTAMP(3)
-        ORDER BY next_poll_at
-        LIMIT #{limit}
-    </select>
 </mapper>

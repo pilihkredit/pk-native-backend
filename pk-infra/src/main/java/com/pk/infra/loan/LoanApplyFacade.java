@@ -2,7 +2,6 @@ package com.pk.infra.loan;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
-import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
@@ -97,9 +96,6 @@ public class LoanApplyFacade {
         }
         if (!command.applyId().equals(creditRecord.applyId())) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        if (!CreditApplicationStatus.APPROVED.equals(creditRecord.status())) {
-            throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
         }
 
         CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits = creditLenderStatusQueryRepository

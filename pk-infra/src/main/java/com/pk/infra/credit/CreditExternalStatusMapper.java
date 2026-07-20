@@ -1,7 +1,6 @@
 package com.pk.infra.credit;
 
 import com.pk.core.credit.CreditApplicationStatus;
-import com.pk.core.credit.port.CreditApplicationRepository;
 
 public final class CreditExternalStatusMapper {
     private CreditExternalStatusMapper() {
@@ -32,9 +31,5 @@ public final class CreditExternalStatusMapper {
             case "PROCESSING" -> CreditApplicationStatus.PROCESSING;
             default -> CreditApplicationStatus.PROCESSING;
         };
-    }
-
-    public static String publicStatusOf(CreditApplicationRepository.CreditApplicationRecord record) {
-        return toPublicStatus(record.status());
     }
 }

@@ -10,7 +10,6 @@ import com.pk.core.callback.CallbackProcessStatus;
 import com.pk.core.callback.CallbackTypes;
 import com.pk.core.callback.port.CallbackEventRepository;
 import com.pk.core.callback.port.CreditCallbackParser;
-import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.CreditProviderCode;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.LenderCreditPort;
@@ -72,7 +71,7 @@ class CreditCallbackHandlerTest {
                 eq("CREDIT_CALLBACK"),
                 eq("LENDER_CALLBACK")
         );
-        verify(creditApplicationRepository).updateLastLenderAudit(10L, null, "{}");
+        verify(creditApplicationRepository, never()).updateLastLenderAudit(any(Long.class), any(), any());
         verify(callbackEventRepository).markProcessed(eq(1L), any(Instant.class));
     }
 
@@ -99,10 +98,6 @@ class CreditCallbackHandlerTest {
                 1L,
                 "partner-1",
                 "81234567890",
-                2L,
-                null,
-                CreditApplicationStatus.PROCESSING,
-                null,
                 null
         );
     }

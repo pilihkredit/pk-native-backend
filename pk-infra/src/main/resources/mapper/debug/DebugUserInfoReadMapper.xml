@@ -63,10 +63,21 @@
         <constructor>
             <arg column="device_no" javaType="string"/>
             <arg column="system_platform" javaType="string"/>
-            <arg column="client_app_name" javaType="string"/>
+            <arg column="app_name" javaType="string"/>
             <arg column="app_version" javaType="string"/>
             <arg column="package_name" javaType="string"/>
+            <arg column="phone_brand" javaType="string"/>
+            <arg column="phone_brand_model" javaType="string"/>
+            <arg column="mac" javaType="string"/>
+            <arg column="system_version" javaType="string"/>
+            <arg column="delivery_platform" javaType="string"/>
+            <arg column="cpu_cores" javaType="java.lang.Integer"/>
+            <arg column="memory_total" javaType="java.lang.Long"/>
+            <arg column="sd_card_total" javaType="java.lang.Long"/>
             <arg column="ad_id" javaType="string"/>
+            <arg column="idfv" javaType="string"/>
+            <arg column="idfa" javaType="string"/>
+            <arg column="ext_param" javaType="string"/>
             <arg column="device_json" javaType="string"/>
             <arg column="last_request_id" javaType="string"/>
             <arg column="updated_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
@@ -76,10 +87,21 @@
     <select id="findDevicesByProfileId" resultMap="deviceRecordMap">
         SELECT device_no,
                system_platform,
-               client_app_name,
+               app_name,
                app_version,
                package_name,
+               phone_brand,
+               phone_brand_model,
+               mac,
+               system_version,
+               delivery_platform,
+               cpu_cores,
+               memory_total,
+               sd_card_total,
                ad_id,
+               idfv,
+               idfa,
+               ext_param,
                device_json,
                last_request_id,
                updated_at

@@ -92,7 +92,9 @@ public class ProductListResolver {
                         snapshotNo,
                         creditRecord.applyId(),
                         creditRecord.id(),
-                        CreditExternalStatusMapper.publicStatusOf(creditRecord),
+                        CreditExternalStatusMapper.toPublicStatus(
+                                CreditExternalStatusMapper.mapLenderStatus(lenderResult.externalCreditStatus())
+                        ),
                         productStatus,
                         productsJson,
                         fetchedAt

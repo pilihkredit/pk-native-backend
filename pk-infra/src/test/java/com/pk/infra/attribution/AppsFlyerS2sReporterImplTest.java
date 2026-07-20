@@ -80,7 +80,18 @@ class AppsFlyerS2sReporterImplTest {
                         "cashloan",
                         "4.8.0",
                         "com.pk.app",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
                         "gaid-demo-value",
+                        "idfv-1",
+                        "idfa-1",
+                        null,
                         "{\"appsflyerId\":\"af-device-1\",\"idfv\":\"idfv-1\",\"idfa\":\"idfa-1\"}",
                         "req-1"
                 )));

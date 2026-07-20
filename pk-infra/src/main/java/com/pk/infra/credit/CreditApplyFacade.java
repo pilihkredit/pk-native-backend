@@ -3,13 +3,11 @@ package com.pk.infra.credit;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.credit.CreditApplicationStatus;
-import com.pk.core.credit.CreditProviderCode;
 import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
-import com.pk.core.credit.port.CreditStatusHistoryRepository;
-import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
+import com.pk.core.provider.port.PkProviderRepository;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import com.pk.infra.profile.ProfileSyncPayloadLoader;
 import java.math.BigDecimal;
@@ -18,38 +16,37 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 public class CreditApplyFacade {
     public static final String PUBLIC_PROCESSING = CreditApplicationStatus.PROCESSING;
-    private static final String SOURCE = "CREDIT_APPLY";
 
     private final OnboardingProgressFacade onboardingProgressFacade;
     private final CreditApplicationRepository creditApplicationRepository;
-    private final ProfileVersionRepository profileVersionRepository;
+    private final PkProviderRepository pkProviderRepository;
     private final CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
     private final CreditApplyProperties creditApplyProperties;
     private final CreditApplyHandler creditApplyHandler;
     private final CreditApplyOutboxPublisher creditApplyOutboxPublisher;
-    private final CreditStatusHistoryRepository creditStatusHistoryRepository;
     private final CreditStatusPollHandler creditStatusPollHandler;
+    private final String configuredProviderCode;
 
     public CreditApplyFacade(
             OnboardingProgressFacade onboardingProgressFacade,
             CreditApplicationRepository creditApplicationRepository,
-            ProfileVersionRepository profileVersionRepository,
+            PkProviderRepository pkProviderRepository,
             CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             CreditApplyProperties creditApplyProperties,
             CreditApplyHandler creditApplyHandler,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
-            CreditStatusHistoryRepository creditStatusHistoryRepository,
-            CreditStatusPollHandler creditStatusPollHandler
+            CreditStatusPollHandler creditStatusPollHandler,
+            String configuredProviderCode
     ) {
         this.onboardingProgressFacade = onboardingProgressFacade;
         this.creditApplicationRepository = creditApplicationRepository;
-        this.profileVersionRepository = profileVersionRepository;
+        this.pkProviderRepository = pkProviderRepository;
         this.creditLenderStatusQueryRepository = creditLenderStatusQueryRepository;
         this.creditApplyProperties = creditApplyProperties;
         this.creditApplyHandler = creditApplyHandler;
         this.creditApplyOutboxPublisher = creditApplyOutboxPublisher;
-        this.creditStatusHistoryRepository = creditStatusHistoryRepository;
         this.creditStatusPollHandler = creditStatusPollHandler;
+        this.configuredProviderCode = configuredProviderCode;
     }
 
     public ApplyResult apply(long profileId, String partnerUserId, String mobileNo, ApplyCommand command) {
@@ -69,32 +66,19 @@ public class CreditApplyFacade {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
 
+        String providerCode = pkProviderRepository.findActiveProviderCode(configuredProviderCode)
+                .orElseThrow(() -> new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS));
+
         String applyId = CreditApplyIdGenerator.generate();
-        long profileVersionId = profileVersionRepository.createSnapshot(
-                profileId,
-                mobileNo,
-                onboarding.completedModules(),
-                SOURCE
-        );
 
         try {
             long creditApplicationId = creditApplicationRepository.insert(new CreditApplicationRepository.CreditApplicationInsert(
                     applyId,
                     command.requestId(),
-                    CreditProviderCode.PENDANAAN,
+                    providerCode,
                     profileId,
-                    mobileNo,
-                    profileVersionId,
-                    CreditApplicationStatus.INIT
+                    mobileNo
             ));
-            creditStatusHistoryRepository.insert(
-                    creditApplicationId,
-                    mobileNo,
-                    null,
-                    CreditApplicationStatus.INIT,
-                    null,
-                    SOURCE
-            );
             CreditApplyJob job = new CreditApplyJob(
                     creditApplicationId,
                     applyId,
@@ -151,7 +135,7 @@ public class CreditApplyFacade {
         return new ApplyResult(
                 record.applyId(),
                 PUBLIC_PROCESSING,
-                record.externalCreditApplyNo()
+                record.applyNo()
         );
     }
 
@@ -159,13 +143,18 @@ public class CreditApplyFacade {
             CreditApplicationRepository.CreditApplicationRecord record,
             CreditLenderStatusQueryRepository.CreditLenderStatusQueryData query
     ) {
-        Long freezeEndTime = record.freezeEndAt() == null ? null : record.freezeEndAt().toEpochMilli();
+        String status = PUBLIC_PROCESSING;
+        if (query != null && query.externalStatus() != null && !query.externalStatus().isBlank()) {
+            status = CreditExternalStatusMapper.toPublicStatus(
+                    CreditExternalStatusMapper.mapLenderStatus(query.externalStatus())
+            );
+        }
         return new StatusResult(
                 record.applyId(),
-                CreditExternalStatusMapper.publicStatusOf(record),
-                query == null || query.creditApplyNo() == null ? record.externalCreditApplyNo() : query.creditApplyNo(),
+                status,
+                query == null || query.creditApplyNo() == null ? record.applyNo() : query.creditApplyNo(),
                 query == null ? null : query.creditContractExpireTime(),
-                query == null || query.freezeEndTime() == null ? freezeEndTime : query.freezeEndTime(),
+                query == null ? null : query.freezeEndTime(),
                 query == null ? null : query.riskMinLimit(),
                 query == null ? null : query.riskMaxLimit(),
                 query == null ? null : query.psychologicalCreditLimit(),

@@ -170,8 +170,8 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
                 }
                 DeviceIds fromJson = extractFromDeviceJson(data.deviceJson());
                 appsflyerId = fromJson.appsflyerId();
-                idfa = fromJson.idfa();
-                idfv = fromJson.idfv();
+                idfa = firstNonBlank(data.idfa(), fromJson.idfa());
+                idfv = firstNonBlank(data.idfv(), fromJson.idfv());
                 if (isBlank(gpsAdid)) {
                     gpsAdid = fromJson.gpsAdid();
                 }

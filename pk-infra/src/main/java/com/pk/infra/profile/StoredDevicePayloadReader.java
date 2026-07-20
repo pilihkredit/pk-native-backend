@@ -6,6 +6,7 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.profile.ProfileDeviceData;
 import com.pk.core.profile.sync.DeviceExtendedAttributes;
+import com.pk.core.profile.sync.DeviceOtherInfoDocumentFields;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,7 +34,7 @@ public final class StoredDevicePayloadReader {
                     textOrDefault(root, "systemPlatform", stored.systemPlatform()),
                     textOrNull(root.get("adId")),
                     readDeviceOtherInfo(root.get("deviceOtherInfo")),
-                    textOrDefault(root, "appName", stored.clientAppName()),
+                    textOrDefault(root, "appName", stored.appName()),
                     readExtendedAttributes(root)
             );
         } catch (ApiException exception) {
@@ -69,7 +70,8 @@ public final class StoredDevicePayloadReader {
             Map.Entry<String, JsonNode> field = fields.next();
             values.put(field.getKey(), objectValue(field.getValue()));
         }
-        return values.isEmpty() ? null : values;
+        Map<String, Object> filtered = DeviceOtherInfoDocumentFields.filter(values);
+        return filtered.isEmpty() ? null : filtered;
     }
 
     private static Object objectValue(JsonNode node) {
