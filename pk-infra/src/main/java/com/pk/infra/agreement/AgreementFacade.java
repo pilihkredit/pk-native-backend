@@ -25,7 +25,7 @@ public class AgreementFacade {
 
     public List<UserAgreementRecordData> createRecords(CreateCommand command) {
         validateCreate(command);
-        Instant agreedAt = Instant.now();
+        Instant agreedAt = command.clickedAt();
         String mobileNo = command.mobileNo().trim();
         String deviceNo = command.deviceNo().trim();
         String partnerUserId = blankToNull(command.partnerUserId());
@@ -66,6 +66,9 @@ public class AgreementFacade {
         String mobileNo = command.mobileNo().trim();
         if (!MobileNumberValidator.isValid(mobileNo)) {
             throw new ApiException(ApiCode.INVALID_MOBILE_NUMBER);
+        }
+        if (command.clickedAt() == null) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
         if (command.deviceNo() == null || command.deviceNo().isBlank()
                 || command.deviceNo().trim().length() > MAX_DEVICE_NO_LENGTH) {
@@ -117,6 +120,7 @@ public class AgreementFacade {
             String partnerUserId,
             String deviceNo,
             Long profileId,
+            Instant clickedAt,
             List<AgreementItemCommand> items
     ) {
     }

@@ -28,6 +28,11 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
     }
 
     @Override
+    public Optional<UserProfileSummary> findByPartnerUserId(String partnerUserId) {
+        return Optional.ofNullable(userAuthMapper.findByPartnerUserId(partnerUserId));
+    }
+
+    @Override
     public UserProfileSummary createByMobileNo(String mobileNo) {
         String partnerUserId = "U" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
         userAuthMapper.insertProfile(partnerUserId, mobileNo);

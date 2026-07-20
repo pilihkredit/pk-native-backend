@@ -25,7 +25,7 @@ public class AgreementController {
         this.agreementApplicationService = agreementApplicationService;
     }
 
-    /** Append agreement records (login optional). */
+    /** Append agreement records. Mobile is resolved by backend from login or partnerUserId. */
     @PublicApi
     @PostMapping("/records")
     public ApiResponse<AgreementCreateResponse> create(

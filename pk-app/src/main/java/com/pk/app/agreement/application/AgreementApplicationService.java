@@ -8,22 +8,33 @@ import com.pk.app.agreement.dto.response.AgreementRecordResponse;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
+import com.pk.core.auth.UserProfileSummary;
+import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.infra.agreement.AgreementFacade;
+import java.time.Instant;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AgreementApplicationService {
     private final AgreementFacade agreementFacade;
+    private final UserAuthRepository userAuthRepository;
 
-    public AgreementApplicationService(AgreementFacade agreementFacade) {
+    public AgreementApplicationService(
+            AgreementFacade agreementFacade,
+            UserAuthRepository userAuthRepository
+    ) {
         this.agreementFacade = agreementFacade;
+        this.userAuthRepository = userAuthRepository;
     }
 
     public AgreementCreateResponse create(AuthenticatedPrincipal principal, AgreementCreateRequest request) {
         String partnerUserId = request.partnerUserId();
         Long profileId = null;
+        String mobileNo = null;
+
         if (principal != null) {
             profileId = principal.profileId();
+            mobileNo = principal.mobileNo();
             if (partnerUserId != null && !partnerUserId.isBlank()
                     && !partnerUserId.trim().equals(principal.partnerUserId())) {
                 throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -31,16 +42,24 @@ public class AgreementApplicationService {
             if (partnerUserId == null || partnerUserId.isBlank()) {
                 partnerUserId = principal.partnerUserId();
             }
-            if (request.mobileNo() != null
-                    && !request.mobileNo().trim().equals(principal.mobileNo())) {
-                throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-            }
+        } else if (partnerUserId != null && !partnerUserId.isBlank()) {
+            UserProfileSummary profile = userAuthRepository.findByPartnerUserId(partnerUserId.trim())
+                    .orElseThrow(() -> new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS));
+            profileId = profile.profileId();
+            mobileNo = profile.mobileNo();
+            partnerUserId = profile.partnerUserId();
         }
+
+        if (mobileNo == null || mobileNo.isBlank()) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+
         var records = agreementFacade.createRecords(new AgreementFacade.CreateCommand(
-                request.mobileNo(),
+                mobileNo,
                 partnerUserId,
                 request.deviceNo(),
                 profileId,
+                Instant.ofEpochMilli(request.clickedAt()),
                 request.items().stream()
                         .map(item -> new AgreementFacade.AgreementItemCommand(
                                 item.agreementType(),

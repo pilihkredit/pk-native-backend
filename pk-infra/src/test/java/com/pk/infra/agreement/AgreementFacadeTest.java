@@ -28,7 +28,8 @@ class AgreementFacadeTest {
     }
 
     @Test
-    void createsAppendOnlyRecordsWithServerAgreedAt() {
+    void createsAppendOnlyRecordsWithClientClickedAt() {
+        Instant clickedAt = Instant.parse("2026-07-20T03:00:00Z");
         when(repository.insert(any())).thenAnswer(invocation -> {
             UserAgreementRecordRepository.UserAgreementRecordInsert insert = invocation.getArgument(0);
             return new UserAgreementRecordData(
@@ -48,6 +49,7 @@ class AgreementFacadeTest {
                 null,
                 "device-1",
                 null,
+                clickedAt,
                 List.of(
                         new AgreementFacade.AgreementItemCommand("PRIVACY_POLICY", true),
                         new AgreementFacade.AgreementItemCommand("USER_AGREEMENT", null)
@@ -58,12 +60,12 @@ class AgreementFacadeTest {
         assertThat(result.get(0).agreementType()).isEqualTo("PRIVACY_POLICY");
         assertThat(result.get(0).agreed()).isTrue();
         assertThat(result.get(1).agreed()).isNull();
-        assertThat(result.get(0).agreedAt()).isNotNull();
+        assertThat(result.get(0).agreedAt()).isEqualTo(clickedAt);
 
         ArgumentCaptor<UserAgreementRecordRepository.UserAgreementRecordInsert> captor =
                 ArgumentCaptor.forClass(UserAgreementRecordRepository.UserAgreementRecordInsert.class);
         verify(repository, org.mockito.Mockito.times(2)).insert(captor.capture());
-        assertThat(captor.getAllValues()).allMatch(item -> item.agreedAt() != null);
+        assertThat(captor.getAllValues()).allMatch(item -> clickedAt.equals(item.agreedAt()));
     }
 
     @Test
@@ -73,6 +75,7 @@ class AgreementFacadeTest {
                 "U10001",
                 "device-1",
                 10L,
+                Instant.parse("2026-07-20T03:00:00Z"),
                 List.of(
                         new AgreementFacade.AgreementItemCommand("PRIVACY_POLICY", true),
                         new AgreementFacade.AgreementItemCommand("PRIVACY_POLICY", false)

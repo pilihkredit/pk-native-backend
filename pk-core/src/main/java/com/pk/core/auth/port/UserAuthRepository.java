@@ -10,6 +10,8 @@ public interface UserAuthRepository {
 
     Optional<UserProfileSummary> findByProfileId(long profileId);
 
+    Optional<UserProfileSummary> findByPartnerUserId(String partnerUserId);
+
     UserProfileSummary createByMobileNo(String mobileNo);
 
     void saveSessionTokens(

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS user_agreement_record (
     profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier when logged in',
     agreement_type VARCHAR(64) NOT NULL COMMENT 'Agreement type code from client',
     agreed TINYINT(1) NULL COMMENT 'Agreement choice: 1 agree, 0 reject, NULL unknown/viewed',
-    agreed_at DATETIME(3) NOT NULL COMMENT 'Server-side agreement capture time',
+    agreed_at DATETIME(3) NOT NULL COMMENT 'Client click timestamp for the agreement action',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
