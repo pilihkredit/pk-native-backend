@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.agreement.mapper.UserAgreementRecordMapper">
+
+    <resultMap id="agreementRecordMap" type="com.pk.core.agreement.UserAgreementRecordData">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="partner_user_id" javaType="string"/>
+            <arg column="device_no" javaType="string"/>
+            <arg column="profile_id" javaType="java.lang.Long"/>
+            <arg column="agreement_type" javaType="string"/>
+            <arg column="agreed" javaType="java.lang.Boolean"
+                 typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
+            <arg column="agreed_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO user_agreement_record (
+            mobile_no,
+            partner_user_id,
+            device_no,
+            profile_id,
+            agreement_type,
+            agreed,
+            agreed_at
+        ) VALUES (
+            #{mobileNo},
+            #{partnerUserId},
+            #{deviceNo},
+            #{profileId},
+            #{agreementType},
+            #{agreed, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            #{agreedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        )
+    </insert>
+
+    <select id="findLatestByMobileNo" resultMap="agreementRecordMap">
+        SELECT t.id, t.mobile_no, t.partner_user_id, t.device_no, t.profile_id,
+               t.agreement_type, t.agreed, t.agreed_at
+        FROM user_agreement_record t
+        INNER JOIN (
+            SELECT agreement_type, MAX(id) AS max_id
+            FROM user_agreement_record
+            WHERE mobile_no = #{mobileNo}
+            <if test="agreementTypes != null and agreementTypes.size() &gt; 0">
+                AND agreement_type IN
+                <foreach collection="agreementTypes" item="type" open="(" separator="," close=")">
+                    #{type}
+                </foreach>
+            </if>
+            GROUP BY agreement_type
+        ) latest ON t.id = latest.max_id
+        ORDER BY t.agreement_type ASC
+    </select>
+</mapper>
