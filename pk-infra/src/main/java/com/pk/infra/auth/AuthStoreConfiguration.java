@@ -9,7 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.appconfig.port.AppConfigRepository;
 import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSender;
+import com.pk.core.auth.port.WhatsAppSendLogRepository;
+import com.pk.core.auth.port.WhatsAppSender;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -27,6 +30,11 @@ public class AuthStoreConfiguration {
     }
 
     @Bean
+    OtpChallengeStore whatsappOtpChallengeStore(StringRedisTemplate redisTemplate) {
+        return new RedisOtpChallengeStore(redisTemplate, "whatsapp");
+    }
+
+    @Bean
     RefreshTokenStore refreshTokenStore(StringRedisTemplate redisTemplate) {
         return new RedisRefreshTokenStore(redisTemplate);
     }
@@ -37,29 +45,42 @@ public class AuthStoreConfiguration {
     }
 
     @Bean
+    WhatsAppConfigLoader whatsAppConfigLoader(AppConfigRepository appConfigRepository, ObjectMapper objectMapper) {
+        return new WhatsAppConfigLoader(appConfigRepository, objectMapper);
+    }
+
+    @Bean
     AuthServiceFacade authServiceFacade(
             AuthProperties authProperties,
             AuthOtpConfigLoader authOtpConfigLoader,
             SessionStore sessionStore,
-            OtpChallengeStore otpChallengeStore,
+            @Qualifier("otpChallengeStore") OtpChallengeStore otpChallengeStore,
+            @Qualifier("whatsappOtpChallengeStore") OtpChallengeStore whatsappOtpChallengeStore,
             RefreshTokenStore refreshTokenStore,
             TokenIssuer tokenIssuer,
             UserAuthRepository userAuthRepository,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             SmsSendLogRepository smsSendLogRepository,
-            SmsSender smsSender
+            SmsSender smsSender,
+            WhatsAppSendLogRepository whatsAppSendLogRepository,
+            WhatsAppSender whatsAppSender,
+            WhatsAppConfigLoader whatsAppConfigLoader
     ) {
         return new AuthServiceFacade(
                 authProperties,
                 authOtpConfigLoader,
                 sessionStore,
                 otpChallengeStore,
+                whatsappOtpChallengeStore,
                 refreshTokenStore,
                 tokenIssuer,
                 userAuthRepository,
                 sensitiveFieldEncryptor,
                 smsSendLogRepository,
-                smsSender
+                smsSender,
+                whatsAppSendLogRepository,
+                whatsAppSender,
+                whatsAppConfigLoader
         );
     }
 }

@@ -8,19 +8,26 @@ import java.util.Optional;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 public class RedisOtpChallengeStore implements OtpChallengeStore {
-    private static final String TOKEN_PREFIX = "auth:otp:token:";
-    private static final String MOBILE_PREFIX = "auth:otp:mobile:";
-    private static final String RESEND_DEVICE_PREFIX = "auth:otp:resend:device:";
-
     private final StringRedisTemplate redisTemplate;
+    private final String tokenPrefix;
+    private final String mobilePrefix;
+    private final String resendDevicePrefix;
 
     public RedisOtpChallengeStore(StringRedisTemplate redisTemplate) {
+        this(redisTemplate, "otp");
+    }
+
+    public RedisOtpChallengeStore(StringRedisTemplate redisTemplate, String namespace) {
         this.redisTemplate = redisTemplate;
+        String ns = namespace == null || namespace.isBlank() ? "otp" : namespace.trim();
+        this.tokenPrefix = "auth:" + ns + ":token:";
+        this.mobilePrefix = "auth:" + ns + ":mobile:";
+        this.resendDevicePrefix = "auth:" + ns + ":resend:device:";
     }
 
     @Override
     public Optional<OtpChallenge> findByToken(String otpToken) {
-        String raw = redisTemplate.opsForValue().get(TOKEN_PREFIX + otpToken);
+        String raw = redisTemplate.opsForValue().get(tokenPrefix + otpToken);
         if (raw == null || raw.isBlank()) {
             return Optional.empty();
         }
@@ -42,20 +49,20 @@ public class RedisOtpChallengeStore implements OtpChallengeStore {
                 + "|" + challenge.deviceNo()
                 + "|" + challenge.otpCode()
                 + "|" + challenge.expiresAt();
-        redisTemplate.opsForValue().set(TOKEN_PREFIX + otpToken, value, ttl);
-        redisTemplate.opsForValue().set(MOBILE_PREFIX + challenge.mobileNo(), otpToken, ttl);
+        redisTemplate.opsForValue().set(tokenPrefix + otpToken, value, ttl);
+        redisTemplate.opsForValue().set(mobilePrefix + challenge.mobileNo(), otpToken, ttl);
     }
 
     @Override
     public void delete(String otpToken) {
         Optional<OtpChallenge> challenge = findByToken(otpToken);
-        redisTemplate.delete(TOKEN_PREFIX + otpToken);
-        challenge.ifPresent(value -> redisTemplate.delete(MOBILE_PREFIX + value.mobileNo()));
+        redisTemplate.delete(tokenPrefix + otpToken);
+        challenge.ifPresent(value -> redisTemplate.delete(mobilePrefix + value.mobileNo()));
     }
 
     @Override
     public Optional<Duration> timeUntilResendAllowed(String deviceNo) {
-        Long ttlSeconds = redisTemplate.getExpire(RESEND_DEVICE_PREFIX + deviceNo);
+        Long ttlSeconds = redisTemplate.getExpire(resendDevicePrefix + deviceNo);
         if (ttlSeconds == null || ttlSeconds <= 0) {
             return Optional.empty();
         }
@@ -64,6 +71,6 @@ public class RedisOtpChallengeStore implements OtpChallengeStore {
 
     @Override
     public void markSent(String deviceNo, Duration resendInterval) {
-        redisTemplate.opsForValue().set(RESEND_DEVICE_PREFIX + deviceNo, "1", resendInterval);
+        redisTemplate.opsForValue().set(resendDevicePrefix + deviceNo, "1", resendInterval);
     }
 }

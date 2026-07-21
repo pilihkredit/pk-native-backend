@@ -20,3 +20,32 @@ VALUES (
 )
 ON DUPLICATE KEY UPDATE
     `value` = VALUES(`value`);
+
+INSERT INTO app_config (`key`, `value`)
+VALUES (
+    'whatsappConf',
+    JSON_OBJECT(
+        'enableWhatsApp', false,
+        'url', 'https://api.innopaas.com/api/whatsapp/v3',
+        'appKey', '',
+        'authorization', '',
+        'wabaId', '',
+        'sendNumber', '',
+        'templateName', 'otp_pilihkredit',
+        'language', 'id',
+        'countryDialCode', '62',
+        'timeout', 10000,
+        'minInterval', 60,
+        'expireTime', 300
+    )
+)
+ON DUPLICATE KEY UPDATE
+    `value` = VALUES(`value`);
+
+INSERT INTO app_config (`key`, `value`)
+VALUES (
+    'whatsapp_daily_limit',
+    CAST('5' AS JSON)
+)
+ON DUPLICATE KEY UPDATE
+    `value` = VALUES(`value`);

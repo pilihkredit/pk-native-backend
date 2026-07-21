@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pk.infra.auth.mapper.SmsSendLogMapper">
+<mapper namespace="com.pk.infra.auth.mapper.WhatsAppSendLogMapper">
 
     <select id="countSince" resultType="long">
         SELECT COUNT(*)
-        FROM sms_send_log
+        FROM whatsapp_send_log
         WHERE mobile_no = #{mobileNo}
           AND provider_success = 1
           AND created_at &gt;= #{sinceInclusive, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
     </select>
 
     <insert id="insertParam" useGeneratedKeys="true" keyProperty="logId" keyColumn="id">
-        INSERT INTO sms_send_log (
+        INSERT INTO whatsapp_send_log (
             profile_id,
             mobile_no,
             device_no,
@@ -32,7 +32,7 @@
     </insert>
 
     <update id="updateProviderResult">
-        UPDATE sms_send_log
+        UPDATE whatsapp_send_log
         SET provider_code = #{providerCode},
             provider_message_id = #{providerMessageId},
             provider_success = #{providerSuccess, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},

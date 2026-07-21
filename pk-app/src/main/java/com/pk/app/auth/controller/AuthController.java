@@ -83,6 +83,20 @@ public class AuthController {
         );
     }
 
+    /** Login with WhatsApp OTP. Body/headers align with {@code POST /auth/otp/verify}. */
+    @PublicApi
+    @PostMapping("/login-whatsapp")
+    public ApiResponse<OtpVerifyResponse> loginWhatsApp(
+            @Valid @RequestBody OtpVerifyRequest request,
+            @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
+            HttpServletRequest httpRequest
+    ) {
+        return ApiResponse.success(
+                authApplicationService.loginWithWhatsApp(request, deviceNoHeader),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
     /** Refresh access token. */
     @PublicApi
     @PostMapping("/refresh")

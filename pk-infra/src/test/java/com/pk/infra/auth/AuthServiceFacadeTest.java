@@ -24,6 +24,9 @@ import com.pk.core.auth.port.SmsSendLogRepository.SmsSendLogEntry;
 import com.pk.core.auth.port.SmsSender;
 import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.UserAuthRepository;
+import com.pk.core.auth.port.WhatsAppSendLogRepository;
+import com.pk.core.auth.port.WhatsAppSendLogRepository.WhatsAppSendLogEntry;
+import com.pk.core.auth.port.WhatsAppSender;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import java.time.Duration;
@@ -35,38 +38,81 @@ import org.mockito.ArgumentCaptor;
 
 class AuthServiceFacadeTest {
     private OtpChallengeStore otpChallengeStore;
+    private OtpChallengeStore whatsappOtpChallengeStore;
     private UserAuthRepository userAuthRepository;
     private SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private SmsSendLogRepository smsSendLogRepository;
     private SmsSender smsSender;
+    private WhatsAppSendLogRepository whatsAppSendLogRepository;
+    private WhatsAppSender whatsAppSender;
+    private WhatsAppConfigLoader whatsAppConfigLoader;
     private AuthOtpConfigLoader authOtpConfigLoader;
     private AuthServiceFacade facade;
 
     @BeforeEach
     void setUp() {
         otpChallengeStore = mock(OtpChallengeStore.class);
+        whatsappOtpChallengeStore = mock(OtpChallengeStore.class);
         userAuthRepository = mock(UserAuthRepository.class);
         sensitiveFieldEncryptor = mock(SensitiveFieldEncryptor.class);
         smsSendLogRepository = mock(SmsSendLogRepository.class);
         smsSender = mock(SmsSender.class);
+        whatsAppSendLogRepository = mock(WhatsAppSendLogRepository.class);
+        whatsAppSender = mock(WhatsAppSender.class);
+        whatsAppConfigLoader = mock(WhatsAppConfigLoader.class);
         authOtpConfigLoader = defaultOtpConfigLoader();
         AuthProperties properties = new AuthProperties();
         properties.setOtpTtl(Duration.ofMinutes(5));
-        facade = new AuthServiceFacade(
-                properties,
-                authOtpConfigLoader,
-                mock(SessionStore.class),
-                otpChallengeStore,
-                mock(RefreshTokenStore.class),
-                mock(TokenIssuer.class),
-                userAuthRepository,
-                sensitiveFieldEncryptor,
-                smsSendLogRepository,
-                smsSender
-        );
+        facade = newFacade(properties, mock(SessionStore.class), mock(RefreshTokenStore.class), mock(TokenIssuer.class));
         when(smsSendLogRepository.countSince(eq("8123456789"), any(Instant.class))).thenReturn(0L);
         when(smsSendLogRepository.insert(any())).thenReturn(1L);
         when(smsSender.send(eq("8123456789"), any())).thenReturn(SmsSendResult.success("local", "local-1"));
+        when(whatsAppSendLogRepository.countSince(eq("8123456789"), any(Instant.class))).thenReturn(0L);
+        when(whatsAppSendLogRepository.insert(any())).thenReturn(1L);
+        when(whatsAppSender.send(eq("8123456789"), any())).thenReturn(SmsSendResult.success("chuanglan", "wa-1"));
+        when(whatsAppConfigLoader.loadDailyLimit()).thenReturn(5);
+        when(whatsAppConfigLoader.loadConf()).thenReturn(defaultWhatsAppConf());
+    }
+
+    private static WhatsAppConfigLoader.WhatsAppConf defaultWhatsAppConf() {
+        return new WhatsAppConfigLoader.WhatsAppConf(
+                false,
+                "https://api.innopaas.com/api/whatsapp/v3",
+                "",
+                "",
+                "",
+                "",
+                "otp_pilihkredit",
+                "id",
+                "62",
+                Duration.ofSeconds(10),
+                Duration.ofSeconds(60),
+                Duration.ofSeconds(300)
+        );
+    }
+
+    private AuthServiceFacade newFacade(
+            AuthProperties properties,
+            SessionStore sessionStore,
+            RefreshTokenStore refreshTokenStore,
+            TokenIssuer tokenIssuer
+    ) {
+        return new AuthServiceFacade(
+                properties,
+                authOtpConfigLoader,
+                sessionStore,
+                otpChallengeStore,
+                whatsappOtpChallengeStore,
+                refreshTokenStore,
+                tokenIssuer,
+                userAuthRepository,
+                sensitiveFieldEncryptor,
+                smsSendLogRepository,
+                smsSender,
+                whatsAppSendLogRepository,
+                whatsAppSender,
+                whatsAppConfigLoader
+        );
     }
 
     private static AuthOtpConfigLoader defaultOtpConfigLoader() {
@@ -115,6 +161,65 @@ class AuthServiceFacadeTest {
     }
 
     @Test
+    void rejectsWhatsAppResendForSameDeviceWithinInterval() {
+        when(whatsappOtpChallengeStore.timeUntilResendAllowed("device-1"))
+                .thenReturn(Optional.of(Duration.ofSeconds(30)));
+
+        assertThatThrownBy(() -> facade.sendWhatsAppCode("8123456789", "device-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.TOO_MANY_REQUESTS);
+
+        verify(whatsappOtpChallengeStore, never()).save(any(), any(), any());
+        verify(whatsAppSendLogRepository, never()).insert(any());
+    }
+
+    @Test
+    void sendsWhatsAppAndPersistsSendLog() {
+        when(whatsappOtpChallengeStore.timeUntilResendAllowed("device-1")).thenReturn(Optional.empty());
+
+        var result = facade.sendWhatsAppCode("8123456789", "device-1");
+
+        assertThat(result.otpToken()).isNotBlank();
+        ArgumentCaptor<WhatsAppSendLogEntry> logCaptor = ArgumentCaptor.forClass(WhatsAppSendLogEntry.class);
+        verify(whatsAppSendLogRepository).insert(logCaptor.capture());
+        assertThat(logCaptor.getValue().otpToken()).isEqualTo(result.otpToken());
+        verify(whatsAppSender).send(eq("8123456789"), any());
+        verify(whatsappOtpChallengeStore).markSent(eq("device-1"), eq(Duration.ofSeconds(60)));
+        verify(smsSender, never()).send(any(), any());
+    }
+
+    @Test
+    void rejectsWhatsAppSendWhenDailyLimitReached() {
+        when(whatsappOtpChallengeStore.timeUntilResendAllowed("device-1")).thenReturn(Optional.empty());
+        when(whatsAppConfigLoader.loadDailyLimit()).thenReturn(5);
+        when(whatsAppSendLogRepository.countSince(eq("8123456789"), any(Instant.class))).thenReturn(5L);
+
+        assertThatThrownBy(() -> facade.sendWhatsAppCode("8123456789", "device-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.TOO_MANY_REQUESTS);
+
+        verify(whatsappOtpChallengeStore, never()).save(any(), any(), any());
+        verify(whatsAppSendLogRepository, never()).insert(any());
+    }
+
+    @Test
+    void rollsBackWhatsAppChallengeWhenProviderFails() {
+        when(whatsappOtpChallengeStore.timeUntilResendAllowed("device-1")).thenReturn(Optional.empty());
+        when(whatsAppSender.send(eq("8123456789"), any()))
+                .thenReturn(SmsSendResult.failure("chuanglan", "TIMEOUT", "gateway timeout"));
+
+        assertThatThrownBy(() -> facade.sendWhatsAppCode("8123456789", "device-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.SERVICE_UNAVAILABLE);
+
+        verify(whatsappOtpChallengeStore).delete(any());
+        verify(whatsappOtpChallengeStore, never()).markSent(any(), any());
+    }
+
+    @Test
     void persistsSessionTokensAfterSuccessfulOtpVerify() {
         when(otpChallengeStore.timeUntilResendAllowed("device-1")).thenReturn(Optional.empty());
         when(otpChallengeStore.findByToken("token-1")).thenReturn(Optional.of(
@@ -133,18 +238,7 @@ class AuthServiceFacadeTest {
         RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
         when(sessionStore.findByProfileId(7L)).thenReturn(Optional.empty());
 
-        AuthServiceFacade verifyFacade = new AuthServiceFacade(
-                properties,
-                defaultOtpConfigLoader(),
-                sessionStore,
-                otpChallengeStore,
-                refreshTokenStore,
-                tokenIssuer,
-                userAuthRepository,
-                sensitiveFieldEncryptor,
-                smsSendLogRepository,
-                smsSender
-        );
+        AuthServiceFacade verifyFacade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);
 
         AuthServiceFacade.OtpVerifyResult result = verifyFacade.verifyOtp(
                 "8123456789",
@@ -164,6 +258,40 @@ class AuthServiceFacadeTest {
         assertThat(expiresAtCaptor.getValue())
                 .isAfter(Instant.now().plusSeconds(890))
                 .isBefore(Instant.now().plusSeconds(910));
+    }
+
+    @Test
+    void loginWithWhatsAppCreatesUserWhenMissing() {
+        when(whatsappOtpChallengeStore.findByToken("wa-token")).thenReturn(Optional.of(
+                new OtpChallenge("8123456789", "device-1", "654321", Instant.now().plusSeconds(300))
+        ));
+        when(userAuthRepository.findByMobileNo("8123456789")).thenReturn(Optional.empty());
+        when(userAuthRepository.createByMobileNo("8123456789"))
+                .thenReturn(new UserProfileSummary(9L, "UWA", "8123456789", true));
+        when(userAuthRepository.isPasswordSet(9L)).thenReturn(false);
+
+        AuthProperties properties = new AuthProperties();
+        properties.setAccessTokenTtl(Duration.ofMinutes(15));
+        properties.setRefreshTokenTtl(Duration.ofDays(30));
+        properties.setJwtSecret("local-dev-secret-change-in-prod-min-32-chars");
+        TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
+        SessionStore sessionStore = mock(SessionStore.class);
+        RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
+        when(sessionStore.findByProfileId(9L)).thenReturn(Optional.empty());
+
+        AuthServiceFacade verifyFacade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);
+
+        AuthServiceFacade.OtpVerifyResult result = verifyFacade.loginWithWhatsApp(
+                "8123456789",
+                "wa-token",
+                "654321",
+                "device-1"
+        );
+
+        assertThat(result.profile().newlyCreated()).isTrue();
+        assertThat(result.tokenPair().accessToken()).isNotBlank();
+        verify(whatsappOtpChallengeStore).delete("wa-token");
+        verify(otpChallengeStore, never()).findByToken(any());
     }
 
     @Test
@@ -284,18 +412,7 @@ class AuthServiceFacadeTest {
                 .thenReturn(Optional.of(new UserProfileSummary(7L, "UABC", "8123456789", false)));
         when(userAuthRepository.isPasswordSet(7L)).thenReturn(false);
 
-        AuthServiceFacade verifyFacade = new AuthServiceFacade(
-                properties,
-                defaultOtpConfigLoader(),
-                sessionStore,
-                otpChallengeStore,
-                refreshTokenStore,
-                tokenIssuer,
-                userAuthRepository,
-                sensitiveFieldEncryptor,
-                smsSendLogRepository,
-                smsSender
-        );
+        AuthServiceFacade verifyFacade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);
 
         AuthServiceFacade.OtpVerifyResult result = verifyFacade.verifyOtp(
                 "8123456789",

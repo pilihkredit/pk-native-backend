@@ -16,68 +16,84 @@ import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSender;
 import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.UserAuthRepository;
+import com.pk.core.auth.port.WhatsAppSendLogRepository;
+import com.pk.core.auth.port.WhatsAppSender;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 public class AuthServiceFacade {
     private static final String LOGIN_CHANNEL_OTP = "OTP";
+    private static final String LOGIN_CHANNEL_WHATSAPP = "WHATSAPP";
     private static final String LOGIN_CHANNEL_PASSWORD = "PASSWORD";
-    private static final String SMS_PURPOSE_OTP = "OTP";
+    private static final String OTP_PURPOSE = "OTP";
 
     private final AuthProperties authProperties;
     private final AuthOtpConfigLoader authOtpConfigLoader;
     private final SessionStore sessionStore;
     private final OtpChallengeStore otpChallengeStore;
+    private final OtpChallengeStore whatsappOtpChallengeStore;
     private final RefreshTokenStore refreshTokenStore;
     private final TokenIssuer tokenIssuer;
     private final UserAuthRepository userAuthRepository;
     private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private final SmsSendLogRepository smsSendLogRepository;
     private final SmsSender smsSender;
+    private final WhatsAppSendLogRepository whatsAppSendLogRepository;
+    private final WhatsAppSender whatsAppSender;
+    private final WhatsAppConfigLoader whatsAppConfigLoader;
 
     public AuthServiceFacade(
             AuthProperties authProperties,
             AuthOtpConfigLoader authOtpConfigLoader,
             SessionStore sessionStore,
-            OtpChallengeStore otpChallengeStore,
+            @Qualifier("otpChallengeStore") OtpChallengeStore otpChallengeStore,
+            @Qualifier("whatsappOtpChallengeStore") OtpChallengeStore whatsappOtpChallengeStore,
             RefreshTokenStore refreshTokenStore,
             TokenIssuer tokenIssuer,
             UserAuthRepository userAuthRepository,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             SmsSendLogRepository smsSendLogRepository,
-            SmsSender smsSender
+            SmsSender smsSender,
+            WhatsAppSendLogRepository whatsAppSendLogRepository,
+            WhatsAppSender whatsAppSender,
+            WhatsAppConfigLoader whatsAppConfigLoader
     ) {
         this.authProperties = authProperties;
         this.authOtpConfigLoader = authOtpConfigLoader;
         this.sessionStore = sessionStore;
         this.otpChallengeStore = otpChallengeStore;
+        this.whatsappOtpChallengeStore = whatsappOtpChallengeStore;
         this.refreshTokenStore = refreshTokenStore;
         this.tokenIssuer = tokenIssuer;
         this.userAuthRepository = userAuthRepository;
         this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
         this.smsSendLogRepository = smsSendLogRepository;
         this.smsSender = smsSender;
+        this.whatsAppSendLogRepository = whatsAppSendLogRepository;
+        this.whatsAppSender = whatsAppSender;
+        this.whatsAppConfigLoader = whatsAppConfigLoader;
     }
 
     public OtpSendResult sendOtp(String mobileNo, String deviceNo) {
         validateMobile(mobileNo);
-        Objects.requireNonNull(deviceNo, "deviceNo is required");
-        if (deviceNo.isBlank()) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
+        requireDeviceNo(deviceNo);
         AuthOtpConfigLoader.AuthOtpConfig otpConfig = authOtpConfigLoader.load();
-        Optional<Duration> wait = otpChallengeStore.timeUntilResendAllowed(deviceNo);
-        if (wait.isPresent()) {
-            throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
-        }
-        enforceDailySmsLimit(mobileNo, otpConfig);
+        enforceResendInterval(otpChallengeStore, deviceNo);
+        enforceDailyLimit(
+                smsSendLogRepository::countSince,
+                mobileNo,
+                otpConfig.otpDailyLimit(),
+                otpConfig.otpDailyLimitZone()
+        );
 
         String otpToken = OtpCodeGenerator.token();
         String otpCode = OtpCodeGenerator.sixDigits();
@@ -95,7 +111,7 @@ public class AuthServiceFacade {
                 deviceNo,
                 otpToken,
                 otpCode,
-                SMS_PURPOSE_OTP
+                OTP_PURPOSE
         ));
 
         SmsSendResult smsResult = smsSender.send(mobileNo, otpCode);
@@ -114,23 +130,59 @@ public class AuthServiceFacade {
         );
     }
 
-    private void enforceDailySmsLimit(String mobileNo, AuthOtpConfigLoader.AuthOtpConfig otpConfig) {
-        Instant startOfDay = ZonedDateTime.now(otpConfig.otpDailyLimitZone())
-                .toLocalDate()
-                .atStartOfDay(otpConfig.otpDailyLimitZone())
-                .toInstant();
-        long sentToday = smsSendLogRepository.countSince(mobileNo, startOfDay);
-        if (sentToday >= otpConfig.otpDailyLimit()) {
-            throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
+    public OtpSendResult sendWhatsAppCode(String mobileNo, String deviceNo) {
+        validateMobile(mobileNo);
+        requireDeviceNo(deviceNo);
+        WhatsAppConfigLoader.WhatsAppConf whatsAppConf = whatsAppConfigLoader.loadConf();
+        AuthOtpConfigLoader.AuthOtpConfig otpConfig = authOtpConfigLoader.load();
+        enforceResendInterval(whatsappOtpChallengeStore, deviceNo);
+        enforceDailyLimit(
+                whatsAppSendLogRepository::countSince,
+                mobileNo,
+                whatsAppConfigLoader.loadDailyLimit(),
+                otpConfig.otpDailyLimitZone()
+        );
+
+        String otpToken = OtpCodeGenerator.token();
+        String otpCode = OtpCodeGenerator.sixDigits();
+        Duration challengeTtl = whatsAppConf.expireTime();
+        Instant expiresAt = Instant.now().plus(challengeTtl);
+        whatsappOtpChallengeStore.save(
+                otpToken,
+                new OtpChallenge(mobileNo, deviceNo, otpCode, expiresAt),
+                challengeTtl
+        );
+
+        Optional<Long> profileId = userAuthRepository.findByMobileNo(mobileNo).map(UserProfileSummary::profileId);
+        long logId = whatsAppSendLogRepository.insert(new WhatsAppSendLogRepository.WhatsAppSendLogEntry(
+                profileId,
+                mobileNo,
+                deviceNo,
+                otpToken,
+                otpCode,
+                OTP_PURPOSE
+        ));
+
+        SmsSendResult sendResult = whatsAppSender.send(mobileNo, otpCode);
+        whatsAppSendLogRepository.updateProviderResult(logId, sendResult);
+        if (!sendResult.success()) {
+            whatsappOtpChallengeStore.delete(otpToken);
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
+
+        Duration resendInterval = whatsAppConf.minInterval();
+        whatsappOtpChallengeStore.markSent(deviceNo, resendInterval);
+        return new OtpSendResult(
+                otpToken,
+                challengeTtl.toSeconds(),
+                resendInterval.toSeconds(),
+                otpCode
+        );
     }
 
     public MobileCheckResult checkMobileRegistration(String mobileNo, String deviceNo) {
         validateMobile(mobileNo);
-        Objects.requireNonNull(deviceNo, "deviceNo is required");
-        if (deviceNo.isBlank()) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
+        requireDeviceNo(deviceNo);
 
         boolean registered = userAuthRepository.findByMobileNo(mobileNo).isPresent();
         boolean passwordSet = userAuthRepository.findByMobileNo(mobileNo)
@@ -184,6 +236,35 @@ public class AuthServiceFacade {
     }
 
     public OtpVerifyResult verifyOtp(String mobileNo, String otpToken, String otpCode, String deviceNo) {
+        return verifyChallengeAndLogin(
+                otpChallengeStore,
+                mobileNo,
+                otpToken,
+                otpCode,
+                deviceNo,
+                LOGIN_CHANNEL_OTP
+        );
+    }
+
+    public OtpVerifyResult loginWithWhatsApp(String mobileNo, String otpToken, String otpCode, String deviceNo) {
+        return verifyChallengeAndLogin(
+                whatsappOtpChallengeStore,
+                mobileNo,
+                otpToken,
+                otpCode,
+                deviceNo,
+                LOGIN_CHANNEL_WHATSAPP
+        );
+    }
+
+    private OtpVerifyResult verifyChallengeAndLogin(
+            OtpChallengeStore challengeStore,
+            String mobileNo,
+            String otpToken,
+            String otpCode,
+            String deviceNo,
+            String loginChannel
+    ) {
         validateMobile(mobileNo);
         if (otpToken == null || otpToken.isBlank() || otpCode == null || otpCode.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -192,12 +273,12 @@ public class AuthServiceFacade {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
         if (isOtpBypass(otpCode)) {
-            otpChallengeStore.findByToken(otpToken).ifPresent(challenge -> otpChallengeStore.delete(otpToken));
+            challengeStore.findByToken(otpToken).ifPresent(challenge -> challengeStore.delete(otpToken));
         } else {
-            OtpChallenge challenge = otpChallengeStore.findByToken(otpToken)
+            OtpChallenge challenge = challengeStore.findByToken(otpToken)
                     .orElseThrow(() -> new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE));
             if (challenge.expired(Instant.now())) {
-                otpChallengeStore.delete(otpToken);
+                challengeStore.delete(otpToken);
                 throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
             }
             if (!mobileNo.equals(challenge.mobileNo())) {
@@ -209,12 +290,12 @@ public class AuthServiceFacade {
             if (!otpCode.equals(challenge.otpCode())) {
                 throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
             }
-            otpChallengeStore.delete(otpToken);
+            challengeStore.delete(otpToken);
         }
 
         UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
                 .orElseGet(() -> userAuthRepository.createByMobileNo(mobileNo));
-        TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_OTP);
+        TokenPair tokenPair = openSession(profile, deviceNo, loginChannel);
         boolean passwordSet = userAuthRepository.isPasswordSet(profile.profileId());
         return new OtpVerifyResult(profile, tokenPair, passwordSet);
     }
@@ -305,6 +386,36 @@ public class AuthServiceFacade {
         return tokenPair;
     }
 
+    private void requireDeviceNo(String deviceNo) {
+        Objects.requireNonNull(deviceNo, "deviceNo is required");
+        if (deviceNo.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+    }
+
+    private void enforceResendInterval(OtpChallengeStore challengeStore, String deviceNo) {
+        Optional<Duration> wait = challengeStore.timeUntilResendAllowed(deviceNo);
+        if (wait.isPresent()) {
+            throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
+        }
+    }
+
+    private void enforceDailyLimit(
+            DailyCountQuery countQuery,
+            String mobileNo,
+            int dailyLimit,
+            ZoneId dailyLimitZone
+    ) {
+        Instant startOfDay = ZonedDateTime.now(dailyLimitZone)
+                .toLocalDate()
+                .atStartOfDay(dailyLimitZone)
+                .toInstant();
+        long sentToday = countQuery.countSince(mobileNo, startOfDay);
+        if (sentToday >= dailyLimit) {
+            throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
+        }
+    }
+
     private void validateMobile(String mobileNo) {
         if (!MobileNumberValidator.isValid(mobileNo)) {
             throw new ApiException(ApiCode.INVALID_MOBILE_NUMBER);
@@ -315,6 +426,11 @@ public class AuthServiceFacade {
         return authProperties.otpBypassEnabled()
                 && authProperties.otpBypassCode() != null
                 && authProperties.otpBypassCode().equals(otpCode);
+    }
+
+    @FunctionalInterface
+    private interface DailyCountQuery {
+        long countSince(String mobileNo, Instant sinceInclusive);
     }
 
     public record OtpSendResult(String otpToken, long expireIn, long resendAfter, String otpCodeForLocalDev) {

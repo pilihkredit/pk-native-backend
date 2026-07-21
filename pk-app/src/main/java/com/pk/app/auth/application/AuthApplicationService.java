@@ -49,6 +49,15 @@ public class AuthApplicationService {
         return new OtpSendResponse(result.otpToken(), result.expireIn(), result.resendAfter());
     }
 
+    public OtpSendResponse sendWhatsAppCode(OtpSendRequest request, String deviceNoHeader) {
+        validateDeviceNoMatchesHeader(request.deviceNo(), deviceNoHeader);
+        AuthServiceFacade.OtpSendResult result = authServiceFacade.sendWhatsAppCode(
+                request.mobileNo(),
+                request.deviceNo()
+        );
+        return new OtpSendResponse(result.otpToken(), result.expireIn(), result.resendAfter());
+    }
+
     public OtpVerifyResponse verifyOtp(OtpVerifyRequest request, String deviceNoHeader) {
         validateDeviceNoMatchesHeader(request.deviceNo(), deviceNoHeader);
         AuthServiceFacade.OtpVerifyResult result = authServiceFacade.verifyOtp(
@@ -57,6 +66,21 @@ public class AuthApplicationService {
                 request.otpCode(),
                 request.deviceNo()
         );
+        return toOtpSessionResponse(result);
+    }
+
+    public OtpVerifyResponse loginWithWhatsApp(OtpVerifyRequest request, String deviceNoHeader) {
+        validateDeviceNoMatchesHeader(request.deviceNo(), deviceNoHeader);
+        AuthServiceFacade.OtpVerifyResult result = authServiceFacade.loginWithWhatsApp(
+                request.mobileNo(),
+                request.otpToken(),
+                request.otpCode(),
+                request.deviceNo()
+        );
+        return toOtpSessionResponse(result);
+    }
+
+    private OtpVerifyResponse toOtpSessionResponse(AuthServiceFacade.OtpVerifyResult result) {
         UserProfileSummary profile = result.profile();
         TokenPair tokenPair = result.tokenPair();
         return new OtpVerifyResponse(
@@ -68,15 +92,16 @@ public class AuthApplicationService {
                 profile.newlyCreated() ? "REGISTER" : "LOGIN",
                 profile.newlyCreated(),
                 result.passwordSet(),
-                resolveUserStageForOtpVerify(profile.profileId(), profile.partnerUserId())
+                resolveUserStageForLogin(profile.profileId(), profile.partnerUserId())
         );
     }
 
     /**
-     * OTP verify must not fail when lender has no user yet (A000010 / L000010).
+     * Login session responses must not fail when lender has no user yet (A000010 / L000010),
+     * e.g. modules incomplete / not yet synced. Treat as ONBOARDING so the client can continue.
      * Other callers of onboarding progress still surface L000010 unchanged.
      */
-    private String resolveUserStageForOtpVerify(long profileId, String partnerUserId) {
+    private String resolveUserStageForLogin(long profileId, String partnerUserId) {
         try {
             return homeApplicationService.resolveUserStage(profileId, partnerUserId);
         } catch (ApiException exception) {
@@ -119,7 +144,7 @@ public class AuthApplicationService {
                 "LOGIN",
                 false,
                 passwordSet,
-                homeApplicationService.resolveUserStage(profile.profileId(), profile.partnerUserId())
+                resolveUserStageForLogin(profile.profileId(), profile.partnerUserId())
         );
     }
 

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.pk.app.auth.dto.request.MobileCheckRequest;
 import com.pk.app.auth.dto.request.OtpVerifyRequest;
+import com.pk.app.auth.dto.request.PasswordLoginRequest;
 import com.pk.app.home.application.HomeApplicationService;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -53,6 +54,48 @@ class AuthApplicationServiceTest {
         assertThat(response.userStage()).isEqualTo(HomeUserStage.ONBOARDING);
         assertThat(response.accessToken()).isEqualTo("access");
         assertThat(response.newUser()).isTrue();
+    }
+
+    @Test
+    void whatsappLoginReturnsOnboardingWhenLenderUserNotFound() {
+        AuthServiceFacade facade = mock(AuthServiceFacade.class);
+        HomeApplicationService homeApplicationService = mock(HomeApplicationService.class);
+        UserProfileSummary profile = new UserProfileSummary(10L, "U10001", "81234567890", true);
+        TokenPair tokenPair = new TokenPair("access", "refresh", 900, "Bearer");
+        when(facade.loginWithWhatsApp("81234567890", "otp-token", "123456", "device-1"))
+                .thenReturn(new AuthServiceFacade.OtpVerifyResult(profile, tokenPair, false));
+        when(homeApplicationService.resolveUserStage(10L, "U10001"))
+                .thenThrow(new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada"));
+
+        var response = new AuthApplicationService(facade, homeApplicationService).loginWithWhatsApp(
+                new OtpVerifyRequest("81234567890", "otp-token", "123456", "device-1"),
+                "device-1"
+        );
+
+        assertThat(response.userStage()).isEqualTo(HomeUserStage.ONBOARDING);
+        assertThat(response.authAction()).isEqualTo("REGISTER");
+    }
+
+    @Test
+    void passwordLoginReturnsOnboardingWhenLenderUserNotFound() {
+        AuthServiceFacade facade = mock(AuthServiceFacade.class);
+        HomeApplicationService homeApplicationService = mock(HomeApplicationService.class);
+        UserProfileSummary profile = new UserProfileSummary(10L, "U10001", "81234567890", false);
+        TokenPair tokenPair = new TokenPair("access", "refresh", 900, "Bearer");
+        when(facade.loginByPassword("81234567890", "abc123", "device-1"))
+                .thenReturn(new AuthServiceFacade.PasswordLoginResult(profile, tokenPair, true));
+        when(homeApplicationService.resolveUserStage(10L, "U10001"))
+                .thenThrow(new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada"));
+
+        var response = new AuthApplicationService(facade, homeApplicationService).loginByPassword(
+                new PasswordLoginRequest("81234567890", "abc123", "device-1"),
+                "device-1"
+        );
+
+        assertThat(response.userStage()).isEqualTo(HomeUserStage.ONBOARDING);
+        assertThat(response.accessToken()).isEqualTo("access");
+        assertThat(response.authAction()).isEqualTo("LOGIN");
+        assertThat(response.passwordSet()).isTrue();
     }
 
     @Test
