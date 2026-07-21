@@ -4,6 +4,7 @@ public record ProfileAfData(
         Long id,
         Long profileId,
         String mobileNo,
+        String deviceNo,
         String appsflyerId,
         String advertisingId,
         String androidId,

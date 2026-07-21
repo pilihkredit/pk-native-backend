@@ -8,11 +8,19 @@ import org.apache.ibatis.annotations.Param;
 public interface ProfileAfMapper {
     ProfileAfRow findByRequestId(@Param("requestId") String requestId);
 
+    ProfileAfRow findLatestByDeviceNo(@Param("deviceNo") String deviceNo);
+
     int insert(ProfileAfRow row);
 
     int updateLastLenderAudit(
             @Param("requestId") String requestId,
             @Param("requestDataJson") String requestDataJson,
             @Param("responseDataJson") String responseDataJson
+    );
+
+    int bindProfileIfNull(
+            @Param("id") long id,
+            @Param("profileId") long profileId,
+            @Param("mobileNo") String mobileNo
     );
 }

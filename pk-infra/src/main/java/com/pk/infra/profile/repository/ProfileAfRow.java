@@ -5,6 +5,7 @@ public class ProfileAfRow {
     public Long id;
     public Long profileId;
     public String mobileNo;
+    public String deviceNo;
     public String appsflyerId;
     public String advertisingId;
     public String androidId;

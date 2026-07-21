@@ -50,6 +50,19 @@ public class LenderSyncAuditRequestBuilder {
             LenderDeviceContext device,
             long profileId
     ) {
+        return buildProfileUpsertAudit(requestId, partnerUserId, mobileNo, module, payload, device, profileId, List.of());
+    }
+
+    public String buildProfileUpsertAudit(
+            String requestId,
+            String partnerUserId,
+            String mobileNo,
+            ProfileSyncModule module,
+            ProfileSyncPayload payload,
+            LenderDeviceContext device,
+            long profileId,
+            List<com.pk.core.profile.port.LenderProfileSyncPort.SyncCompanion> companions
+    ) {
         try {
             ObjectNode root = objectMapper.createObjectNode();
             root.put("requestId", requestId);
@@ -59,6 +72,11 @@ public class LenderSyncAuditRequestBuilder {
                 userInfo.put("mobileNo", mobileNo.trim());
             }
             applyModuleAudit(userInfo, module, payload, profileId);
+            if (companions != null) {
+                for (com.pk.core.profile.port.LenderProfileSyncPort.SyncCompanion companion : companions) {
+                    applyModuleAudit(userInfo, companion.module(), companion.payload(), profileId);
+                }
+            }
             userInfo.set("device", buildLenderDeviceNode(device));
             root.set("userInfo", userInfo);
             return objectMapper.writeValueAsString(root);

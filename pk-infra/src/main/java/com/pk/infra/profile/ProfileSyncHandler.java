@@ -71,7 +71,8 @@ public class ProfileSyncHandler {
                 mobileNo,
                 job.module(),
                 payload,
-                job.device()
+                job.device(),
+                job.companions()
         ));
         userProfileBindingRepository.recordLenderProfileSync(job.profileId(), result.externalUserId());
         if (result.responseDataJson() != null) {
@@ -82,7 +83,8 @@ public class ProfileSyncHandler {
                     job.module(),
                     payload,
                     job.device(),
-                    job.profileId()
+                    job.profileId(),
+                    job.companions()
             );
             persistLenderAudit(
                     job.profileId(),
@@ -92,6 +94,28 @@ public class ProfileSyncHandler {
                     auditRequestJson,
                     result.responseDataJson()
             );
+            for (LenderProfileSyncPort.SyncCompanion companion : job.companions()) {
+                String companionAuditId = companion.auditRequestId() == null || companion.auditRequestId().isBlank()
+                        ? job.requestId()
+                        : companion.auditRequestId();
+                persistLenderAudit(
+                        job.profileId(),
+                        companionAuditId,
+                        mobileNo,
+                        companion.module(),
+                        auditRequestJson,
+                        result.responseDataJson()
+                );
+                if (companion.module() == ProfileSyncModule.APPSFLYER_INSTALL
+                        && companion.auditRequestId() != null
+                        && !companion.auditRequestId().isBlank()) {
+                    profileAfRepository.findByRequestId(companion.auditRequestId()).ifPresent(af -> {
+                        if (af.id() != null && af.profileId() == null) {
+                            profileAfRepository.bindProfileIfNull(af.id(), job.profileId(), mobileNo);
+                        }
+                    });
+                }
+            }
         }
         return result;
     }

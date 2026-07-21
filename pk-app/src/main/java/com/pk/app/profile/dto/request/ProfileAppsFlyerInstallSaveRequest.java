@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * AppsFlyer install payload; syncs lender {@code userInfo.appsFlyerInstall}.
+ * AppsFlyer install payload; stored locally. Lender {@code appsFlyerInstall} is sent with identity upsert.
  */
 public record ProfileAppsFlyerInstallSaveRequest(
         @NotBlank @Size(max = 64) String requestId,

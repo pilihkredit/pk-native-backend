@@ -150,7 +150,7 @@ public class ProfileController {
         );
     }
 
-    /** Save AppsFlyer install data; public (no access token). Syncs to lender only when logged in. */
+    /** Save AppsFlyer install data locally (public). Lender sync attaches AF on identity upsert when logged in. */
     @PublicApi
     @PostMapping("/appsflyer-install")
     public ApiResponse<ProfileAppsFlyerInstallSaveResponse> saveAppsFlyerInstall(

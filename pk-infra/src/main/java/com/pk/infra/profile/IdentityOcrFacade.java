@@ -16,6 +16,8 @@ import com.pk.core.profile.ocr.OcrSessionState;
 import com.pk.core.profile.port.AdvanceAiOcrPort;
 import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.OcrSessionStore;
+import com.pk.core.profile.port.LenderProfileSyncPort;
+import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
@@ -42,6 +44,7 @@ public class IdentityOcrFacade {
     private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private final BiometricImageStore biometricImageStore;
     private final ProfileSyncOrchestrator profileSyncOrchestrator;
+    private final ProfileAfRepository profileAfRepository;
     private final UserDeviceWriter userDeviceWriter;
     private final ProfileVersionRepository profileVersionRepository;
     private final UserProfileBindingRepository userProfileBindingRepository;
@@ -57,6 +60,7 @@ public class IdentityOcrFacade {
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             BiometricImageStore biometricImageStore,
             ProfileSyncOrchestrator profileSyncOrchestrator,
+            ProfileAfRepository profileAfRepository,
             UserDeviceWriter userDeviceWriter,
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
@@ -71,6 +75,7 @@ public class IdentityOcrFacade {
         this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
         this.biometricImageStore = biometricImageStore;
         this.profileSyncOrchestrator = profileSyncOrchestrator;
+        this.profileAfRepository = profileAfRepository;
         this.userDeviceWriter = userDeviceWriter;
         this.profileVersionRepository = profileVersionRepository;
         this.userProfileBindingRepository = userProfileBindingRepository;
@@ -398,7 +403,8 @@ public class IdentityOcrFacade {
                 command.requestId(),
                 ProfileSyncModule.IDENTITY,
                 command.device(),
-                payload
+                payload,
+                appsFlyerCompanions(command.device())
         ));
         refreshKycStatus(profileId, partnerUserId);
 
@@ -450,7 +456,8 @@ public class IdentityOcrFacade {
                     resolvedCommand.requestId().trim(),
                     ProfileSyncModule.IDENTITY,
                     resolvedCommand.device(),
-                    payload
+                    payload,
+                    appsFlyerCompanions(resolvedCommand.device())
             ));
             lenderResponse = parseLenderResponse(syncResult.responseDataJson());
         } catch (ApiException exception) {
@@ -791,6 +798,19 @@ public class IdentityOcrFacade {
 
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private List<LenderProfileSyncPort.SyncCompanion> appsFlyerCompanions(LenderDeviceContext device) {
+        if (device == null || device.deviceNo() == null || device.deviceNo().isBlank()) {
+            return List.of();
+        }
+        return profileAfRepository.findLatestByDeviceNo(device.deviceNo().trim())
+                .map(af -> List.of(new LenderProfileSyncPort.SyncCompanion(
+                        ProfileSyncModule.APPSFLYER_INSTALL,
+                        AppsFlyerPayloadMapper.toPayload(af),
+                        af.requestId()
+                )))
+                .orElseGet(List::of);
     }
 
     public record LicenseTokenResult(String licenseToken, long effectiveSeconds) {

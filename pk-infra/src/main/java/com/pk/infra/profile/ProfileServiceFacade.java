@@ -311,10 +311,12 @@ public class ProfileServiceFacade {
             );
         }
 
+        String deviceNo = command.device().deviceNo().trim();
         profileAfRepository.insert(new ProfileAfData(
                 null,
                 profileId,
                 normalizedMobileNo,
+                deviceNo,
                 command.appsflyerId().trim(),
                 trimToNull(command.advertisingId()),
                 trimToNull(command.androidId()),
@@ -361,28 +363,11 @@ public class ProfileServiceFacade {
                 null
         ));
 
-        if (!loggedIn) {
-            return new AppsFlyerSaveResult(command.requestId().trim(), MODULE_COMPLETED, null);
+        // Store-only: lender appsFlyerInstall is attached on identity upsert.
+        if (loggedIn) {
+            persistDevice(profileId, partnerUserId, command.requestId(), command.device());
         }
-
-        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
-
-        com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult syncResult =
-                profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
-                        profileId,
-                        partnerUserId,
-                        normalizedMobileNo,
-                        command.requestId().trim(),
-                        ProfileSyncModule.APPSFLYER_INSTALL,
-                        command.device(),
-                        toAppsFlyerPayload(command)
-                ));
-
-        return new AppsFlyerSaveResult(
-                command.requestId().trim(),
-                MODULE_COMPLETED,
-                syncResult.responseDataJson()
-        );
+        return new AppsFlyerSaveResult(command.requestId().trim(), MODULE_COMPLETED, null);
     }
 
     public TongdunSaveResult saveTongdunDevice(
@@ -470,51 +455,6 @@ public class ProfileServiceFacade {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "tongdunKey is required");
         }
         ProfileSyncPayloadLoader.validateDevice(command.device());
-    }
-
-    private static ProfileSyncPayload.AppsFlyerInstallPayload toAppsFlyerPayload(AppsFlyerSaveCommand command) {
-        return new ProfileSyncPayload.AppsFlyerInstallPayload(
-                command.appsflyerId().trim(),
-                trimToNull(command.advertisingId()),
-                trimToNull(command.androidId()),
-                trimToNull(command.attributedTouchTime()),
-                trimToNull(command.gpClickTime()),
-                trimToNull(command.installTime()),
-                trimToNull(command.mediaSource()),
-                trimToNull(command.afPrt()),
-                trimToNull(command.afAdsetId()),
-                trimToNull(command.afAdset()),
-                trimToNull(command.afSiteid()),
-                trimToNull(command.afCId()),
-                trimToNull(command.campaign()),
-                trimToNull(command.appVersion()),
-                trimToNull(command.appId()),
-                trimToNull(command.deviceType()),
-                trimToNull(command.osVersion()),
-                trimToNull(command.countryCode()),
-                trimToNull(command.city()),
-                trimToNull(command.postalCode()),
-                trimToNull(command.ip()),
-                trimToNull(command.operator()),
-                trimToNull(command.deviceCategory()),
-                trimToNull(command.platform()),
-                trimToNull(command.deviceModel()),
-                trimToNull(command.idfv()),
-                trimToNull(command.idfa()),
-                trimToNull(command.afAd()),
-                trimToNull(command.afChannel()),
-                trimToNull(command.attributedTouchType()),
-                trimToNull(command.afAdId()),
-                trimToNull(command.afAdType()),
-                trimToNull(command.contributor1TouchType()),
-                trimToNull(command.contributor1TouchTime()),
-                trimToNull(command.contributor1AfPrt()),
-                trimToNull(command.contributor1MatchType()),
-                trimToNull(command.contributor1EngagementType()),
-                trimToNull(command.bundleId()),
-                trimToNull(command.matchType()),
-                trimToNull(command.gpInstallBegin())
-        );
     }
 
     private static String trimToNull(String value) {

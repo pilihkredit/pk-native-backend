@@ -122,10 +122,18 @@ class ProfileServiceFacadeAfTongdunTest {
     void saveAppsFlyerIdempotentByRequestId() {
         when(profileAfRepository.findByRequestId("req-1")).thenReturn(Optional.of(
                 new ProfileAfData(
-                        9L, 1L, "81234567890", "AF1", null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, null, null, null,
-                        "COMPLETED", "req-1", null, "{\"cached\":true}"
+                        9L,
+                        1L,
+                        "81234567890",
+                        "device-1",
+                        "AF1",
+                        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null,
+                        "COMPLETED",
+                        "req-1",
+                        null,
+                        "{\"cached\":true}"
                 )
         ));
 
@@ -137,16 +145,17 @@ class ProfileServiceFacadeAfTongdunTest {
     }
 
     @Test
-    void saveAppsFlyerHappyPathSchedulesAppsFlyerModule() {
+    void saveAppsFlyerHappyPathStoresOnlyWithoutLenderSync() {
         var result = facade.saveAppsFlyerInstall(1L, "U1", "81234567890", afCommand("req-2", "AF2"));
 
         assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
-        verify(profileAfRepository).insert(any());
+        assertThat(result.lenderResponseJson()).isNull();
+        ArgumentCaptor<ProfileAfData> insertCaptor = ArgumentCaptor.forClass(ProfileAfData.class);
+        verify(profileAfRepository).insert(insertCaptor.capture());
+        assertThat(insertCaptor.getValue().deviceNo()).isEqualTo("device-1");
+        assertThat(insertCaptor.getValue().appsflyerId()).isEqualTo("AF2");
         verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
-        ArgumentCaptor<ProfileSyncJob> captor = ArgumentCaptor.forClass(ProfileSyncJob.class);
-        verify(profileSyncOrchestrator).scheduleAfterSave(captor.capture());
-        assertThat(captor.getValue().module()).isEqualTo(ProfileSyncModule.APPSFLYER_INSTALL);
-        assertThat(captor.getValue().payloadSnapshot()).isNotNull();
+        verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
     }
 
     @Test
@@ -155,7 +164,9 @@ class ProfileServiceFacadeAfTongdunTest {
 
         assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
         assertThat(result.lenderResponseJson()).isNull();
-        verify(profileAfRepository).insert(any());
+        ArgumentCaptor<ProfileAfData> insertCaptor = ArgumentCaptor.forClass(ProfileAfData.class);
+        verify(profileAfRepository).insert(insertCaptor.capture());
+        assertThat(insertCaptor.getValue().deviceNo()).isEqualTo("device-1");
         verify(userDeviceWriter, never()).upsertFromRequest(anyLong(), any(), any(), any());
         verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
     }

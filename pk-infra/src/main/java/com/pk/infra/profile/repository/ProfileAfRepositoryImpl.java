@@ -20,6 +20,14 @@ public class ProfileAfRepositoryImpl implements ProfileAfRepository {
     }
 
     @Override
+    public Optional<ProfileAfData> findLatestByDeviceNo(String deviceNo) {
+        if (deviceNo == null || deviceNo.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(profileAfMapper.findLatestByDeviceNo(deviceNo.trim())).map(this::toData);
+    }
+
+    @Override
     public long insert(ProfileAfData data) {
         ProfileAfRow row = toRow(data);
         profileAfMapper.insert(row);
@@ -31,11 +39,17 @@ public class ProfileAfRepositoryImpl implements ProfileAfRepository {
         profileAfMapper.updateLastLenderAudit(requestId, requestDataJson, responseDataJson);
     }
 
+    @Override
+    public void bindProfileIfNull(long id, long profileId, String mobileNo) {
+        profileAfMapper.bindProfileIfNull(id, profileId, mobileNo);
+    }
+
     private ProfileAfData toData(ProfileAfRow row) {
         return new ProfileAfData(
                 row.id,
                 row.profileId,
                 row.mobileNo,
+                row.deviceNo,
                 row.appsflyerId,
                 row.advertisingId,
                 row.androidId,
@@ -87,6 +101,7 @@ public class ProfileAfRepositoryImpl implements ProfileAfRepository {
         ProfileAfRow row = new ProfileAfRow();
         row.profileId = data.profileId();
         row.mobileNo = data.mobileNo();
+        row.deviceNo = data.deviceNo();
         row.appsflyerId = data.appsflyerId();
         row.advertisingId = data.advertisingId();
         row.androidId = data.androidId();

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS user_profile_af (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier; null when submitted before login',
     mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number; null when submitted before login',
+    device_no VARCHAR(64) NULL COMMENT 'Client device number from X-Device-No',
     appsflyer_id VARCHAR(64) NOT NULL COMMENT 'AppsFlyer ID',
     advertising_id VARCHAR(128) NULL COMMENT 'Advertising ID',
     android_id VARCHAR(128) NULL COMMENT 'Android ID',
@@ -62,6 +63,7 @@ CREATE TABLE IF NOT EXISTS user_profile_af (
     PRIMARY KEY (id, created_at),
     KEY idx_user_profile_af_request (request_id, created_at),
     KEY idx_user_profile_af_profile (profile_id, created_at),
+    KEY idx_user_profile_af_device (device_no, created_at),
     KEY idx_user_profile_af_appsflyer (appsflyer_id, created_at),
     KEY idx_user_profile_af_advertising (advertising_id, created_at),
     KEY idx_user_profile_af_ad_id (af_ad_id, created_at)
