@@ -1,70 +1,70 @@
 package com.pk.infra.profile;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.onboarding.OnboardingModuleCode;
-import com.pk.core.profile.EncryptedField;
-import com.pk.core.profile.ProfileBankCardData;
-import com.pk.core.profile.ProfileContactsModuleData;
-import com.pk.core.profile.ProfileIdentityData;
-import com.pk.core.profile.ProfilePersonalData;
-import com.pk.core.profile.port.ProfileBankCardRepository;
-import com.pk.core.profile.port.ProfileContactRepository;
-import com.pk.core.profile.port.ProfileDeviceRepository;
-import com.pk.core.profile.port.ProfileIdentityRepository;
-import com.pk.core.profile.port.ProfilePersonalRepository;
-import java.util.Optional;
+import com.pk.core.profile.port.LenderProfileQueryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class OnboardingProgressFacadeTest {
-    private ProfilePersonalRepository profilePersonalRepository;
-    private ProfileBankCardRepository profileBankCardRepository;
-    private ProfileContactRepository profileContactRepository;
-    private ProfileDeviceRepository profileDeviceRepository;
-    private ProfileIdentityRepository profileIdentityRepository;
+    private LenderProfileQueryPort lenderProfileQueryPort;
     private OnboardingProgressFacade facade;
 
     @BeforeEach
     void setUp() {
-        profilePersonalRepository = mock(ProfilePersonalRepository.class);
-        profileBankCardRepository = mock(ProfileBankCardRepository.class);
-        profileContactRepository = mock(ProfileContactRepository.class);
-        profileDeviceRepository = mock(ProfileDeviceRepository.class);
-        profileIdentityRepository = mock(ProfileIdentityRepository.class);
-        facade = new OnboardingProgressFacade(
-                profilePersonalRepository,
-                profileBankCardRepository,
-                profileContactRepository,
-                profileDeviceRepository,
-                profileIdentityRepository
-        );
+        lenderProfileQueryPort = mock(LenderProfileQueryPort.class);
+        facade = new OnboardingProgressFacade(lenderProfileQueryPort, new ObjectMapper());
     }
 
     @Test
-    void returnsIncompleteWhenRequiredModulesMissing() {
-        when(profilePersonalRepository.findByProfileId(1L)).thenReturn(Optional.empty());
-        when(profileBankCardRepository.findByProfileId(1L)).thenReturn(Optional.empty());
-        when(profileContactRepository.findModuleByProfileId(1L)).thenReturn(Optional.empty());
-        when(profileDeviceRepository.existsByProfileId(1L)).thenReturn(false);
+    void returnsIncompleteWhenLenderModulesMissing() {
+        when(lenderProfileQueryPort.query(any())).thenReturn(
+                new LenderProfileQueryPort.LenderProfileQueryResult("""
+                        {
+                          "partnerUserId": "U10001",
+                          "userId": "USR-1",
+                          "mobileNo": { "mobileNo": "081234567890" },
+                          "profile": null,
+                          "contact": null,
+                          "identity": null,
+                          "bankCard": null,
+                          "device": null
+                        }
+                        """)
+        );
 
         var result = facade.getProgress(1L, "U10001");
 
         assertThat(result.kycStatus()).isEqualTo(OnboardingProgressFacade.KYC_INCOMPLETE);
-        assertThat(result.missingModules()).contains(
+        assertThat(result.missingModules()).containsExactly(
                 OnboardingModuleCode.PERSONAL,
                 OnboardingModuleCode.BANK_CARD,
                 OnboardingModuleCode.CONTACT,
                 OnboardingModuleCode.DEVICE,
                 OnboardingModuleCode.IDENTITY
         );
+        assertThat(result.completedModules()).isEmpty();
     }
 
     @Test
-    void returnsIncompleteWhenIdentityMissing() {
-        stubCompletedModulesExceptIdentity();
+    void returnsIncompleteWhenIdentityMissingOnLender() {
+        when(lenderProfileQueryPort.query(any())).thenReturn(
+                new LenderProfileQueryPort.LenderProfileQueryResult("""
+                        {
+                          "partnerUserId": "U10001",
+                          "profile": { "educationDegree": 1, "industry": 16, "income": "5000000" },
+                          "contact": { "userContacts": [{ "mobileNo": "81234567891" }] },
+                          "bankCard": { "bankCode": "BCA", "cardNumber": "****1234" },
+                          "device": { "deviceNo": "device-1" },
+                          "identity": null
+                        }
+                        """)
+        );
 
         var result = facade.getProgress(1L, "U10001");
 
@@ -79,31 +79,50 @@ class OnboardingProgressFacadeTest {
     }
 
     @Test
-    void returnsSyncedWhenAllRequiredModulesComplete() {
-        stubCompletedModulesExceptIdentity();
-        EncryptedField encryptedField = new EncryptedField("cipher", new byte[12], new byte[16]);
-        when(profileIdentityRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileIdentityData(1L, "81234567890", "JOHN DOE", encryptedField, "hash", "COMPLETED", "req-1", null, null)
-        ));
+    void returnsSyncedWhenAllLenderModulesPresent() {
+        when(lenderProfileQueryPort.query(any())).thenReturn(
+                new LenderProfileQueryPort.LenderProfileQueryResult("""
+                        {
+                          "partnerUserId": "U10001",
+                          "profile": { "educationDegree": 1 },
+                          "contact": { "userContacts": [] },
+                          "bankCard": { "bankCode": "BCA" },
+                          "device": { "deviceNo": "device-1" },
+                          "identity": { "name": "JOHN DOE", "idNo": "3201010101010001" }
+                        }
+                        """)
+        );
 
         var result = facade.getProgress(1L, "U10001");
 
         assertThat(result.kycStatus()).isEqualTo(OnboardingProgressFacade.KYC_SYNCED);
         assertThat(result.missingModules()).isEmpty();
+        assertThat(result.completedModules()).containsExactlyInAnyOrder(
+                OnboardingModuleCode.PERSONAL,
+                OnboardingModuleCode.BANK_CARD,
+                OnboardingModuleCode.CONTACT,
+                OnboardingModuleCode.DEVICE,
+                OnboardingModuleCode.IDENTITY
+        );
     }
 
-    private void stubCompletedModulesExceptIdentity() {
-        EncryptedField encryptedField = new EncryptedField("cipher", new byte[12], new byte[16]);
-        when(profilePersonalRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfilePersonalData(1L, "81234567890", 1, 16, "5000000", encryptedField, null, "COMPLETED", "req-1", null, null)
-        ));
-        when(profileBankCardRepository.findByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileBankCardData(1L, "81234567890", "BCA", encryptedField, "hash", "VERIFIED", null, "COMPLETED", "req-1", null, null)
-        ));
-        when(profileContactRepository.findModuleByProfileId(1L)).thenReturn(Optional.of(
-                new ProfileContactsModuleData(1L, "81234567890", "COMPLETED", "req-1", null, null)
-        ));
-        when(profileDeviceRepository.existsByProfileId(1L)).thenReturn(true);
-        when(profileIdentityRepository.findByProfileId(1L)).thenReturn(Optional.empty());
+    @Test
+    void treatsEmptyObjectAsMissing() {
+        when(lenderProfileQueryPort.query(any())).thenReturn(
+                new LenderProfileQueryPort.LenderProfileQueryResult("""
+                        {
+                          "profile": {},
+                          "contact": { "userContacts": [{ "mobileNo": "81234567891" }] },
+                          "bankCard": { "bankCode": "BCA" },
+                          "device": { "deviceNo": "device-1" },
+                          "identity": { "name": "JOHN DOE" }
+                        }
+                        """)
+        );
+
+        var result = facade.getProgress(1L, "U10001");
+
+        assertThat(result.kycStatus()).isEqualTo(OnboardingProgressFacade.KYC_INCOMPLETE);
+        assertThat(result.missingModules()).containsExactly(OnboardingModuleCode.PERSONAL);
     }
 }

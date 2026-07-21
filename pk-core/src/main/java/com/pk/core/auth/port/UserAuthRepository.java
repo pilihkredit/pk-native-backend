@@ -31,15 +31,9 @@ public interface UserAuthRepository {
 
     void savePassword(long profileId, EncryptedField password);
 
-    void recordPasswordFailedAttempt(long profileId, int failedAttempts, Instant lockedUntil);
-
-    void resetPasswordFailedAttempts(long profileId);
-
     record PasswordCredential(
             long profileId,
-            EncryptedField password,
-            int failedAttempts,
-            Instant lockedUntil
+            EncryptedField password
     ) {
     }
 }

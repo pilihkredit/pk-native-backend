@@ -44,7 +44,6 @@ final class ValidationFailureLogger {
                  PASSWORD_ALREADY_SET,
                  PASSWORD_NOT_SET,
                  INVALID_MOBILE_OR_PASSWORD,
-                 PASSWORD_ACCOUNT_LOCKED,
                  DUPLICATE_SUBMISSION_IN_PROGRESS -> false;
             default -> {
                 ApiCodeLayer layer = exception.apiCode().layer();

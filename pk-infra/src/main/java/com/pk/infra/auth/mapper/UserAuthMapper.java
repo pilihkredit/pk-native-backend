@@ -44,12 +44,4 @@ public interface UserAuthMapper {
             @Param("passwordNonce") byte[] passwordNonce,
             @Param("passwordTag") byte[] passwordTag
     );
-
-    int recordPasswordFailedAttempt(
-            @Param("profileId") long profileId,
-            @Param("failedAttempts") int failedAttempts,
-            @Param("lockedUntil") Instant lockedUntil
-    );
-
-    int resetPasswordFailedAttempts(@Param("profileId") long profileId);
 }

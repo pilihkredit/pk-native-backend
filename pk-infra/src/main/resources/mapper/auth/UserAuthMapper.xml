@@ -19,9 +19,6 @@
             <arg column="password_ciphertext" javaType="string"/>
             <arg column="password_nonce" javaType="_byte[]"/>
             <arg column="password_tag" javaType="_byte[]"/>
-            <arg column="password_failed_attempts" javaType="_int"/>
-            <arg column="password_locked_until" javaType="java.time.Instant"
-                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
         </constructor>
     </resultMap>
 
@@ -99,9 +96,7 @@
         SELECT id,
                password_ciphertext,
                password_nonce,
-               password_tag,
-               password_failed_attempts,
-               password_locked_until
+               password_tag
         FROM user_profile
         WHERE id = #{profileId}
           AND deleted_at IS NULL
@@ -114,25 +109,7 @@
         SET password_ciphertext = #{passwordCiphertext},
             password_nonce = #{passwordNonce},
             password_tag = #{passwordTag},
-            password_set_at = NOW(3),
-            password_failed_attempts = 0,
-            password_locked_until = NULL
-        WHERE id = #{profileId}
-          AND deleted_at IS NULL
-    </update>
-
-    <update id="recordPasswordFailedAttempt">
-        UPDATE user_profile
-        SET password_failed_attempts = #{failedAttempts},
-            password_locked_until = #{lockedUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
-        WHERE id = #{profileId}
-          AND deleted_at IS NULL
-    </update>
-
-    <update id="resetPasswordFailedAttempts">
-        UPDATE user_profile
-        SET password_failed_attempts = 0,
-            password_locked_until = NULL
+            password_set_at = NOW(3)
         WHERE id = #{profileId}
           AND deleted_at IS NULL
     </update>

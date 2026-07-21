@@ -9,8 +9,6 @@ public class AuthProperties {
     private Duration refreshTokenTtl = Duration.ofDays(30);
     private Duration otpTtl = Duration.ofMinutes(5);
     private String jwtSecret = "local-dev-secret-change-in-prod-min-32-chars";
-    private int passwordMaxFailedAttempts = 5;
-    private Duration passwordLockDuration = Duration.ofMinutes(15);
     private boolean otpBypassEnabled = false;
     private String otpBypassCode = "123456";
 
@@ -44,22 +42,6 @@ public class AuthProperties {
 
     public void setJwtSecret(String jwtSecret) {
         this.jwtSecret = jwtSecret;
-    }
-
-    public int passwordMaxFailedAttempts() {
-        return passwordMaxFailedAttempts;
-    }
-
-    public void setPasswordMaxFailedAttempts(int passwordMaxFailedAttempts) {
-        this.passwordMaxFailedAttempts = passwordMaxFailedAttempts;
-    }
-
-    public Duration passwordLockDuration() {
-        return passwordLockDuration;
-    }
-
-    public void setPasswordLockDuration(Duration passwordLockDuration) {
-        this.passwordLockDuration = passwordLockDuration;
     }
 
     public boolean otpBypassEnabled() {

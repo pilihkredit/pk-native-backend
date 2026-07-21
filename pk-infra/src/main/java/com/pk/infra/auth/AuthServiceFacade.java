@@ -171,26 +171,10 @@ public class AuthServiceFacade {
                 .findPasswordCredential(profile.profileId())
                 .orElseThrow(() -> new ApiException(ApiCode.PASSWORD_NOT_SET));
 
-        Instant now = Instant.now();
-        if (credential.lockedUntil() != null && credential.lockedUntil().isAfter(now)) {
-            throw new ApiException(ApiCode.PASSWORD_ACCOUNT_LOCKED);
-        }
-
         if (!passwordMatches(password, credential.password())) {
-            int nextAttempts = credential.failedAttempts() + 1;
-            if (nextAttempts >= authProperties.passwordMaxFailedAttempts()) {
-                userAuthRepository.recordPasswordFailedAttempt(
-                        profile.profileId(),
-                        0,
-                        now.plus(authProperties.passwordLockDuration())
-                );
-            } else {
-                userAuthRepository.recordPasswordFailedAttempt(profile.profileId(), nextAttempts, null);
-            }
             throw new ApiException(ApiCode.INVALID_MOBILE_OR_PASSWORD);
         }
 
-        userAuthRepository.resetPasswordFailedAttempts(profile.profileId());
         TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_PASSWORD);
         return new PasswordLoginResult(profile, tokenPair, true);
     }

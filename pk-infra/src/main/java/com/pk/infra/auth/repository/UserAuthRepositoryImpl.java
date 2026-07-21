@@ -86,22 +86,10 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
         );
     }
 
-    @Override
-    public void recordPasswordFailedAttempt(long profileId, int failedAttempts, Instant lockedUntil) {
-        userAuthMapper.recordPasswordFailedAttempt(profileId, failedAttempts, lockedUntil);
-    }
-
-    @Override
-    public void resetPasswordFailedAttempts(long profileId) {
-        userAuthMapper.resetPasswordFailedAttempts(profileId);
-    }
-
     private PasswordCredential toCredential(PasswordCredentialRow row) {
         return new PasswordCredential(
                 row.profileId(),
-                new EncryptedField(row.passwordCiphertext(), row.passwordNonce(), row.passwordTag()),
-                row.failedAttempts(),
-                row.lockedUntil()
+                new EncryptedField(row.passwordCiphertext(), row.passwordNonce(), row.passwordTag())
         );
     }
 }

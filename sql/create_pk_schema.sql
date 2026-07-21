@@ -94,8 +94,6 @@ CREATE TABLE user_profile (
     password_nonce VARBINARY(12) NULL COMMENT 'AES-GCM nonce for login password',
     password_tag VARBINARY(16) NULL COMMENT 'AES-GCM authentication tag for login password',
     password_set_at DATETIME(3) NULL COMMENT 'Password set time',
-    password_failed_attempts INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Consecutive failed password login attempts',
-    password_locked_until DATETIME(3) NULL COMMENT 'Password login lock expiry time',
     version INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Optimistic lock version',
     deleted_at DATETIME(3) NULL COMMENT 'Soft deletion time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',

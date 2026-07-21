@@ -118,19 +118,10 @@ public class ProfileInfraConfiguration {
 
     @Bean
     OnboardingProgressFacade onboardingProgressFacade(
-            com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
-            com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
-            com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
-            com.pk.core.profile.port.ProfileDeviceRepository profileDeviceRepository,
-            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository
+            LenderProfileQueryPort lenderProfileQueryPort,
+            ObjectMapper objectMapper
     ) {
-        return new OnboardingProgressFacade(
-                profilePersonalRepository,
-                profileBankCardRepository,
-                profileContactRepository,
-                profileDeviceRepository,
-                profileIdentityRepository
-        );
+        return new OnboardingProgressFacade(lenderProfileQueryPort, objectMapper);
     }
 
     @Bean
