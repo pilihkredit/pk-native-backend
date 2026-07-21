@@ -33,6 +33,7 @@ import java.util.List;
 
 public class IdentityOcrFacade {
     public static final String MODULE_COMPLETED = "COMPLETED";
+    public static final String MODULE_DRAFT = "DRAFT";
     public static final String OCR_CHANNEL = "advanceAi";
 
     private final AdvanceAiOcrPort advanceAiOcrPort;
@@ -111,6 +112,65 @@ public class IdentityOcrFacade {
         } finally {
             OcrCallContextHolder.clear();
         }
+    }
+
+    /**
+     * Persist manual legal name + EKTP locally ({@code DRAFT}). Does not sync to lender.
+     */
+    public BasicSaveResult saveBasic(
+            long profileId,
+            String mobileNo,
+            BasicSaveCommand command
+    ) {
+        String normalizedMobileNo = normalizeMobile(mobileNo);
+        if (isBlank(command.requestId())) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "requestId is required");
+        }
+        if (isBlank(command.name())) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "name is required");
+        }
+        if (isBlank(command.idNo())) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "idNo is required");
+        }
+        String name = command.name().trim();
+        String idNo = command.idNo().trim();
+        if (!EktpValidator.isValid(idNo)) {
+            throw new ApiException(ApiCode.INVALID_EKTP_FORMAT);
+        }
+
+        var existing = profileIdentityRepository.findByProfileId(profileId);
+        if (existing.isPresent()) {
+            ProfileIdentityData identity = existing.get();
+            if (command.requestId().trim().equals(identity.lastRequestId())
+                    && MODULE_DRAFT.equals(identity.moduleStatus())) {
+                return new BasicSaveResult(command.requestId().trim(), MODULE_DRAFT);
+            }
+            if (MODULE_COMPLETED.equals(identity.moduleStatus())) {
+                throw new ApiException(ApiCode.DUPLICATE_SUBMISSION_IN_PROGRESS);
+            }
+        }
+
+        EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(idNo);
+        profileIdentityRepository.upsert(new ProfileIdentityData(
+                profileId,
+                normalizedMobileNo,
+                name,
+                encryptedIdNo,
+                EktpValidator.hash(idNo),
+                MODULE_DRAFT,
+                command.requestId().trim(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        ));
+        return new BasicSaveResult(command.requestId().trim(), MODULE_DRAFT);
     }
 
     public OcrCheckResult ocrCheck(
@@ -217,14 +277,26 @@ public class IdentityOcrFacade {
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
         var existing = profileIdentityRepository.findByProfileId(profileId);
-        if (existing.isPresent()) {
-            ProfileIdentityData identity = existing.get();
-            if (command.requestId().equals(identity.lastRequestId())) {
-                return buildIdempotentResult(command.requestId(), identity);
-            }
-            if (MODULE_COMPLETED.equals(identity.moduleStatus())) {
-                throw new ApiException(ApiCode.DUPLICATE_SUBMISSION_IN_PROGRESS);
-            }
+        if (existing.isEmpty()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "identity basic info required");
+        }
+        ProfileIdentityData storedIdentity = existing.get();
+        if (isBlank(storedIdentity.fullName()) || storedIdentity.idNo() == null) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "identity basic info required");
+        }
+        if (command.requestId().equals(storedIdentity.lastRequestId())
+                && MODULE_COMPLETED.equals(storedIdentity.moduleStatus())) {
+            return buildIdempotentResult(command.requestId(), storedIdentity);
+        }
+        if (MODULE_COMPLETED.equals(storedIdentity.moduleStatus())) {
+            throw new ApiException(ApiCode.DUPLICATE_SUBMISSION_IN_PROGRESS);
+        }
+
+        String manualName = storedIdentity.fullName().trim();
+        // Decrypt stored ciphertext so lender identity.idNo receives plaintext EKTP.
+        String manualIdNo = sensitiveFieldEncryptor.decrypt(storedIdentity.idNo()).trim();
+        if (isBlank(manualName) || !EktpValidator.isValid(manualIdNo)) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "identity basic info required");
         }
 
         OcrSessionState session = ocrSessionStore.find(profileId)
@@ -279,9 +351,15 @@ public class IdentityOcrFacade {
         );
         String faceBase64 = OcrImageSupport.encodeBase64(faceImage);
         String idCardBase64 = OcrImageSupport.encodeBase64(idCardImage);
-        ProfileSyncPayload.IdentityProfilePayload payload = buildIdentityPayload(parsed, session, faceBase64, idCardBase64);
+        ProfileSyncPayload.IdentityProfilePayload payload = buildIdentityPayload(
+                manualName,
+                manualIdNo,
+                parsed,
+                session,
+                faceBase64,
+                idCardBase64
+        );
 
-        EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(parsed.ocrIdNo().trim());
         long profileVersionId = profileVersionRepository.createSnapshot(
                 profileId,
                 normalizedMobileNo,
@@ -295,9 +373,9 @@ public class IdentityOcrFacade {
         profileIdentityRepository.upsert(new ProfileIdentityData(
                 profileId,
                 normalizedMobileNo,
-                parsed.ocrName().trim(),
-                encryptedIdNo,
-                EktpValidator.hash(parsed.ocrIdNo()),
+                manualName,
+                storedIdentity.idNo(),
+                storedIdentity.idNoHash(),
                 MODULE_COMPLETED,
                 command.requestId().trim(),
                 null,
@@ -617,15 +695,17 @@ public class IdentityOcrFacade {
     }
 
     private ProfileSyncPayload.IdentityProfilePayload buildIdentityPayload(
+            String name,
+            String idNo,
             OcrSessionState.OcrParsedFields parsed,
             OcrSessionState session,
             String faceBase64,
             String idCardBase64
     ) {
-        // §17 session stores Advance.ai full OCR response; normalize before lender upsert.
+        // Top-level name/idNo come from manual basic save; ocrResult keeps OCR originals.
         return new ProfileSyncPayload.IdentityProfilePayload(
-                parsed.ocrName().trim(),
-                parsed.ocrIdNo().trim(),
+                name,
+                idNo,
                 faceBase64,
                 idCardBase64,
                 lenderRawOcrDetail(session.ocrRawJson()),
@@ -736,6 +816,16 @@ public class IdentityOcrFacade {
     }
 
     public record LivenessCheckResult(int livenessScore, boolean passed, int threshold) {
+    }
+
+    public record BasicSaveCommand(
+            String requestId,
+            String name,
+            String idNo
+    ) {
+    }
+
+    public record BasicSaveResult(String requestId, String moduleStatus) {
     }
 
     public record FaceRecognitionCommand(

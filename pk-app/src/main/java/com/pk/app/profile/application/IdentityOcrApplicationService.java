@@ -2,10 +2,12 @@ package com.pk.app.profile.application;
 
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.common.web.RequestTrace;
+import com.pk.app.profile.dto.request.IdentityBasicSaveRequest;
 import com.pk.app.profile.dto.request.IdentityOcrCheckRequest;
 import com.pk.app.profile.dto.request.IdentityOcrFaceRecognitionRequest;
 import com.pk.app.profile.dto.request.IdentityOcrLicenseTokenRequest;
 import com.pk.app.profile.dto.request.IdentityOcrLivenessCheckRequest;
+import com.pk.app.profile.dto.response.IdentityBasicSaveResponse;
 import com.pk.app.profile.dto.response.IdentityOcrCheckResponse;
 import com.pk.app.profile.dto.response.IdentityOcrFaceRecognitionResponse;
 import com.pk.app.profile.dto.response.IdentityOcrLicenseTokenResponse;
@@ -50,6 +52,25 @@ public class IdentityOcrApplicationService {
                 traceId
         );
         return new IdentityOcrLicenseTokenResponse(result.licenseToken(), result.effectiveSeconds());
+    }
+
+    public IdentityBasicSaveResponse saveBasic(
+            AuthenticatedPrincipal principal,
+            IdentityBasicSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        requirePrincipal(principal);
+        RequestTrace.resolveClientRequestId(httpRequest, request.requestId());
+        IdentityOcrFacade.BasicSaveResult result = identityOcrFacade.saveBasic(
+                principal.profileId(),
+                principal.mobileNo(),
+                new IdentityOcrFacade.BasicSaveCommand(
+                        request.requestId(),
+                        request.name(),
+                        request.idNo()
+                )
+        );
+        return new IdentityBasicSaveResponse(result.requestId(), result.moduleStatus());
     }
 
     public IdentityOcrCheckResponse ocrCheck(
