@@ -16,7 +16,8 @@ public interface UserAgreementRecordRepository {
             Long profileId,
             String agreementType,
             Boolean agreed,
-            Instant agreedAt
+            Instant agreedAt,
+            Long clickedAtMs
     ) {
     }
 }

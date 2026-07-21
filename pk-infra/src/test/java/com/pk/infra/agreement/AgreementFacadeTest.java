@@ -29,7 +29,8 @@ class AgreementFacadeTest {
 
     @Test
     void createsAppendOnlyRecordsWithClientClickedAt() {
-        Instant clickedAt = Instant.parse("2026-07-20T03:00:00Z");
+        long clickedAtMs = Instant.parse("2026-07-20T03:00:00Z").toEpochMilli();
+        Instant agreedAt = Instant.ofEpochMilli(clickedAtMs);
         when(repository.insert(any())).thenAnswer(invocation -> {
             UserAgreementRecordRepository.UserAgreementRecordInsert insert = invocation.getArgument(0);
             return new UserAgreementRecordData(
@@ -40,7 +41,8 @@ class AgreementFacadeTest {
                     insert.profileId(),
                     insert.agreementType(),
                     insert.agreed(),
-                    insert.agreedAt()
+                    insert.agreedAt(),
+                    insert.clickedAtMs()
             );
         });
 
@@ -49,7 +51,7 @@ class AgreementFacadeTest {
                 null,
                 "device-1",
                 null,
-                clickedAt,
+                clickedAtMs,
                 List.of(
                         new AgreementFacade.AgreementItemCommand("PRIVACY_POLICY", true),
                         new AgreementFacade.AgreementItemCommand("USER_AGREEMENT", null)
@@ -60,12 +62,15 @@ class AgreementFacadeTest {
         assertThat(result.get(0).agreementType()).isEqualTo("PRIVACY_POLICY");
         assertThat(result.get(0).agreed()).isTrue();
         assertThat(result.get(1).agreed()).isNull();
-        assertThat(result.get(0).agreedAt()).isEqualTo(clickedAt);
+        assertThat(result.get(0).agreedAt()).isEqualTo(agreedAt);
+        assertThat(result.get(0).clickedAtMs()).isEqualTo(clickedAtMs);
 
         ArgumentCaptor<UserAgreementRecordRepository.UserAgreementRecordInsert> captor =
                 ArgumentCaptor.forClass(UserAgreementRecordRepository.UserAgreementRecordInsert.class);
         verify(repository, org.mockito.Mockito.times(2)).insert(captor.capture());
-        assertThat(captor.getAllValues()).allMatch(item -> clickedAt.equals(item.agreedAt()));
+        assertThat(captor.getAllValues()).allMatch(item ->
+                agreedAt.equals(item.agreedAt()) && clickedAtMs == item.clickedAtMs()
+        );
     }
 
     @Test
@@ -75,7 +80,7 @@ class AgreementFacadeTest {
                 "U10001",
                 "device-1",
                 10L,
-                Instant.parse("2026-07-20T03:00:00Z"),
+                Instant.parse("2026-07-20T03:00:00Z").toEpochMilli(),
                 List.of(
                         new AgreementFacade.AgreementItemCommand("PRIVACY_POLICY", true),
                         new AgreementFacade.AgreementItemCommand("PRIVACY_POLICY", false)
@@ -88,7 +93,7 @@ class AgreementFacadeTest {
 
     @Test
     void createsAnonymousRecordWithoutMobileNo() {
-        Instant clickedAt = Instant.parse("2026-07-20T03:00:00Z");
+        long clickedAtMs = Instant.parse("2026-07-20T03:00:00Z").toEpochMilli();
         when(repository.insert(any())).thenAnswer(invocation -> {
             UserAgreementRecordRepository.UserAgreementRecordInsert insert = invocation.getArgument(0);
             return new UserAgreementRecordData(
@@ -99,7 +104,8 @@ class AgreementFacadeTest {
                     insert.profileId(),
                     insert.agreementType(),
                     insert.agreed(),
-                    insert.agreedAt()
+                    insert.agreedAt(),
+                    insert.clickedAtMs()
             );
         });
 
@@ -108,7 +114,7 @@ class AgreementFacadeTest {
                 null,
                 "device-1",
                 null,
-                clickedAt,
+                clickedAtMs,
                 List.of(new AgreementFacade.AgreementItemCommand("PRIVACY_POLICY", true))
         ));
 
@@ -116,6 +122,7 @@ class AgreementFacadeTest {
         assertThat(result.get(0).mobileNo()).isNull();
         assertThat(result.get(0).partnerUserId()).isNull();
         assertThat(result.get(0).deviceNo()).isEqualTo("device-1");
+        assertThat(result.get(0).clickedAtMs()).isEqualTo(clickedAtMs);
     }
 
     @Test
@@ -129,7 +136,8 @@ class AgreementFacadeTest {
                         10L,
                         "PRIVACY_POLICY",
                         true,
-                        Instant.parse("2026-07-20T03:00:00Z")
+                        Instant.parse("2026-07-20T03:00:00Z"),
+                        Instant.parse("2026-07-20T03:00:00Z").toEpochMilli()
                 )));
 
         var result = facade.latestByMobileNo("81234567890", List.of("PRIVACY_POLICY"));

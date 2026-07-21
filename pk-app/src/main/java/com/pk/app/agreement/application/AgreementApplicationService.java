@@ -9,7 +9,6 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.infra.agreement.AgreementFacade;
-import java.time.Instant;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -42,7 +41,7 @@ public class AgreementApplicationService {
                 partnerUserId,
                 request.deviceNo(),
                 profileId,
-                Instant.ofEpochMilli(request.clickedAt()),
+                request.clickedAt(),
                 request.items().stream()
                         .map(item -> new AgreementFacade.AgreementItemCommand(
                                 item.agreementType(),

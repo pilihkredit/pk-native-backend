@@ -24,6 +24,7 @@ class AgreementApplicationServiceTest {
     void createUsesPrincipalMobileAndPartnerUserId() {
         AgreementFacade facade = mock(AgreementFacade.class);
         AgreementApplicationService service = new AgreementApplicationService(facade);
+        long clickedAt = Instant.parse("2026-07-20T03:00:00Z").toEpochMilli();
         when(facade.createRecords(any())).thenReturn(List.of(new UserAgreementRecordData(
                 1L,
                 "81234567890",
@@ -32,10 +33,10 @@ class AgreementApplicationServiceTest {
                 10L,
                 "PRIVACY_POLICY",
                 true,
-                Instant.parse("2026-07-20T03:00:00Z")
+                Instant.ofEpochMilli(clickedAt),
+                clickedAt
         )));
 
-        long clickedAt = Instant.parse("2026-07-20T03:00:00Z").toEpochMilli();
         var response = service.create(
                 new AuthenticatedPrincipal(10L, "U10001", "81234567890", 1L),
                 new AgreementCreateRequest(
@@ -53,7 +54,7 @@ class AgreementApplicationServiceTest {
         assertThat(captor.getValue().mobileNo()).isEqualTo("81234567890");
         assertThat(captor.getValue().partnerUserId()).isEqualTo("U10001");
         assertThat(captor.getValue().profileId()).isEqualTo(10L);
-        assertThat(captor.getValue().clickedAt()).isEqualTo(Instant.ofEpochMilli(clickedAt));
+        assertThat(captor.getValue().clickedAtMs()).isEqualTo(clickedAt);
     }
 
     @Test
@@ -80,6 +81,7 @@ class AgreementApplicationServiceTest {
         assertThat(captor.getValue().partnerUserId()).isNull();
         assertThat(captor.getValue().profileId()).isNull();
         assertThat(captor.getValue().deviceNo()).isEqualTo("device-1");
+        assertThat(captor.getValue().clickedAtMs()).isEqualTo(clickedAt);
     }
 
     @Test

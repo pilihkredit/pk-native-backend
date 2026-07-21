@@ -24,6 +24,7 @@ public class UserAgreementRecordRepositoryImpl implements UserAgreementRecordRep
         param.setAgreementType(data.agreementType());
         param.setAgreed(data.agreed());
         param.setAgreedAt(data.agreedAt());
+        param.setClickedAtMs(data.clickedAtMs());
         userAgreementRecordMapper.insert(param);
         return new UserAgreementRecordData(
                 param.getId(),
@@ -33,7 +34,8 @@ public class UserAgreementRecordRepositoryImpl implements UserAgreementRecordRep
                 data.profileId(),
                 data.agreementType(),
                 data.agreed(),
-                data.agreedAt()
+                data.agreedAt(),
+                data.clickedAtMs()
         );
     }
 

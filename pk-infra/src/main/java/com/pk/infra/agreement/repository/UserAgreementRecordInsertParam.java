@@ -11,6 +11,7 @@ public class UserAgreementRecordInsertParam {
     private String agreementType;
     private Boolean agreed;
     private Instant agreedAt;
+    private Long clickedAtMs;
 
     public Long getId() {
         return id;
@@ -74,5 +75,13 @@ public class UserAgreementRecordInsertParam {
 
     public void setAgreedAt(Instant agreedAt) {
         this.agreedAt = agreedAt;
+    }
+
+    public Long getClickedAtMs() {
+        return clickedAtMs;
+    }
+
+    public void setClickedAtMs(Long clickedAtMs) {
+        this.clickedAtMs = clickedAtMs;
     }
 }

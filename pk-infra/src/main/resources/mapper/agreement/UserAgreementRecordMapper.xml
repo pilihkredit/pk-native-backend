@@ -15,6 +15,7 @@
                  typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
             <arg column="agreed_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="clicked_at_ms" javaType="java.lang.Long"/>
         </constructor>
     </resultMap>
 
@@ -26,7 +27,8 @@
             profile_id,
             agreement_type,
             agreed,
-            agreed_at
+            agreed_at,
+            clicked_at_ms
         ) VALUES (
             #{mobileNo},
             #{partnerUserId},
@@ -34,13 +36,14 @@
             #{profileId},
             #{agreementType},
             #{agreed, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
-            #{agreedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+            #{agreedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+            #{clickedAtMs}
         )
     </insert>
 
     <select id="findLatestByMobileNo" resultMap="agreementRecordMap">
         SELECT t.id, t.mobile_no, t.partner_user_id, t.device_no, t.profile_id,
-               t.agreement_type, t.agreed, t.agreed_at
+               t.agreement_type, t.agreed, t.agreed_at, t.clicked_at_ms
         FROM user_agreement_record t
         INNER JOIN (
             SELECT agreement_type, MAX(id) AS max_id
