@@ -112,7 +112,7 @@ public class CreditApplyFacade {
                 .findByApplyIdAndProfileId(record.applyId(), profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         var query = creditLenderStatusQueryRepository
-                .findByApplyIdAndProfileId(record.applyId(), profileId)
+                .findLatestByApplyIdAndProfileId(record.applyId(), profileId)
                 .orElse(null);
         return toStatusResult(record, query);
     }

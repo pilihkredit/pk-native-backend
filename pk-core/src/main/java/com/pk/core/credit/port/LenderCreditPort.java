@@ -41,8 +41,7 @@ public interface LenderCreditPort {
             BigDecimal psychologicalCreditLimit,
             BigDecimal fakeCreditLimit,
             BigDecimal borrowAmtStepSize,
-            String requestJson,
-            String responseDataJson
+            Long externalInteractionId
     ) {
     }
 }

@@ -52,12 +52,13 @@ public class PendanaanCreditAdapter implements LenderCreditPort {
     @Override
     public LenderCreditStatusResult queryStatus(String applyId) {
         String requestBody = PendanaanCreditRequestMapper.buildStatusBody(applyId);
-        JsonNode data = httpClient.post(
+        PendanaanHttpClient.ExchangeResult exchange = httpClient.postWithInteraction(
                 APPLY_STATUS_PATH,
                 requestBody,
                 BUSINESS_TYPE_STATUS,
                 applyId
         );
+        JsonNode data = exchange.data();
         return new LenderCreditStatusResult(
                 PendanaanHttpSupport.textOrEmpty(data.get("status")),
                 textOrNull(data.get("userId")),
@@ -69,8 +70,7 @@ public class PendanaanCreditAdapter implements LenderCreditPort {
                 decimalOrNull(data.get("psychologicalCreditLimit")),
                 decimalOrNull(data.get("fakeCreditLimit")),
                 decimalOrNull(data.get("borrowAmtStepSize")),
-                requestBody,
-                serializeResponseData(data)
+                exchange.interactionId()
         );
     }
 

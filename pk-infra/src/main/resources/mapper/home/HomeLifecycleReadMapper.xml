@@ -18,7 +18,15 @@ SELECT
         ELSE 'PROCESSING'
     END AS status
 FROM credit_application ca
-LEFT JOIN credit_lender_status_query q ON q.apply_id = ca.apply_id
+LEFT JOIN (
+    SELECT q1.apply_id, q1.external_status
+    FROM credit_lender_status_query q1
+    INNER JOIN (
+        SELECT apply_id, MAX(id) AS max_id
+        FROM credit_lender_status_query
+        GROUP BY apply_id
+    ) latest ON latest.apply_id = q1.apply_id AND latest.max_id = q1.id
+) q ON q.apply_id = ca.apply_id
 WHERE ca.profile_id = #{profileId}
 ORDER BY ca.id DESC
 LIMIT 1

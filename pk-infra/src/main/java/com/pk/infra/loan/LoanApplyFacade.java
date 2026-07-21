@@ -99,7 +99,7 @@ public class LoanApplyFacade {
         }
 
         CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits = creditLenderStatusQueryRepository
-                .findByApplyIdAndProfileId(creditRecord.applyId(), profileId)
+                .findLatestByApplyIdAndProfileId(creditRecord.applyId(), profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.CREDIT_LIMIT_NOT_AVAILABLE));
         if (limits.creditContractExpireTime() != null
                 && Instant.ofEpochMilli(limits.creditContractExpireTime()).isBefore(Instant.now())) {

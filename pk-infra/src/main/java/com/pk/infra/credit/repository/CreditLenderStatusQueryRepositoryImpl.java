@@ -14,17 +14,17 @@ public class CreditLenderStatusQueryRepositoryImpl implements CreditLenderStatus
     }
 
     @Override
-    public void upsert(CreditLenderStatusQueryData data) {
-        mapper.upsert(data);
+    public void insert(CreditLenderStatusQueryData data) {
+        mapper.insert(data);
     }
 
     @Override
-    public Optional<CreditLenderStatusQueryData> findByApplyId(String applyId) {
-        return Optional.ofNullable(mapper.findByApplyId(applyId));
+    public Optional<CreditLenderStatusQueryData> findLatestByApplyId(String applyId) {
+        return Optional.ofNullable(mapper.findLatestByApplyId(applyId));
     }
 
     @Override
-    public Optional<CreditLenderStatusQueryData> findByApplyIdAndProfileId(String applyId, long profileId) {
-        return Optional.ofNullable(mapper.findByApplyIdAndProfileId(applyId, profileId));
+    public Optional<CreditLenderStatusQueryData> findLatestByApplyIdAndProfileId(String applyId, long profileId) {
+        return Optional.ofNullable(mapper.findLatestByApplyIdAndProfileId(applyId, profileId));
     }
 }

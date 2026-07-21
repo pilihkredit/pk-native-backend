@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.external.mapper.LenderInteractionLogMapper">
-    <insert id="insert">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO external_interaction (provider_code, interaction_no, business_type, business_id, mobile_no, http_method,
             endpoint, request_id, request_hash, request_ref, response_code, response_msg, response_ref, success, duration_ms)
         VALUES (#{providerCode}, #{interactionNo}, #{businessType}, #{businessId}, #{mobileNo}, #{httpMethod},

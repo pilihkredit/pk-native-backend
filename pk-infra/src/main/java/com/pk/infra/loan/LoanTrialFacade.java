@@ -45,7 +45,7 @@ public class LoanTrialFacade {
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
 
         CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits = creditLenderStatusQueryRepository
-                .findByApplyIdAndProfileId(command.applyId(), profileId)
+                .findLatestByApplyIdAndProfileId(command.applyId(), profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.CREDIT_LIMIT_NOT_AVAILABLE));
 
         BigDecimal applyAmt = LoanAmountValidator.normalize(command.applyAmt());

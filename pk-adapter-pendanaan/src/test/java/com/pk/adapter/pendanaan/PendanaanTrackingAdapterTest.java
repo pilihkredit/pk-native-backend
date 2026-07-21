@@ -50,7 +50,7 @@ class PendanaanTrackingAdapterTest {
         assertThat(body.get("datetime").asText()).isEqualTo("2025-06-21 17:00:00");
         assertThat(body.get("extend").get("applyId").asText()).isEqualTo("APPLY-1");
         assertThat(logs.logs).hasSize(1);
-        assertThat(logs.logs.getFirst().success()).isTrue();
+        assertThat(logs.logs.getFirst().isSuccess()).isTrue();
     }
 
     @Test
@@ -65,7 +65,7 @@ class PendanaanTrackingAdapterTest {
                 .isEqualTo(ApiCode.SERVICE_UNAVAILABLE);
 
         assertThat(logs.logs).hasSize(1);
-        assertThat(logs.logs.getFirst().success()).isFalse();
+        assertThat(logs.logs.getFirst().isSuccess()).isFalse();
     }
 
     private static HttpServer startServer(int status, String responseBody, List<String> bodies) throws IOException {
@@ -123,8 +123,10 @@ class PendanaanTrackingAdapterTest {
         private final List<LenderInteractionLog> logs = new ArrayList<>();
 
         @Override
-        public void insert(LenderInteractionLog log) {
+        public long insert(LenderInteractionLog log) {
             logs.add(log);
+            log.setId((long) logs.size());
+            return log.getId();
         }
     }
 }

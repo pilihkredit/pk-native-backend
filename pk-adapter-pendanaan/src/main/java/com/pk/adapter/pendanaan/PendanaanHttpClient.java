@@ -39,10 +39,14 @@ public class PendanaanHttpClient {
     }
 
     public JsonNode get(String path, String businessType, String businessId) {
-        return exchange("GET", path, null, businessType, businessId);
+        return exchange("GET", path, null, businessType, businessId).data();
     }
 
     public JsonNode post(String path, String jsonBody, String businessType, String businessId) {
+        return exchange("POST", path, jsonBody, businessType, businessId).data();
+    }
+
+    public ExchangeResult postWithInteraction(String path, String jsonBody, String businessType, String businessId) {
         return exchange("POST", path, jsonBody, businessType, businessId);
     }
 
@@ -50,7 +54,7 @@ public class PendanaanHttpClient {
         return exchangeEnvelope("POST", path, jsonBody, businessType, businessId);
     }
 
-    private JsonNode exchange(
+    private ExchangeResult exchange(
             String method,
             String path,
             String jsonBody,
@@ -63,6 +67,8 @@ public class PendanaanHttpClient {
         String interactionNo = UUID.randomUUID().toString();
         long startedAt = System.currentTimeMillis();
         PendanaanHttpSupport.InteractionOutcome outcome = new PendanaanHttpSupport.InteractionOutcome();
+        JsonNode data = null;
+        ApiException failure = null;
         try {
             HttpResponse<String> response = send(method, endpoint, requestBody);
             outcome.httpStatus = response.statusCode();
@@ -72,18 +78,18 @@ public class PendanaanHttpClient {
             outcome.responseMsg = PendanaanHttpSupport.textOrEmpty(envelope.get("msg"));
             PendanaanHttpSupport.ensureSuccess(envelope);
             outcome.success = true;
-            return envelope.get("data");
+            data = envelope.get("data");
         } catch (ApiException exception) {
-            throw exception;
+            failure = exception;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             outcome.transportFailure = PendanaanHttpSupport.formatTransportFailure(exception);
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+            failure = new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         } catch (Exception exception) {
             outcome.transportFailure = PendanaanHttpSupport.formatTransportFailure(exception);
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+            failure = new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         } finally {
-            logInteraction(
+            outcome.interactionId = logInteraction(
                     interactionNo,
                     businessType,
                     businessId,
@@ -94,6 +100,10 @@ public class PendanaanHttpClient {
                     startedAt
             );
         }
+        if (failure != null) {
+            throw failure;
+        }
+        return new ExchangeResult(data, outcome.interactionId);
     }
 
     private JsonNode exchangeEnvelope(
@@ -109,24 +119,25 @@ public class PendanaanHttpClient {
         String interactionNo = UUID.randomUUID().toString();
         long startedAt = System.currentTimeMillis();
         PendanaanHttpSupport.InteractionOutcome outcome = new PendanaanHttpSupport.InteractionOutcome();
+        JsonNode envelope = null;
+        ApiException failure = null;
         try {
             HttpResponse<String> response = send(method, endpoint, requestBody);
             outcome.httpStatus = response.statusCode();
             outcome.responseText = response.body() == null ? "" : response.body();
-            JsonNode envelope = objectMapper.readTree(outcome.responseText);
+            envelope = objectMapper.readTree(outcome.responseText);
             outcome.responseCode = PendanaanHttpSupport.textOrEmpty(envelope.get("code"));
             outcome.responseMsg = PendanaanHttpSupport.textOrEmpty(envelope.get("msg"));
             outcome.success = ApiCode.SUCCESS.code().equals(outcome.responseCode);
-            return envelope;
         } catch (ApiException exception) {
-            throw exception;
+            failure = exception;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             outcome.transportFailure = PendanaanHttpSupport.formatTransportFailure(exception);
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+            failure = new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         } catch (Exception exception) {
             outcome.transportFailure = PendanaanHttpSupport.formatTransportFailure(exception);
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+            failure = new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         } finally {
             logInteraction(
                     interactionNo,
@@ -139,6 +150,10 @@ public class PendanaanHttpClient {
                     startedAt
             );
         }
+        if (failure != null) {
+            throw failure;
+        }
+        return envelope;
     }
 
     private HttpResponse<String> send(String method, String endpoint, String requestBody)
@@ -157,7 +172,7 @@ public class PendanaanHttpClient {
         return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
-    private void logInteraction(
+    private long logInteraction(
             String interactionNo,
             String businessType,
             String businessId,
@@ -169,7 +184,7 @@ public class PendanaanHttpClient {
     ) {
         PendanaanHttpSupport.applyTransportFailureForLog(outcome);
         int durationMs = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - startedAt);
-        PendanaanInteractionSupport.log(
+        return PendanaanInteractionSupport.log(
                 interactionLogRepository,
                 properties.logging(),
                 structuredLogger,
@@ -186,5 +201,8 @@ public class PendanaanHttpClient {
                 durationMs,
                 outcome.httpStatus
         );
+    }
+
+    public record ExchangeResult(JsonNode data, Long interactionId) {
     }
 }

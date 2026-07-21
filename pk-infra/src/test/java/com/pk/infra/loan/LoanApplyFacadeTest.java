@@ -194,7 +194,7 @@ class LoanApplyFacadeTest {
         when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.of(freshQuote()));
         when(loanQuoteRepository.countTermsByQuoteId(10L)).thenReturn(2);
         when(creditApplicationRepository.findById(100L)).thenReturn(Optional.of(approvedCredit("APPLY-1")));
-        when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L)).thenReturn(Optional.of(limits()));
+        when(creditLenderStatusQueryRepository.findLatestByApplyIdAndProfileId("APPLY-1", 1L)).thenReturn(Optional.of(limits()));
         when(loanProductFacade.resolveProductList(1L, "APPLY-1", true)).thenReturn(productSnapshot());
         when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
                 new OnboardingProgressFacade.OnboardingProgressResult(
@@ -224,7 +224,7 @@ class LoanApplyFacadeTest {
         when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.of(freshQuote()));
         when(loanQuoteRepository.countTermsByQuoteId(10L)).thenReturn(2);
         when(creditApplicationRepository.findById(100L)).thenReturn(Optional.of(approvedCredit("APPLY-1")));
-        when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L)).thenReturn(Optional.of(limits()));
+        when(creditLenderStatusQueryRepository.findLatestByApplyIdAndProfileId("APPLY-1", 1L)).thenReturn(Optional.of(limits()));
         when(loanProductFacade.resolveProductList(1L, "APPLY-1", true)).thenReturn(productSnapshot());
         when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
                 new OnboardingProgressFacade.OnboardingProgressResult(
@@ -381,8 +381,7 @@ class LoanApplyFacadeTest {
                 new BigDecimal("3000000"),
                 new BigDecimal("2000000"),
                 new BigDecimal("100000"),
-                "{}",
-                "{}",
+                null,
                 Instant.now()
         );
     }

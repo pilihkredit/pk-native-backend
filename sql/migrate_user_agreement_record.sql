@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS user_agreement_record (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number; null when not logged in',
     partner_user_id VARCHAR(64) NULL COMMENT 'Partner user identifier; optional when not logged in',
     device_no VARCHAR(128) NOT NULL COMMENT 'Device identifier',
     profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier when logged in',

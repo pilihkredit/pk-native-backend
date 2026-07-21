@@ -1,4 +1,5 @@
 package com.pk.infra.external.repository;
+
 import com.pk.core.external.LenderInteractionLog;
 import com.pk.core.external.port.LenderInteractionLogRepository;
 import com.pk.infra.external.mapper.LenderInteractionLogMapper;
@@ -16,7 +17,12 @@ public class LenderInteractionLogRepositoryImpl implements LenderInteractionLogR
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void insert(LenderInteractionLog log) {
+    public long insert(LenderInteractionLog log) {
         mapper.insert(log);
+        Long id = log.getId();
+        if (id == null) {
+            throw new IllegalStateException("external_interaction insert did not return generated id");
+        }
+        return id;
     }
 }

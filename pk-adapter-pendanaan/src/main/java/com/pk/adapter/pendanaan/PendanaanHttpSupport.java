@@ -208,6 +208,7 @@ final class PendanaanHttpSupport {
         boolean success = false;
         String transportFailure = "";
         Integer httpStatus;
+        Long interactionId;
     }
 
     static String sha256Hex(String value) {

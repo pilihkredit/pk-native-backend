@@ -164,7 +164,7 @@ class CreditApplyFacadeTest {
         when(creditApplicationRepository.findLatestByProfileId(1L)).thenReturn(Optional.of(record));
         when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(Optional.of(record));
-        when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditLenderStatusQueryRepository.findLatestByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(Optional.of(new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
                         "APPLY-1",
                         1L,
@@ -180,8 +180,7 @@ class CreditApplyFacadeTest {
                         BigDecimal.TEN,
                         BigDecimal.TEN,
                         BigDecimal.ONE,
-                        "{}",
-                        "{}",
+                        null,
                         Instant.now()
                 )));
 

@@ -53,8 +53,7 @@ public class CreditCallbackHandler {
                 parsed.psychologicalCreditLimit(),
                 parsed.fakeCreditLimit(),
                 parsed.borrowAmtStepSize(),
-                null,
-                callbackEvent.payloadJson()
+                null
         );
         creditLenderStatusApplier.apply(application.get(), status, SOURCE, LIMIT_SOURCE);
         callbackEventRepository.markProcessed(callbackEvent.id(), now);

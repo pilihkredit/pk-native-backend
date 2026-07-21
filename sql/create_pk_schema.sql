@@ -465,7 +465,7 @@ CREATE TABLE user_consent_record (
 
 CREATE TABLE user_agreement_record (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number; null when not logged in',
     partner_user_id VARCHAR(64) NULL COMMENT 'Partner user identifier; optional when not logged in',
     device_no VARCHAR(128) NOT NULL COMMENT 'Device identifier',
     profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier when logged in',
@@ -539,33 +539,16 @@ CREATE TABLE credit_lender_status_query (
     psychological_credit_limit DECIMAL(18,2) NULL COMMENT 'Psychological credit limit',
     fake_credit_limit DECIMAL(18,2) NULL COMMENT 'Displayed fake credit limit',
     borrow_amt_step_size DECIMAL(18,2) NULL COMMENT 'Borrow amount step size',
-    last_lender_request_json JSON NULL COMMENT 'Last lender credit status request JSON',
-    last_lender_response_json JSON NULL COMMENT 'Last lender credit status response JSON',
-    queried_at DATETIME(3) NOT NULL COMMENT 'Last lender status query time',
+    external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id for this snapshot (nullable for callbacks)',
+    queried_at DATETIME(3) NOT NULL COMMENT 'Snapshot query time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_credit_lender_status_query_apply_id (apply_id),
+    KEY idx_credit_lender_status_query_apply_id (apply_id, id),
     KEY idx_credit_lender_status_query_profile (profile_id),
     KEY idx_credit_lender_status_query_mobile_no (mobile_no),
     KEY idx_credit_lender_status_query_external_no (credit_apply_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest lender credit status query results';
-
-CREATE TABLE credit_status_history (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    credit_application_id BIGINT UNSIGNED NOT NULL COMMENT 'Credit application identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
-    from_status VARCHAR(32) NULL COMMENT 'Previous status',
-    to_status VARCHAR(32) NOT NULL COMMENT 'Next status',
-    external_status VARCHAR(32) NULL COMMENT 'External status',
-    reason_code VARCHAR(64) NULL COMMENT 'Reason or error code',
-    source VARCHAR(32) NOT NULL COMMENT 'Record source',
-    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
-    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (id),
-    KEY idx_credit_status_history_credit_created (credit_application_id, created_at),
-    KEY idx_credit_status_history_mobile_no (mobile_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Credit status transition history';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Append-only lender credit status snapshots (insert on business-field change)';
 
 CREATE TABLE pk_product_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',

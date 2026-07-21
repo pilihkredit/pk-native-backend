@@ -18,7 +18,7 @@ final class PendanaanInteractionSupport {
     private PendanaanInteractionSupport() {
     }
 
-    static void log(
+    static long log(
             LenderInteractionLogRepository repository,
             PendanaanProperties.Logging logging,
             PlatformStructuredLogger structuredLogger,
@@ -86,7 +86,7 @@ final class PendanaanInteractionSupport {
                     .extra(extra)
                     .build());
         }
-        repository.insert(new LenderInteractionLog(
+        return repository.insert(new LenderInteractionLog(
                 PROVIDER_CODE,
                 interactionNo,
                 businessType,

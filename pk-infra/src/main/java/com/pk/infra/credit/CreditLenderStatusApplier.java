@@ -2,20 +2,16 @@ package com.pk.infra.credit;
 
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
-import com.pk.core.credit.port.CreditStatusHistoryRepository;
 import com.pk.core.credit.port.LenderCreditPort;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 public class CreditLenderStatusApplier {
-    private final CreditStatusHistoryRepository creditStatusHistoryRepository;
     private final CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
 
-    public CreditLenderStatusApplier(
-            CreditStatusHistoryRepository creditStatusHistoryRepository,
-            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository
-    ) {
-        this.creditStatusHistoryRepository = creditStatusHistoryRepository;
+    public CreditLenderStatusApplier(CreditLenderStatusQueryRepository creditLenderStatusQueryRepository) {
         this.creditLenderStatusQueryRepository = creditLenderStatusQueryRepository;
     }
 
@@ -25,51 +21,66 @@ public class CreditLenderStatusApplier {
             String source,
             String limitSource
     ) {
-        String previousExternal = creditLenderStatusQueryRepository.findByApplyId(record.applyId())
-                .map(CreditLenderStatusQueryRepository.CreditLenderStatusQueryData::externalStatus)
-                .orElse(null);
+        Optional<CreditLenderStatusQueryRepository.CreditLenderStatusQueryData> latest =
+                creditLenderStatusQueryRepository.findLatestByApplyId(record.applyId());
 
-        creditLenderStatusQueryRepository.upsert(new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
-                record.applyId(),
-                record.profileId(),
-                record.mobileNo(),
-                record.partnerUserId(),
-                status.lenderUserId(),
-                status.creditApplyNo(),
-                status.externalStatus(),
-                status.creditContractExpireTime(),
-                status.freezeEndTime(),
-                status.riskMinLimit(),
-                status.riskMaxLimit(),
-                status.psychologicalCreditLimit(),
-                status.fakeCreditLimit(),
-                status.borrowAmtStepSize(),
-                status.requestJson(),
-                status.responseDataJson(),
-                Instant.now()
-        ));
+        CreditLenderStatusQueryRepository.CreditLenderStatusQueryData next =
+                new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
+                        record.applyId(),
+                        record.profileId(),
+                        record.mobileNo(),
+                        record.partnerUserId(),
+                        status.lenderUserId(),
+                        status.creditApplyNo(),
+                        status.externalStatus(),
+                        status.creditContractExpireTime(),
+                        status.freezeEndTime(),
+                        status.riskMinLimit(),
+                        status.riskMaxLimit(),
+                        status.psychologicalCreditLimit(),
+                        status.fakeCreditLimit(),
+                        status.borrowAmtStepSize(),
+                        status.externalInteractionId(),
+                        Instant.now()
+                );
 
-        if (!hasExternalStatus(status.externalStatus())) {
+        if (latest.isPresent() && !hasBusinessChange(latest.get(), next)) {
             return;
         }
-
-        String fromMapped = previousExternal == null
-                ? null
-                : CreditExternalStatusMapper.mapLenderStatus(previousExternal);
-        String nextMapped = CreditExternalStatusMapper.mapLenderStatus(status.externalStatus());
-        if (!Objects.equals(fromMapped, nextMapped)) {
-            creditStatusHistoryRepository.insert(
-                    record.id(),
-                    record.mobileNo(),
-                    fromMapped,
-                    nextMapped,
-                    status.externalStatus(),
-                    source
-            );
-        }
+        creditLenderStatusQueryRepository.insert(next);
     }
 
-    private static boolean hasExternalStatus(String externalStatus) {
-        return externalStatus != null && !externalStatus.isBlank();
+    static boolean hasBusinessChange(
+            CreditLenderStatusQueryRepository.CreditLenderStatusQueryData previous,
+            CreditLenderStatusQueryRepository.CreditLenderStatusQueryData next
+    ) {
+        return !Objects.equals(normalizeText(previous.externalStatus()), normalizeText(next.externalStatus()))
+                || !Objects.equals(previous.creditContractExpireTime(), next.creditContractExpireTime())
+                || !Objects.equals(previous.freezeEndTime(), next.freezeEndTime())
+                || !decimalEquals(previous.riskMinLimit(), next.riskMinLimit())
+                || !decimalEquals(previous.riskMaxLimit(), next.riskMaxLimit())
+                || !decimalEquals(previous.psychologicalCreditLimit(), next.psychologicalCreditLimit())
+                || !decimalEquals(previous.fakeCreditLimit(), next.fakeCreditLimit())
+                || !decimalEquals(previous.borrowAmtStepSize(), next.borrowAmtStepSize())
+                || !Objects.equals(normalizeText(previous.lenderUserId()), normalizeText(next.lenderUserId()))
+                || !Objects.equals(normalizeText(previous.creditApplyNo()), normalizeText(next.creditApplyNo()));
+    }
+
+    private static String normalizeText(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static boolean decimalEquals(BigDecimal left, BigDecimal right) {
+        if (left == null && right == null) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
+        return left.compareTo(right) == 0;
     }
 }

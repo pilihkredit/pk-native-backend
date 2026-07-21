@@ -5,11 +5,11 @@ import java.time.Instant;
 import java.util.Optional;
 
 public interface CreditLenderStatusQueryRepository {
-    void upsert(CreditLenderStatusQueryData data);
+    void insert(CreditLenderStatusQueryData data);
 
-    Optional<CreditLenderStatusQueryData> findByApplyId(String applyId);
+    Optional<CreditLenderStatusQueryData> findLatestByApplyId(String applyId);
 
-    Optional<CreditLenderStatusQueryData> findByApplyIdAndProfileId(String applyId, long profileId);
+    Optional<CreditLenderStatusQueryData> findLatestByApplyIdAndProfileId(String applyId, long profileId);
 
     record CreditLenderStatusQueryData(
             String applyId,
@@ -26,8 +26,7 @@ public interface CreditLenderStatusQueryRepository {
             BigDecimal psychologicalCreditLimit,
             BigDecimal fakeCreditLimit,
             BigDecimal borrowAmtStepSize,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson,
+            Long externalInteractionId,
             Instant queriedAt
     ) {
     }

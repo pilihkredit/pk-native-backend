@@ -22,7 +22,6 @@ public class FakePendanaanCreditAdapter implements LenderCreditPort {
                 new BigDecimal("2500000"),
                 new BigDecimal("2800000"),
                 new BigDecimal("100000"),
-                null,
                 null
         );
     }

@@ -20,8 +20,7 @@
             <arg column="psychological_credit_limit" javaType="java.math.BigDecimal"/>
             <arg column="fake_credit_limit" javaType="java.math.BigDecimal"/>
             <arg column="borrow_amt_step_size" javaType="java.math.BigDecimal"/>
-            <arg column="last_lender_request_json" javaType="string"/>
-            <arg column="last_lender_response_json" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
             <arg column="queried_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
         </constructor>
@@ -31,10 +30,10 @@
         apply_id, profile_id, mobile_no, partner_user_id, lender_user_id, credit_apply_no, external_status,
         credit_contract_expire_time, freeze_end_time, risk_min_limit, risk_max_limit,
         psychological_credit_limit, fake_credit_limit, borrow_amt_step_size,
-        last_lender_request_json, last_lender_response_json, queried_at
+        external_interaction_id, queried_at
     </sql>
 
-    <insert id="upsert">
+    <insert id="insert">
         INSERT INTO credit_lender_status_query (
             apply_id,
             profile_id,
@@ -50,8 +49,7 @@
             psychological_credit_limit,
             fake_credit_limit,
             borrow_amt_step_size,
-            last_lender_request_json,
-            last_lender_response_json,
+            external_interaction_id,
             queried_at
         ) VALUES (
             #{applyId},
@@ -68,39 +66,25 @@
             #{psychologicalCreditLimit},
             #{fakeCreditLimit},
             #{borrowAmtStepSize},
-            #{lastLenderRequestJson},
-            #{lastLenderResponseJson},
+            #{externalInteractionId},
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
-        ON DUPLICATE KEY UPDATE
-            profile_id = VALUES(profile_id),
-            mobile_no = VALUES(mobile_no),
-            partner_user_id = VALUES(partner_user_id),
-            lender_user_id = VALUES(lender_user_id),
-            credit_apply_no = VALUES(credit_apply_no),
-            external_status = VALUES(external_status),
-            credit_contract_expire_time = VALUES(credit_contract_expire_time),
-            freeze_end_time = VALUES(freeze_end_time),
-            risk_min_limit = VALUES(risk_min_limit),
-            risk_max_limit = VALUES(risk_max_limit),
-            psychological_credit_limit = VALUES(psychological_credit_limit),
-            fake_credit_limit = VALUES(fake_credit_limit),
-            borrow_amt_step_size = VALUES(borrow_amt_step_size),
-            last_lender_request_json = VALUES(last_lender_request_json),
-            last_lender_response_json = VALUES(last_lender_response_json),
-            queried_at = VALUES(queried_at)
     </insert>
 
-    <select id="findByApplyId" resultMap="creditLenderStatusQueryMap">
+    <select id="findLatestByApplyId" resultMap="creditLenderStatusQueryMap">
         SELECT <include refid="creditLenderStatusQueryColumns"/>
         FROM credit_lender_status_query
         WHERE apply_id = #{applyId}
+        ORDER BY id DESC
+        LIMIT 1
     </select>
 
-    <select id="findByApplyIdAndProfileId" resultMap="creditLenderStatusQueryMap">
+    <select id="findLatestByApplyIdAndProfileId" resultMap="creditLenderStatusQueryMap">
         SELECT <include refid="creditLenderStatusQueryColumns"/>
         FROM credit_lender_status_query
         WHERE apply_id = #{applyId}
           AND profile_id = #{profileId}
+        ORDER BY id DESC
+        LIMIT 1
     </select>
 </mapper>

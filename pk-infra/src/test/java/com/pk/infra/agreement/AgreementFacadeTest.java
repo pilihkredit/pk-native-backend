@@ -87,6 +87,38 @@ class AgreementFacadeTest {
     }
 
     @Test
+    void createsAnonymousRecordWithoutMobileNo() {
+        Instant clickedAt = Instant.parse("2026-07-20T03:00:00Z");
+        when(repository.insert(any())).thenAnswer(invocation -> {
+            UserAgreementRecordRepository.UserAgreementRecordInsert insert = invocation.getArgument(0);
+            return new UserAgreementRecordData(
+                    12L,
+                    insert.mobileNo(),
+                    insert.partnerUserId(),
+                    insert.deviceNo(),
+                    insert.profileId(),
+                    insert.agreementType(),
+                    insert.agreed(),
+                    insert.agreedAt()
+            );
+        });
+
+        var result = facade.createRecords(new AgreementFacade.CreateCommand(
+                null,
+                null,
+                "device-1",
+                null,
+                clickedAt,
+                List.of(new AgreementFacade.AgreementItemCommand("PRIVACY_POLICY", true))
+        ));
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).mobileNo()).isNull();
+        assertThat(result.get(0).partnerUserId()).isNull();
+        assertThat(result.get(0).deviceNo()).isEqualTo("device-1");
+    }
+
+    @Test
     void latestQueriesByMobileNo() {
         when(repository.findLatestByMobileNo("81234567890", List.of("PRIVACY_POLICY")))
                 .thenReturn(List.of(new UserAgreementRecordData(

@@ -8,7 +8,6 @@ import com.pk.core.callback.port.LoanCallbackParser;
 import com.pk.core.callback.port.ServerEventCallbackParser;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
-import com.pk.core.credit.port.CreditStatusHistoryRepository;
 import com.pk.core.loan.port.LoanApplicationRepository;
 import com.pk.core.outbox.port.OutboxEventRepository;
 import com.pk.infra.credit.CreditCallbackHandler;
@@ -36,13 +35,9 @@ public class CallbackInfraConfiguration {
 
     @Bean
     CreditLenderStatusApplier creditLenderStatusApplier(
-            CreditStatusHistoryRepository creditStatusHistoryRepository,
             CreditLenderStatusQueryRepository creditLenderStatusQueryRepository
     ) {
-        return new CreditLenderStatusApplier(
-                creditStatusHistoryRepository,
-                creditLenderStatusQueryRepository
-        );
+        return new CreditLenderStatusApplier(creditLenderStatusQueryRepository);
     }
 
     @Bean

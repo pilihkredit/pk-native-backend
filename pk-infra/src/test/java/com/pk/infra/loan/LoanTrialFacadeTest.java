@@ -59,7 +59,7 @@ class LoanTrialFacadeTest {
     void trialForceRefreshesProductsPersistsQuoteAndReturnsDisplayFields() {
         when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(Optional.of(approvedRecord()));
-        when(creditLenderStatusQueryRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditLenderStatusQueryRepository.findLatestByApplyIdAndProfileId("APPLY-1", 1L))
                 .thenReturn(Optional.of(statusQuery()));
         ProductListResolver.ResolvedProductList resolved = new ProductListResolver.ResolvedProductList(
                 501L,
@@ -154,8 +154,7 @@ class LoanTrialFacadeTest {
                 new BigDecimal("2500000"),
                 new BigDecimal("2800000"),
                 new BigDecimal("100000"),
-                "{}",
-                "{}",
+                null,
                 Instant.parse("2026-06-01T00:00:00Z")
         );
     }
