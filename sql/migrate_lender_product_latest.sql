@@ -1,3 +1,5 @@
+-- DEPRECATED: superseded by migrate_lender_product_list_append.sql (append-only pk_lender_product_*).
+-- Kept only as historical migration record; do not run on new environments.
 -- Normalized latest lender product list tables (one row-set per credit application).
 
 CREATE TABLE IF NOT EXISTS pk_lender_product_list_latest (

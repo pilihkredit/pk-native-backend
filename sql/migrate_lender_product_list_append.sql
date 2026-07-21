@@ -88,3 +88,11 @@ SET @ddl = IF(
 PREPARE stmt FROM @ddl;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
+
+-- Drop legacy write-path tables (snapshot JSON + replace-all *_latest).
+-- Child tables first in case any environment added FKs.
+DROP TABLE IF EXISTS pk_lender_product_uneven_rate_latest;
+DROP TABLE IF EXISTS pk_lender_product_repay_method_latest;
+DROP TABLE IF EXISTS pk_lender_product_latest;
+DROP TABLE IF EXISTS pk_lender_product_list_latest;
+DROP TABLE IF EXISTS pk_product_snapshot;
