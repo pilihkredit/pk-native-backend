@@ -45,16 +45,7 @@ public class OnboardingProgressFacade {
     }
 
     public OnboardingProgressResult getProgress(long profileId, String partnerUserId) {
-        JsonNode lenderData;
-        try {
-            lenderData = queryLender(partnerUserId);
-        } catch (ApiException exception) {
-            // Lender has no user/profile yet (A000010 / L000010) — treat as zero modules completed.
-            if (exception.apiCode() == ApiCode.UPSTREAM_APPLICATION_NOT_FOUND) {
-                return emptyProgress(partnerUserId);
-            }
-            throw exception;
-        }
+        JsonNode lenderData = queryLender(partnerUserId);
 
         List<String> completedModules = new ArrayList<>();
         List<String> missingModules = new ArrayList<>();
@@ -72,18 +63,6 @@ public class OnboardingProgressFacade {
                 kycStatus,
                 List.copyOf(completedModules),
                 List.copyOf(missingModules)
-        );
-    }
-
-    private static OnboardingProgressResult emptyProgress(String partnerUserId) {
-        List<String> missingModules = MODULE_MAPPINGS.stream()
-                .map(ModuleMapping::onboardingModuleCode)
-                .toList();
-        return new OnboardingProgressResult(
-                partnerUserId,
-                KYC_INCOMPLETE,
-                List.of(),
-                missingModules
         );
     }
 

@@ -16,6 +16,7 @@ import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.auth.TokenPair;
 import com.pk.core.auth.UserProfileSummary;
+import com.pk.core.home.HomeUserStage;
 import com.pk.app.home.application.HomeApplicationService;
 import com.pk.infra.auth.AuthServiceFacade;
 import org.springframework.stereotype.Service;
@@ -67,8 +68,23 @@ public class AuthApplicationService {
                 profile.newlyCreated() ? "REGISTER" : "LOGIN",
                 profile.newlyCreated(),
                 result.passwordSet(),
-                homeApplicationService.resolveUserStage(profile.profileId(), profile.partnerUserId())
+                resolveUserStageForOtpVerify(profile.profileId(), profile.partnerUserId())
         );
+    }
+
+    /**
+     * OTP verify must not fail when lender has no user yet (A000010 / L000010).
+     * Other callers of onboarding progress still surface L000010 unchanged.
+     */
+    private String resolveUserStageForOtpVerify(long profileId, String partnerUserId) {
+        try {
+            return homeApplicationService.resolveUserStage(profileId, partnerUserId);
+        } catch (ApiException exception) {
+            if (exception.apiCode() == ApiCode.UPSTREAM_APPLICATION_NOT_FOUND) {
+                return HomeUserStage.ONBOARDING;
+            }
+            throw exception;
+        }
     }
 
     public PasswordSetResponse setPassword(AuthenticatedPrincipal principal, PasswordSetRequest request) {

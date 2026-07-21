@@ -1,6 +1,7 @@
 package com.pk.infra.profile;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -109,22 +110,15 @@ class OnboardingProgressFacadeTest {
     }
 
     @Test
-    void returnsIncompleteWhenLenderUserNotFound() {
+    void propagatesLenderUserNotFound() {
         when(lenderProfileQueryPort.query(any())).thenThrow(
                 new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada")
         );
 
-        var result = facade.getProgress(1L, "U10001");
-
-        assertThat(result.kycStatus()).isEqualTo(OnboardingProgressFacade.KYC_INCOMPLETE);
-        assertThat(result.completedModules()).isEmpty();
-        assertThat(result.missingModules()).containsExactly(
-                OnboardingModuleCode.PERSONAL,
-                OnboardingModuleCode.BANK_CARD,
-                OnboardingModuleCode.CONTACT,
-                OnboardingModuleCode.DEVICE,
-                OnboardingModuleCode.IDENTITY
-        );
+        assertThatThrownBy(() -> facade.getProgress(1L, "U10001"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
     }
 
     @Test
