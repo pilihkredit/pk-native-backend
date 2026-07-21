@@ -2,7 +2,7 @@ package com.pk.core.profile;
 
 public record ProfileAfData(
         Long id,
-        long profileId,
+        Long profileId,
         String mobileNo,
         String appsflyerId,
         String advertisingId,

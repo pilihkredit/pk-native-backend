@@ -326,8 +326,8 @@ CREATE TABLE user_profile_login_log (
 
 CREATE TABLE user_profile_af (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier; null when submitted before login',
+    mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number; null when submitted before login',
     appsflyer_id VARCHAR(64) NOT NULL COMMENT 'AppsFlyer ID',
     advertising_id VARCHAR(128) NULL COMMENT 'Advertising ID',
     android_id VARCHAR(128) NULL COMMENT 'Android ID',

@@ -150,6 +150,17 @@ class ProfileServiceFacadeAfTongdunTest {
     }
 
     @Test
+    void saveAppsFlyerAnonymousSkipsLenderSync() {
+        var result = facade.saveAppsFlyerInstall(null, null, null, afCommand("req-anon", "AF-ANON"));
+
+        assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
+        assertThat(result.lenderResponseJson()).isNull();
+        verify(profileAfRepository).insert(any());
+        verify(userDeviceWriter, never()).upsertFromRequest(anyLong(), any(), any(), any());
+        verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
+    }
+
+    @Test
     void saveTongdunHappyPathSchedulesTongdunModule() {
         facade.saveTongdunDevice(
                 1L, "U1", "81234567890",

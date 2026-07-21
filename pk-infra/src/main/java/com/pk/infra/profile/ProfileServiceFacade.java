@@ -289,13 +289,18 @@ public class ProfileServiceFacade {
     }
 
     public AppsFlyerSaveResult saveAppsFlyerInstall(
-            long profileId,
+            Long profileId,
             String partnerUserId,
             String mobileNo,
             AppsFlyerSaveCommand command
     ) {
         validateAppsFlyer(command);
-        String normalizedMobileNo = normalizeMobile(mobileNo);
+        boolean loggedIn = profileId != null
+                && partnerUserId != null
+                && !partnerUserId.isBlank()
+                && mobileNo != null
+                && !mobileNo.isBlank();
+        String normalizedMobileNo = loggedIn ? normalizeMobile(mobileNo) : null;
 
         var existing = profileAfRepository.findByRequestId(command.requestId());
         if (existing.isPresent()) {
@@ -355,6 +360,10 @@ public class ProfileServiceFacade {
                 null,
                 null
         ));
+
+        if (!loggedIn) {
+            return new AppsFlyerSaveResult(command.requestId().trim(), MODULE_COMPLETED, null);
+        }
 
         persistDevice(profileId, partnerUserId, command.requestId(), command.device());
 

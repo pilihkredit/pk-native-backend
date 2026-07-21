@@ -155,13 +155,13 @@ public class ProfileApplicationService {
             ProfileAppsFlyerInstallSaveRequest request,
             HttpServletRequest httpRequest
     ) {
-        if (principal == null) {
-            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
-        }
+        Long profileId = principal == null ? null : principal.profileId();
+        String partnerUserId = principal == null ? null : principal.partnerUserId();
+        String mobileNo = principal == null ? null : principal.mobileNo();
         ProfileServiceFacade.AppsFlyerSaveResult result = profileServiceFacade.saveAppsFlyerInstall(
-                principal.profileId(),
-                principal.partnerUserId(),
-                principal.mobileNo(),
+                profileId,
+                partnerUserId,
+                mobileNo,
                 new ProfileServiceFacade.AppsFlyerSaveCommand(
                         request.requestId(),
                         request.appsflyerId(),

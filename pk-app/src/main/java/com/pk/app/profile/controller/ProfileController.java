@@ -24,6 +24,7 @@ import com.pk.app.security.SecurityContextSupport;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
+import com.pk.core.auth.PublicApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -149,16 +150,14 @@ public class ProfileController {
         );
     }
 
-    /** Save AppsFlyer install data and sync to lender. */
+    /** Save AppsFlyer install data; public (no access token). Syncs to lender only when logged in. */
+    @PublicApi
     @PostMapping("/appsflyer-install")
     public ApiResponse<ProfileAppsFlyerInstallSaveResponse> saveAppsFlyerInstall(
             @Valid @RequestBody ProfileAppsFlyerInstallSaveRequest request,
             HttpServletRequest httpRequest
     ) {
         AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
-        if (principal == null) {
-            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
-        }
         return ApiResponse.success(
                 profileApplicationService.saveAppsFlyerInstall(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
