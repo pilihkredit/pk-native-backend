@@ -63,7 +63,6 @@ class LoanTrialFacadeTest {
                 .thenReturn(Optional.of(statusQuery()));
         ProductListResolver.ResolvedProductList resolved = new ProductListResolver.ResolvedProductList(
                 501L,
-                "PSNAP-1",
                 "APPROVED",
                 "READY",
                 List.of(),
@@ -78,7 +77,7 @@ class LoanTrialFacadeTest {
                     insert.quoteNo(),
                     insert.creditApplicationId(),
                     insert.mobileNo(),
-                    insert.productSnapshotId(),
+                    insert.productListId(),
                     insert.quote(),
                     insert.lastLenderRequestJson(),
                     insert.lastLenderResponseJson(),
@@ -111,7 +110,7 @@ class LoanTrialFacadeTest {
         ArgumentCaptor<LoanQuoteRepository.LoanQuoteInsert> insertCaptor =
                 ArgumentCaptor.forClass(LoanQuoteRepository.LoanQuoteInsert.class);
         verify(loanQuoteRepository).insert(insertCaptor.capture(), any());
-        assertThat(insertCaptor.getValue().productSnapshotId()).isEqualTo(501L);
+        assertThat(insertCaptor.getValue().productListId()).isEqualTo(501L);
         assertThat(insertCaptor.getValue().mobileNo()).isEqualTo("81234567890");
         assertThat(insertCaptor.getValue().quote().loanTerm()).isEqualTo(6);
         assertThat(insertCaptor.getValue().quote().handFee()).isEqualByComparingTo("45000");

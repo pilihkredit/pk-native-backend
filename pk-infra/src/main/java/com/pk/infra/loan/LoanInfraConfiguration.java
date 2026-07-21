@@ -17,8 +17,7 @@ import com.pk.core.loan.port.LoanQuoteRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
 import com.pk.core.loan.port.ContractFileRepository;
 import com.pk.core.loan.port.ProductListCache;
-import com.pk.core.loan.port.ProductSnapshotRepository;
-import com.pk.core.loan.port.LenderProductLatestRepository;
+import com.pk.core.loan.port.LenderProductListRepository;
 import com.pk.core.outbox.port.OutboxEventRepository;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import org.springframework.context.annotation.Bean;
@@ -33,11 +32,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 })
 public class LoanInfraConfiguration {
     @Bean
-    ProductSnapshotPayloadCodec productSnapshotPayloadCodec(ObjectMapper objectMapper) {
-        return new ProductSnapshotPayloadCodec(objectMapper);
-    }
-
-    @Bean
     ProductListCache productListCache(
             StringRedisTemplate redisTemplate,
             LoanProductProperties loanProductProperties
@@ -47,19 +41,15 @@ public class LoanInfraConfiguration {
 
     @Bean
     ProductListResolver productListResolver(
-            ProductSnapshotRepository productSnapshotRepository,
+            LenderProductListRepository lenderProductListRepository,
             ProductListCache productListCache,
             LenderLoanProductPort lenderLoanProductPort,
-            LenderProductLatestRepository lenderProductLatestRepository,
-            ProductSnapshotPayloadCodec productSnapshotPayloadCodec,
             LoanProductProperties loanProductProperties
     ) {
         return new ProductListResolver(
-                productSnapshotRepository,
+                lenderProductListRepository,
                 productListCache,
                 lenderLoanProductPort,
-                lenderProductLatestRepository,
-                productSnapshotPayloadCodec,
                 loanProductProperties
         );
     }

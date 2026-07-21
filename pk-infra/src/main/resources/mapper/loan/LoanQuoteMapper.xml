@@ -6,7 +6,7 @@
 <result column="quote_no" property="quoteNo"/>
 <result column="credit_application_id" property="creditApplicationId"/>
 <result column="mobile_no" property="mobileNo"/>
-<result column="product_snapshot_id" property="productSnapshotId"/>
+<result column="product_list_id" property="productListId"/>
 <result column="apply_id" property="applyId"/>
 <result column="credit_apply_no" property="creditApplyNo"/>
 <result column="user_id" property="userId"/>
@@ -70,7 +70,7 @@
 (quote_no,
 credit_application_id,
 mobile_no,
-product_snapshot_id,
+product_list_id,
 apply_id,
 credit_apply_no,
 user_id,
@@ -132,7 +132,7 @@ quoted_at)
 VALUES (#{quoteNo},
 #{creditApplicationId},
 #{mobileNo},
-#{productSnapshotId},
+#{productListId},
 #{applyId},
 #{creditApplyNo},
 #{userId},
@@ -259,7 +259,7 @@ VALUES (#{quoteId},
 <select id="findByQuoteNo" resultMap="quoteMap">SELECT id,quote_no,
 credit_application_id,
 mobile_no,
-product_snapshot_id,
+product_list_id,
 apply_id,
 credit_apply_no,
 user_id,

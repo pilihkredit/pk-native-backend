@@ -56,13 +56,13 @@ public class LoanTrialFacade {
                 limits.borrowAmtStepSize()
         );
 
-        ProductListResolver.ResolvedProductList productSnapshot = loanProductFacade.resolveProductList(
+        ProductListResolver.ResolvedProductList productList = loanProductFacade.resolveProductList(
                 profileId,
                 command.applyId(),
                 true
         );
         loanProductFacade.requireProductRepayMethod(
-                productSnapshot,
+                productList,
                 command.productCode(),
                 command.repayMethod()
         );
@@ -88,7 +88,7 @@ public class LoanTrialFacade {
                         quoteNo,
                         creditRecord.id(),
                         creditRecord.mobileNo(),
-                        productSnapshot.snapshotId(),
+                        productList.productListId(),
                         quote,
                         lenderResult.requestJson(),
                         lenderResult.rawResponseJson(),

@@ -2,37 +2,32 @@ package com.pk.infra.loan;
 
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.loan.LenderLoanProduct;
+import com.pk.core.loan.ProductListContentHash;
 import com.pk.core.loan.port.LenderLoanProductPort;
-import com.pk.core.loan.port.LenderProductLatestRepository;
+import com.pk.core.loan.port.LenderProductListRepository;
 import com.pk.core.loan.port.ProductListCache;
-import com.pk.core.loan.port.ProductSnapshotRepository;
 import com.pk.infra.credit.CreditExternalStatusMapper;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class ProductListResolver {
-    private final ProductSnapshotRepository productSnapshotRepository;
+    private final LenderProductListRepository lenderProductListRepository;
     private final ProductListCache productListCache;
     private final LenderLoanProductPort lenderLoanProductPort;
-    private final LenderProductLatestRepository lenderProductLatestRepository;
-    private final ProductSnapshotPayloadCodec payloadCodec;
     private final Duration cacheTtl;
 
     public ProductListResolver(
-            ProductSnapshotRepository productSnapshotRepository,
+            LenderProductListRepository lenderProductListRepository,
             ProductListCache productListCache,
             LenderLoanProductPort lenderLoanProductPort,
-            LenderProductLatestRepository lenderProductLatestRepository,
-            ProductSnapshotPayloadCodec payloadCodec,
             LoanProductProperties loanProductProperties
     ) {
-        this.productSnapshotRepository = productSnapshotRepository;
+        this.lenderProductListRepository = lenderProductListRepository;
         this.productListCache = productListCache;
         this.lenderLoanProductPort = lenderLoanProductPort;
-        this.lenderProductLatestRepository = lenderProductLatestRepository;
-        this.payloadCodec = payloadCodec;
         this.cacheTtl = loanProductProperties.cacheTtl();
     }
 
@@ -46,9 +41,9 @@ public class ProductListResolver {
             if (cached.isPresent()) {
                 return cached.get();
             }
-            Optional<ResolvedProductList> latest = resolveFromLatestSnapshot(creditRecord);
+            Optional<ResolvedProductList> latest = resolveFromLatest(creditRecord);
             if (latest.isPresent()) {
-                productListCache.putSnapshotNo(profileId, creditRecord.applyId(), latest.get().snapshotNo());
+                productListCache.putProductListId(profileId, creditRecord.applyId(), latest.get().productListId());
                 return latest.get();
             }
         }
@@ -59,21 +54,21 @@ public class ProductListResolver {
             long profileId,
             CreditApplicationRepository.CreditApplicationRecord creditRecord
     ) {
-        Optional<String> snapshotNo = productListCache.getSnapshotNo(profileId, creditRecord.applyId());
-        if (snapshotNo.isEmpty()) {
+        Optional<Long> listId = productListCache.getProductListId(profileId, creditRecord.applyId());
+        if (listId.isEmpty()) {
             return Optional.empty();
         }
-        return productSnapshotRepository.findBySnapshotNo(snapshotNo.get())
-                .filter(snapshot -> snapshot.creditApplicationId() == creditRecord.id())
-                .filter(snapshot -> !isStale(snapshot.fetchedAt()))
+        return lenderProductListRepository.findById(listId.get())
+                .filter(tree -> tree.header().creditApplicationId() == creditRecord.id())
                 .map(this::toResolved);
     }
 
-    private Optional<ResolvedProductList> resolveFromLatestSnapshot(
+    private Optional<ResolvedProductList> resolveFromLatest(
             CreditApplicationRepository.CreditApplicationRecord creditRecord
     ) {
-        return productSnapshotRepository.findLatestByCreditApplicationId(creditRecord.id())
-                .filter(snapshot -> !isStale(snapshot.fetchedAt()))
+        return lenderProductListRepository.findLatestByApplyId(creditRecord.applyId())
+                .filter(tree -> tree.header().creditApplicationId() == creditRecord.id())
+                .filter(tree -> !isStale(tree.header().fetchedAt()))
                 .map(this::toResolved);
     }
 
@@ -85,55 +80,52 @@ public class ProductListResolver {
                 lenderLoanProductPort.listProducts(creditRecord.applyId());
         Instant fetchedAt = Instant.now();
         String productStatus = mapProductStatus(lenderResult.productStatus());
-        String productsJson = payloadCodec.encode(productStatus, lenderResult.products());
-        String snapshotNo = ProductSnapshotNoGenerator.generate();
-        ProductSnapshotRepository.ProductSnapshotRecord snapshot = productSnapshotRepository.insert(
-                new ProductSnapshotRepository.ProductSnapshotInsert(
-                        snapshotNo,
-                        creditRecord.applyId(),
-                        creditRecord.id(),
-                        CreditExternalStatusMapper.toPublicStatus(
-                                CreditExternalStatusMapper.mapLenderStatus(lenderResult.externalCreditStatus())
-                        ),
-                        productStatus,
-                        productsJson,
-                        fetchedAt
-                )
+        String creditStatus = CreditExternalStatusMapper.toPublicStatus(
+                CreditExternalStatusMapper.mapLenderStatus(lenderResult.externalCreditStatus())
         );
-        lenderProductLatestRepository.replaceLatest(new LenderProductLatestRepository.ReplaceLatestCommand(
-                profileId,
-                creditRecord.id(),
-                creditRecord.mobileNo(),
-                lenderResult.applyId() == null ? creditRecord.applyId() : lenderResult.applyId(),
+        String applyId = lenderResult.applyId() == null ? creditRecord.applyId() : lenderResult.applyId();
+        String contentHash = ProductListContentHash.sha256(
+                creditStatus,
+                productStatus,
                 lenderResult.creditApplyNo(),
                 lenderResult.userId(),
-                lenderResult.externalCreditStatus(),
-                productStatus,
-                lenderResult.requestJson(),
-                lenderResult.responseDataJson(),
-                fetchedAt,
                 lenderResult.products()
-        ));
-        productListCache.putSnapshotNo(profileId, creditRecord.applyId(), snapshot.snapshotNo());
-        return new ResolvedProductList(
-                snapshot.id(),
-                snapshot.snapshotNo(),
-                snapshot.creditStatus(),
-                productStatus,
-                lenderResult.products(),
-                snapshot.fetchedAt()
         );
+
+        Optional<LenderProductListRepository.ProductListTree> latest =
+                lenderProductListRepository.findLatestByApplyId(creditRecord.applyId())
+                        .filter(tree -> tree.header().creditApplicationId() == creditRecord.id());
+
+        LenderProductListRepository.ProductListTree tree;
+        if (latest.isPresent() && Objects.equals(latest.get().header().contentHash(), contentHash)) {
+            tree = latest.get();
+        } else {
+            tree = lenderProductListRepository.insertTree(new LenderProductListRepository.ProductListInsert(
+                    profileId,
+                    creditRecord.id(),
+                    creditRecord.mobileNo(),
+                    applyId,
+                    lenderResult.creditApplyNo(),
+                    lenderResult.userId(),
+                    creditStatus,
+                    productStatus,
+                    contentHash,
+                    lenderResult.externalInteractionId(),
+                    fetchedAt,
+                    lenderResult.products()
+            ));
+        }
+        productListCache.putProductListId(profileId, creditRecord.applyId(), tree.header().id());
+        return toResolved(tree);
     }
 
-    private ResolvedProductList toResolved(ProductSnapshotRepository.ProductSnapshotRecord snapshot) {
-        ProductSnapshotPayloadCodec.StoredPayload payload = payloadCodec.decode(snapshot.productsJson());
+    private ResolvedProductList toResolved(LenderProductListRepository.ProductListTree tree) {
         return new ResolvedProductList(
-                snapshot.id(),
-                snapshot.snapshotNo(),
-                snapshot.creditStatus(),
-                snapshot.productStatus(),
-                payload.toLenderProducts(),
-                snapshot.fetchedAt()
+                tree.header().id(),
+                tree.header().creditStatus(),
+                tree.header().productStatus(),
+                tree.products(),
+                tree.header().fetchedAt()
         );
     }
 
@@ -153,8 +145,7 @@ public class ProductListResolver {
     }
 
     public record ResolvedProductList(
-            long snapshotId,
-            String snapshotNo,
+            long productListId,
             String creditStatus,
             String productStatus,
             List<LenderLoanProduct> products,

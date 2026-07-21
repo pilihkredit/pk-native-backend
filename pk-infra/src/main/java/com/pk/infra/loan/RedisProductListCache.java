@@ -17,17 +17,25 @@ public class RedisProductListCache implements ProductListCache {
     }
 
     @Override
-    public Optional<String> getSnapshotNo(long profileId, String applyId) {
+    public Optional<Long> getProductListId(long profileId, String applyId) {
         String value = redisTemplate.opsForValue().get(cacheKey(profileId, applyId));
         if (value == null || value.isBlank()) {
             return Optional.empty();
         }
-        return Optional.of(value.trim());
+        try {
+            return Optional.of(Long.parseLong(value.trim()));
+        } catch (NumberFormatException exception) {
+            return Optional.empty();
+        }
     }
 
     @Override
-    public void putSnapshotNo(long profileId, String applyId, String snapshotNo) {
-        redisTemplate.opsForValue().set(cacheKey(profileId, applyId), snapshotNo, cacheTtl);
+    public void putProductListId(long profileId, String applyId, long productListId) {
+        redisTemplate.opsForValue().set(
+                cacheKey(profileId, applyId),
+                Long.toString(productListId),
+                cacheTtl
+        );
     }
 
     private static String cacheKey(long profileId, String applyId) {

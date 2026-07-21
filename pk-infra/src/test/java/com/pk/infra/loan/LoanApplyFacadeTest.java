@@ -389,7 +389,6 @@ class LoanApplyFacadeTest {
     private static ProductListResolver.ResolvedProductList productSnapshot() {
         return new ProductListResolver.ResolvedProductList(
                 55L,
-                "SNAP-1",
                 "APPROVED",
                 "AVAILABLE",
                 List.of(),

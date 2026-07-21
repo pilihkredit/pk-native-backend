@@ -7,14 +7,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.loan.LenderLoanProduct;
 import com.pk.core.loan.LenderRepayMethod;
+import com.pk.core.loan.ProductListContentHash;
 import com.pk.core.loan.port.LenderLoanProductPort;
-import com.pk.core.loan.port.LenderProductLatestRepository;
+import com.pk.core.loan.port.LenderProductListRepository;
 import com.pk.core.loan.port.ProductListCache;
-import com.pk.core.loan.port.ProductSnapshotRepository;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -30,13 +29,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class ProductListResolverTest {
     @Mock
-    private ProductSnapshotRepository productSnapshotRepository;
+    private LenderProductListRepository lenderProductListRepository;
     @Mock
     private ProductListCache productListCache;
     @Mock
     private LenderLoanProductPort lenderLoanProductPort;
-    @Mock
-    private LenderProductLatestRepository lenderProductLatestRepository;
 
     private ProductListResolver resolver;
 
@@ -45,94 +42,97 @@ class ProductListResolverTest {
         LoanProductProperties properties = new LoanProductProperties();
         properties.setCacheTtl(Duration.ofSeconds(30));
         resolver = new ProductListResolver(
-                productSnapshotRepository,
+                lenderProductListRepository,
                 productListCache,
                 lenderLoanProductPort,
-                lenderProductLatestRepository,
-                new ProductSnapshotPayloadCodec(new ObjectMapper()),
                 properties
         );
     }
 
     @Test
-    void returnsCachedSnapshotWithoutCallingLender() {
+    void returnsCachedListWithoutCallingLender() {
         CreditApplicationRepository.CreditApplicationRecord record = approvedRecord();
-        ProductSnapshotRepository.ProductSnapshotRecord snapshot = freshSnapshot(record, "READY");
-        when(productListCache.getSnapshotNo(1L, "APPLY-1")).thenReturn(Optional.of(snapshot.snapshotNo()));
-        when(productSnapshotRepository.findBySnapshotNo(snapshot.snapshotNo())).thenReturn(Optional.of(snapshot));
+        LenderProductListRepository.ProductListTree tree = freshTree(record, "READY", Instant.now());
+        when(productListCache.getProductListId(1L, "APPLY-1")).thenReturn(Optional.of(tree.header().id()));
+        when(lenderProductListRepository.findById(tree.header().id())).thenReturn(Optional.of(tree));
 
         ProductListResolver.ResolvedProductList result = resolver.resolve(1L, record, false);
 
-        assertThat(result.snapshotNo()).isEqualTo(snapshot.snapshotNo());
+        assertThat(result.productListId()).isEqualTo(tree.header().id());
         assertThat(result.productStatus()).isEqualTo("READY");
         verify(lenderLoanProductPort, never()).listProducts(any());
-        verify(lenderProductLatestRepository, never()).replaceLatest(any());
+        verify(lenderProductListRepository, never()).insertTree(any());
     }
 
     @Test
-    void forceRefreshBypassesCacheAndPersistsSnapshot() {
+    void forceRefreshInsertsWhenContentChanged() {
         CreditApplicationRepository.CreditApplicationRecord record = approvedRecord();
         when(lenderLoanProductPort.listProducts("APPLY-1")).thenReturn(lenderProducts());
-        when(productSnapshotRepository.insert(any())).thenAnswer(invocation -> {
-            ProductSnapshotRepository.ProductSnapshotInsert command = invocation.getArgument(0);
-            return new ProductSnapshotRepository.ProductSnapshotRecord(
-                    501L,
-                    command.snapshotNo(),
-                    command.applyId(),
-                    command.creditApplicationId(),
-                    command.creditStatus(),
-                    command.productStatus(),
-                    command.productsJson(),
-                    command.fetchedAt()
+        when(lenderProductListRepository.findLatestByApplyId("APPLY-1")).thenReturn(Optional.empty());
+        when(lenderProductListRepository.insertTree(any())).thenAnswer(invocation -> {
+            LenderProductListRepository.ProductListInsert command = invocation.getArgument(0);
+            return new LenderProductListRepository.ProductListTree(
+                    new LenderProductListRepository.ProductListHeader(
+                            501L,
+                            command.profileId(),
+                            command.creditApplicationId(),
+                            command.mobileNo(),
+                            command.applyId(),
+                            command.creditApplyNo(),
+                            command.lenderUserId(),
+                            command.creditStatus(),
+                            command.productStatus(),
+                            command.contentHash(),
+                            command.externalInteractionId(),
+                            command.fetchedAt()
+                    ),
+                    command.products()
             );
         });
 
         ProductListResolver.ResolvedProductList result = resolver.resolve(1L, record, true);
 
-        assertThat(result.snapshotId()).isEqualTo(501L);
+        assertThat(result.productListId()).isEqualTo(501L);
         assertThat(result.products()).hasSize(1);
         verify(lenderLoanProductPort).listProducts("APPLY-1");
-        verify(productListCache).putSnapshotNo(eq(1L), eq("APPLY-1"), any());
-        verify(productSnapshotRepository).insert(any());
-        ArgumentCaptor<LenderProductLatestRepository.ReplaceLatestCommand> latestCaptor =
-                ArgumentCaptor.forClass(LenderProductLatestRepository.ReplaceLatestCommand.class);
-        verify(lenderProductLatestRepository).replaceLatest(latestCaptor.capture());
-        assertThat(latestCaptor.getValue().mobileNo()).isEqualTo(record.mobileNo());
-        assertThat(latestCaptor.getValue().lastLenderRequestJson()).contains("APPLY-1");
-        assertThat(latestCaptor.getValue().lastLenderResponseJson()).contains("PD001");
+        verify(productListCache).putProductListId(eq(1L), eq("APPLY-1"), eq(501L));
+        ArgumentCaptor<LenderProductListRepository.ProductListInsert> insertCaptor =
+                ArgumentCaptor.forClass(LenderProductListRepository.ProductListInsert.class);
+        verify(lenderProductListRepository).insertTree(insertCaptor.capture());
+        assertThat(insertCaptor.getValue().mobileNo()).isEqualTo(record.mobileNo());
+        assertThat(insertCaptor.getValue().externalInteractionId()).isEqualTo(88L);
+        assertThat(insertCaptor.getValue().contentHash()).isEqualTo(ProductListContentHash.sha256(
+                insertCaptor.getValue().creditStatus(),
+                insertCaptor.getValue().productStatus(),
+                insertCaptor.getValue().creditApplyNo(),
+                insertCaptor.getValue().lenderUserId(),
+                insertCaptor.getValue().products()
+        ));
     }
 
     @Test
-    void refetchesWhenCachedSnapshotIsStale() {
+    void reusesLatestWhenContentHashUnchanged() {
         CreditApplicationRepository.CreditApplicationRecord record = approvedRecord();
-        ProductSnapshotRepository.ProductSnapshotRecord stale = freshSnapshot(
-                record,
-                "READY",
-                Instant.now().minusSeconds(60)
+        LenderLoanProductPort.LenderLoanProductListResult lenderResult = lenderProducts();
+        String creditStatus = "APPROVED";
+        String productStatus = "READY";
+        String hash = ProductListContentHash.sha256(
+                creditStatus,
+                productStatus,
+                lenderResult.creditApplyNo(),
+                lenderResult.userId(),
+                lenderResult.products()
         );
-        when(productListCache.getSnapshotNo(1L, "APPLY-1")).thenReturn(Optional.of(stale.snapshotNo()));
-        when(productSnapshotRepository.findBySnapshotNo(stale.snapshotNo())).thenReturn(Optional.of(stale));
-        when(productSnapshotRepository.findLatestByCreditApplicationId(100L)).thenReturn(Optional.of(stale));
-        when(lenderLoanProductPort.listProducts("APPLY-1")).thenReturn(lenderProducts());
-        when(productSnapshotRepository.insert(any())).thenAnswer(invocation -> {
-            ProductSnapshotRepository.ProductSnapshotInsert command = invocation.getArgument(0);
-            return new ProductSnapshotRepository.ProductSnapshotRecord(
-                    502L,
-                    command.snapshotNo(),
-                    command.applyId(),
-                    command.creditApplicationId(),
-                    command.creditStatus(),
-                    command.productStatus(),
-                    command.productsJson(),
-                    command.fetchedAt()
-            );
-        });
+        LenderProductListRepository.ProductListTree existing = freshTree(record, productStatus, Instant.now().minusSeconds(60), hash);
+        when(productListCache.getProductListId(1L, "APPLY-1")).thenReturn(Optional.empty());
+        when(lenderProductListRepository.findLatestByApplyId("APPLY-1")).thenReturn(Optional.of(existing));
+        when(lenderLoanProductPort.listProducts("APPLY-1")).thenReturn(lenderResult);
 
         ProductListResolver.ResolvedProductList result = resolver.resolve(1L, record, false);
 
-        assertThat(result.snapshotId()).isEqualTo(502L);
-        verify(lenderLoanProductPort).listProducts("APPLY-1");
-        verify(lenderProductLatestRepository).replaceLatest(any());
+        assertThat(result.productListId()).isEqualTo(existing.header().id());
+        verify(lenderProductListRepository, never()).insertTree(any());
+        verify(productListCache).putProductListId(1L, "APPLY-1", existing.header().id());
     }
 
     private static CreditApplicationRepository.CreditApplicationRecord approvedRecord() {
@@ -148,33 +148,45 @@ class ProductListResolverTest {
         );
     }
 
-    private static ProductSnapshotRepository.ProductSnapshotRecord freshSnapshot(
-            CreditApplicationRepository.CreditApplicationRecord record,
-            String productStatus
-    ) {
-        return freshSnapshot(record, productStatus, Instant.now());
-    }
-
-    private static ProductSnapshotRepository.ProductSnapshotRecord freshSnapshot(
+    private static LenderProductListRepository.ProductListTree freshTree(
             CreditApplicationRepository.CreditApplicationRecord record,
             String productStatus,
             Instant fetchedAt
     ) {
-        String productsJson = """
-                {"productStatus":"READY","products":[{"productCode":"PD001","productName":"Cash Loan",\
-                "minAmount":500000,"maxAmount":3000000,"comprehensiveRateUnit":null,"comprehensiveRate":0.18,\
-                "repayMethods":[{"repayMethod":"RP001","cycleType":"D","cycleInterval":30,"cycleCount":6,\
-                "totalCycleInterval":180,"repayMethodType":0,"unevenBillsRepaymentRates":[]}]}]}
-                """;
-        return new ProductSnapshotRepository.ProductSnapshotRecord(
-                500L,
-                "PSNAP20250624120000AAAAAA",
-                record.applyId(),
-                record.id(),
-                "APPROVED",
-                productStatus,
-                productsJson,
-                fetchedAt
+        return freshTree(record, productStatus, fetchedAt, "hash-1");
+    }
+
+    private static LenderProductListRepository.ProductListTree freshTree(
+            CreditApplicationRepository.CreditApplicationRecord record,
+            String productStatus,
+            Instant fetchedAt,
+            String contentHash
+    ) {
+        List<LenderLoanProduct> products = List.of(new LenderLoanProduct(
+                "PD001",
+                null,
+                new BigDecimal("500000"),
+                new BigDecimal("3000000"),
+                null,
+                new BigDecimal("0.18"),
+                List.of(new LenderRepayMethod("RP001", "D", 30, 6, 180, 0, null, List.of()))
+        ));
+        return new LenderProductListRepository.ProductListTree(
+                new LenderProductListRepository.ProductListHeader(
+                        500L,
+                        record.profileId(),
+                        record.id(),
+                        record.mobileNo(),
+                        record.applyId(),
+                        "CA-1",
+                        "USR-1",
+                        "APPROVED",
+                        productStatus,
+                        contentHash,
+                        1L,
+                        fetchedAt
+                ),
+                products
         );
     }
 
@@ -194,8 +206,7 @@ class ProductListResolverTest {
                         new BigDecimal("0.18"),
                         List.of(new LenderRepayMethod("RP001", "D", 30, 6, 180, 0, null, List.of()))
                 )),
-                "{\"applyId\":\"APPLY-1\"}",
-                "{\"products\":[{\"productCode\":\"PD001\"}]}"
+                88L
         );
     }
 }

@@ -25,7 +25,7 @@ public final class LoanQuoteIntegrityValidator {
     }
 
     public static void validateIntegrity(LoanQuoteRepository.LoanQuoteRecord quote, int termCount) {
-        if (quote.productSnapshotId() == null
+        if (quote.productListId() == null
                 || quote.productCode() == null
                 || quote.productCode().isBlank()
                 || quote.repayMethod() == null

@@ -57,9 +57,9 @@ public class LoanProductFacade {
         return null;
     }
 
-    public long latestSnapshotId(long profileId, String applyId, boolean forceRefresh) {
+    public long latestProductListId(long profileId, String applyId, boolean forceRefresh) {
         CreditApplicationRepository.CreditApplicationRecord record = requireApprovedCredit(profileId, applyId);
-        return productListResolver.resolve(profileId, record, forceRefresh).snapshotId();
+        return productListResolver.resolve(profileId, record, forceRefresh).productListId();
     }
 
     public ProductListResolver.ResolvedProductList resolveProductList(

@@ -16,7 +16,7 @@ public final class LoanQuotePersistenceMapper {
             String quoteNo,
             long creditApplicationId,
             String mobileNo,
-            Long productSnapshotId,
+            Long productListId,
             LoanTrialQuoteDetail quote,
             String lastLenderRequestJson,
             String lastLenderResponseJson,
@@ -27,7 +27,7 @@ public final class LoanQuotePersistenceMapper {
                 quoteNo,
                 creditApplicationId,
                 mobileNo,
-                productSnapshotId,
+                productListId,
                 quote,
                 lastLenderRequestJson,
                 lastLenderResponseJson,
@@ -41,7 +41,7 @@ public final class LoanQuotePersistenceMapper {
         param.setQuoteNo(command.quoteNo());
         param.setCreditApplicationId(command.creditApplicationId());
         param.setMobileNo(command.mobileNo());
-        param.setProductSnapshotId(command.productSnapshotId());
+        param.setProductListId(command.productListId());
         param.setApplyId(quote.applyId());
         param.setCreditApplyNo(quote.creditApplyNo());
         param.setUserId(quote.userId());
@@ -144,7 +144,7 @@ public final class LoanQuotePersistenceMapper {
                 row.getQuoteNo(),
                 row.getCreditApplicationId(),
                 row.getMobileNo(),
-                row.getProductSnapshotId(),
+                row.getProductListId(),
                 toQuoteDetail(row),
                 row.getLastLenderRequestJson(),
                 row.getLastLenderResponseJson(),

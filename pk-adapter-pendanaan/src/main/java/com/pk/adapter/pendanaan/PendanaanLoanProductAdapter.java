@@ -27,7 +27,13 @@ public class PendanaanLoanProductAdapter implements LenderLoanProductPort {
     @Override
     public LenderLoanProductListResult listProducts(String applyId) {
         String requestBody = "{\"applyId\":\"" + applyId + "\"}";
-        JsonNode data = httpClient.post(PRODUCT_LIST_PATH, requestBody, BUSINESS_TYPE, applyId);
+        PendanaanHttpClient.ExchangeResult exchange = httpClient.postWithInteraction(
+                PRODUCT_LIST_PATH,
+                requestBody,
+                BUSINESS_TYPE,
+                applyId
+        );
+        JsonNode data = exchange.data();
         return new LenderLoanProductListResult(
                 textOrNull(data.get("applyId")),
                 textOrNull(data.get("creditApplyNo")),
@@ -35,20 +41,8 @@ public class PendanaanLoanProductAdapter implements LenderLoanProductPort {
                 textOrNull(data.get("creditStatus")),
                 textOrNull(data.get("productStatus")),
                 mapProducts(data.get("products")),
-                requestBody,
-                serializeResponseData(data)
+                exchange.interactionId()
         );
-    }
-
-    private String serializeResponseData(JsonNode data) {
-        if (data == null || data.isNull()) {
-            return null;
-        }
-        try {
-            return objectMapper.writeValueAsString(data);
-        } catch (Exception exception) {
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
-        }
     }
 
     private List<LenderLoanProduct> mapProducts(JsonNode productsNode) {

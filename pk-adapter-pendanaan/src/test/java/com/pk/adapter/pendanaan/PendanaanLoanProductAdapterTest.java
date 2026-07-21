@@ -20,12 +20,12 @@ class PendanaanLoanProductAdapterTest {
     void mapsTopLevelFieldsAndUnevenRateRawJson() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         PendanaanLoanProductAdapter adapter = new PendanaanLoanProductAdapter(httpClient, objectMapper);
-        when(httpClient.post(
+        when(httpClient.postWithInteraction(
                 eq(PendanaanLoanProductAdapter.PRODUCT_LIST_PATH),
                 org.mockito.ArgumentMatchers.anyString(),
                 eq(PendanaanLoanProductAdapter.BUSINESS_TYPE),
                 eq("APPLY-1")
-        )).thenReturn(objectMapper.readTree("""
+        )).thenReturn(new PendanaanHttpClient.ExchangeResult(objectMapper.readTree("""
                 {
                   "applyId": "APPLY-1",
                   "creditApplyNo": "CA2025060200001",
@@ -54,7 +54,7 @@ class PendanaanLoanProductAdapterTest {
                     }
                   ]
                 }
-                """));
+                """), 99L));
 
         LenderLoanProductPort.LenderLoanProductListResult result = adapter.listProducts("APPLY-1");
 
@@ -63,8 +63,7 @@ class PendanaanLoanProductAdapterTest {
         assertThat(result.userId()).isEqualTo("USR202506020001");
         assertThat(result.externalCreditStatus()).isEqualTo("SUCCESS");
         assertThat(result.productStatus()).isEqualTo("READY");
-        assertThat(result.requestJson()).contains("APPLY-1");
-        assertThat(result.responseDataJson()).contains("CA2025060200001");
+        assertThat(result.externalInteractionId()).isEqualTo(99L);
         assertThat(result.products()).hasSize(1);
         assertThat(result.products().getFirst().comprehensiveRateUnit()).isEqualTo("M");
         assertThat(result.products().getFirst().repayMethods()).hasSize(1);

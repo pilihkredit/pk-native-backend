@@ -56,7 +56,6 @@ public class FakePendanaanLoanProductAdapter implements LenderLoanProductPort {
                                 )
                         )
                 ),
-                "{\"applyId\":\"" + applyId + "\"}",
                 null
         );
     }

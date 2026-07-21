@@ -8,7 +8,7 @@ public class LoanQuoteRow {
     private String quoteNo;
     private long creditApplicationId;
     private String mobileNo;
-    private Long productSnapshotId;
+    private Long productListId;
     private String applyId;
     private String creditApplyNo;
     private String userId;
@@ -76,8 +76,8 @@ public class LoanQuoteRow {
     public void setCreditApplicationId(long creditApplicationId) { this.creditApplicationId = creditApplicationId; }
     public String getMobileNo() { return mobileNo; }
     public void setMobileNo(String mobileNo) { this.mobileNo = mobileNo; }
-    public Long getProductSnapshotId() { return productSnapshotId; }
-    public void setProductSnapshotId(Long productSnapshotId) { this.productSnapshotId = productSnapshotId; }
+    public Long getProductListId() { return productListId; }
+    public void setProductListId(Long productListId) { this.productListId = productListId; }
     public String getApplyId() { return applyId; }
     public void setApplyId(String applyId) { this.applyId = applyId; }
     public String getCreditApplyNo() { return creditApplyNo; }
