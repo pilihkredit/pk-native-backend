@@ -3,11 +3,13 @@ package com.pk.infra.profile;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.profile.port.LenderProfileSyncPort;
+import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.ProfileLoginLogRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
+import com.pk.core.profile.port.ProfileTongdunRepository;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
@@ -23,6 +25,8 @@ public class ProfileSyncHandler {
     private final ProfileBankCardRepository profileBankCardRepository;
     private final ProfileIdentityRepository profileIdentityRepository;
     private final ProfileLoginLogRepository profileLoginLogRepository;
+    private final ProfileAfRepository profileAfRepository;
+    private final ProfileTongdunRepository profileTongdunRepository;
     private final LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder;
     private final OcrSensitiveJsonSupport ocrSensitiveJsonSupport;
 
@@ -35,6 +39,8 @@ public class ProfileSyncHandler {
             ProfileBankCardRepository profileBankCardRepository,
             ProfileIdentityRepository profileIdentityRepository,
             ProfileLoginLogRepository profileLoginLogRepository,
+            ProfileAfRepository profileAfRepository,
+            ProfileTongdunRepository profileTongdunRepository,
             LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder,
             OcrSensitiveJsonSupport ocrSensitiveJsonSupport
     ) {
@@ -46,6 +52,8 @@ public class ProfileSyncHandler {
         this.profileBankCardRepository = profileBankCardRepository;
         this.profileIdentityRepository = profileIdentityRepository;
         this.profileLoginLogRepository = profileLoginLogRepository;
+        this.profileAfRepository = profileAfRepository;
+        this.profileTongdunRepository = profileTongdunRepository;
         this.lenderSyncAuditRequestBuilder = lenderSyncAuditRequestBuilder;
         this.ocrSensitiveJsonSupport = ocrSensitiveJsonSupport;
     }
@@ -78,6 +86,7 @@ public class ProfileSyncHandler {
             );
             persistLenderAudit(
                     job.profileId(),
+                    job.requestId(),
                     mobileNo,
                     job.module(),
                     auditRequestJson,
@@ -116,6 +125,7 @@ public class ProfileSyncHandler {
 
     private void persistLenderAudit(
             long profileId,
+            String requestId,
             String mobileNo,
             ProfileSyncModule module,
             String requestDataJson,
@@ -144,6 +154,16 @@ public class ProfileSyncHandler {
             );
             case LOGIN_LOG -> profileLoginLogRepository.updateLastLenderAudit(
                     profileId,
+                    requestDataJson,
+                    responseDataJson
+            );
+            case APPSFLYER_INSTALL -> profileAfRepository.updateLastLenderAudit(
+                    requestId,
+                    requestDataJson,
+                    responseDataJson
+            );
+            case TONGDUN_DEVICE -> profileTongdunRepository.updateLastLenderAudit(
+                    requestId,
                     requestDataJson,
                     responseDataJson
             );

@@ -14,10 +14,12 @@ import com.pk.core.api.ApiException;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileContactsModuleData;
 import com.pk.core.profile.ProfilePersonalData;
+import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileLoginLogRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
+import com.pk.core.profile.port.ProfileTongdunRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.UserProfileBindingRepository;
@@ -33,6 +35,8 @@ class ProfileServiceFacadeTest {
     private ProfileContactRepository profileContactRepository;
     private ProfileBankCardRepository profileBankCardRepository;
     private ProfileLoginLogRepository profileLoginLogRepository;
+    private ProfileAfRepository profileAfRepository;
+    private ProfileTongdunRepository profileTongdunRepository;
     private UserDeviceWriter userDeviceWriter;
     private BankReferenceFacade bankReferenceFacade;
     private ProfileSyncOrchestrator profileSyncOrchestrator;
@@ -46,6 +50,8 @@ class ProfileServiceFacadeTest {
         profileContactRepository = mock(ProfileContactRepository.class);
         profileBankCardRepository = mock(ProfileBankCardRepository.class);
         profileLoginLogRepository = mock(ProfileLoginLogRepository.class);
+        profileAfRepository = mock(ProfileAfRepository.class);
+        profileTongdunRepository = mock(ProfileTongdunRepository.class);
         userDeviceWriter = mock(UserDeviceWriter.class);
         bankReferenceFacade = mock(BankReferenceFacade.class);
         profileSyncOrchestrator = mock(ProfileSyncOrchestrator.class);
@@ -77,6 +83,8 @@ class ProfileServiceFacadeTest {
                 profileContactRepository,
                 profileBankCardRepository,
                 profileLoginLogRepository,
+                profileAfRepository,
+                profileTongdunRepository,
                 userDeviceWriter,
                 encryptor,
                 new ProfileEnumValidator(new PendanaanProfileEnumCatalog()),
@@ -96,6 +104,8 @@ class ProfileServiceFacadeTest {
         when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.empty());
         when(profileBankCardRepository.findByProfileId(10L)).thenReturn(Optional.empty());
         when(profileLoginLogRepository.findByProfileId(10L)).thenReturn(Optional.empty());
+        when(profileAfRepository.findByRequestId(any())).thenReturn(Optional.empty());
+        when(profileTongdunRepository.findByRequestId(any())).thenReturn(Optional.empty());
         when(profileBankCardRepository.findByCardNoHash(any())).thenReturn(Optional.empty());
         when(bankReferenceFacade.isValidBankCode("BCA")).thenReturn(true);
         when(profileSyncOrchestrator.scheduleAfterSave(any())).thenReturn(

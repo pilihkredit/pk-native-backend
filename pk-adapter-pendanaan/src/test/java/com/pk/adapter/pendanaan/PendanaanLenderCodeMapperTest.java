@@ -45,4 +45,14 @@ class PendanaanLenderCodeMapperTest {
         ApiCode mapped = PendanaanLenderCodeMapper.mapApiCode("A009999", ProfileSyncModule.PERSONAL);
         assertThat(mapped).isEqualTo(ApiCode.LENDER_INVALID_REQUEST_PARAMETERS);
     }
+
+    @Test
+    void mapsTongdunDeviceLenderCodes() {
+        assertThat(PendanaanLenderCodeMapper.mapApiCode("A000466", ProfileSyncModule.TONGDUN_DEVICE))
+                .isEqualTo(ApiCode.LENDER_INVALID_REQUEST_PARAMETERS);
+        assertThat(PendanaanLenderCodeMapper.mapApiCode("A000467", ProfileSyncModule.TONGDUN_DEVICE))
+                .isEqualTo(ApiCode.LENDER_INVALID_REQUEST_PARAMETERS);
+        assertThat(PendanaanLenderCodeMapper.mapApiCode("A000468", ProfileSyncModule.TONGDUN_DEVICE))
+                .isEqualTo(ApiCode.LENDER_INVALID_REQUEST_PARAMETERS);
+    }
 }

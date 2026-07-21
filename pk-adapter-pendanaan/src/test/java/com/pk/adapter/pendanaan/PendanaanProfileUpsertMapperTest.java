@@ -147,4 +147,38 @@ class PendanaanProfileUpsertMapperTest {
         assertThat(userInfo.get("loginLog").get("loginLat").asText()).isEqualTo("-6.2088");
         assertThat(userInfo.get("loginLog").get("loginLng").asText()).isEqualTo("106.8456");
     }
+
+    @Test
+    void applyAppsFlyerInstallPutsNonBlankFieldsOnly() {
+        ObjectNode userInfo = objectMapper.createObjectNode();
+        PendanaanProfileUpsertMapper.applyModule(
+                userInfo,
+                ProfileSyncModule.APPSFLYER_INSTALL,
+                new ProfileSyncPayload.AppsFlyerInstallPayload(
+                        "AF1", "AD1", null, null, null, "2026-07-08 10:00:00",
+                        "media", null, null, null, null, null, "camp",
+                        null, null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null
+                )
+        );
+        assertThat(userInfo.path("appsFlyerInstall").path("appsflyerId").asText()).isEqualTo("AF1");
+        assertThat(userInfo.path("appsFlyerInstall").path("advertisingId").asText()).isEqualTo("AD1");
+        assertThat(userInfo.path("appsFlyerInstall").path("installTime").asText()).isEqualTo("2026-07-08 10:00:00");
+        assertThat(userInfo.path("appsFlyerInstall").path("mediaSource").asText()).isEqualTo("media");
+        assertThat(userInfo.path("appsFlyerInstall").path("campaign").asText()).isEqualTo("camp");
+        assertThat(userInfo.path("appsFlyerInstall").has("androidId")).isFalse();
+    }
+
+    @Test
+    void applyTongdunDevice() {
+        ObjectNode userInfo = objectMapper.createObjectNode();
+        PendanaanProfileUpsertMapper.applyModule(
+                userInfo,
+                ProfileSyncModule.TONGDUN_DEVICE,
+                new ProfileSyncPayload.TongdunDevicePayload("LOGIN", "KEY1")
+        );
+        assertThat(userInfo.path("tongdunDevice").path("sceneType").asText()).isEqualTo("LOGIN");
+        assertThat(userInfo.path("tongdunDevice").path("tongdunKey").asText()).isEqualTo("KEY1");
+    }
 }

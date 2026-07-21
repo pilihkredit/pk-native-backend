@@ -3,14 +3,18 @@ package com.pk.app.profile.application;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.app.common.web.ClientRequestHeaders;
+import com.pk.app.profile.dto.request.ProfileAppsFlyerInstallSaveRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
+import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
+import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
+import com.pk.app.profile.dto.response.ProfileTongdunDeviceSaveResponse;
 import com.pk.adapter.pendanaan.PendanaanProperties;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -140,6 +144,96 @@ public class ProfileApplicationService {
                 )
         );
         return new ProfileLoginLogSaveResponse(
+                result.requestId(),
+                result.moduleStatus(),
+                parseLenderResponse(result.lenderResponseJson())
+        );
+    }
+
+    public ProfileAppsFlyerInstallSaveResponse saveAppsFlyerInstall(
+            AuthenticatedPrincipal principal,
+            ProfileAppsFlyerInstallSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        ProfileServiceFacade.AppsFlyerSaveResult result = profileServiceFacade.saveAppsFlyerInstall(
+                principal.profileId(),
+                principal.partnerUserId(),
+                principal.mobileNo(),
+                new ProfileServiceFacade.AppsFlyerSaveCommand(
+                        request.requestId(),
+                        request.appsflyerId(),
+                        request.advertisingId(),
+                        request.androidId(),
+                        request.attributedTouchTime(),
+                        request.gpClickTime(),
+                        request.installTime(),
+                        request.mediaSource(),
+                        request.afPrt(),
+                        request.afAdsetId(),
+                        request.afAdset(),
+                        request.afSiteid(),
+                        request.afCId(),
+                        request.campaign(),
+                        request.appVersion(),
+                        request.appId(),
+                        request.deviceType(),
+                        request.osVersion(),
+                        request.countryCode(),
+                        request.city(),
+                        request.postalCode(),
+                        request.ip(),
+                        request.operator(),
+                        request.deviceCategory(),
+                        request.platform(),
+                        request.deviceModel(),
+                        request.idfv(),
+                        request.idfa(),
+                        request.afAd(),
+                        request.afChannel(),
+                        request.attributedTouchType(),
+                        request.afAdId(),
+                        request.afAdType(),
+                        request.contributor1TouchType(),
+                        request.contributor1TouchTime(),
+                        request.contributor1AfPrt(),
+                        request.contributor1MatchType(),
+                        request.contributor1EngagementType(),
+                        request.bundleId(),
+                        request.matchType(),
+                        request.gpInstallBegin(),
+                        resolveDevice(request.device(), httpRequest)
+                )
+        );
+        return new ProfileAppsFlyerInstallSaveResponse(
+                result.requestId(),
+                result.moduleStatus(),
+                parseLenderResponse(result.lenderResponseJson())
+        );
+    }
+
+    public ProfileTongdunDeviceSaveResponse saveTongdunDevice(
+            AuthenticatedPrincipal principal,
+            ProfileTongdunDeviceSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        ProfileServiceFacade.TongdunSaveResult result = profileServiceFacade.saveTongdunDevice(
+                principal.profileId(),
+                principal.partnerUserId(),
+                principal.mobileNo(),
+                new ProfileServiceFacade.TongdunSaveCommand(
+                        request.requestId(),
+                        request.sceneType(),
+                        request.tongdunKey(),
+                        resolveDevice(request.device(), httpRequest)
+                )
+        );
+        return new ProfileTongdunDeviceSaveResponse(
                 result.requestId(),
                 result.moduleStatus(),
                 parseLenderResponse(result.lenderResponseJson())

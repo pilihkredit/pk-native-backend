@@ -22,6 +22,8 @@ final class PendanaanProfileUpsertMapper {
             case BANK_CARD -> applyBankCard(userInfo, (ProfileSyncPayload.BankCardProfilePayload) payload);
             case IDENTITY -> applyIdentity(userInfo, (ProfileSyncPayload.IdentityProfilePayload) payload);
             case LOGIN_LOG -> applyLoginLog(userInfo, (ProfileSyncPayload.LoginLogProfilePayload) payload);
+            case APPSFLYER_INSTALL -> applyAppsFlyer(userInfo, (ProfileSyncPayload.AppsFlyerInstallPayload) payload);
+            case TONGDUN_DEVICE -> applyTongdun(userInfo, (ProfileSyncPayload.TongdunDevicePayload) payload);
         }
     }
 
@@ -53,18 +55,6 @@ final class PendanaanProfileUpsertMapper {
         bankCard.put("cardNumber", payload.cardNumber());
     }
 
-    private static void applyLoginLog(ObjectNode userInfo, ProfileSyncPayload.LoginLogProfilePayload payload) {
-        ObjectNode loginLog = userInfo.putObject("loginLog");
-        loginLog.put("loginType", payload.loginType());
-        loginLog.put("loginIp", payload.loginIp());
-        if (payload.loginLat() != null) {
-            loginLog.put("loginLat", payload.loginLat());
-        }
-        if (payload.loginLng() != null) {
-            loginLog.put("loginLng", payload.loginLng());
-        }
-    }
-
     private static void applyIdentity(ObjectNode userInfo, ProfileSyncPayload.IdentityProfilePayload payload) {
         ObjectNode identity = userInfo.putObject("identity");
         identity.put("name", payload.name());
@@ -86,6 +76,68 @@ final class PendanaanProfileUpsertMapper {
         putIfPresent(ocrResult, "expiryDate", payload.expiryDate());
         ocrResult.put("rawOcrDetail", payload.rawOcrDetail());
         ocrResult.put("ocrChannel", payload.ocrChannel());
+    }
+
+    private static void applyLoginLog(ObjectNode userInfo, ProfileSyncPayload.LoginLogProfilePayload payload) {
+        ObjectNode loginLog = userInfo.putObject("loginLog");
+        loginLog.put("loginType", payload.loginType());
+        loginLog.put("loginIp", payload.loginIp());
+        if (payload.loginLat() != null) {
+            loginLog.put("loginLat", payload.loginLat());
+        }
+        if (payload.loginLng() != null) {
+            loginLog.put("loginLng", payload.loginLng());
+        }
+    }
+
+    private static void applyAppsFlyer(ObjectNode userInfo, ProfileSyncPayload.AppsFlyerInstallPayload payload) {
+        ObjectNode appsFlyer = userInfo.putObject("appsFlyerInstall");
+        putIfPresent(appsFlyer, "appsflyerId", payload.appsflyerId());
+        putIfPresent(appsFlyer, "advertisingId", payload.advertisingId());
+        putIfPresent(appsFlyer, "androidId", payload.androidId());
+        putIfPresent(appsFlyer, "attributedTouchTime", payload.attributedTouchTime());
+        putIfPresent(appsFlyer, "gpClickTime", payload.gpClickTime());
+        putIfPresent(appsFlyer, "installTime", payload.installTime());
+        putIfPresent(appsFlyer, "mediaSource", payload.mediaSource());
+        putIfPresent(appsFlyer, "afPrt", payload.afPrt());
+        putIfPresent(appsFlyer, "afAdsetId", payload.afAdsetId());
+        putIfPresent(appsFlyer, "afAdset", payload.afAdset());
+        putIfPresent(appsFlyer, "afSiteid", payload.afSiteid());
+        putIfPresent(appsFlyer, "afCId", payload.afCId());
+        putIfPresent(appsFlyer, "campaign", payload.campaign());
+        putIfPresent(appsFlyer, "appVersion", payload.appVersion());
+        putIfPresent(appsFlyer, "appId", payload.appId());
+        putIfPresent(appsFlyer, "deviceType", payload.deviceType());
+        putIfPresent(appsFlyer, "osVersion", payload.osVersion());
+        putIfPresent(appsFlyer, "countryCode", payload.countryCode());
+        putIfPresent(appsFlyer, "city", payload.city());
+        putIfPresent(appsFlyer, "postalCode", payload.postalCode());
+        putIfPresent(appsFlyer, "ip", payload.ip());
+        putIfPresent(appsFlyer, "operator", payload.operator());
+        putIfPresent(appsFlyer, "deviceCategory", payload.deviceCategory());
+        putIfPresent(appsFlyer, "platform", payload.platform());
+        putIfPresent(appsFlyer, "deviceModel", payload.deviceModel());
+        putIfPresent(appsFlyer, "idfv", payload.idfv());
+        putIfPresent(appsFlyer, "idfa", payload.idfa());
+        putIfPresent(appsFlyer, "afAd", payload.afAd());
+        putIfPresent(appsFlyer, "afChannel", payload.afChannel());
+        putIfPresent(appsFlyer, "attributedTouchType", payload.attributedTouchType());
+        putIfPresent(appsFlyer, "afAdId", payload.afAdId());
+        putIfPresent(appsFlyer, "afAdType", payload.afAdType());
+        putIfPresent(appsFlyer, "contributor1TouchType", payload.contributor1TouchType());
+        putIfPresent(appsFlyer, "contributor1TouchTime", payload.contributor1TouchTime());
+        putIfPresent(appsFlyer, "contributor1AfPrt", payload.contributor1AfPrt());
+        putIfPresent(appsFlyer, "contributor1MatchType", payload.contributor1MatchType());
+        putIfPresent(appsFlyer, "contributor1EngagementType", payload.contributor1EngagementType());
+        putIfPresent(appsFlyer, "bundleId", payload.bundleId());
+        putIfPresent(appsFlyer, "matchType", payload.matchType());
+        putIfPresent(appsFlyer, "gpInstallBegin", payload.gpInstallBegin());
+    }
+
+    private static void applyTongdun(ObjectNode userInfo, ProfileSyncPayload.TongdunDevicePayload payload) {
+        ObjectNode tongdun = userInfo.putObject("tongdunDevice");
+        tongdun.put("sceneType", payload.sceneType());
+        tongdun.put("tongdunKey", payload.tongdunKey());
     }
 
     private static void putIfPresent(ObjectNode node, String field, String value) {

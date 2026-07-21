@@ -86,6 +86,8 @@ class ProfileSyncHandlerTest {
                 profileBankCardRepository,
                 profileIdentityRepository,
                 profileLoginLogRepository,
+                mock(com.pk.core.profile.port.ProfileAfRepository.class),
+                mock(com.pk.core.profile.port.ProfileTongdunRepository.class),
                 lenderSyncAuditRequestBuilder,
                 ocrSensitiveJsonSupport
         );

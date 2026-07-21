@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileAfMapper">
+    <sql id="afColumns">
+        id, profile_id, mobile_no, appsflyer_id, advertising_id, android_id, attributed_touch_time, gp_click_time,
+        install_time, media_source, af_prt, af_adset_id, af_adset, af_siteid, af_c_id, campaign, app_version, app_id,
+        device_type, os_version, country_code, city, postal_code, ip, operator, device_category, platform, device_model,
+        idfv, idfa, af_ad, af_channel, attributed_touch_type, af_ad_id, af_ad_type, contributor1_touch_type,
+        contributor1_touch_time, contributor1_af_prt, contributor1_match_type, contributor1_engagement_type,
+        bundle_id, match_type, gp_install_begin, module_status, request_id, last_lender_request_json,
+        last_lender_response_json
+    </sql>
+    <select id="findByRequestId" resultType="com.pk.infra.profile.repository.ProfileAfRow">
+        SELECT <include refid="afColumns"/>
+        FROM user_profile_af
+        WHERE request_id = #{requestId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO user_profile_af (
+            profile_id, mobile_no, appsflyer_id, advertising_id, android_id, attributed_touch_time, gp_click_time,
+            install_time, media_source, af_prt, af_adset_id, af_adset, af_siteid, af_c_id, campaign, app_version, app_id,
+            device_type, os_version, country_code, city, postal_code, ip, operator, device_category, platform, device_model,
+            idfv, idfa, af_ad, af_channel, attributed_touch_type, af_ad_id, af_ad_type, contributor1_touch_type,
+            contributor1_touch_time, contributor1_af_prt, contributor1_match_type, contributor1_engagement_type,
+            bundle_id, match_type, gp_install_begin, module_status, request_id
+        ) VALUES (
+            #{profileId}, #{mobileNo}, #{appsflyerId}, #{advertisingId}, #{androidId}, #{attributedTouchTime}, #{gpClickTime},
+            #{installTime}, #{mediaSource}, #{afPrt}, #{afAdsetId}, #{afAdset}, #{afSiteid}, #{afCId}, #{campaign},
+            #{appVersion}, #{appId}, #{deviceType}, #{osVersion}, #{countryCode}, #{city}, #{postalCode}, #{ip}, #{operator},
+            #{deviceCategory}, #{platform}, #{deviceModel}, #{idfv}, #{idfa}, #{afAd}, #{afChannel}, #{attributedTouchType},
+            #{afAdId}, #{afAdType}, #{contributor1TouchType}, #{contributor1TouchTime}, #{contributor1AfPrt},
+            #{contributor1MatchType}, #{contributor1EngagementType}, #{bundleId}, #{matchType}, #{gpInstallBegin},
+            #{moduleStatus}, #{requestId}
+        )
+    </insert>
+    <update id="updateLastLenderAudit">
+        UPDATE user_profile_af
+        SET last_lender_request_json = #{requestDataJson},
+            last_lender_response_json = #{responseDataJson}
+        WHERE request_id = #{requestId}
+    </update>
+</mapper>

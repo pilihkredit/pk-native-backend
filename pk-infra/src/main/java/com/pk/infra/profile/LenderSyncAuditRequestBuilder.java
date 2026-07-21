@@ -81,7 +81,65 @@ public class LenderSyncAuditRequestBuilder {
             case BANK_CARD -> applyBankCardAudit(userInfo, profileId);
             case IDENTITY -> applyIdentityAudit(userInfo, (ProfileSyncPayload.IdentityProfilePayload) payload);
             case LOGIN_LOG -> applyLoginLogAudit(userInfo, profileId);
+            case APPSFLYER_INSTALL -> applyAppsFlyerAudit(
+                    userInfo,
+                    (ProfileSyncPayload.AppsFlyerInstallPayload) payload
+            );
+            case TONGDUN_DEVICE -> applyTongdunAudit(
+                    userInfo,
+                    (ProfileSyncPayload.TongdunDevicePayload) payload
+            );
         }
+    }
+
+    private void applyAppsFlyerAudit(ObjectNode userInfo, ProfileSyncPayload.AppsFlyerInstallPayload payload) {
+        ObjectNode appsFlyer = userInfo.putObject("appsFlyerInstall");
+        putIfPresent(appsFlyer, "appsflyerId", payload.appsflyerId());
+        putIfPresent(appsFlyer, "advertisingId", payload.advertisingId());
+        putIfPresent(appsFlyer, "androidId", payload.androidId());
+        putIfPresent(appsFlyer, "attributedTouchTime", payload.attributedTouchTime());
+        putIfPresent(appsFlyer, "gpClickTime", payload.gpClickTime());
+        putIfPresent(appsFlyer, "installTime", payload.installTime());
+        putIfPresent(appsFlyer, "mediaSource", payload.mediaSource());
+        putIfPresent(appsFlyer, "afPrt", payload.afPrt());
+        putIfPresent(appsFlyer, "afAdsetId", payload.afAdsetId());
+        putIfPresent(appsFlyer, "afAdset", payload.afAdset());
+        putIfPresent(appsFlyer, "afSiteid", payload.afSiteid());
+        putIfPresent(appsFlyer, "afCId", payload.afCId());
+        putIfPresent(appsFlyer, "campaign", payload.campaign());
+        putIfPresent(appsFlyer, "appVersion", payload.appVersion());
+        putIfPresent(appsFlyer, "appId", payload.appId());
+        putIfPresent(appsFlyer, "deviceType", payload.deviceType());
+        putIfPresent(appsFlyer, "osVersion", payload.osVersion());
+        putIfPresent(appsFlyer, "countryCode", payload.countryCode());
+        putIfPresent(appsFlyer, "city", payload.city());
+        putIfPresent(appsFlyer, "postalCode", payload.postalCode());
+        putIfPresent(appsFlyer, "ip", payload.ip());
+        putIfPresent(appsFlyer, "operator", payload.operator());
+        putIfPresent(appsFlyer, "deviceCategory", payload.deviceCategory());
+        putIfPresent(appsFlyer, "platform", payload.platform());
+        putIfPresent(appsFlyer, "deviceModel", payload.deviceModel());
+        putIfPresent(appsFlyer, "idfv", payload.idfv());
+        putIfPresent(appsFlyer, "idfa", payload.idfa());
+        putIfPresent(appsFlyer, "afAd", payload.afAd());
+        putIfPresent(appsFlyer, "afChannel", payload.afChannel());
+        putIfPresent(appsFlyer, "attributedTouchType", payload.attributedTouchType());
+        putIfPresent(appsFlyer, "afAdId", payload.afAdId());
+        putIfPresent(appsFlyer, "afAdType", payload.afAdType());
+        putIfPresent(appsFlyer, "contributor1TouchType", payload.contributor1TouchType());
+        putIfPresent(appsFlyer, "contributor1TouchTime", payload.contributor1TouchTime());
+        putIfPresent(appsFlyer, "contributor1AfPrt", payload.contributor1AfPrt());
+        putIfPresent(appsFlyer, "contributor1MatchType", payload.contributor1MatchType());
+        putIfPresent(appsFlyer, "contributor1EngagementType", payload.contributor1EngagementType());
+        putIfPresent(appsFlyer, "bundleId", payload.bundleId());
+        putIfPresent(appsFlyer, "matchType", payload.matchType());
+        putIfPresent(appsFlyer, "gpInstallBegin", payload.gpInstallBegin());
+    }
+
+    private void applyTongdunAudit(ObjectNode userInfo, ProfileSyncPayload.TongdunDevicePayload payload) {
+        ObjectNode tongdun = userInfo.putObject("tongdunDevice");
+        tongdun.put("sceneType", payload.sceneType());
+        tongdun.put("tongdunKey", payload.tongdunKey());
     }
 
     private void applyPersonalAudit(ObjectNode userInfo, long profileId) {

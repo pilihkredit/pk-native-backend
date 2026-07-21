@@ -86,6 +86,8 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
             com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
             com.pk.core.profile.port.ProfileLoginLogRepository profileLoginLogRepository,
+            com.pk.core.profile.port.ProfileAfRepository profileAfRepository,
+            com.pk.core.profile.port.ProfileTongdunRepository profileTongdunRepository,
             LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder,
             com.pk.infra.ocr.OcrSensitiveJsonSupport ocrSensitiveJsonSupport
     ) {
@@ -98,6 +100,8 @@ public class ProfileInfraConfiguration {
                 profileBankCardRepository,
                 profileIdentityRepository,
                 profileLoginLogRepository,
+                profileAfRepository,
+                profileTongdunRepository,
                 lenderSyncAuditRequestBuilder,
                 ocrSensitiveJsonSupport
         );
@@ -164,6 +168,8 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
             com.pk.core.profile.port.ProfileLoginLogRepository profileLoginLogRepository,
+            com.pk.core.profile.port.ProfileAfRepository profileAfRepository,
+            com.pk.core.profile.port.ProfileTongdunRepository profileTongdunRepository,
             UserDeviceWriter userDeviceWriter,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             ProfileEnumValidator profileEnumValidator,
@@ -177,6 +183,8 @@ public class ProfileInfraConfiguration {
                 profileContactRepository,
                 profileBankCardRepository,
                 profileLoginLogRepository,
+                profileAfRepository,
+                profileTongdunRepository,
                 userDeviceWriter,
                 sensitiveFieldEncryptor,
                 profileEnumValidator,

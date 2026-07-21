@@ -75,6 +75,7 @@ final class PendanaanLenderCodeMapper {
             case "A000075" -> ApiCode.LENDER_INVALID_EMAIL;
             case "A000144" -> ApiCode.LENDER_DUPLICATE_SUBMISSION_IN_PROGRESS;
             case "A000001", "A000012", "A000017", "A000024" -> ApiCode.LENDER_INVALID_REQUEST_PARAMETERS;
+            case "A000466", "A000467", "A000468" -> ApiCode.LENDER_INVALID_REQUEST_PARAMETERS;
             default -> null;
         };
     }

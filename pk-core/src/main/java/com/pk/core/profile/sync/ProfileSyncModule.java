@@ -5,5 +5,7 @@ public enum ProfileSyncModule {
     CONTACT,
     BANK_CARD,
     IDENTITY,
-    LOGIN_LOG
+    LOGIN_LOG,
+    APPSFLYER_INSTALL,
+    TONGDUN_DEVICE
 }

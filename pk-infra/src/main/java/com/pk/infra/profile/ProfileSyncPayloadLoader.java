@@ -35,6 +35,8 @@ public class ProfileSyncPayloadLoader {
             case BANK_CARD -> throw new IllegalStateException("Bank card payload must be supplied explicitly");
             case IDENTITY -> throw new IllegalStateException("Identity payload must be supplied explicitly");
             case LOGIN_LOG -> throw new IllegalStateException("Login log payload must be supplied explicitly");
+            case APPSFLYER_INSTALL -> throw new IllegalStateException("AppsFlyer payload must be supplied explicitly");
+            case TONGDUN_DEVICE -> throw new IllegalStateException("Tongdun payload must be supplied explicitly");
         };
     }
 

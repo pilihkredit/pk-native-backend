@@ -3,15 +3,19 @@ package com.pk.infra.profile;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.profile.EncryptedField;
+import com.pk.core.profile.ProfileAfData;
 import com.pk.core.profile.ProfileBankCardData;
 import com.pk.core.profile.ProfileContactData;
 import com.pk.core.profile.ProfileContactsModuleData;
 import com.pk.core.profile.ProfileLoginLogData;
 import com.pk.core.profile.ProfilePersonalData;
+import com.pk.core.profile.ProfileTongdunData;
+import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
 import com.pk.core.profile.port.ProfileLoginLogRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
+import com.pk.core.profile.port.ProfileTongdunRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
@@ -27,11 +31,16 @@ import java.util.Set;
 public class ProfileServiceFacade {
     public static final String MODULE_COMPLETED = "COMPLETED";
     private static final int MIN_CONTACT_COUNT = 2;
+    private static final Set<String> TONGDUN_SCENE_TYPES = Set.of(
+            "LOGIN", "SIGNUP", "IDENTITY", "LOAN", "CREDIT"
+    );
 
     private final ProfilePersonalRepository profilePersonalRepository;
     private final ProfileContactRepository profileContactRepository;
     private final ProfileBankCardRepository profileBankCardRepository;
     private final ProfileLoginLogRepository profileLoginLogRepository;
+    private final ProfileAfRepository profileAfRepository;
+    private final ProfileTongdunRepository profileTongdunRepository;
     private final UserDeviceWriter userDeviceWriter;
     private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private final ProfileEnumValidator profileEnumValidator;
@@ -45,6 +54,8 @@ public class ProfileServiceFacade {
             ProfileContactRepository profileContactRepository,
             ProfileBankCardRepository profileBankCardRepository,
             ProfileLoginLogRepository profileLoginLogRepository,
+            ProfileAfRepository profileAfRepository,
+            ProfileTongdunRepository profileTongdunRepository,
             UserDeviceWriter userDeviceWriter,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             ProfileEnumValidator profileEnumValidator,
@@ -57,6 +68,8 @@ public class ProfileServiceFacade {
         this.profileContactRepository = profileContactRepository;
         this.profileBankCardRepository = profileBankCardRepository;
         this.profileLoginLogRepository = profileLoginLogRepository;
+        this.profileAfRepository = profileAfRepository;
+        this.profileTongdunRepository = profileTongdunRepository;
         this.userDeviceWriter = userDeviceWriter;
         this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
         this.profileEnumValidator = profileEnumValidator;
@@ -275,6 +288,146 @@ public class ProfileServiceFacade {
         );
     }
 
+    public AppsFlyerSaveResult saveAppsFlyerInstall(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            AppsFlyerSaveCommand command
+    ) {
+        validateAppsFlyer(command);
+        String normalizedMobileNo = normalizeMobile(mobileNo);
+
+        var existing = profileAfRepository.findByRequestId(command.requestId());
+        if (existing.isPresent()) {
+            return new AppsFlyerSaveResult(
+                    command.requestId(),
+                    MODULE_COMPLETED,
+                    existing.get().lastLenderResponseJson()
+            );
+        }
+
+        profileAfRepository.insert(new ProfileAfData(
+                null,
+                profileId,
+                normalizedMobileNo,
+                command.appsflyerId().trim(),
+                trimToNull(command.advertisingId()),
+                trimToNull(command.androidId()),
+                trimToNull(command.attributedTouchTime()),
+                trimToNull(command.gpClickTime()),
+                trimToNull(command.installTime()),
+                trimToNull(command.mediaSource()),
+                trimToNull(command.afPrt()),
+                trimToNull(command.afAdsetId()),
+                trimToNull(command.afAdset()),
+                trimToNull(command.afSiteid()),
+                trimToNull(command.afCId()),
+                trimToNull(command.campaign()),
+                trimToNull(command.appVersion()),
+                trimToNull(command.appId()),
+                trimToNull(command.deviceType()),
+                trimToNull(command.osVersion()),
+                trimToNull(command.countryCode()),
+                trimToNull(command.city()),
+                trimToNull(command.postalCode()),
+                trimToNull(command.ip()),
+                trimToNull(command.operator()),
+                trimToNull(command.deviceCategory()),
+                trimToNull(command.platform()),
+                trimToNull(command.deviceModel()),
+                trimToNull(command.idfv()),
+                trimToNull(command.idfa()),
+                trimToNull(command.afAd()),
+                trimToNull(command.afChannel()),
+                trimToNull(command.attributedTouchType()),
+                trimToNull(command.afAdId()),
+                trimToNull(command.afAdType()),
+                trimToNull(command.contributor1TouchType()),
+                trimToNull(command.contributor1TouchTime()),
+                trimToNull(command.contributor1AfPrt()),
+                trimToNull(command.contributor1MatchType()),
+                trimToNull(command.contributor1EngagementType()),
+                trimToNull(command.bundleId()),
+                trimToNull(command.matchType()),
+                trimToNull(command.gpInstallBegin()),
+                MODULE_COMPLETED,
+                command.requestId().trim(),
+                null,
+                null
+        ));
+
+        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
+
+        com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult syncResult =
+                profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
+                        profileId,
+                        partnerUserId,
+                        normalizedMobileNo,
+                        command.requestId().trim(),
+                        ProfileSyncModule.APPSFLYER_INSTALL,
+                        command.device(),
+                        toAppsFlyerPayload(command)
+                ));
+
+        return new AppsFlyerSaveResult(
+                command.requestId().trim(),
+                MODULE_COMPLETED,
+                syncResult.responseDataJson()
+        );
+    }
+
+    public TongdunSaveResult saveTongdunDevice(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            TongdunSaveCommand command
+    ) {
+        validateTongdun(command);
+        String normalizedMobileNo = normalizeMobile(mobileNo);
+        String sceneType = command.sceneType().trim();
+        String tongdunKey = command.tongdunKey().trim();
+
+        var existing = profileTongdunRepository.findByRequestId(command.requestId());
+        if (existing.isPresent()) {
+            return new TongdunSaveResult(
+                    command.requestId(),
+                    MODULE_COMPLETED,
+                    existing.get().lastLenderResponseJson()
+            );
+        }
+
+        profileTongdunRepository.insert(new ProfileTongdunData(
+                null,
+                profileId,
+                normalizedMobileNo,
+                sceneType,
+                tongdunKey,
+                MODULE_COMPLETED,
+                command.requestId().trim(),
+                null,
+                null
+        ));
+
+        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
+
+        com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult syncResult =
+                profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
+                        profileId,
+                        partnerUserId,
+                        normalizedMobileNo,
+                        command.requestId().trim(),
+                        ProfileSyncModule.TONGDUN_DEVICE,
+                        command.device(),
+                        new ProfileSyncPayload.TongdunDevicePayload(sceneType, tongdunKey)
+                ));
+
+        return new TongdunSaveResult(
+                command.requestId().trim(),
+                MODULE_COMPLETED,
+                syncResult.responseDataJson()
+        );
+    }
+
     private void validateLoginLog(LoginLogSaveCommand command) {
         if (command.requestId() == null || command.requestId().isBlank() || command.requestId().length() > 64) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -284,6 +437,83 @@ public class ProfileServiceFacade {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
         ProfileSyncPayloadLoader.validateDevice(command.device());
+    }
+
+    private void validateAppsFlyer(AppsFlyerSaveCommand command) {
+        if (command.requestId() == null || command.requestId().isBlank() || command.requestId().length() > 64) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (command.appsflyerId() == null || command.appsflyerId().isBlank() || command.appsflyerId().trim().length() > 64) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "appsflyerId is required");
+        }
+        ProfileSyncPayloadLoader.validateDevice(command.device());
+    }
+
+    private void validateTongdun(TongdunSaveCommand command) {
+        if (command.requestId() == null || command.requestId().isBlank() || command.requestId().length() > 64) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (command.sceneType() == null || command.sceneType().isBlank()
+                || !TONGDUN_SCENE_TYPES.contains(command.sceneType().trim())) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "sceneType is invalid");
+        }
+        if (command.tongdunKey() == null || command.tongdunKey().isBlank() || command.tongdunKey().trim().length() > 256) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "tongdunKey is required");
+        }
+        ProfileSyncPayloadLoader.validateDevice(command.device());
+    }
+
+    private static ProfileSyncPayload.AppsFlyerInstallPayload toAppsFlyerPayload(AppsFlyerSaveCommand command) {
+        return new ProfileSyncPayload.AppsFlyerInstallPayload(
+                command.appsflyerId().trim(),
+                trimToNull(command.advertisingId()),
+                trimToNull(command.androidId()),
+                trimToNull(command.attributedTouchTime()),
+                trimToNull(command.gpClickTime()),
+                trimToNull(command.installTime()),
+                trimToNull(command.mediaSource()),
+                trimToNull(command.afPrt()),
+                trimToNull(command.afAdsetId()),
+                trimToNull(command.afAdset()),
+                trimToNull(command.afSiteid()),
+                trimToNull(command.afCId()),
+                trimToNull(command.campaign()),
+                trimToNull(command.appVersion()),
+                trimToNull(command.appId()),
+                trimToNull(command.deviceType()),
+                trimToNull(command.osVersion()),
+                trimToNull(command.countryCode()),
+                trimToNull(command.city()),
+                trimToNull(command.postalCode()),
+                trimToNull(command.ip()),
+                trimToNull(command.operator()),
+                trimToNull(command.deviceCategory()),
+                trimToNull(command.platform()),
+                trimToNull(command.deviceModel()),
+                trimToNull(command.idfv()),
+                trimToNull(command.idfa()),
+                trimToNull(command.afAd()),
+                trimToNull(command.afChannel()),
+                trimToNull(command.attributedTouchType()),
+                trimToNull(command.afAdId()),
+                trimToNull(command.afAdType()),
+                trimToNull(command.contributor1TouchType()),
+                trimToNull(command.contributor1TouchTime()),
+                trimToNull(command.contributor1AfPrt()),
+                trimToNull(command.contributor1MatchType()),
+                trimToNull(command.contributor1EngagementType()),
+                trimToNull(command.bundleId()),
+                trimToNull(command.matchType()),
+                trimToNull(command.gpInstallBegin())
+        );
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private void validateBankCard(BankCardSaveCommand command) {
@@ -465,5 +695,65 @@ public class ProfileServiceFacade {
     }
 
     public record LoginLogSaveResult(String requestId, String moduleStatus, String lenderResponseJson) {
+    }
+
+    public record AppsFlyerSaveCommand(
+            String requestId,
+            String appsflyerId,
+            String advertisingId,
+            String androidId,
+            String attributedTouchTime,
+            String gpClickTime,
+            String installTime,
+            String mediaSource,
+            String afPrt,
+            String afAdsetId,
+            String afAdset,
+            String afSiteid,
+            String afCId,
+            String campaign,
+            String appVersion,
+            String appId,
+            String deviceType,
+            String osVersion,
+            String countryCode,
+            String city,
+            String postalCode,
+            String ip,
+            String operator,
+            String deviceCategory,
+            String platform,
+            String deviceModel,
+            String idfv,
+            String idfa,
+            String afAd,
+            String afChannel,
+            String attributedTouchType,
+            String afAdId,
+            String afAdType,
+            String contributor1TouchType,
+            String contributor1TouchTime,
+            String contributor1AfPrt,
+            String contributor1MatchType,
+            String contributor1EngagementType,
+            String bundleId,
+            String matchType,
+            String gpInstallBegin,
+            LenderDeviceContext device
+    ) {
+    }
+
+    public record AppsFlyerSaveResult(String requestId, String moduleStatus, String lenderResponseJson) {
+    }
+
+    public record TongdunSaveCommand(
+            String requestId,
+            String sceneType,
+            String tongdunKey,
+            LenderDeviceContext device
+    ) {
+    }
+
+    public record TongdunSaveResult(String requestId, String moduleStatus, String lenderResponseJson) {
     }
 }
