@@ -44,6 +44,18 @@ public class RedisOtpChallengeStore implements OtpChallengeStore {
     }
 
     @Override
+    public Optional<String> findTokenByMobile(String mobileNo) {
+        if (mobileNo == null || mobileNo.isBlank()) {
+            return Optional.empty();
+        }
+        String token = redisTemplate.opsForValue().get(mobilePrefix + mobileNo);
+        if (token == null || token.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(token);
+    }
+
+    @Override
     public void save(String otpToken, OtpChallenge challenge, Duration ttl) {
         String value = challenge.mobileNo()
                 + "|" + challenge.deviceNo()

@@ -1,12 +1,15 @@
 package com.pk.app.auth.controller;
 
 import com.pk.app.auth.application.AuthApplicationService;
+import com.pk.app.auth.dto.request.AccountCloseRequest;
 import com.pk.app.auth.dto.request.MobileCheckRequest;
 import com.pk.app.auth.dto.request.PasswordLoginRequest;
 import com.pk.app.auth.dto.request.PasswordSetRequest;
 import com.pk.app.auth.dto.request.OtpSendRequest;
 import com.pk.app.auth.dto.request.OtpVerifyRequest;
 import com.pk.app.auth.dto.request.RefreshTokenRequest;
+import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
+import com.pk.app.auth.dto.response.AccountCloseResponse;
 import com.pk.app.auth.dto.response.MobileCheckResponse;
 import com.pk.app.auth.dto.response.PasswordSetResponse;
 import com.pk.app.auth.dto.response.OtpSendResponse;
@@ -83,11 +86,11 @@ public class AuthController {
         );
     }
 
-    /** Login with WhatsApp OTP. Body/headers align with {@code POST /auth/otp/verify}. */
+    /** Login with WhatsApp OTP. No otpToken; challenge is resolved by mobileNo. */
     @PublicApi
     @PostMapping("/login-whatsapp")
     public ApiResponse<OtpVerifyResponse> loginWhatsApp(
-            @Valid @RequestBody OtpVerifyRequest request,
+            @Valid @RequestBody WhatsAppLoginRequest request,
             @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
             HttpServletRequest httpRequest
     ) {
@@ -115,6 +118,24 @@ public class AuthController {
     public ApiResponse<Void> logout(HttpServletRequest httpRequest) {
         authApplicationService.logout(SecurityContextSupport.requirePrincipal());
         return ApiResponse.success(null, RequestTrace.resolveTraceId(httpRequest));
+    }
+
+    /**
+     * Close (deregister) the current account.
+     * Sets {@code deleted_at} and {@code retention_until} (= closedAt + 5 years), then invalidates the session.
+     */
+    @PostMapping("/close-account")
+    public ApiResponse<AccountCloseResponse> closeAccount(
+            @Valid @RequestBody(required = false) AccountCloseRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return ApiResponse.success(
+                authApplicationService.closeAccount(
+                        SecurityContextSupport.requirePrincipal(),
+                        request == null ? new AccountCloseRequest(null) : request
+                ),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
     }
 
     /** Set login password for the first time. */

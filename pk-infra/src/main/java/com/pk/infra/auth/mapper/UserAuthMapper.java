@@ -34,6 +34,16 @@ public interface UserAuthMapper {
 
     int clearSessionTokens(@Param("profileId") long profileId);
 
+    int updateLastLoginAt(
+            @Param("profileId") long profileId,
+            @Param("lastLoginAt") Instant lastLoginAt
+    );
+
+    int updateLastLogoutAt(
+            @Param("profileId") long profileId,
+            @Param("lastLogoutAt") Instant lastLogoutAt
+    );
+
     int countPasswordSet(@Param("profileId") long profileId);
 
     PasswordCredentialRow findPasswordCredential(@Param("profileId") long profileId);

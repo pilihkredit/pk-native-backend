@@ -18,8 +18,10 @@ import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.auth.port.WhatsAppSendLogRepository;
 import com.pk.core.auth.port.WhatsAppSender;
+import com.pk.core.profile.AccountCloseResult;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import com.pk.core.profile.port.UserProfileBindingRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
@@ -50,6 +52,7 @@ public class AuthServiceFacade {
     private final WhatsAppSendLogRepository whatsAppSendLogRepository;
     private final WhatsAppSender whatsAppSender;
     private final WhatsAppConfigLoader whatsAppConfigLoader;
+    private final UserProfileBindingRepository userProfileBindingRepository;
 
     public AuthServiceFacade(
             AuthProperties authProperties,
@@ -65,7 +68,8 @@ public class AuthServiceFacade {
             SmsSender smsSender,
             WhatsAppSendLogRepository whatsAppSendLogRepository,
             WhatsAppSender whatsAppSender,
-            WhatsAppConfigLoader whatsAppConfigLoader
+            WhatsAppConfigLoader whatsAppConfigLoader,
+            UserProfileBindingRepository userProfileBindingRepository
     ) {
         this.authProperties = authProperties;
         this.authOtpConfigLoader = authOtpConfigLoader;
@@ -81,6 +85,7 @@ public class AuthServiceFacade {
         this.whatsAppSendLogRepository = whatsAppSendLogRepository;
         this.whatsAppSender = whatsAppSender;
         this.whatsAppConfigLoader = whatsAppConfigLoader;
+        this.userProfileBindingRepository = userProfileBindingRepository;
     }
 
     public OtpSendResult sendOtp(String mobileNo, String deviceNo) {
@@ -246,7 +251,25 @@ public class AuthServiceFacade {
         );
     }
 
-    public OtpVerifyResult loginWithWhatsApp(String mobileNo, String otpToken, String otpCode, String deviceNo) {
+    public OtpVerifyResult loginWithWhatsApp(String mobileNo, String otpCode, String deviceNo) {
+        validateMobile(mobileNo);
+        if (otpCode == null || otpCode.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (deviceNo == null || deviceNo.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (isOtpBypass(otpCode)) {
+            whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
+                    .ifPresent(whatsappOtpChallengeStore::delete);
+            UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
+                    .orElseGet(() -> userAuthRepository.createByMobileNo(mobileNo));
+            TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_WHATSAPP);
+            boolean passwordSet = userAuthRepository.isPasswordSet(profile.profileId());
+            return new OtpVerifyResult(profile, tokenPair, passwordSet);
+        }
+        String otpToken = whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
+                .orElseThrow(() -> new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE));
         return verifyChallengeAndLogin(
                 whatsappOtpChallengeStore,
                 mobileNo,
@@ -321,6 +344,19 @@ public class AuthServiceFacade {
         sessionStore.delete(principal.profileId());
         refreshTokenStore.deleteAllForProfile(principal.profileId());
         userAuthRepository.clearSessionTokens(principal.profileId());
+        userAuthRepository.updateLastLogoutAt(principal.profileId(), Instant.now());
+    }
+
+    /**
+     * Soft-close the account and invalidate the current session (SMS / WhatsApp / password).
+     */
+    public AccountCloseResult closeAccount(AuthenticatedPrincipal principal) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        AccountCloseResult result = userProfileBindingRepository.closeAccount(principal.profileId());
+        logout(principal);
+        return result;
     }
 
     public AuthenticatedPrincipal validateAccessToken(String accessToken) {
@@ -367,6 +403,7 @@ public class AuthServiceFacade {
                 tokenPair.refreshToken(),
                 Instant.now().plusSeconds(tokenPair.accessTokenExpiresInSeconds())
         );
+        userAuthRepository.updateLastLoginAt(profile.profileId(), Instant.now());
         return tokenPair;
     }
 

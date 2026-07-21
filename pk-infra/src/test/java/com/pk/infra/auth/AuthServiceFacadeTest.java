@@ -15,6 +15,7 @@ import com.pk.core.api.ApiException;
 import com.pk.core.appconfig.port.AppConfigRepository;
 import com.pk.core.auth.OtpChallenge;
 import com.pk.core.auth.SmsSendResult;
+import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.auth.UserProfileSummary;
 import com.pk.core.auth.port.OtpChallengeStore;
 import com.pk.core.auth.port.RefreshTokenStore;
@@ -29,6 +30,7 @@ import com.pk.core.auth.port.WhatsAppSendLogRepository.WhatsAppSendLogEntry;
 import com.pk.core.auth.port.WhatsAppSender;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import com.pk.core.profile.port.UserProfileBindingRepository;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -46,6 +48,7 @@ class AuthServiceFacadeTest {
     private WhatsAppSendLogRepository whatsAppSendLogRepository;
     private WhatsAppSender whatsAppSender;
     private WhatsAppConfigLoader whatsAppConfigLoader;
+    private UserProfileBindingRepository userProfileBindingRepository;
     private AuthOtpConfigLoader authOtpConfigLoader;
     private AuthServiceFacade facade;
 
@@ -60,6 +63,7 @@ class AuthServiceFacadeTest {
         whatsAppSendLogRepository = mock(WhatsAppSendLogRepository.class);
         whatsAppSender = mock(WhatsAppSender.class);
         whatsAppConfigLoader = mock(WhatsAppConfigLoader.class);
+        userProfileBindingRepository = mock(UserProfileBindingRepository.class);
         authOtpConfigLoader = defaultOtpConfigLoader();
         AuthProperties properties = new AuthProperties();
         properties.setOtpTtl(Duration.ofMinutes(5));
@@ -111,7 +115,8 @@ class AuthServiceFacadeTest {
                 smsSender,
                 whatsAppSendLogRepository,
                 whatsAppSender,
-                whatsAppConfigLoader
+                whatsAppConfigLoader,
+                userProfileBindingRepository
         );
     }
 
@@ -258,10 +263,12 @@ class AuthServiceFacadeTest {
         assertThat(expiresAtCaptor.getValue())
                 .isAfter(Instant.now().plusSeconds(890))
                 .isBefore(Instant.now().plusSeconds(910));
+        verify(userAuthRepository).updateLastLoginAt(eq(7L), any(Instant.class));
     }
 
     @Test
     void loginWithWhatsAppCreatesUserWhenMissing() {
+        when(whatsappOtpChallengeStore.findTokenByMobile("8123456789")).thenReturn(Optional.of("wa-token"));
         when(whatsappOtpChallengeStore.findByToken("wa-token")).thenReturn(Optional.of(
                 new OtpChallenge("8123456789", "device-1", "654321", Instant.now().plusSeconds(300))
         ));
@@ -283,7 +290,6 @@ class AuthServiceFacadeTest {
 
         AuthServiceFacade.OtpVerifyResult result = verifyFacade.loginWithWhatsApp(
                 "8123456789",
-                "wa-token",
                 "654321",
                 "device-1"
         );
@@ -292,6 +298,27 @@ class AuthServiceFacadeTest {
         assertThat(result.tokenPair().accessToken()).isNotBlank();
         verify(whatsappOtpChallengeStore).delete("wa-token");
         verify(otpChallengeStore, never()).findByToken(any());
+        verify(userAuthRepository).updateLastLoginAt(eq(9L), any(Instant.class));
+    }
+
+    @Test
+    void logoutClearsSessionAndRecordsLastLogoutAt() {
+        AuthProperties properties = new AuthProperties();
+        properties.setAccessTokenTtl(Duration.ofMinutes(15));
+        properties.setRefreshTokenTtl(Duration.ofDays(30));
+        properties.setJwtSecret("local-dev-secret-change-in-prod-min-32-chars");
+        TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
+        SessionStore sessionStore = mock(SessionStore.class);
+        RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
+        AuthServiceFacade logoutFacade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);
+
+        AuthenticatedPrincipal principal = new AuthenticatedPrincipal(11L, "UP11", "8123456789", 3L);
+        logoutFacade.logout(principal);
+
+        verify(sessionStore).delete(11L);
+        verify(refreshTokenStore).deleteAllForProfile(11L);
+        verify(userAuthRepository).clearSessionTokens(11L);
+        verify(userAuthRepository).updateLastLogoutAt(eq(11L), any(Instant.class));
     }
 
     @Test

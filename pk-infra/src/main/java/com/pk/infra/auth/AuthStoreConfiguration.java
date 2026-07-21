@@ -12,6 +12,7 @@ import com.pk.core.auth.port.SmsSender;
 import com.pk.core.auth.port.WhatsAppSendLogRepository;
 import com.pk.core.auth.port.WhatsAppSender;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import com.pk.core.profile.port.UserProfileBindingRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -64,7 +65,8 @@ public class AuthStoreConfiguration {
             SmsSender smsSender,
             WhatsAppSendLogRepository whatsAppSendLogRepository,
             WhatsAppSender whatsAppSender,
-            WhatsAppConfigLoader whatsAppConfigLoader
+            WhatsAppConfigLoader whatsAppConfigLoader,
+            UserProfileBindingRepository userProfileBindingRepository
     ) {
         return new AuthServiceFacade(
                 authProperties,
@@ -80,7 +82,8 @@ public class AuthStoreConfiguration {
                 smsSender,
                 whatsAppSendLogRepository,
                 whatsAppSender,
-                whatsAppConfigLoader
+                whatsAppConfigLoader,
+                userProfileBindingRepository
         );
     }
 }

@@ -67,6 +67,16 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
     }
 
     @Override
+    public void updateLastLoginAt(long profileId, Instant lastLoginAt) {
+        userAuthMapper.updateLastLoginAt(profileId, lastLoginAt);
+    }
+
+    @Override
+    public void updateLastLogoutAt(long profileId, Instant lastLogoutAt) {
+        userAuthMapper.updateLastLogoutAt(profileId, lastLogoutAt);
+    }
+
+    @Override
     public boolean isPasswordSet(long profileId) {
         return userAuthMapper.countPasswordSet(profileId) > 0;
     }

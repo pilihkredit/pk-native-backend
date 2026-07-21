@@ -25,6 +25,10 @@ public interface UserAuthRepository {
 
     void clearSessionTokens(long profileId);
 
+    void updateLastLoginAt(long profileId, Instant lastLoginAt);
+
+    void updateLastLogoutAt(long profileId, Instant lastLogoutAt);
+
     boolean isPasswordSet(long profileId);
 
     Optional<PasswordCredential> findPasswordCredential(long profileId);
