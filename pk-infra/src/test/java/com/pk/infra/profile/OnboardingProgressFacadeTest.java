@@ -6,6 +6,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.api.ApiCode;
+import com.pk.core.api.ApiException;
 import com.pk.core.onboarding.OnboardingModuleCode;
 import com.pk.core.profile.port.LenderProfileQueryPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -98,6 +100,25 @@ class OnboardingProgressFacadeTest {
         assertThat(result.kycStatus()).isEqualTo(OnboardingProgressFacade.KYC_SYNCED);
         assertThat(result.missingModules()).isEmpty();
         assertThat(result.completedModules()).containsExactlyInAnyOrder(
+                OnboardingModuleCode.PERSONAL,
+                OnboardingModuleCode.BANK_CARD,
+                OnboardingModuleCode.CONTACT,
+                OnboardingModuleCode.DEVICE,
+                OnboardingModuleCode.IDENTITY
+        );
+    }
+
+    @Test
+    void returnsIncompleteWhenLenderUserNotFound() {
+        when(lenderProfileQueryPort.query(any())).thenThrow(
+                new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada")
+        );
+
+        var result = facade.getProgress(1L, "U10001");
+
+        assertThat(result.kycStatus()).isEqualTo(OnboardingProgressFacade.KYC_INCOMPLETE);
+        assertThat(result.completedModules()).isEmpty();
+        assertThat(result.missingModules()).containsExactly(
                 OnboardingModuleCode.PERSONAL,
                 OnboardingModuleCode.BANK_CARD,
                 OnboardingModuleCode.CONTACT,
