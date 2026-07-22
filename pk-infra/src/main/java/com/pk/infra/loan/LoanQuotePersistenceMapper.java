@@ -6,7 +6,6 @@ import com.pk.core.loan.port.LoanQuoteRepository;
 import com.pk.infra.loan.repository.LoanQuoteInsertParam;
 import com.pk.infra.loan.repository.LoanQuoteRow;
 import com.pk.infra.loan.repository.LoanQuoteTermInsertParam;
-import com.pk.infra.loan.repository.LoanQuoteTermRow;
 
 public final class LoanQuotePersistenceMapper {
     private LoanQuotePersistenceMapper() {
@@ -14,24 +13,22 @@ public final class LoanQuotePersistenceMapper {
 
     public static LoanQuoteRepository.LoanQuoteInsert toInsert(
             String quoteNo,
+            Long profileId,
             long creditApplicationId,
             String mobileNo,
-            Long productListId,
+            Long couponId,
+            Long externalInteractionId,
             LoanTrialQuoteDetail quote,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson,
-            String rawResponseJson,
             java.time.Instant quotedAt
     ) {
         return new LoanQuoteRepository.LoanQuoteInsert(
                 quoteNo,
+                profileId,
                 creditApplicationId,
                 mobileNo,
-                productListId,
+                couponId,
+                externalInteractionId,
                 quote,
-                lastLenderRequestJson,
-                lastLenderResponseJson,
-                rawResponseJson,
                 quotedAt
         );
     }
@@ -39,9 +36,11 @@ public final class LoanQuotePersistenceMapper {
     public static void fillInsertParam(LoanQuoteInsertParam param, LoanQuoteRepository.LoanQuoteInsert command) {
         LoanTrialQuoteDetail quote = command.quote();
         param.setQuoteNo(command.quoteNo());
+        param.setProfileId(command.profileId());
         param.setCreditApplicationId(command.creditApplicationId());
         param.setMobileNo(command.mobileNo());
-        param.setProductListId(command.productListId());
+        param.setCouponId(command.couponId());
+        param.setExternalInteractionId(command.externalInteractionId());
         param.setApplyId(quote.applyId());
         param.setCreditApplyNo(quote.creditApplyNo());
         param.setUserId(quote.userId());
@@ -96,13 +95,14 @@ public final class LoanQuotePersistenceMapper {
         param.setFirstRepayDate(quote.firstRepayDate());
         param.setLastRepayDate(quote.lastRepayDate());
         param.setUnevenBillsFlag(quote.unevenBillsFlag());
-        param.setLastLenderRequestJson(command.lastLenderRequestJson());
-        param.setLastLenderResponseJson(command.lastLenderResponseJson());
-        param.setRawResponseJson(command.rawResponseJson());
         param.setQuotedAt(command.quotedAt());
     }
 
-    public static void fillTermInsertParam(long quoteId, LoanQuoteTermInsertParam param, LoanQuoteRepository.LoanQuoteTermInsert term) {
+    public static void fillTermInsertParam(
+            long quoteId,
+            LoanQuoteTermInsertParam param,
+            LoanQuoteRepository.LoanQuoteTermInsert term
+    ) {
         LenderTrialTerm detail = term.term();
         param.setQuoteId(quoteId);
         param.setMobileNo(term.mobileNo());
@@ -142,13 +142,12 @@ public final class LoanQuotePersistenceMapper {
         return new LoanQuoteRepository.LoanQuoteRecord(
                 row.getId(),
                 row.getQuoteNo(),
+                row.getProfileId(),
                 row.getCreditApplicationId(),
                 row.getMobileNo(),
-                row.getProductListId(),
+                row.getCouponId(),
+                row.getExternalInteractionId(),
                 toQuoteDetail(row),
-                row.getLastLenderRequestJson(),
-                row.getLastLenderResponseJson(),
-                row.getRawResponseJson(),
                 row.getQuotedAt()
         );
     }

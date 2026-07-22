@@ -79,6 +79,7 @@ class LoanLenderStatusApplierTest {
                 "81234567890",
                 100L,
                 200L,
+                "QUOTE-1",
                 1L,
                 300L,
                 "LN-OLD",

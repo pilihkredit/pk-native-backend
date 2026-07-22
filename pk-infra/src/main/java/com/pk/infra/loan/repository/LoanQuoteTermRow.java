@@ -1,15 +1,13 @@
 package com.pk.infra.loan.repository;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-
 public class LoanQuoteTermRow {
     private long quoteId;
     private String mobileNo;
     private int termNo;
-    private Instant valueDate;
-    private Instant dueDate;
-    private Instant graceDate;
+    private Long valueDate;
+    private Long dueDate;
+    private Long graceDate;
     private BigDecimal schdAmount;
     private BigDecimal schdPrincipal;
     private BigDecimal showLoanPrincipal;
@@ -43,12 +41,12 @@ public class LoanQuoteTermRow {
     public void setMobileNo(String mobileNo) { this.mobileNo = mobileNo; }
     public int getTermNo() { return termNo; }
     public void setTermNo(int termNo) { this.termNo = termNo; }
-    public Instant getValueDate() { return valueDate; }
-    public void setValueDate(Instant valueDate) { this.valueDate = valueDate; }
-    public Instant getDueDate() { return dueDate; }
-    public void setDueDate(Instant dueDate) { this.dueDate = dueDate; }
-    public Instant getGraceDate() { return graceDate; }
-    public void setGraceDate(Instant graceDate) { this.graceDate = graceDate; }
+    public Long getValueDate() { return valueDate; }
+    public void setValueDate(Long valueDate) { this.valueDate = valueDate; }
+    public Long getDueDate() { return dueDate; }
+    public void setDueDate(Long dueDate) { this.dueDate = dueDate; }
+    public Long getGraceDate() { return graceDate; }
+    public void setGraceDate(Long graceDate) { this.graceDate = graceDate; }
     public BigDecimal getSchdAmount() { return schdAmount; }
     public void setSchdAmount(BigDecimal schdAmount) { this.schdAmount = schdAmount; }
     public BigDecimal getSchdPrincipal() { return schdPrincipal; }

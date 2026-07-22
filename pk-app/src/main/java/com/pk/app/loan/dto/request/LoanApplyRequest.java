@@ -10,7 +10,10 @@ import java.math.BigDecimal;
 public record LoanApplyRequest(
         @NotBlank @Size(max = 64) String requestId,
         @NotBlank @Size(max = 64) String applyId,
-        @NotBlank @Size(max = 64) String quoteNo,
+        @Size(max = 64) String quoteNo,
+        @NotNull BigDecimal applyAmt,
+        @NotBlank @Size(max = 64) String productCode,
+        @NotBlank @Size(max = 64) String repayMethod,
         @Size(max = 256) String loanPurpose,
         BigDecimal lat,
         BigDecimal lng,

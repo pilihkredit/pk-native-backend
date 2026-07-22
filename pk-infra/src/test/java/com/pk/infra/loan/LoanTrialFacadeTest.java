@@ -70,18 +70,17 @@ class LoanTrialFacadeTest {
         );
         when(loanProductFacade.resolveProductList(1L, "APPLY-1", true)).thenReturn(resolved);
         when(lenderLoanTrialPort.trial(any())).thenReturn(lenderTrialResult());
-        when(loanQuoteRepository.insert(any(), any())).thenAnswer(invocation -> {
+        when(loanQuoteRepository.upsert(any(), any())).thenAnswer(invocation -> {
             LoanQuoteRepository.LoanQuoteInsert insert = invocation.getArgument(0);
             return new LoanQuoteRepository.LoanQuoteRecord(
                     900L,
                     insert.quoteNo(),
+                    insert.profileId(),
                     insert.creditApplicationId(),
                     insert.mobileNo(),
-                    insert.productListId(),
+                    insert.couponId(),
+                    insert.externalInteractionId(),
                     insert.quote(),
-                    insert.lastLenderRequestJson(),
-                    insert.lastLenderResponseJson(),
-                    insert.rawResponseJson(),
                     insert.quotedAt()
             );
         });
@@ -94,7 +93,7 @@ class LoanTrialFacadeTest {
                         new BigDecimal("1500000"),
                         "PD001",
                         "RP001",
-                        null
+                        88L
                 )
         );
 
@@ -109,19 +108,23 @@ class LoanTrialFacadeTest {
         verify(loanProductFacade).requireProductRepayMethod(resolved, "PD001", "RP001");
         ArgumentCaptor<LoanQuoteRepository.LoanQuoteInsert> insertCaptor =
                 ArgumentCaptor.forClass(LoanQuoteRepository.LoanQuoteInsert.class);
-        verify(loanQuoteRepository).insert(insertCaptor.capture(), any());
-        assertThat(insertCaptor.getValue().productListId()).isEqualTo(501L);
+        verify(loanQuoteRepository).upsert(insertCaptor.capture(), any());
+        assertThat(insertCaptor.getValue().profileId()).isEqualTo(1L);
         assertThat(insertCaptor.getValue().mobileNo()).isEqualTo("81234567890");
+        assertThat(insertCaptor.getValue().couponId()).isEqualTo(88L);
+        assertThat(insertCaptor.getValue().externalInteractionId()).isEqualTo(77L);
         assertThat(insertCaptor.getValue().quote().loanTerm()).isEqualTo(6);
         assertThat(insertCaptor.getValue().quote().handFee()).isEqualByComparingTo("45000");
-        assertThat(insertCaptor.getValue().lastLenderRequestJson()).contains("APPLY-1");
-        assertThat(insertCaptor.getValue().lastLenderResponseJson()).contains("loanTerm");
-        verify(loanQuoteRepository).insert(any(), termCaptor.capture());
+        verify(loanQuoteRepository).upsert(any(), termCaptor.capture());
         assertThat(termCaptor.getValue()).allSatisfy(term -> {
             assertThat(term.mobileNo()).isEqualTo("81234567890");
             assertThat(term.term().shouldAmount()).isEqualByComparingTo("295000");
+            assertThat(term.term().valueDate()).isEqualTo(1747180800000L);
         });
-        verify(lenderLoanTrialPort).trial(any(LenderLoanTrialPort.LenderLoanTrialCommand.class));
+        ArgumentCaptor<LenderLoanTrialPort.LenderLoanTrialCommand> commandCaptor =
+                ArgumentCaptor.forClass(LenderLoanTrialPort.LenderLoanTrialCommand.class);
+        verify(lenderLoanTrialPort).trial(commandCaptor.capture());
+        assertThat(commandCaptor.getValue().couponId()).isEqualTo(88L);
     }
 
     private static CreditApplicationRepository.CreditApplicationRecord approvedRecord() {
@@ -219,9 +222,9 @@ class LoanTrialFacadeTest {
                 quote,
                 List.of(new LenderTrialTerm(
                         1,
-                        Instant.parse("2025-05-14T00:00:00Z"),
-                        Instant.parse("2025-06-13T00:00:00Z"),
-                        Instant.parse("2025-06-20T00:00:00Z"),
+                        1747180800000L,
+                        1749772800000L,
+                        1750377600000L,
                         new BigDecimal("295000"),
                         new BigDecimal("250000"),
                         new BigDecimal("250000"),
@@ -249,8 +252,7 @@ class LoanTrialFacadeTest {
                         BigDecimal.ZERO,
                         BigDecimal.ZERO
                 )),
-                "{\"applyId\":\"APPLY-1\",\"applyAmt\":1500000}",
-                "{\"loanTerm\":6}"
+                77L
         );
     }
 }

@@ -4,9 +4,11 @@
 <resultMap id="quoteMap" type="com.pk.infra.loan.repository.LoanQuoteRow">
 <id column="id" property="id"/>
 <result column="quote_no" property="quoteNo"/>
+<result column="profile_id" property="profileId"/>
 <result column="credit_application_id" property="creditApplicationId"/>
 <result column="mobile_no" property="mobileNo"/>
-<result column="product_list_id" property="productListId"/>
+<result column="coupon_id" property="couponId"/>
+<result column="external_interaction_id" property="externalInteractionId"/>
 <result column="apply_id" property="applyId"/>
 <result column="credit_apply_no" property="creditApplyNo"/>
 <result column="user_id" property="userId"/>
@@ -61,16 +63,17 @@
 <result column="first_repay_date" property="firstRepayDate"/>
 <result column="last_repay_date" property="lastRepayDate"/>
 <result column="uneven_bills_flag" property="unevenBillsFlag"/>
-<result column="last_lender_request_json" property="lastLenderRequestJson"/>
-<result column="last_lender_response_json" property="lastLenderResponseJson"/>
-<result column="raw_response_json" property="rawResponseJson"/>
 <result column="quoted_at" property="quotedAt" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
 </resultMap>
-<insert id="insertQuote" useGeneratedKeys="true" keyProperty="id" keyColumn="id">INSERT INTO loan_quote
-(quote_no,
+
+<insert id="upsertQuote" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+INSERT INTO loan_quote (
+quote_no,
+profile_id,
 credit_application_id,
 mobile_no,
-product_list_id,
+coupon_id,
+external_interaction_id,
 apply_id,
 credit_apply_no,
 user_id,
@@ -125,14 +128,14 @@ lending_date,
 first_repay_date,
 last_repay_date,
 uneven_bills_flag,
-last_lender_request_json,
-last_lender_response_json,
-raw_response_json,
-quoted_at)
-VALUES (#{quoteNo},
+quoted_at
+) VALUES (
+#{quoteNo},
+#{profileId},
 #{creditApplicationId},
 #{mobileNo},
-#{productListId},
+#{couponId},
+#{externalInteractionId},
 #{applyId},
 #{creditApplyNo},
 #{userId},
@@ -187,11 +190,80 @@ VALUES (#{quoteNo},
 #{firstRepayDate},
 #{lastRepayDate},
 #{unevenBillsFlag},
-#{lastLenderRequestJson},
-#{lastLenderResponseJson},
-#{rawResponseJson},
-#{quotedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})</insert>
-<insert id="insertTerm">INSERT INTO loan_quote_term (quote_id,
+#{quotedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+)
+ON DUPLICATE KEY UPDATE
+id = LAST_INSERT_ID(id),
+quote_no = VALUES(quote_no),
+profile_id = VALUES(profile_id),
+credit_application_id = VALUES(credit_application_id),
+mobile_no = VALUES(mobile_no),
+coupon_id = VALUES(coupon_id),
+external_interaction_id = VALUES(external_interaction_id),
+apply_id = VALUES(apply_id),
+credit_apply_no = VALUES(credit_apply_no),
+user_id = VALUES(user_id),
+product_code = VALUES(product_code),
+repay_method = VALUES(repay_method),
+apply_amt = VALUES(apply_amt),
+loan_term = VALUES(loan_term),
+loan_principal = VALUES(loan_principal),
+show_loan_principal = VALUES(show_loan_principal),
+pay_amount = VALUES(pay_amount),
+hand_fee = VALUES(hand_fee),
+schd_amount = VALUES(schd_amount),
+should_amount = VALUES(should_amount),
+interest = VALUES(interest),
+day_rate = VALUES(day_rate),
+show_day_rate = VALUES(show_day_rate),
+total_days = VALUES(total_days),
+fee1_name = VALUES(fee1_name),
+fee1 = VALUES(fee1),
+fee2_name = VALUES(fee2_name),
+fee2 = VALUES(fee2),
+fee3_name = VALUES(fee3_name),
+fee3 = VALUES(fee3),
+tax = VALUES(tax),
+tax_rate_percent = VALUES(tax_rate_percent),
+ppn_amount = VALUES(ppn_amount),
+should_stamp_duty = VALUES(should_stamp_duty),
+should_principal = VALUES(should_principal),
+should_interest = VALUES(should_interest),
+should_fee1 = VALUES(should_fee1),
+should_fee2 = VALUES(should_fee2),
+should_fee3 = VALUES(should_fee3),
+should_fee1_tax = VALUES(should_fee1_tax),
+should_fee2_tax = VALUES(should_fee2_tax),
+should_fee3_tax = VALUES(should_fee3_tax),
+reduction_amount = VALUES(reduction_amount),
+ad_reduction_amt = VALUES(ad_reduction_amt),
+ad_reduction_ratio = VALUES(ad_reduction_ratio),
+ad_reduction_end_date = VALUES(ad_reduction_end_date),
+reduction_stamp_duty = VALUES(reduction_stamp_duty),
+reduction_principal = VALUES(reduction_principal),
+reduction_interest = VALUES(reduction_interest),
+reduction_fee1 = VALUES(reduction_fee1),
+reduction_fee2 = VALUES(reduction_fee2),
+reduction_fee3 = VALUES(reduction_fee3),
+reduction_fee1_tax = VALUES(reduction_fee1_tax),
+reduction_fee2_tax = VALUES(reduction_fee2_tax),
+reduction_fee3_tax = VALUES(reduction_fee3_tax),
+after_service_fee_status = VALUES(after_service_fee_status),
+fee_prepay_type = VALUES(fee_prepay_type),
+lending_date = VALUES(lending_date),
+first_repay_date = VALUES(first_repay_date),
+last_repay_date = VALUES(last_repay_date),
+uneven_bills_flag = VALUES(uneven_bills_flag),
+quoted_at = VALUES(quoted_at)
+</insert>
+
+<delete id="deleteTermsByQuoteId">
+DELETE FROM loan_quote_term WHERE quote_id = #{quoteId}
+</delete>
+
+<insert id="insertTerm">
+INSERT INTO loan_quote_term (
+quote_id,
 mobile_no,
 term_no,
 value_date,
@@ -222,13 +294,14 @@ reduction_fee3,
 reduction_fee1_tax,
 reduction_fee2_tax,
 reduction_fee3_tax,
-reduction_stamp_duty)
-VALUES (#{quoteId},
+reduction_stamp_duty
+) VALUES (
+#{quoteId},
 #{mobileNo},
 #{termNo},
-#{valueDate,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
-#{dueDate,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
-#{graceDate,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+#{valueDate},
+#{dueDate},
+#{graceDate},
 #{schdAmount},
 #{schdPrincipal},
 #{showLoanPrincipal},
@@ -254,12 +327,22 @@ VALUES (#{quoteId},
 #{reductionFee1Tax},
 #{reductionFee2Tax},
 #{reductionFee3Tax},
-#{reductionStampDuty})</insert>
-<select id="countTermsByQuoteId" resultType="int">SELECT COUNT(*) FROM loan_quote_term WHERE quote_id=#{quoteId}</select>
-<select id="findByQuoteNo" resultMap="quoteMap">SELECT id,quote_no,
+#{reductionStampDuty}
+)
+</insert>
+
+<select id="countTermsByQuoteId" resultType="int">
+SELECT COUNT(*) FROM loan_quote_term WHERE quote_id=#{quoteId}
+</select>
+
+<select id="findByQuoteNo" resultMap="quoteMap">
+SELECT id,
+quote_no,
+profile_id,
 credit_application_id,
 mobile_no,
-product_list_id,
+coupon_id,
+external_interaction_id,
 apply_id,
 credit_apply_no,
 user_id,
@@ -314,8 +397,7 @@ lending_date,
 first_repay_date,
 last_repay_date,
 uneven_bills_flag,
-last_lender_request_json,
-last_lender_response_json,
-raw_response_json,
-quoted_at FROM loan_quote WHERE quote_no=#{quoteNo}</select>
+quoted_at
+FROM loan_quote WHERE quote_no=#{quoteNo}
+</select>
 </mapper>

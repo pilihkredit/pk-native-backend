@@ -83,16 +83,15 @@ public class LoanTrialFacade {
         List<LoanQuoteRepository.LoanQuoteTermInsert> termInserts = lenderResult.termInfo().stream()
                 .map(term -> new LoanQuoteRepository.LoanQuoteTermInsert(creditRecord.mobileNo(), term))
                 .toList();
-        loanQuoteRepository.insert(
+        loanQuoteRepository.upsert(
                 LoanQuotePersistenceMapper.toInsert(
                         quoteNo,
+                        profileId,
                         creditRecord.id(),
                         creditRecord.mobileNo(),
-                        productList.productListId(),
+                        command.couponId(),
+                        lenderResult.externalInteractionId(),
                         quote,
-                        lenderResult.requestJson(),
-                        lenderResult.rawResponseJson(),
-                        lenderResult.rawResponseJson(),
                         quotedAt
                 ),
                 termInserts
@@ -204,12 +203,12 @@ public class LoanTrialFacade {
         return new TermResult(
                 term.termNo(),
                 DisplayFormatters.formatTermNo(term.termNo()),
-                toMillis(term.valueDate()),
-                DisplayFormatters.formatJakartaDate(toMillis(term.valueDate())),
-                toMillis(term.dueDate()),
-                DisplayFormatters.formatJakartaDate(toMillis(term.dueDate())),
-                toMillis(term.graceDate()),
-                DisplayFormatters.formatJakartaDate(toMillis(term.graceDate())),
+                term.valueDate(),
+                DisplayFormatters.formatJakartaDate(term.valueDate()),
+                term.dueDate(),
+                DisplayFormatters.formatJakartaDate(term.dueDate()),
+                term.graceDate(),
+                DisplayFormatters.formatJakartaDate(term.graceDate()),
                 term.schdAmount(),
                 DisplayFormatters.formatIdrAmount(term.schdAmount()),
                 term.schdPrincipal(),
@@ -263,10 +262,6 @@ public class LoanTrialFacade {
                 term.reductionStampDuty(),
                 DisplayFormatters.formatIdrAmount(term.reductionStampDuty())
         );
-    }
-
-    private static Long toMillis(Instant instant) {
-        return instant == null ? null : instant.toEpochMilli();
     }
 
     public record TrialCommand(

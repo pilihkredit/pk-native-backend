@@ -8,7 +8,6 @@ import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.loan.LoanAmountValidator;
 import com.pk.core.loan.LoanApplicationStatus;
-import com.pk.core.loan.LoanQuoteIntegrityValidator;
 import com.pk.core.loan.port.LoanApplicationRepository;
 import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.loan.port.LoanQuoteRepository;
@@ -29,7 +28,6 @@ public class LoanApplyFacade {
     private final CreditApplicationRepository creditApplicationRepository;
     private final CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
     private final LoanQuoteRepository loanQuoteRepository;
-    private final LoanQuoteProperties loanQuoteProperties;
     private final LoanProductFacade loanProductFacade;
     private final ProfileVersionRepository profileVersionRepository;
     private final LoanApplicationRepository loanApplicationRepository;
@@ -45,7 +43,6 @@ public class LoanApplyFacade {
             CreditApplicationRepository creditApplicationRepository,
             CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             LoanQuoteRepository loanQuoteRepository,
-            LoanQuoteProperties loanQuoteProperties,
             LoanProductFacade loanProductFacade,
             ProfileVersionRepository profileVersionRepository,
             LoanApplicationRepository loanApplicationRepository,
@@ -60,7 +57,6 @@ public class LoanApplyFacade {
         this.creditApplicationRepository = creditApplicationRepository;
         this.creditLenderStatusQueryRepository = creditLenderStatusQueryRepository;
         this.loanQuoteRepository = loanQuoteRepository;
-        this.loanQuoteProperties = loanQuoteProperties;
         this.loanProductFacade = loanProductFacade;
         this.profileVersionRepository = profileVersionRepository;
         this.loanApplicationRepository = loanApplicationRepository;
@@ -81,22 +77,9 @@ public class LoanApplyFacade {
             return toApplyResult(existing.get());
         }
 
-        LoanQuoteRepository.LoanQuoteRecord quote = loanQuoteRepository.findByQuoteNo(command.quoteNo())
-                .orElseThrow(() -> new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS));
-        LoanQuoteIntegrityValidator.validateNotExpired(quote.quotedAt(), loanQuoteProperties.ttl());
-        int termCount = loanQuoteRepository.countTermsByQuoteId(quote.id());
-        LoanQuoteIntegrityValidator.validateIntegrity(quote, termCount);
-        LoanQuoteIntegrityValidator.computeHash(quote, termCount);
-
         CreditApplicationRepository.CreditApplicationRecord creditRecord = creditApplicationRepository
-                .findById(quote.creditApplicationId())
+                .findByApplyIdAndProfileId(command.applyId(), profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
-        if (creditRecord.profileId() != profileId) {
-            throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
-        }
-        if (!command.applyId().equals(creditRecord.applyId())) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
 
         CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits = creditLenderStatusQueryRepository
                 .findLatestByApplyIdAndProfileId(creditRecord.applyId(), profileId)
@@ -106,7 +89,7 @@ public class LoanApplyFacade {
             throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
         }
 
-        BigDecimal applyAmt = LoanAmountValidator.normalize(quote.applyAmt());
+        BigDecimal applyAmt = LoanAmountValidator.normalize(command.applyAmt());
         LoanAmountValidator.validateAgainstCreditLimits(
                 applyAmt,
                 limits.riskMinLimit(),
@@ -114,16 +97,24 @@ public class LoanApplyFacade {
                 limits.borrowAmtStepSize()
         );
 
-        ProductListResolver.ResolvedProductList productSnapshot = loanProductFacade.resolveProductList(
+        ProductListResolver.ResolvedProductList productList = loanProductFacade.resolveProductList(
                 profileId,
                 creditRecord.applyId(),
                 true
         );
         loanProductFacade.requireProductRepayMethod(
-                productSnapshot,
-                quote.productCode(),
-                quote.repayMethod()
+                productList,
+                command.productCode(),
+                command.repayMethod()
         );
+
+        Long quoteId = null;
+        String quoteNo = blankToNull(command.quoteNo());
+        if (quoteNo != null) {
+            quoteId = loanQuoteRepository.findByQuoteNo(quoteNo)
+                    .map(LoanQuoteRepository.LoanQuoteRecord::id)
+                    .orElse(null);
+        }
 
         OnboardingProgressFacade.OnboardingProgressResult onboarding = onboardingProgressFacade.getProgress(
                 profileId,
@@ -144,7 +135,8 @@ public class LoanApplyFacade {
                     creditRecord.applyId(),
                     mobileNo,
                     creditRecord.id(),
-                    quote.id(),
+                    quoteId,
+                    quoteNo,
                     profileId,
                     profileVersionId,
                     applyAmt,
@@ -163,8 +155,8 @@ public class LoanApplyFacade {
                     loanApplyId,
                     creditRecord.applyId(),
                     applyAmt,
-                    quote.productCode(),
-                    quote.repayMethod(),
+                    command.productCode(),
+                    command.repayMethod(),
                     command.loanPurpose(),
                     null,
                     command.lat(),
@@ -216,9 +208,16 @@ public class LoanApplyFacade {
                 || command.applyId() == null
                 || command.applyId().isBlank()
                 || command.applyId().length() > 64
-                || command.quoteNo() == null
-                || command.quoteNo().isBlank()
-                || command.quoteNo().length() > 64) {
+                || command.productCode() == null
+                || command.productCode().isBlank()
+                || command.productCode().length() > 64
+                || command.repayMethod() == null
+                || command.repayMethod().isBlank()
+                || command.repayMethod().length() > 64
+                || command.applyAmt() == null) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (command.quoteNo() != null && command.quoteNo().length() > 64) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
         if (command.appList() == null) {
@@ -230,6 +229,10 @@ public class LoanApplyFacade {
         if (command.address() != null && command.address().length() > 512) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     private static ApplyResult toApplyResult(LoanApplicationRepository.LoanApplicationRecord record) {
@@ -269,6 +272,9 @@ public class LoanApplyFacade {
             String requestId,
             String applyId,
             String quoteNo,
+            BigDecimal applyAmt,
+            String productCode,
+            String repayMethod,
             String loanPurpose,
             BigDecimal lat,
             BigDecimal lng,

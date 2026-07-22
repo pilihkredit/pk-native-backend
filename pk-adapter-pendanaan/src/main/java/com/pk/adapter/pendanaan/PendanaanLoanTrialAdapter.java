@@ -3,7 +3,6 @@ package com.pk.adapter.pendanaan;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.loan.port.LenderLoanTrialPort;
-import java.util.List;
 
 public class PendanaanLoanTrialAdapter implements LenderLoanTrialPort {
     static final String LOAN_TRIAL_PATH = PendanaanOpenApiPaths.LOAN_TRIAL;
@@ -20,13 +19,17 @@ public class PendanaanLoanTrialAdapter implements LenderLoanTrialPort {
     @Override
     public LenderLoanTrialResult trial(LenderLoanTrialCommand command) {
         String requestBody = buildRequestBody(command);
-        JsonNode data = httpClient.post(LOAN_TRIAL_PATH, requestBody, BUSINESS_TYPE, command.applyId());
-        String rawResponseJson = data == null ? "{}" : data.toString();
+        PendanaanHttpClient.ExchangeResult exchange = httpClient.postWithInteraction(
+                LOAN_TRIAL_PATH,
+                requestBody,
+                BUSINESS_TYPE,
+                command.applyId()
+        );
+        JsonNode data = exchange.data();
         return new LenderLoanTrialResult(
                 PendanaanLoanTrialParser.mapQuote(data),
                 PendanaanLoanTrialParser.mapTerms(data == null ? null : data.get("termInfo")),
-                requestBody,
-                rawResponseJson
+                exchange.interactionId()
         );
     }
 

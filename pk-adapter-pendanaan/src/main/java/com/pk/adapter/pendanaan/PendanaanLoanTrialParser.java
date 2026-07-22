@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.pk.core.loan.LenderTrialTerm;
 import com.pk.core.loan.LoanTrialQuoteDetail;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,9 +85,9 @@ final class PendanaanLoanTrialParser {
             }
             terms.add(new LenderTrialTerm(
                     termNo,
-                    millisToInstant(longOrNull(termNode.get("valueDate"))),
-                    millisToInstant(longOrNull(termNode.get("dueDate"))),
-                    millisToInstant(longOrNull(termNode.get("graceDate"))),
+                    longOrNull(termNode.get("valueDate")),
+                    longOrNull(termNode.get("dueDate")),
+                    longOrNull(termNode.get("graceDate")),
                     decimalOrNull(termNode.get("schdAmount")),
                     decimalOrNull(termNode.get("schdPrincipal")),
                     decimalOrNull(termNode.get("showLoanPrincipal")),
@@ -127,10 +126,6 @@ final class PendanaanLoanTrialParser {
                 null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
                 null, null, null
         );
-    }
-
-    private static Instant millisToInstant(Long epochMillis) {
-        return epochMillis == null ? null : Instant.ofEpochMilli(epochMillis);
     }
 
     private static String textOrNull(JsonNode node) {

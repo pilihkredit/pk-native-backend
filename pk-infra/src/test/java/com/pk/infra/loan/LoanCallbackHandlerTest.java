@@ -97,6 +97,7 @@ class LoanCallbackHandlerTest {
                 "81234567890",
                 100L,
                 200L,
+                "QUOTE-001",
                 1L,
                 300L,
                 null,

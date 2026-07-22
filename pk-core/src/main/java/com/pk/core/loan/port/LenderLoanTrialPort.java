@@ -19,8 +19,7 @@ public interface LenderLoanTrialPort {
     record LenderLoanTrialResult(
             LoanTrialQuoteDetail quote,
             List<LenderTrialTerm> termInfo,
-            String requestJson,
-            String rawResponseJson
+            Long externalInteractionId
     ) {
     }
 }

@@ -8,7 +8,9 @@ public class LoanQuoteRow {
     private String quoteNo;
     private long creditApplicationId;
     private String mobileNo;
-    private Long productListId;
+    private Long profileId;
+    private Long couponId;
+    private Long externalInteractionId;
     private String applyId;
     private String creditApplyNo;
     private String userId;
@@ -63,9 +65,6 @@ public class LoanQuoteRow {
     private Long firstRepayDate;
     private Long lastRepayDate;
     private Boolean unevenBillsFlag;
-    private String lastLenderRequestJson;
-    private String lastLenderResponseJson;
-    private String rawResponseJson;
     private Instant quotedAt;
 
     public long getId() { return id; }
@@ -76,8 +75,12 @@ public class LoanQuoteRow {
     public void setCreditApplicationId(long creditApplicationId) { this.creditApplicationId = creditApplicationId; }
     public String getMobileNo() { return mobileNo; }
     public void setMobileNo(String mobileNo) { this.mobileNo = mobileNo; }
-    public Long getProductListId() { return productListId; }
-    public void setProductListId(Long productListId) { this.productListId = productListId; }
+    public Long getProfileId() { return profileId; }
+    public void setProfileId(Long profileId) { this.profileId = profileId; }
+    public Long getCouponId() { return couponId; }
+    public void setCouponId(Long couponId) { this.couponId = couponId; }
+    public Long getExternalInteractionId() { return externalInteractionId; }
+    public void setExternalInteractionId(Long externalInteractionId) { this.externalInteractionId = externalInteractionId; }
     public String getApplyId() { return applyId; }
     public void setApplyId(String applyId) { this.applyId = applyId; }
     public String getCreditApplyNo() { return creditApplyNo; }
@@ -186,12 +189,6 @@ public class LoanQuoteRow {
     public void setLastRepayDate(Long lastRepayDate) { this.lastRepayDate = lastRepayDate; }
     public Boolean getUnevenBillsFlag() { return unevenBillsFlag; }
     public void setUnevenBillsFlag(Boolean unevenBillsFlag) { this.unevenBillsFlag = unevenBillsFlag; }
-    public String getLastLenderRequestJson() { return lastLenderRequestJson; }
-    public void setLastLenderRequestJson(String lastLenderRequestJson) { this.lastLenderRequestJson = lastLenderRequestJson; }
-    public String getLastLenderResponseJson() { return lastLenderResponseJson; }
-    public void setLastLenderResponseJson(String lastLenderResponseJson) { this.lastLenderResponseJson = lastLenderResponseJson; }
-    public String getRawResponseJson() { return rawResponseJson; }
-    public void setRawResponseJson(String rawResponseJson) { this.rawResponseJson = rawResponseJson; }
     public Instant getQuotedAt() { return quotedAt; }
     public void setQuotedAt(Instant quotedAt) { this.quotedAt = quotedAt; }
 }

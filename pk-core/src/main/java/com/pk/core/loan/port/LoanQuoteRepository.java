@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface LoanQuoteRepository {
-    LoanQuoteRecord insert(LoanQuoteInsert command, List<LoanQuoteTermInsert> terms);
+    LoanQuoteRecord upsert(LoanQuoteInsert command, List<LoanQuoteTermInsert> terms);
 
     Optional<LoanQuoteRecord> findByQuoteNo(String quoteNo);
 
@@ -16,13 +16,12 @@ public interface LoanQuoteRepository {
 
     record LoanQuoteInsert(
             String quoteNo,
+            Long profileId,
             long creditApplicationId,
             String mobileNo,
-            Long productListId,
+            Long couponId,
+            Long externalInteractionId,
             LoanTrialQuoteDetail quote,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson,
-            String rawResponseJson,
             Instant quotedAt
     ) {
     }
@@ -36,13 +35,12 @@ public interface LoanQuoteRepository {
     record LoanQuoteRecord(
             long id,
             String quoteNo,
+            Long profileId,
             long creditApplicationId,
             String mobileNo,
-            Long productListId,
+            Long couponId,
+            Long externalInteractionId,
             LoanTrialQuoteDetail quote,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson,
-            String rawResponseJson,
             Instant quotedAt
     ) {
         public String productCode() {

@@ -18,14 +18,21 @@ public class LoanQuoteRepositoryImpl implements LoanQuoteRepository {
 
     @Override
     @Transactional
-    public LoanQuoteRecord insert(LoanQuoteInsert command, List<LoanQuoteTermInsert> terms) {
+    public LoanQuoteRecord upsert(LoanQuoteInsert command, List<LoanQuoteTermInsert> terms) {
         LoanQuoteInsertParam param = new LoanQuoteInsertParam();
         LoanQuotePersistenceMapper.fillInsertParam(param, command);
-        mapper.insertQuote(param);
-        for (LoanQuoteTermInsert term : terms) {
-            LoanQuoteTermInsertParam termParam = new LoanQuoteTermInsertParam();
-            LoanQuotePersistenceMapper.fillTermInsertParam(param.getId(), termParam, term);
-            mapper.insertTerm(termParam);
+        mapper.upsertQuote(param);
+        if (param.getId() <= 0) {
+            throw new IllegalStateException("Failed to upsert loan_quote");
+        }
+        long quoteId = param.getId();
+        mapper.deleteTermsByQuoteId(quoteId);
+        if (terms != null) {
+            for (LoanQuoteTermInsert term : terms) {
+                LoanQuoteTermInsertParam termParam = new LoanQuoteTermInsertParam();
+                LoanQuotePersistenceMapper.fillTermInsertParam(quoteId, termParam, term);
+                mapper.insertTerm(termParam);
+            }
         }
         return LoanQuotePersistenceMapper.toRecord(param);
     }

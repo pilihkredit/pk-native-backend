@@ -6,7 +6,9 @@
             <arg column="id" javaType="_long"/><arg column="loan_apply_id" javaType="string"/>
             <arg column="request_id" javaType="string"/><arg column="apply_id" javaType="string"/>
             <arg column="mobile_no" javaType="string"/>
-            <arg column="credit_application_id" javaType="_long"/><arg column="quote_id" javaType="_long"/>
+            <arg column="credit_application_id" javaType="_long"/>
+            <arg column="quote_id" javaType="java.lang.Long"/>
+            <arg column="quote_no" javaType="string"/>
             <arg column="profile_id" javaType="_long"/><arg column="profile_version_id" javaType="_long"/>
             <arg column="external_loan_apply_no" javaType="string"/><arg column="lender_user_id" javaType="string"/>
             <arg column="bill_no" javaType="string"/>
@@ -17,7 +19,7 @@
             <arg column="last_lender_response_json" javaType="string"/>
         </constructor>
     </resultMap>
-    <sql id="cols">id, loan_apply_id, request_id, apply_id, mobile_no, credit_application_id, quote_id, profile_id, profile_version_id,
+    <sql id="cols">id, loan_apply_id, request_id, apply_id, mobile_no, credit_application_id, quote_id, quote_no, profile_id, profile_version_id,
         external_loan_apply_no, lender_user_id, bill_no, status, external_status, apply_amt, pay_amount, pay_time,
         last_lender_request_json, last_lender_response_json</sql>
     <select id="findById" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE id = #{id}</select>
@@ -26,11 +28,11 @@
     <select id="findByLoanApplyIdAndProfileId" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE loan_apply_id = #{loanApplyId} AND profile_id = #{profileId}</select>
     <insert id="insert">
         INSERT INTO loan_application (
-            loan_apply_id, request_id, apply_id, mobile_no, credit_application_id, quote_id, profile_id, profile_version_id,
+            loan_apply_id, request_id, apply_id, mobile_no, credit_application_id, quote_id, quote_no, profile_id, profile_version_id,
             status, apply_amt, loan_purpose, submitted_at
         )
         VALUES (
-            #{loanApplyId}, #{requestId}, #{applyId}, #{mobileNo}, #{creditApplicationId}, #{quoteId}, #{profileId}, #{profileVersionId},
+            #{loanApplyId}, #{requestId}, #{applyId}, #{mobileNo}, #{creditApplicationId}, #{quoteId}, #{quoteNo}, #{profileId}, #{profileVersionId},
             #{status}, #{applyAmt}, #{loanPurpose}, CURRENT_TIMESTAMP(3)
         )
     </insert>
