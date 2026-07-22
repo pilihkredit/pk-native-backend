@@ -230,8 +230,8 @@ class AuthServiceFacadeTest {
         when(otpChallengeStore.findByToken("token-1")).thenReturn(Optional.of(
                 new OtpChallenge("8123456789", "device-1", "123456", Instant.now().plusSeconds(300))
         ));
-        when(userAuthRepository.findByMobileNo("8123456789"))
-                .thenReturn(Optional.of(new UserProfileSummary(7L, "UABC", "8123456789", false)));
+        when(userAuthRepository.findOrCreateActiveByMobileNo("8123456789"))
+                .thenReturn(new UserProfileSummary(7L, "UABC", "8123456789", false));
         when(userAuthRepository.isPasswordSet(7L)).thenReturn(false);
 
         AuthProperties properties = new AuthProperties();
@@ -272,8 +272,7 @@ class AuthServiceFacadeTest {
         when(whatsappOtpChallengeStore.findByToken("wa-token")).thenReturn(Optional.of(
                 new OtpChallenge("8123456789", "device-1", "654321", Instant.now().plusSeconds(300))
         ));
-        when(userAuthRepository.findByMobileNo("8123456789")).thenReturn(Optional.empty());
-        when(userAuthRepository.createByMobileNo("8123456789"))
+        when(userAuthRepository.findOrCreateActiveByMobileNo("8123456789"))
                 .thenReturn(new UserProfileSummary(9L, "UWA", "8123456789", true));
         when(userAuthRepository.isPasswordSet(9L)).thenReturn(false);
 
@@ -298,6 +297,8 @@ class AuthServiceFacadeTest {
         assertThat(result.tokenPair().accessToken()).isNotBlank();
         verify(whatsappOtpChallengeStore).delete("wa-token");
         verify(otpChallengeStore, never()).findByToken(any());
+        verify(userAuthRepository).findOrCreateActiveByMobileNo("8123456789");
+        verify(userAuthRepository, never()).createByMobileNo(any());
         verify(userAuthRepository).updateLastLoginAt(eq(9L), any(Instant.class));
     }
 
@@ -435,8 +436,8 @@ class AuthServiceFacadeTest {
         RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
         when(sessionStore.findByProfileId(7L)).thenReturn(Optional.empty());
         when(otpChallengeStore.findByToken("unused-token")).thenReturn(Optional.empty());
-        when(userAuthRepository.findByMobileNo("8123456789"))
-                .thenReturn(Optional.of(new UserProfileSummary(7L, "UABC", "8123456789", false)));
+        when(userAuthRepository.findOrCreateActiveByMobileNo("8123456789"))
+                .thenReturn(new UserProfileSummary(7L, "UABC", "8123456789", false));
         when(userAuthRepository.isPasswordSet(7L)).thenReturn(false);
 
         AuthServiceFacade verifyFacade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);

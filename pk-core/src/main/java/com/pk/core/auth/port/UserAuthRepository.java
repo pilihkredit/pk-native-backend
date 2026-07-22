@@ -14,6 +14,12 @@ public interface UserAuthRepository {
 
     UserProfileSummary createByMobileNo(String mobileNo);
 
+    /**
+     * Active profile by mobile, or create one. If only a soft-closed profile exists,
+     * insert a new row reusing that profile's {@code partner_user_id} after renaming the closed row.
+     */
+    UserProfileSummary findOrCreateActiveByMobileNo(String mobileNo);
+
     void saveSessionTokens(
             long profileId,
             String accessToken,

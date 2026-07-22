@@ -89,9 +89,7 @@ class LoanLenderStatusApplierTest {
                 "PROCESSING",
                 new BigDecimal("1500000"),
                 null,
-                null,
-                "{\"loanApplyId\":\"LOAN-1\",\"applyAmt\":1500000}",
-                "{\"loanApplyNo\":\"LN-OLD\"}"
+                null
         );
     }
 

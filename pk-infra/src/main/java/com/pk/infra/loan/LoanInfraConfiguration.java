@@ -101,9 +101,7 @@ public class LoanInfraConfiguration {
     LoanApplyFacade loanApplyFacade(
             OnboardingProgressFacade onboardingProgressFacade,
             CreditApplicationRepository creditApplicationRepository,
-            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
             LoanQuoteRepository loanQuoteRepository,
-            LoanProductFacade loanProductFacade,
             ProfileVersionRepository profileVersionRepository,
             LoanApplicationRepository loanApplicationRepository,
             LoanLenderStatusQueryRepository loanLenderStatusQueryRepository,
@@ -116,9 +114,7 @@ public class LoanInfraConfiguration {
         return new LoanApplyFacade(
                 onboardingProgressFacade,
                 creditApplicationRepository,
-                creditLenderStatusQueryRepository,
                 loanQuoteRepository,
-                loanProductFacade,
                 profileVersionRepository,
                 loanApplicationRepository,
                 loanLenderStatusQueryRepository,

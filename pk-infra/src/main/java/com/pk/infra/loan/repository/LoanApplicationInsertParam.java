@@ -15,7 +15,15 @@ public class LoanApplicationInsertParam {
     private long profileVersionId;
     private String status;
     private BigDecimal applyAmt;
+    private String productCode;
+    private String repayMethod;
+    private Long couponId;
     private String loanPurpose;
+    private BigDecimal lat;
+    private BigDecimal lng;
+    private String ip;
+    private String address;
+    private String adId;
 
     public static LoanApplicationInsertParam from(LoanApplicationInsert insert) {
         LoanApplicationInsertParam p = new LoanApplicationInsertParam();
@@ -30,7 +38,15 @@ public class LoanApplicationInsertParam {
         p.profileVersionId = insert.profileVersionId();
         p.status = insert.status();
         p.applyAmt = insert.applyAmt();
+        p.productCode = insert.productCode();
+        p.repayMethod = insert.repayMethod();
+        p.couponId = insert.couponId();
         p.loanPurpose = insert.loanPurpose();
+        p.lat = insert.lat();
+        p.lng = insert.lng();
+        p.ip = insert.ip();
+        p.address = insert.address();
+        p.adId = insert.adId();
         return p;
     }
 
@@ -78,7 +94,39 @@ public class LoanApplicationInsertParam {
         return applyAmt;
     }
 
+    public String getProductCode() {
+        return productCode;
+    }
+
+    public String getRepayMethod() {
+        return repayMethod;
+    }
+
+    public Long getCouponId() {
+        return couponId;
+    }
+
     public String getLoanPurpose() {
         return loanPurpose;
+    }
+
+    public BigDecimal getLat() {
+        return lat;
+    }
+
+    public BigDecimal getLng() {
+        return lng;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public String getAdId() {
+        return adId;
     }
 }

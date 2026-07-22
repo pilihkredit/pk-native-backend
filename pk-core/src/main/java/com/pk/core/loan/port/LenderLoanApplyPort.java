@@ -31,8 +31,7 @@ public interface LenderLoanApplyPort {
             String loanApplyNo,
             String lenderUserId,
             String externalStatus,
-            String requestJson,
-            String responseDataJson
+            Long externalInteractionId
     ) {
     }
 }

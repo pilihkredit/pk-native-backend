@@ -265,8 +265,7 @@ public class AuthServiceFacade {
         if (isOtpBypass(otpCode)) {
             whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
                     .ifPresent(whatsappOtpChallengeStore::delete);
-            UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
-                    .orElseGet(() -> userAuthRepository.createByMobileNo(mobileNo));
+            UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
             TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_WHATSAPP);
             boolean passwordSet = userAuthRepository.isPasswordSet(profile.profileId());
             return new OtpVerifyResult(profile, tokenPair, passwordSet);
@@ -319,8 +318,7 @@ public class AuthServiceFacade {
             challengeStore.delete(otpToken);
         }
 
-        UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
-                .orElseGet(() -> userAuthRepository.createByMobileNo(mobileNo));
+        UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
         TokenPair tokenPair = openSession(profile, deviceNo, loginChannel);
         boolean passwordSet = userAuthRepository.isPasswordSet(profile.profileId());
         return new OtpVerifyResult(profile, tokenPair, passwordSet);

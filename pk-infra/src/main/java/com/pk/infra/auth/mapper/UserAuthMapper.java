@@ -14,6 +14,13 @@ public interface UserAuthMapper {
 
     UserProfileSummary findByPartnerUserId(@Param("partnerUserId") String partnerUserId);
 
+    UserProfileSummary findLatestClosedByMobileNoForUpdate(@Param("mobileNo") String mobileNo);
+
+    int relinquishPartnerUserId(
+            @Param("profileId") long profileId,
+            @Param("relinquishedPartnerUserId") String relinquishedPartnerUserId
+    );
+
     int insertProfile(
             @Param("partnerUserId") String partnerUserId,
             @Param("mobileNo") String mobileNo

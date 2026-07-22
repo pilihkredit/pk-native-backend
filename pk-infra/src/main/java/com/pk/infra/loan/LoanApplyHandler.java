@@ -61,8 +61,7 @@ public class LoanApplyHandler {
                 result.loanApplyNo(),
                 result.lenderUserId(),
                 result.externalStatus(),
-                result.requestJson(),
-                result.responseDataJson()
+                result.externalInteractionId()
         ));
         loanStatusHistoryRepository.insert(
                 job.loanApplicationId(),
@@ -78,8 +77,8 @@ public class LoanApplyHandler {
         return result.loanApplyNo();
     }
 
-    private void transition(long loanApplicationId, String fromStatus, String toStatus, String externalStatus) {
-        loanApplicationRepository.updateStatus(loanApplicationId, toStatus, externalStatus);
-        loanStatusHistoryRepository.insert(loanApplicationId, fromStatus, toStatus, externalStatus, SOURCE);
+    private void transition(long id, String from, String to, String externalStatus) {
+        loanApplicationRepository.updateStatus(id, to, externalStatus);
+        loanStatusHistoryRepository.insert(id, from, to, externalStatus, SOURCE);
     }
 }

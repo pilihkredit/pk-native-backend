@@ -45,7 +45,15 @@ public interface LoanApplicationRepository {
             long profileId,
             long profileVersionId,
             BigDecimal applyAmt,
+            String productCode,
+            String repayMethod,
+            Long couponId,
             String loanPurpose,
+            BigDecimal lat,
+            BigDecimal lng,
+            String ip,
+            String address,
+            String adId,
             String status
     ) {
     }
@@ -55,8 +63,7 @@ public interface LoanApplicationRepository {
             String externalLoanApplyNo,
             String lenderUserId,
             String externalStatus,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson
+            Long externalInteractionId
     ) {
     }
 
@@ -78,9 +85,7 @@ public interface LoanApplicationRepository {
             String externalStatus,
             BigDecimal applyAmt,
             BigDecimal payAmount,
-            Instant payTime,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson
+            Instant payTime
     ) {
     }
 }

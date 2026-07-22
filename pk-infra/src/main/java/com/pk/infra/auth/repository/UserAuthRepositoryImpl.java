@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class UserAuthRepositoryImpl implements UserAuthRepository {
@@ -44,6 +45,41 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
                         true
                 ))
                 .orElseThrow(() -> new IllegalStateException("Failed to load created user profile"));
+    }
+
+    @Override
+    @Transactional
+    public UserProfileSummary findOrCreateActiveByMobileNo(String mobileNo) {
+        Optional<UserProfileSummary> active = findByMobileNo(mobileNo);
+        if (active.isPresent()) {
+            return active.get();
+        }
+
+        UserProfileSummary closed = userAuthMapper.findLatestClosedByMobileNoForUpdate(mobileNo);
+        active = findByMobileNo(mobileNo);
+        if (active.isPresent()) {
+            return active.get();
+        }
+        if (closed == null) {
+            return createByMobileNo(mobileNo);
+        }
+
+        String originalPartnerUserId = closed.partnerUserId();
+        String relinquished = originalPartnerUserId + "_closed_" + closed.profileId();
+        int updated = userAuthMapper.relinquishPartnerUserId(closed.profileId(), relinquished);
+        if (updated != 1) {
+            return findByMobileNo(mobileNo).orElseGet(() -> createByMobileNo(mobileNo));
+        }
+
+        userAuthMapper.insertProfile(originalPartnerUserId, mobileNo);
+        return findByMobileNo(mobileNo)
+                .map(profile -> new UserProfileSummary(
+                        profile.profileId(),
+                        profile.partnerUserId(),
+                        profile.mobileNo(),
+                        true
+                ))
+                .orElseThrow(() -> new IllegalStateException("Failed to load re-created user profile"));
     }
 
     @Override

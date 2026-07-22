@@ -10,8 +10,7 @@ public class FakePendanaanLoanApplyAdapter implements LenderLoanApplyPort {
                 "LN-FAKE-" + command.loanApplyId(),
                 "USR-FAKE",
                 "PROCESSING",
-                null,
-                null
+                1L
         );
     }
 }

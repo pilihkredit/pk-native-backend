@@ -67,6 +67,7 @@ public class LoanApplyApplicationService {
                         request.applyAmt(),
                         request.productCode(),
                         request.repayMethod(),
+                        request.couponId(),
                         request.loanPurpose(),
                         request.lat(),
                         request.lng(),

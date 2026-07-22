@@ -15,13 +15,10 @@
             <arg column="status" javaType="string"/><arg column="external_status" javaType="string"/>
             <arg column="apply_amt" javaType="java.math.BigDecimal"/><arg column="pay_amount" javaType="java.math.BigDecimal"/>
             <arg column="pay_time" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
-            <arg column="last_lender_request_json" javaType="string"/>
-            <arg column="last_lender_response_json" javaType="string"/>
         </constructor>
     </resultMap>
     <sql id="cols">id, loan_apply_id, request_id, apply_id, mobile_no, credit_application_id, quote_id, quote_no, profile_id, profile_version_id,
-        external_loan_apply_no, lender_user_id, bill_no, status, external_status, apply_amt, pay_amount, pay_time,
-        last_lender_request_json, last_lender_response_json</sql>
+        external_loan_apply_no, lender_user_id, bill_no, status, external_status, apply_amt, pay_amount, pay_time</sql>
     <select id="findById" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE id = #{id}</select>
     <select id="findByRequestId" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE request_id = #{requestId}</select>
     <select id="findByLoanApplyId" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE loan_apply_id = #{loanApplyId}</select>
@@ -29,11 +26,12 @@
     <insert id="insert">
         INSERT INTO loan_application (
             loan_apply_id, request_id, apply_id, mobile_no, credit_application_id, quote_id, quote_no, profile_id, profile_version_id,
-            status, apply_amt, loan_purpose, submitted_at
+            status, apply_amt, product_code, repay_method, coupon_id, loan_purpose, lat, lng, ip, address, ad_id, submitted_at
         )
         VALUES (
             #{loanApplyId}, #{requestId}, #{applyId}, #{mobileNo}, #{creditApplicationId}, #{quoteId}, #{quoteNo}, #{profileId}, #{profileVersionId},
-            #{status}, #{applyAmt}, #{loanPurpose}, CURRENT_TIMESTAMP(3)
+            #{status}, #{applyAmt}, #{productCode}, #{repayMethod}, #{couponId}, #{loanPurpose}, #{lat}, #{lng}, #{ip}, #{address}, #{adId},
+            CURRENT_TIMESTAMP(3)
         )
     </insert>
     <select id="findIdByLoanApplyId" resultType="long">SELECT id FROM loan_application WHERE loan_apply_id = #{loanApplyId}</select>
@@ -54,8 +52,7 @@
             external_loan_apply_no = #{externalLoanApplyNo},
             lender_user_id = #{lenderUserId},
             external_status = #{externalStatus},
-            last_lender_request_json = #{lastLenderRequestJson},
-            last_lender_response_json = #{lastLenderResponseJson},
+            external_interaction_id = #{externalInteractionId},
             submitted_at = COALESCE(submitted_at, CURRENT_TIMESTAMP(3))
         WHERE id = #{id}
     </update>

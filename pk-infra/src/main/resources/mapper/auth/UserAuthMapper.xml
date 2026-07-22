@@ -46,6 +46,24 @@
         LIMIT 1
     </select>
 
+    <select id="findLatestClosedByMobileNoForUpdate" resultMap="userProfileSummaryMap">
+        SELECT id, partner_user_id, mobile_no, 0 AS newly_created
+        FROM user_profile
+        WHERE mobile_no = #{mobileNo}
+          AND deleted_at IS NOT NULL
+        ORDER BY deleted_at DESC, id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <update id="relinquishPartnerUserId">
+        UPDATE user_profile
+        SET partner_user_id = #{relinquishedPartnerUserId},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{profileId}
+          AND deleted_at IS NOT NULL
+    </update>
+
     <insert id="insertProfile">
         INSERT INTO user_profile (
             partner_user_id,

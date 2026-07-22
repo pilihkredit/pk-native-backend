@@ -18,31 +18,22 @@ public class PendanaanLoanApplyAdapter implements LenderLoanApplyPort {
     @Override
     public LenderLoanApplyResult apply(LenderLoanApplyCommand command) {
         String requestBody = PendanaanLoanRequestMapper.buildApplyBody(command);
-        JsonNode envelope = httpClient.postEnvelope(
+        PendanaanHttpClient.ExchangeResult exchange = httpClient.postWithInteraction(
                 APPLY_PATH,
                 requestBody,
                 BUSINESS_TYPE,
                 command.loanApplyId()
         );
-        String responseCode = PendanaanHttpSupport.textOrEmpty(envelope.get("code"));
-        if (!ApiCode.SUCCESS.code().equals(responseCode)) {
-            throw PendanaanHttpSupport.mapFailureCode(
-                    responseCode,
-                    PendanaanHttpSupport.textOrEmpty(envelope.get("msg"))
-            );
-        }
-        JsonNode data = envelope.get("data");
+        JsonNode data = exchange.data();
         if (data == null || data.isNull()) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
-        String responseDataJson = data.toString();
         return new LenderLoanApplyResult(
                 requiredText(data, "loanApplyId"),
                 requiredText(data, "loanApplyNo"),
                 requiredText(data, "userId"),
                 requiredText(data, "applyStatus"),
-                requestBody,
-                responseDataJson
+                exchange.interactionId()
         );
     }
 
