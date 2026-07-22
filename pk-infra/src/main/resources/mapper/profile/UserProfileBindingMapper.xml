@@ -25,7 +25,7 @@
     </update>
 
     <select id="findClosure" resultMap="accountClosureMap">
-        SELECT deleted_at, retention_until
+        SELECT id, deleted_at, retention_until
         FROM user_profile
         WHERE id = #{profileId}
         LIMIT 1
@@ -33,6 +33,7 @@
 
     <resultMap id="accountClosureMap" type="com.pk.infra.profile.mapper.UserProfileBindingMapper$AccountClosureRow">
         <constructor>
+            <arg column="id" javaType="_long"/>
             <arg column="deleted_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
             <arg column="retention_until" javaType="java.time.Instant"

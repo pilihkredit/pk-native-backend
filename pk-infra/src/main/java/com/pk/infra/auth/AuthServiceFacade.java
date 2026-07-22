@@ -363,7 +363,7 @@ public class AuthServiceFacade {
         } catch (ApiException exception) {
             if (exception.apiCode() == ApiCode.UNAUTHORIZED_REQUEST) {
                 log.warn(
-                        "Close account rejected: profile not found profileId={} mobileNo={}",
+                        "Close account rejected: profile row missing profileId={} mobileNo={}",
                         principal.profileId(),
                         principal.mobileNo()
                 );

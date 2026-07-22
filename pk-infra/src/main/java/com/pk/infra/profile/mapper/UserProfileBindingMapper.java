@@ -23,6 +23,10 @@ public interface UserProfileBindingMapper {
 
     AccountClosureRow findClosure(@Param("profileId") long profileId);
 
-    record AccountClosureRow(Instant deletedAt, Instant retentionUntil) {
+    /**
+     * Include non-null {@code id} so MyBatis does not discard the row when
+     * {@code deleted_at}/{@code retention_until} are both null (active accounts).
+     */
+    record AccountClosureRow(long id, Instant deletedAt, Instant retentionUntil) {
     }
 }
