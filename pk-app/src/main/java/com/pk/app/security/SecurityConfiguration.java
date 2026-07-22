@@ -1,5 +1,6 @@
 package com.pk.app.security;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -13,6 +14,20 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 public class SecurityConfiguration {
+    /**
+     * Prevent Spring Boot from also registering {@link JwtAuthenticationFilter} as a servlet filter.
+     * It must run only inside the Security filter chain (see {@link #securityFilterChain}).
+     */
+    @Bean
+    FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
+            JwtAuthenticationFilter jwtAuthenticationFilter
+    ) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration =
+                new FilterRegistrationBean<>(jwtAuthenticationFilter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
     @Bean
     @DependsOn("publicApiEndpointRegistry")
     SecurityFilterChain securityFilterChain(

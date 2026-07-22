@@ -23,7 +23,8 @@ public class RedisSessionStore implements SessionStore {
             return Optional.empty();
         }
         String[] parts = raw.split("\\|", 5);
-        if (parts.length != 5) {
+        // Expected: version|deviceId|loginChannel|issuedAt| (trailing empty) or without trailing pipe.
+        if (parts.length < 4) {
             return Optional.empty();
         }
         return Optional.of(new AuthSession(

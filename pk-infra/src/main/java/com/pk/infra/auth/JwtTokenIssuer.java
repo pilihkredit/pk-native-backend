@@ -67,11 +67,13 @@ public class JwtTokenIssuer implements TokenIssuer {
         try {
             SignedJWT signedJwt = SignedJWT.parse(accessToken);
             if (!signedJwt.verify(new MACVerifier(secret))) {
+                AuthRejectReasons.set(AuthRejectReasons.TOKEN_REJECTED);
                 throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
             }
             JWTClaimsSet claims = signedJwt.getJWTClaimsSet();
             Date expiration = claims.getExpirationTime();
             if (expiration == null || expiration.toInstant().isBefore(Instant.now())) {
+                AuthRejectReasons.set(AuthRejectReasons.TOKEN_EXPIRED);
                 log.warn(
                         "Access token expired mobileNo={} subject={}",
                         claims.getStringClaim("mobile"),
@@ -87,6 +89,7 @@ public class JwtTokenIssuer implements TokenIssuer {
         } catch (ApiException exception) {
             throw exception;
         } catch (Exception exception) {
+            AuthRejectReasons.set(AuthRejectReasons.TOKEN_REJECTED);
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST, exception);
         }
     }

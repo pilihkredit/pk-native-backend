@@ -30,9 +30,12 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 public class AuthServiceFacade {
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceFacade.class);
     private static final String LOGIN_CHANNEL_OTP = "OTP";
     private static final String LOGIN_CHANNEL_WHATSAPP = "WHATSAPP";
     private static final String LOGIN_CHANNEL_PASSWORD = "PASSWORD";
@@ -354,16 +357,45 @@ public class AuthServiceFacade {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        AccountCloseResult result = userProfileBindingRepository.closeAccount(principal.profileId());
+        AccountCloseResult result;
+        try {
+            result = userProfileBindingRepository.closeAccount(principal.profileId());
+        } catch (ApiException exception) {
+            if (exception.apiCode() == ApiCode.UNAUTHORIZED_REQUEST) {
+                log.warn(
+                        "Close account rejected: profile not found profileId={} mobileNo={}",
+                        principal.profileId(),
+                        principal.mobileNo()
+                );
+            }
+            throw exception;
+        }
         logout(principal);
         return result;
     }
 
     public AuthenticatedPrincipal validateAccessToken(String accessToken) {
         AuthenticatedPrincipal principal = tokenIssuer.parseAccessToken(accessToken);
-        AuthSession session = sessionStore.findByProfileId(principal.profileId())
-                .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
+        AuthSession session = sessionStore.findByProfileId(principal.profileId()).orElse(null);
+        if (session == null) {
+            AuthRejectReasons.set(AuthRejectReasons.SESSION_NOT_FOUND);
+            log.warn(
+                    "Access token session not found profileId={} mobileNo={} tokenSessionVersion={}",
+                    principal.profileId(),
+                    principal.mobileNo(),
+                    principal.sessionVersion()
+            );
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
         if (session.sessionVersion() != principal.sessionVersion()) {
+            AuthRejectReasons.set(AuthRejectReasons.SESSION_VERSION_MISMATCH);
+            log.warn(
+                    "Access token session version mismatch profileId={} mobileNo={} tokenSessionVersion={} activeSessionVersion={}",
+                    principal.profileId(),
+                    principal.mobileNo(),
+                    principal.sessionVersion(),
+                    session.sessionVersion()
+            );
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return principal;

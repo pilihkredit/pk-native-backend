@@ -123,6 +123,8 @@ public class AuthController {
     /**
      * Close (deregister) the current account.
      * Sets {@code deleted_at} and {@code retention_until} (= closedAt + 5 years), then invalidates the session.
+     * Client must call this while still logged in (valid access token). Do not call {@code /auth/logout} first —
+     * logout clears the session and causes {@code K000012} on close-account.
      */
     @PostMapping("/close-account")
     public ApiResponse<AccountCloseResponse> closeAccount(

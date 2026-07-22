@@ -5,6 +5,7 @@ import com.pk.app.common.web.ActiveLenderProvider;
 import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
 import com.pk.core.api.ApiCode;
+import com.pk.infra.auth.AuthRejectReasons;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -22,10 +23,16 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
     private final ActiveLenderProvider activeLenderProvider;
+    private final AuthUnauthorizedStructuredLogger authUnauthorizedStructuredLogger;
 
-    public ApiAuthenticationEntryPoint(ObjectMapper objectMapper, ActiveLenderProvider activeLenderProvider) {
+    public ApiAuthenticationEntryPoint(
+            ObjectMapper objectMapper,
+            ActiveLenderProvider activeLenderProvider,
+            AuthUnauthorizedStructuredLogger authUnauthorizedStructuredLogger
+    ) {
         this.objectMapper = objectMapper;
         this.activeLenderProvider = activeLenderProvider;
+        this.authUnauthorizedStructuredLogger = authUnauthorizedStructuredLogger;
     }
 
     @Override
@@ -35,11 +42,14 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
             AuthenticationException authException
     ) throws IOException {
         if (JwtAuthenticationFilter.resolveBearerToken(request) == null) {
+            authUnauthorizedStructuredLogger.log(request, AuthRejectReasons.TOKEN_NOT_PROVIDED);
             log.warn(
                     "Access token not provided path={} method={}",
                     request.getRequestURI(),
                     request.getMethod()
             );
+        } else {
+            authUnauthorizedStructuredLogger.log(request, AuthRejectReasons.TOKEN_REJECTED);
         }
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
