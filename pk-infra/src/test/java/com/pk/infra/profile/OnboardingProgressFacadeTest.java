@@ -128,6 +128,55 @@ class OnboardingProgressFacadeTest {
     }
 
     @Test
+    void returnsSyncedWhenBankCardProvidedAsBankCardList() {
+        when(lenderProfileQueryPort.query(any())).thenReturn(
+                new LenderProfileQueryPort.LenderProfileQueryResult("""
+                        {
+                          "partnerUserId": "U10001",
+                          "profile": { "educationDegree": 1 },
+                          "contact": { "userContacts": [] },
+                          "bankCardList": [
+                            {
+                              "bankCardId": 10001,
+                              "bankCode": "BCA",
+                              "bankName": "Bank Central Asia",
+                              "cardNumber": "1234567890",
+                              "isDefault": true
+                            }
+                          ],
+                          "device": { "deviceNo": "device-1" },
+                          "identity": { "name": "JOHN DOE", "idNo": "3201010101010001" }
+                        }
+                        """)
+        );
+
+        var result = facade.getProgress(1L, "U10001");
+
+        assertThat(result.kycStatus()).isEqualTo(OnboardingProgressFacade.KYC_SYNCED);
+        assertThat(result.missingModules()).isEmpty();
+        assertThat(result.completedModules()).contains(OnboardingModuleCode.BANK_CARD);
+    }
+
+    @Test
+    void treatsEmptyBankCardListAsMissing() {
+        when(lenderProfileQueryPort.query(any())).thenReturn(
+                new LenderProfileQueryPort.LenderProfileQueryResult("""
+                        {
+                          "profile": { "educationDegree": 1 },
+                          "contact": { "userContacts": [{ "mobileNo": "81234567891" }] },
+                          "bankCardList": [],
+                          "device": { "deviceNo": "device-1" },
+                          "identity": { "name": "JOHN DOE" }
+                        }
+                        """)
+        );
+
+        var result = facade.getProgress(1L, "U10001");
+
+        assertThat(result.missingModules()).contains(OnboardingModuleCode.BANK_CARD);
+    }
+
+    @Test
     void treatsEmptyObjectAsMissing() {
         when(lenderProfileQueryPort.query(any())).thenReturn(
                 new LenderProfileQueryPort.LenderProfileQueryResult("""

@@ -23,7 +23,7 @@ public class ProfileQueryFacade {
         LenderProfileQueryPort.LenderProfileQueryResult result = lenderProfileQueryPort.query(
                 new LenderProfileQueryPort.LenderProfileQueryCommand(partnerUserId, modules)
         );
-        return parseResponse(result.rawResponseJson());
+        return LenderProfileQueryCompat.applyBankCardCompat(parseResponse(result.rawResponseJson()), objectMapper);
     }
 
     private JsonNode parseResponse(String rawResponseJson) {

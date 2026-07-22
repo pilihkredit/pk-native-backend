@@ -79,7 +79,7 @@ public class OnboardingProgressFacade {
                             LENDER_QUERY_MODULES
                     )
             );
-            return parseResponse(result.rawResponseJson());
+            return LenderProfileQueryCompat.applyBankCardCompat(parseResponse(result.rawResponseJson()), objectMapper);
         } catch (ApiException exception) {
             // Lender has no user yet (A000010 / L000010): treat as all modules incomplete.
             if (exception.apiCode() == ApiCode.UPSTREAM_APPLICATION_NOT_FOUND) {
@@ -105,6 +105,17 @@ public class OnboardingProgressFacade {
             return false;
         }
         JsonNode node = root.get(lenderModuleKey);
+        if (isPresentPayload(node)) {
+            return true;
+        }
+        // Lender v1.1.12+: bank card module is returned as bankCardList (compat also fills bankCard).
+        if ("bankCard".equals(lenderModuleKey)) {
+            return isPresentPayload(root.get("bankCardList"));
+        }
+        return false;
+    }
+
+    private static boolean isPresentPayload(JsonNode node) {
         if (node == null || node.isNull() || node.isMissingNode()) {
             return false;
         }
