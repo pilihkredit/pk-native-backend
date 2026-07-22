@@ -12,6 +12,8 @@ import java.util.List;
 /**
  * Onboarding progress based on lender {@code POST /api/open/v1/user/info/query}.
  * A module counts as completed only when the lender returns a non-null payload for it.
+ * When the lender reports user/application not found ({@code A000010}/{@code L000010}),
+ * progress is returned as incomplete with every module missing (success path for clients).
  */
 public class OnboardingProgressFacade {
     public static final String KYC_INCOMPLETE = "INCOMPLETE";
@@ -70,13 +72,21 @@ public class OnboardingProgressFacade {
         if (partnerUserId == null || partnerUserId.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "partnerUserId is required");
         }
-        LenderProfileQueryPort.LenderProfileQueryResult result = lenderProfileQueryPort.query(
-                new LenderProfileQueryPort.LenderProfileQueryCommand(
-                        partnerUserId,
-                        LENDER_QUERY_MODULES
-                )
-        );
-        return parseResponse(result.rawResponseJson());
+        try {
+            LenderProfileQueryPort.LenderProfileQueryResult result = lenderProfileQueryPort.query(
+                    new LenderProfileQueryPort.LenderProfileQueryCommand(
+                            partnerUserId,
+                            LENDER_QUERY_MODULES
+                    )
+            );
+            return parseResponse(result.rawResponseJson());
+        } catch (ApiException exception) {
+            // Lender has no user yet (A000010 / L000010): treat as all modules incomplete.
+            if (exception.apiCode() == ApiCode.UPSTREAM_APPLICATION_NOT_FOUND) {
+                return objectMapper.createObjectNode();
+            }
+            throw exception;
+        }
     }
 
     private JsonNode parseResponse(String rawResponseJson) {
