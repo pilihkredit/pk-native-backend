@@ -54,6 +54,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     LogContext.putMobileNo(principal.mobileNo());
                 } catch (ApiException exception) {
                     if (!publicApiEndpointRegistry.isPublic(request)) {
+                        log.warn(
+                                "Access token rejected path={} method={} code={}",
+                                request.getRequestURI(),
+                                request.getMethod(),
+                                exception.apiCode() == null ? null : exception.apiCode().code()
+                        );
                         apiExceptionResponseWriter.write(request, response, exception);
                         return;
                     }

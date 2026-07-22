@@ -16,10 +16,14 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
 public class JwtTokenIssuer implements TokenIssuer {
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenIssuer.class);
+
     private final AuthProperties authProperties;
     private final byte[] secret;
 
@@ -68,6 +72,11 @@ public class JwtTokenIssuer implements TokenIssuer {
             JWTClaimsSet claims = signedJwt.getJWTClaimsSet();
             Date expiration = claims.getExpirationTime();
             if (expiration == null || expiration.toInstant().isBefore(Instant.now())) {
+                log.warn(
+                        "Access token expired mobileNo={} subject={}",
+                        claims.getStringClaim("mobile"),
+                        claims.getSubject()
+                );
                 throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
             }
             long profileId = Long.parseLong(Objects.requireNonNull(claims.getSubject()));
