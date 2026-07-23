@@ -70,6 +70,16 @@ class LoanLenderStatusApplierTest {
         verify(loanApplicationRepository).updateStatus(10L, LoanApplicationStatus.DISBURSED, "SUCCESS");
     }
 
+    @Test
+    void applyMainRecordSkipsStatusQuerySnapshot() {
+        LoanApplicationRepository.LoanApplicationRecord record = processingRecord();
+
+        applier.applyMainRecord(record, callbackStatus("SUCCESS"), "LOAN_CALLBACK");
+
+        verify(loanLenderStatusQueryRepository, never()).upsert(any());
+        verify(loanApplicationRepository).updateStatus(10L, LoanApplicationStatus.DISBURSED, "SUCCESS");
+    }
+
     private static LoanApplicationRepository.LoanApplicationRecord processingRecord() {
         return new LoanApplicationRepository.LoanApplicationRecord(
                 10L,

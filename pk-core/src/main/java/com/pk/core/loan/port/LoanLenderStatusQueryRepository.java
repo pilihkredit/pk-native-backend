@@ -25,6 +25,7 @@ public interface LoanLenderStatusQueryRepository {
             Long freezeEndTime,
             String lastLenderRequestJson,
             String lastLenderResponseJson,
+            Long externalInteractionCallbackId,
             Instant queriedAt
     ) {
     }

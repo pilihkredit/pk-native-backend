@@ -2,15 +2,20 @@ package com.pk.infra.loan;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.pk.core.callback.CallbackProcessStatus;
 import com.pk.core.callback.CallbackTypes;
-import com.pk.core.callback.port.CallbackEventRepository;
 import com.pk.core.callback.port.LoanCallbackParser;
 import com.pk.core.credit.CreditProviderCode;
+import com.pk.core.external.ExternalInteractionCallbackLog;
+import com.pk.core.external.port.ExternalInteractionCallbackLogRepository;
+import com.pk.core.loan.LoanApplicationStatus;
+import com.pk.core.loan.port.LenderLoanStatusPort;
+import com.pk.core.loan.port.LoanApplicationRepository;
+import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,64 +28,154 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class LoanCallbackIntakeFacadeTest {
     @Mock
-    private CallbackEventRepository callbackEventRepository;
-    @Mock
-    private LoanCallbackOutboxPublisher loanCallbackOutboxPublisher;
+    private ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository;
     @Mock
     private LoanCallbackParser loanCallbackParser;
+    @Mock
+    private LoanApplicationRepository loanApplicationRepository;
+    @Mock
+    private LoanLenderStatusQueryRepository loanLenderStatusQueryRepository;
+    @Mock
+    private LoanLenderStatusApplier loanLenderStatusApplier;
 
     private LoanCallbackIntakeFacade facade;
 
     @BeforeEach
     void setUp() {
         facade = new LoanCallbackIntakeFacade(
-                callbackEventRepository,
-                loanCallbackOutboxPublisher,
-                loanCallbackParser
+                externalInteractionCallbackLogRepository,
+                loanCallbackParser,
+                loanApplicationRepository,
+                loanLenderStatusQueryRepository,
+                loanLenderStatusApplier
         );
     }
 
     @Test
-    void publishesOutboxForNewCallback() {
+    void processesCallbackSynchronouslyForKnownLoanApplyId() {
+        LoanApplicationRepository.LoanApplicationRecord record = applicationRecord();
         when(loanCallbackParser.parse("{}")).thenReturn(parsedCallback());
-        when(callbackEventRepository.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        when(callbackEventRepository.insert(any())).thenReturn(42L);
+        when(externalInteractionCallbackLogRepository.findIdByIdempotencyKey(any())).thenReturn(Optional.empty());
+        when(externalInteractionCallbackLogRepository.insert(any(ExternalInteractionCallbackLog.class))).thenAnswer(invocation -> {
+            ExternalInteractionCallbackLog log = invocation.getArgument(0);
+            log.setId(99L);
+            return 99L;
+        });
+        when(loanApplicationRepository.findByLoanApplyId("LOAN-001")).thenReturn(Optional.of(record));
 
         LoanCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
 
-        assertThat(result.callbackEventId()).isEqualTo(42L);
+        assertThat(result.externalInteractionCallbackId()).isEqualTo(99L);
         assertThat(result.duplicate()).isFalse();
-        verify(loanCallbackOutboxPublisher).publish(42L, "LOAN-001");
+        assertThat(result.ignored()).isFalse();
+
+        ArgumentCaptor<LoanLenderStatusQueryRepository.LoanLenderStatusQueryData> statusCaptor =
+                ArgumentCaptor.forClass(LoanLenderStatusQueryRepository.LoanLenderStatusQueryData.class);
+        verify(loanLenderStatusQueryRepository).upsert(statusCaptor.capture());
+        assertThat(statusCaptor.getValue().externalInteractionCallbackId()).isEqualTo(99L);
+        assertThat(statusCaptor.getValue().loanApplyId()).isEqualTo("LOAN-001");
+        assertThat(statusCaptor.getValue().lastLenderRequestJson()).isEqualTo("{}");
+
+        verify(loanLenderStatusApplier).applyMainRecord(
+                eq(record),
+                any(LenderLoanStatusPort.LenderLoanStatusResult.class),
+                eq("LOAN_CALLBACK")
+        );
+        verify(externalInteractionCallbackLogRepository).updateResponse(
+                eq(99L),
+                eq("81234567890"),
+                eq("000000"),
+                eq("success"),
+                eq("{\"code\":\"000000\",\"msg\":\"success\"}"),
+                eq(true),
+                any(Integer.class)
+        );
     }
 
     @Test
-    void skipsOutboxForDuplicateCallback() {
+    void skipsBusinessUpdateForDuplicateCallback() {
         when(loanCallbackParser.parse("{}")).thenReturn(parsedCallback());
-        when(callbackEventRepository.findByIdempotencyKey(any())).thenReturn(Optional.of(existingRecord()));
+        when(externalInteractionCallbackLogRepository.findIdByIdempotencyKey(any())).thenReturn(Optional.of(7L));
 
         LoanCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
 
-        assertThat(result.callbackEventId()).isEqualTo(7L);
+        assertThat(result.externalInteractionCallbackId()).isEqualTo(7L);
         assertThat(result.duplicate()).isTrue();
-        verify(loanCallbackOutboxPublisher, never()).publish(any(Long.class), any());
+        verify(externalInteractionCallbackLogRepository, never()).insert(any());
+        verify(loanLenderStatusQueryRepository, never()).upsert(any());
+        verify(loanLenderStatusApplier, never()).applyMainRecord(any(), any(), any());
     }
 
     @Test
-    void buildsExpectedIdempotencyKey() {
+    void ignoresUnknownLoanApplyIdAfterAuditInsert() {
         when(loanCallbackParser.parse("{}")).thenReturn(parsedCallback());
-        when(callbackEventRepository.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        when(callbackEventRepository.insert(any())).thenReturn(1L);
+        when(externalInteractionCallbackLogRepository.findIdByIdempotencyKey(any())).thenReturn(Optional.empty());
+        when(externalInteractionCallbackLogRepository.insert(any(ExternalInteractionCallbackLog.class))).thenAnswer(invocation -> {
+            ExternalInteractionCallbackLog log = invocation.getArgument(0);
+            log.setId(55L);
+            return 55L;
+        });
+        when(loanApplicationRepository.findByLoanApplyId("LOAN-001")).thenReturn(Optional.empty());
+
+        LoanCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
+
+        assertThat(result.ignored()).isTrue();
+        verify(loanLenderStatusQueryRepository, never()).upsert(any());
+        verify(loanLenderStatusApplier, never()).applyMainRecord(any(), any(), any());
+        verify(externalInteractionCallbackLogRepository).updateResponse(
+                eq(55L),
+                eq(null),
+                eq("000000"),
+                eq("success"),
+                eq("{\"code\":\"000000\",\"msg\":\"success\"}"),
+                eq(true),
+                any(Integer.class)
+        );
+    }
+
+    @Test
+    void buildsExpectedIdempotencyKeyOnInsert() {
+        when(loanCallbackParser.parse("{}")).thenReturn(parsedCallback());
+        when(externalInteractionCallbackLogRepository.findIdByIdempotencyKey(any())).thenReturn(Optional.empty());
+        when(externalInteractionCallbackLogRepository.insert(any(ExternalInteractionCallbackLog.class))).thenAnswer(invocation -> {
+            ExternalInteractionCallbackLog log = invocation.getArgument(0);
+            log.setId(1L);
+            return 1L;
+        });
+        when(loanApplicationRepository.findByLoanApplyId("LOAN-001")).thenReturn(Optional.empty());
 
         facade.intake("{}");
 
-        ArgumentCaptor<CallbackEventRepository.CallbackEventInsert> captor =
-                ArgumentCaptor.forClass(CallbackEventRepository.CallbackEventInsert.class);
-        verify(callbackEventRepository).insert(captor.capture());
-        assertThat(captor.getValue().idempotencyKey())
+        ArgumentCaptor<ExternalInteractionCallbackLog> captor =
+                ArgumentCaptor.forClass(ExternalInteractionCallbackLog.class);
+        verify(externalInteractionCallbackLogRepository).insert(captor.capture());
+        assertThat(captor.getValue().getIdempotencyKey())
                 .isEqualTo("pendanaan:LOAN_RESULT:LOAN-001:SUCCESS:LN-001");
-        assertThat(captor.getValue().callbackType()).isEqualTo(CallbackTypes.LOAN_RESULT);
-        assertThat(captor.getValue().providerCode()).isEqualTo(CreditProviderCode.PENDANAAN);
-        assertThat(captor.getValue().processStatus()).isEqualTo(CallbackProcessStatus.RECEIVED);
+        assertThat(captor.getValue().getBusinessType()).isEqualTo(CallbackTypes.LOAN_RESULT);
+        assertThat(captor.getValue().getProviderCode()).isEqualTo(CreditProviderCode.PENDANAAN);
+    }
+
+    private static LoanApplicationRepository.LoanApplicationRecord applicationRecord() {
+        return new LoanApplicationRepository.LoanApplicationRecord(
+                10L,
+                "LOAN-001",
+                "REQ-001",
+                "APPLY-001",
+                "81234567890",
+                100L,
+                200L,
+                "QUOTE-001",
+                1L,
+                300L,
+                null,
+                null,
+                null,
+                LoanApplicationStatus.PROCESSING,
+                null,
+                new BigDecimal("1500000"),
+                null,
+                null
+        );
     }
 
     private static LoanCallbackParser.ParsedLoanCallback parsedCallback() {
@@ -93,20 +188,6 @@ class LoanCallbackIntakeFacadeTest {
                 new BigDecimal("1455000"),
                 1749792000000L,
                 null
-        );
-    }
-
-    private static CallbackEventRepository.CallbackEventRecord existingRecord() {
-        return new CallbackEventRepository.CallbackEventRecord(
-                7L,
-                "CB-1",
-                CreditProviderCode.PENDANAAN,
-                CallbackTypes.LOAN_RESULT,
-                "LOAN-001",
-                "key",
-                "SUCCESS",
-                "{}",
-                CallbackProcessStatus.PROCESSED
         );
     }
 }

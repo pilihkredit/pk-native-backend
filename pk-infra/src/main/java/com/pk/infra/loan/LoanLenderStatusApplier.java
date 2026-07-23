@@ -33,7 +33,30 @@ public class LoanLenderStatusApplier {
         if (LoanApplicationStatus.isTerminal(record.status())) {
             return;
         }
-        persistStatusQuerySnapshot(record, status);
+        persistStatusQuerySnapshot(record, status, null);
+        applyMainRecordInternal(record, status, source);
+    }
+
+    /**
+     * Updates {@code loan_application} from a lender status payload without touching
+     * {@code loan_lender_status_query}. Used when the status snapshot was already persisted.
+     */
+    public void applyMainRecord(
+            LoanApplicationRepository.LoanApplicationRecord record,
+            LenderLoanStatusPort.LenderLoanStatusResult status,
+            String source
+    ) {
+        if (LoanApplicationStatus.isTerminal(record.status())) {
+            return;
+        }
+        applyMainRecordInternal(record, status, source);
+    }
+
+    private void applyMainRecordInternal(
+            LoanApplicationRepository.LoanApplicationRecord record,
+            LenderLoanStatusPort.LenderLoanStatusResult status,
+            String source
+    ) {
         String nextStatus = LoanExternalStatusMapper.mapLenderStatus(status.externalStatus());
         if (!nextStatus.equals(record.status())) {
             loanApplicationRepository.updateStatus(
@@ -72,9 +95,12 @@ public class LoanLenderStatusApplier {
 
     private void persistStatusQuerySnapshot(
             LoanApplicationRepository.LoanApplicationRecord record,
-            LenderLoanStatusPort.LenderLoanStatusResult status
+            LenderLoanStatusPort.LenderLoanStatusResult status,
+            Long externalInteractionCallbackId
     ) {
-        if (status.requestJson() == null && status.responseDataJson() == null) {
+        if (externalInteractionCallbackId == null
+                && status.requestJson() == null
+                && status.responseDataJson() == null) {
             return;
         }
         loanLenderStatusQueryRepository.upsert(new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
@@ -91,6 +117,7 @@ public class LoanLenderStatusApplier {
                 status.freezeEndTime(),
                 status.requestJson(),
                 status.responseDataJson(),
+                externalInteractionCallbackId,
                 Instant.now()
         ));
     }

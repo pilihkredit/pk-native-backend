@@ -8,7 +8,9 @@ import com.pk.core.callback.port.LoanCallbackParser;
 import com.pk.core.callback.port.ServerEventCallbackParser;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
+import com.pk.core.external.port.ExternalInteractionCallbackLogRepository;
 import com.pk.core.loan.port.LoanApplicationRepository;
+import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.outbox.port.OutboxEventRepository;
 import com.pk.infra.credit.CreditCallbackHandler;
 import com.pk.infra.credit.CreditCallbackIntakeFacade;
@@ -78,14 +80,18 @@ public class CallbackInfraConfiguration {
 
     @Bean
     LoanCallbackIntakeFacade loanCallbackIntakeFacade(
-            CallbackEventRepository callbackEventRepository,
-            LoanCallbackOutboxPublisher loanCallbackOutboxPublisher,
-            LoanCallbackParser loanCallbackParser
+            ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository,
+            LoanCallbackParser loanCallbackParser,
+            LoanApplicationRepository loanApplicationRepository,
+            LoanLenderStatusQueryRepository loanLenderStatusQueryRepository,
+            LoanLenderStatusApplier loanLenderStatusApplier
     ) {
         return new LoanCallbackIntakeFacade(
-                callbackEventRepository,
-                loanCallbackOutboxPublisher,
-                loanCallbackParser
+                externalInteractionCallbackLogRepository,
+                loanCallbackParser,
+                loanApplicationRepository,
+                loanLenderStatusQueryRepository,
+                loanLenderStatusApplier
         );
     }
 
