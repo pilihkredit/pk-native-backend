@@ -29,6 +29,7 @@ public record ProfileDeviceRequest(
         Long memoryTotal,
         Long sdCardTotal,
         @Size(max = 128) String adId,
+        @Size(max = 64) String adChannel,
         @Size(max = 64) String idfv,
         @Size(max = 64) String idfa,
         @Size(max = 1024) String extParam,

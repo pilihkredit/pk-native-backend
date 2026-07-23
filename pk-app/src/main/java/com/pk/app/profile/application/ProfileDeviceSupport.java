@@ -67,7 +67,8 @@ public final class ProfileDeviceSupport {
                 deviceRequest.sdCardTotal(),
                 normalizeOptional(deviceRequest.idfv()),
                 normalizeOptional(deviceRequest.idfa()),
-                normalizeOptional(deviceRequest.extParam())
+                normalizeOptional(deviceRequest.extParam()),
+                normalizeOptional(deviceRequest.adChannel())
         );
     }
 

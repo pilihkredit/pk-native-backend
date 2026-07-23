@@ -255,6 +255,7 @@ public class LenderSyncAuditRequestBuilder {
         deviceNode.put("systemPlatform", device.systemPlatform());
         applyExtendedAttributes(deviceNode, device.resolvedExtendedAttributes());
         putIfPresent(deviceNode, "adId", device.adId());
+        putIfPresent(deviceNode, "adChannel", device.resolvedExtendedAttributes().adChannel());
         applyDeviceOtherInfo(deviceNode, device.deviceOtherInfo());
         return deviceNode;
     }

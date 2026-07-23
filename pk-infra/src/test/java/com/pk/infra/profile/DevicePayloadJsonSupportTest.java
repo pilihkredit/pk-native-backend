@@ -26,7 +26,7 @@ class DevicePayloadJsonSupportTest {
                 "ad-1",
                 other,
                 "ClientApp",
-                new DeviceExtendedAttributes("Huawei", "P30", null, "12", null, 8, null, null, null, null, null)
+                new DeviceExtendedAttributes("Huawei", "P30", null, "12", null, 8, null, null, null, null, null, null)
         );
         String stored = DevicePayloadJsonSupport.toLenderDeviceJson(device, mapper);
         assertEquals(

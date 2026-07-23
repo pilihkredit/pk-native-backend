@@ -56,7 +56,8 @@ public final class StoredDevicePayloadReader {
                 longOrNull(root.get("sdCardTotal")),
                 textOrNull(root.get("idfv")),
                 textOrNull(root.get("idfa")),
-                textOrNull(root.get("extParam"))
+                textOrNull(root.get("extParam")),
+                textOrNull(root.get("adChannel"))
         );
     }
 

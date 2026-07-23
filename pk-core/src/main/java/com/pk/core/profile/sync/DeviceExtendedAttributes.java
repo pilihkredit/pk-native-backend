@@ -11,9 +11,12 @@ public record DeviceExtendedAttributes(
         Long sdCardTotal,
         String idfv,
         String idfa,
-        String extParam
+        String extParam,
+        String adChannel
 ) {
     public static DeviceExtendedAttributes empty() {
-        return new DeviceExtendedAttributes(null, null, null, null, null, null, null, null, null, null, null);
+        return new DeviceExtendedAttributes(
+                null, null, null, null, null, null, null, null, null, null, null, null
+        );
     }
 }

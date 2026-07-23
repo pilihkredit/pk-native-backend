@@ -25,6 +25,7 @@ public final class LenderDevicePayloadBuilder {
         payload.put("systemPlatform", device.systemPlatform());
         applyExtendedAttributes(payload, device.resolvedExtendedAttributes());
         putIfPresent(payload, "adId", device.adId());
+        putIfPresent(payload, "adChannel", device.resolvedExtendedAttributes().adChannel());
         Map<String, Object> filteredOther = DeviceOtherInfoDocumentFields.filter(device.deviceOtherInfo());
         if (requireDeviceOtherInfo) {
             payload.put("deviceOtherInfo", filteredOther.isEmpty() ? new LinkedHashMap<>() : new LinkedHashMap<>(filteredOther));

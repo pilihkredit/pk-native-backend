@@ -24,7 +24,7 @@ class LenderDevicePayloadBuilderTest {
                 other,
                 "ClientAppName",
                 new DeviceExtendedAttributes(
-                        "Huawei", "P30", null, "12", null, 8, null, null, null, null, null
+                        "Huawei", "P30", null, "12", null, 8, null, null, null, null, null, null
                 )
         );
         Map<String, Object> payload = LenderDevicePayloadBuilder.buildProfileSyncDevice(device);
@@ -34,6 +34,26 @@ class LenderDevicePayloadBuilderTest {
         Map<String, Object> storedOther = (Map<String, Object>) payload.get("deviceOtherInfo");
         assertEquals("80", storedOther.get("battery"));
         assertFalse(storedOther.containsKey("unknownExtra"));
+    }
+
+    @Test
+    void includesAdChannelWhenPresent() {
+        LenderDeviceContext device = new LenderDeviceContext(
+                "LenderApp",
+                "1.0.0",
+                "com.example",
+                "dev-1",
+                "android",
+                "ad-1",
+                null,
+                "ClientAppName",
+                new DeviceExtendedAttributes(
+                        null, null, null, null, null, null, null, null, null, null, null, "facebook"
+                )
+        );
+        Map<String, Object> payload = LenderDevicePayloadBuilder.buildProfileSyncDevice(device);
+        assertEquals("facebook", payload.get("adChannel"));
+        assertEquals("ad-1", payload.get("adId"));
     }
 
     @Test
