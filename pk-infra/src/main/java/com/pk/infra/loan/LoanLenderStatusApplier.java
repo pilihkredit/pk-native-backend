@@ -5,7 +5,10 @@ import com.pk.core.loan.port.LenderLoanStatusPort;
 import com.pk.core.loan.port.LoanApplicationRepository;
 import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Objects;
+import java.util.Optional;
 
 public class LoanLenderStatusApplier {
     private final LoanApplicationRepository loanApplicationRepository;
@@ -30,10 +33,19 @@ public class LoanLenderStatusApplier {
             LenderLoanStatusPort.LenderLoanStatusResult status,
             String source
     ) {
+        apply(record, status, source, null);
+    }
+
+    public void apply(
+            LoanApplicationRepository.LoanApplicationRecord record,
+            LenderLoanStatusPort.LenderLoanStatusResult status,
+            String source,
+            Long externalInteractionCallbackId
+    ) {
         if (LoanApplicationStatus.isTerminal(record.status())) {
             return;
         }
-        persistStatusQuerySnapshot(record, status, null);
+        persistStatusQuerySnapshot(record, status, externalInteractionCallbackId);
         applyMainRecordInternal(record, status, source);
     }
 
@@ -98,28 +110,64 @@ public class LoanLenderStatusApplier {
             LenderLoanStatusPort.LenderLoanStatusResult status,
             Long externalInteractionCallbackId
     ) {
-        if (externalInteractionCallbackId == null
-                && status.requestJson() == null
-                && status.responseDataJson() == null) {
+        Optional<LoanLenderStatusQueryRepository.LoanLenderStatusQueryData> latest =
+                loanLenderStatusQueryRepository.findLatestByLoanApplyId(record.loanApplyId());
+
+        LoanLenderStatusQueryRepository.LoanLenderStatusQueryData next =
+                new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
+                        record.loanApplyId(),
+                        record.profileId(),
+                        record.mobileNo(),
+                        record.lenderUserId(),
+                        firstNonBlank(status.loanApplyNo(), record.externalLoanApplyNo()),
+                        status.externalStatus(),
+                        status.billNo(),
+                        status.applyAmt(),
+                        status.payAmount(),
+                        status.payTime() == null ? null : Instant.ofEpochMilli(status.payTime()),
+                        status.freezeEndTime(),
+                        status.requestJson(),
+                        status.responseDataJson(),
+                        externalInteractionCallbackId,
+                        Instant.now()
+                );
+
+        if (latest.isPresent() && !hasBusinessChange(latest.get(), next)) {
             return;
         }
-        loanLenderStatusQueryRepository.upsert(new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
-                record.loanApplyId(),
-                record.profileId(),
-                record.mobileNo(),
-                record.lenderUserId(),
-                firstNonBlank(status.loanApplyNo(), record.externalLoanApplyNo()),
-                status.externalStatus(),
-                status.billNo(),
-                status.applyAmt(),
-                status.payAmount(),
-                status.payTime() == null ? null : Instant.ofEpochMilli(status.payTime()),
-                status.freezeEndTime(),
-                status.requestJson(),
-                status.responseDataJson(),
-                externalInteractionCallbackId,
-                Instant.now()
-        ));
+        loanLenderStatusQueryRepository.insert(next);
+    }
+
+    static boolean hasBusinessChange(
+            LoanLenderStatusQueryRepository.LoanLenderStatusQueryData previous,
+            LoanLenderStatusQueryRepository.LoanLenderStatusQueryData next
+    ) {
+        return !Objects.equals(normalizeText(previous.externalStatus()), normalizeText(next.externalStatus()))
+                || !Objects.equals(normalizeText(previous.externalLoanApplyNo()), normalizeText(next.externalLoanApplyNo()))
+                || !Objects.equals(normalizeText(previous.billNo()), normalizeText(next.billNo()))
+                || !Objects.equals(normalizeText(previous.lenderUserId()), normalizeText(next.lenderUserId()))
+                || !decimalEquals(previous.applyAmt(), next.applyAmt())
+                || !decimalEquals(previous.payAmount(), next.payAmount())
+                || !Objects.equals(previous.payTime(), next.payTime())
+                || !Objects.equals(previous.freezeEndTime(), next.freezeEndTime());
+    }
+
+    private static String normalizeText(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static boolean decimalEquals(BigDecimal left, BigDecimal right) {
+        if (left == null && right == null) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
+        return left.compareTo(right) == 0;
     }
 
     private static String firstNonBlank(String primary, String fallback) {

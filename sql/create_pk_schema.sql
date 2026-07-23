@@ -963,12 +963,12 @@ CREATE TABLE loan_lender_status_query (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_loan_lender_status_query_apply_id (loan_apply_id),
+    KEY idx_loan_lender_status_query_apply_id (loan_apply_id, id),
     KEY idx_loan_lender_status_query_profile (profile_id),
     KEY idx_loan_lender_status_query_mobile_no (mobile_no),
     KEY idx_loan_lender_status_query_external_no (external_loan_apply_no),
     KEY idx_loan_lender_status_query_bill_no (bill_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest lender loan status query results';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Append-only lender loan status snapshots (insert on business-field change)';
 
 CREATE TABLE external_interaction_callback (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',

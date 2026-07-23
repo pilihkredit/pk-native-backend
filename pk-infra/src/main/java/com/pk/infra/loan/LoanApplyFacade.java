@@ -161,7 +161,7 @@ public class LoanApplyFacade {
                     .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         }
         var query = loanLenderStatusQueryRepository
-                .findByLoanApplyIdAndProfileId(loanApplyId, profileId)
+                .findLatestByLoanApplyIdAndProfileId(loanApplyId, profileId)
                 .orElse(null);
         return toStatusResult(record, query);
     }

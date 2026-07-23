@@ -14,17 +14,17 @@ public class LoanLenderStatusQueryRepositoryImpl implements LoanLenderStatusQuer
     }
 
     @Override
-    public void upsert(LoanLenderStatusQueryData data) {
-        mapper.upsert(data);
+    public void insert(LoanLenderStatusQueryData data) {
+        mapper.insert(data);
     }
 
     @Override
-    public Optional<LoanLenderStatusQueryData> findByLoanApplyId(String loanApplyId) {
-        return Optional.ofNullable(mapper.findByLoanApplyId(loanApplyId));
+    public Optional<LoanLenderStatusQueryData> findLatestByLoanApplyId(String loanApplyId) {
+        return Optional.ofNullable(mapper.findLatestByLoanApplyId(loanApplyId));
     }
 
     @Override
-    public Optional<LoanLenderStatusQueryData> findByLoanApplyIdAndProfileId(String loanApplyId, long profileId) {
-        return Optional.ofNullable(mapper.findByLoanApplyIdAndProfileId(loanApplyId, profileId));
+    public Optional<LoanLenderStatusQueryData> findLatestByLoanApplyIdAndProfileId(String loanApplyId, long profileId) {
+        return Optional.ofNullable(mapper.findLatestByLoanApplyIdAndProfileId(loanApplyId, profileId));
     }
 }

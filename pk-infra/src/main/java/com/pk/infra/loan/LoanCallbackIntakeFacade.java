@@ -8,9 +8,7 @@ import com.pk.core.external.ExternalInteractionCallbackLog;
 import com.pk.core.external.port.ExternalInteractionCallbackLogRepository;
 import com.pk.core.loan.port.LenderLoanStatusPort;
 import com.pk.core.loan.port.LoanApplicationRepository;
-import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.infra.external.ExternalInteractionCallbackSupport;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -27,20 +25,17 @@ public class LoanCallbackIntakeFacade {
     private final ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository;
     private final LoanCallbackParser loanCallbackParser;
     private final LoanApplicationRepository loanApplicationRepository;
-    private final LoanLenderStatusQueryRepository loanLenderStatusQueryRepository;
     private final LoanLenderStatusApplier loanLenderStatusApplier;
 
     public LoanCallbackIntakeFacade(
             ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository,
             LoanCallbackParser loanCallbackParser,
             LoanApplicationRepository loanApplicationRepository,
-            LoanLenderStatusQueryRepository loanLenderStatusQueryRepository,
             LoanLenderStatusApplier loanLenderStatusApplier
     ) {
         this.externalInteractionCallbackLogRepository = externalInteractionCallbackLogRepository;
         this.loanCallbackParser = loanCallbackParser;
         this.loanApplicationRepository = loanApplicationRepository;
-        this.loanLenderStatusQueryRepository = loanLenderStatusQueryRepository;
         this.loanLenderStatusApplier = loanLenderStatusApplier;
     }
 
@@ -92,25 +87,18 @@ public class LoanCallbackIntakeFacade {
         }
 
         LoanApplicationRepository.LoanApplicationRecord record = application.get();
-        LenderLoanStatusPort.LenderLoanStatusResult status = toStatusResult(callback);
-        loanLenderStatusQueryRepository.upsert(new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
-                record.loanApplyId(),
-                record.profileId(),
-                record.mobileNo(),
-                record.lenderUserId(),
-                firstNonBlank(status.loanApplyNo(), record.externalLoanApplyNo()),
-                status.externalStatus(),
-                status.billNo(),
-                status.applyAmt(),
-                status.payAmount(),
-                status.payTime() == null ? null : Instant.ofEpochMilli(status.payTime()),
-                status.freezeEndTime(),
+        LenderLoanStatusPort.LenderLoanStatusResult status = new LenderLoanStatusPort.LenderLoanStatusResult(
+                callback.externalStatus(),
+                callback.loanApplyNo(),
+                callback.billNo(),
+                callback.applyAmt(),
+                callback.payAmount(),
+                callback.payTime(),
+                callback.freezeEndTime(),
                 requestBody,
-                null,
-                interactionCallbackId,
-                Instant.now()
-        ));
-        loanLenderStatusApplier.applyMainRecord(record, status, SOURCE);
+                null
+        );
+        loanLenderStatusApplier.apply(record, status, SOURCE, interactionCallbackId);
         finalizeCallbackLog(interactionCallbackId, record.mobileNo(), startedAt, true);
         return new IntakeResult(interactionCallbackId, false, false);
     }
@@ -127,22 +115,6 @@ public class LoanCallbackIntakeFacade {
         );
     }
 
-    private static LenderLoanStatusPort.LenderLoanStatusResult toStatusResult(
-            LoanCallbackParser.ParsedLoanCallback callback
-    ) {
-        return new LenderLoanStatusPort.LenderLoanStatusResult(
-                callback.externalStatus(),
-                callback.loanApplyNo(),
-                callback.billNo(),
-                callback.applyAmt(),
-                callback.payAmount(),
-                callback.payTime(),
-                callback.freezeEndTime(),
-                null,
-                null
-        );
-    }
-
     private static String buildIdempotencyKey(LoanCallbackParser.ParsedLoanCallback callback) {
         return CreditProviderCode.PENDANAAN
                 + ":"
@@ -153,10 +125,6 @@ public class LoanCallbackIntakeFacade {
                 + callback.externalStatus()
                 + ":"
                 + nullToEmpty(callback.loanApplyNo());
-    }
-
-    private static String firstNonBlank(String primary, String fallback) {
-        return primary == null || primary.isBlank() ? fallback : primary;
     }
 
     private static String nullToEmpty(String value) {

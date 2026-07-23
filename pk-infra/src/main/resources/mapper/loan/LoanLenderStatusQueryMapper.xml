@@ -32,7 +32,7 @@
         last_lender_response_json, external_interaction_callback_id, queried_at
     </sql>
 
-    <insert id="upsert">
+    <insert id="insert">
         INSERT INTO loan_lender_status_query (
             loan_apply_id,
             profile_id,
@@ -66,33 +66,22 @@
             #{externalInteractionCallbackId},
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
-        ON DUPLICATE KEY UPDATE
-            profile_id = VALUES(profile_id),
-            mobile_no = VALUES(mobile_no),
-            lender_user_id = VALUES(lender_user_id),
-            external_loan_apply_no = VALUES(external_loan_apply_no),
-            external_status = VALUES(external_status),
-            bill_no = VALUES(bill_no),
-            apply_amt = VALUES(apply_amt),
-            pay_amount = VALUES(pay_amount),
-            pay_time = VALUES(pay_time),
-            freeze_end_time = VALUES(freeze_end_time),
-            last_lender_request_json = VALUES(last_lender_request_json),
-            last_lender_response_json = VALUES(last_lender_response_json),
-            external_interaction_callback_id = VALUES(external_interaction_callback_id),
-            queried_at = VALUES(queried_at)
     </insert>
 
-    <select id="findByLoanApplyId" resultMap="loanLenderStatusQueryMap">
+    <select id="findLatestByLoanApplyId" resultMap="loanLenderStatusQueryMap">
         SELECT <include refid="loanLenderStatusQueryColumns"/>
         FROM loan_lender_status_query
         WHERE loan_apply_id = #{loanApplyId}
+        ORDER BY id DESC
+        LIMIT 1
     </select>
 
-    <select id="findByLoanApplyIdAndProfileId" resultMap="loanLenderStatusQueryMap">
+    <select id="findLatestByLoanApplyIdAndProfileId" resultMap="loanLenderStatusQueryMap">
         SELECT <include refid="loanLenderStatusQueryColumns"/>
         FROM loan_lender_status_query
         WHERE loan_apply_id = #{loanApplyId}
           AND profile_id = #{profileId}
+        ORDER BY id DESC
+        LIMIT 1
     </select>
 </mapper>

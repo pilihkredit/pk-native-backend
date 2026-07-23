@@ -10,7 +10,6 @@ import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.external.port.ExternalInteractionCallbackLogRepository;
 import com.pk.core.loan.port.LoanApplicationRepository;
-import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.outbox.port.OutboxEventRepository;
 import com.pk.infra.credit.CreditCallbackHandler;
 import com.pk.infra.credit.CreditCallbackIntakeFacade;
@@ -85,14 +84,12 @@ public class CallbackInfraConfiguration {
             ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository,
             LoanCallbackParser loanCallbackParser,
             LoanApplicationRepository loanApplicationRepository,
-            LoanLenderStatusQueryRepository loanLenderStatusQueryRepository,
             LoanLenderStatusApplier loanLenderStatusApplier
     ) {
         return new LoanCallbackIntakeFacade(
                 externalInteractionCallbackLogRepository,
                 loanCallbackParser,
                 loanApplicationRepository,
-                loanLenderStatusQueryRepository,
                 loanLenderStatusApplier
         );
     }

@@ -5,11 +5,11 @@ import java.time.Instant;
 import java.util.Optional;
 
 public interface LoanLenderStatusQueryRepository {
-    void upsert(LoanLenderStatusQueryData data);
+    void insert(LoanLenderStatusQueryData data);
 
-    Optional<LoanLenderStatusQueryData> findByLoanApplyId(String loanApplyId);
+    Optional<LoanLenderStatusQueryData> findLatestByLoanApplyId(String loanApplyId);
 
-    Optional<LoanLenderStatusQueryData> findByLoanApplyIdAndProfileId(String loanApplyId, long profileId);
+    Optional<LoanLenderStatusQueryData> findLatestByLoanApplyIdAndProfileId(String loanApplyId, long profileId);
 
     record LoanLenderStatusQueryData(
             String loanApplyId,

@@ -1,8 +1,9 @@
 package com.pk.infra.loan;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.pk.core.loan.LoanApplicationStatus;
 import com.pk.core.loan.port.LenderLoanStatusPort;
@@ -10,6 +11,8 @@ import com.pk.core.loan.port.LoanApplicationRepository;
 import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,31 +45,59 @@ class LoanLenderStatusApplierTest {
     }
 
     @Test
-    void storesLatestLenderStatusQuerySnapshotSeparatelyFromLoanApplicationApplyAudit() {
+    void insertsWhenNoPreviousSnapshot() {
         LoanApplicationRepository.LoanApplicationRecord record = processingRecord();
+        when(loanLenderStatusQueryRepository.findLatestByLoanApplyId("LOAN-1")).thenReturn(Optional.empty());
 
         applier.apply(record, lenderStatus("PROCESSING"), "LOAN_STATUS_API");
 
         ArgumentCaptor<LoanLenderStatusQueryRepository.LoanLenderStatusQueryData> captor =
                 ArgumentCaptor.forClass(LoanLenderStatusQueryRepository.LoanLenderStatusQueryData.class);
-        verify(loanLenderStatusQueryRepository).upsert(captor.capture());
+        verify(loanLenderStatusQueryRepository).insert(captor.capture());
         LoanLenderStatusQueryRepository.LoanLenderStatusQueryData saved = captor.getValue();
         org.assertj.core.api.Assertions.assertThat(saved.loanApplyId()).isEqualTo("LOAN-1");
-        org.assertj.core.api.Assertions.assertThat(saved.profileId()).isEqualTo(1L);
-        org.assertj.core.api.Assertions.assertThat(saved.mobileNo()).isEqualTo("81234567890");
-        org.assertj.core.api.Assertions.assertThat(saved.externalLoanApplyNo()).isEqualTo("LN-1");
         org.assertj.core.api.Assertions.assertThat(saved.externalStatus()).isEqualTo("PROCESSING");
         org.assertj.core.api.Assertions.assertThat(saved.lastLenderRequestJson()).isEqualTo("{\"loanApplyId\":\"LOAN-1\"}");
-        org.assertj.core.api.Assertions.assertThat(saved.lastLenderResponseJson()).isEqualTo("{\"applyStatus\":\"PROCESSING\"}");
+        org.assertj.core.api.Assertions.assertThat(saved.externalInteractionCallbackId()).isNull();
     }
 
     @Test
-    void doesNotOverwriteStatusQuerySnapshotWhenSourceHasNoQueryAuditJson() {
+    void skipsInsertWhenBusinessFieldsUnchanged() {
         LoanApplicationRepository.LoanApplicationRecord record = processingRecord();
+        when(loanLenderStatusQueryRepository.findLatestByLoanApplyId("LOAN-1"))
+                .thenReturn(Optional.of(existingQuery("PROCESSING")));
 
-        applier.apply(record, callbackStatus("SUCCESS"), "LOAN_CALLBACK");
+        applier.apply(record, lenderStatus("PROCESSING"), "LOAN_STATUS_API");
 
-        verify(loanLenderStatusQueryRepository, never()).upsert(any());
+        verify(loanLenderStatusQueryRepository, never()).insert(any());
+    }
+
+    @Test
+    void insertsWhenExternalStatusChanges() {
+        LoanApplicationRepository.LoanApplicationRecord record = processingRecord();
+        when(loanLenderStatusQueryRepository.findLatestByLoanApplyId("LOAN-1"))
+                .thenReturn(Optional.of(existingQuery("PROCESSING")));
+
+        applier.apply(record, lenderStatus("SUCCESS"), "LOAN_STATUS_API");
+
+        ArgumentCaptor<LoanLenderStatusQueryRepository.LoanLenderStatusQueryData> captor =
+                ArgumentCaptor.forClass(LoanLenderStatusQueryRepository.LoanLenderStatusQueryData.class);
+        verify(loanLenderStatusQueryRepository).insert(captor.capture());
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().externalStatus()).isEqualTo("SUCCESS");
+        verify(loanApplicationRepository).updateStatus(10L, LoanApplicationStatus.DISBURSED, "SUCCESS");
+    }
+
+    @Test
+    void insertsCallbackIdWhenProvided() {
+        LoanApplicationRepository.LoanApplicationRecord record = processingRecord();
+        when(loanLenderStatusQueryRepository.findLatestByLoanApplyId("LOAN-1")).thenReturn(Optional.empty());
+
+        applier.apply(record, callbackStatus("SUCCESS"), "LOAN_CALLBACK", 77L);
+
+        ArgumentCaptor<LoanLenderStatusQueryRepository.LoanLenderStatusQueryData> captor =
+                ArgumentCaptor.forClass(LoanLenderStatusQueryRepository.LoanLenderStatusQueryData.class);
+        verify(loanLenderStatusQueryRepository).insert(captor.capture());
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionCallbackId()).isEqualTo(77L);
         verify(loanApplicationRepository).updateStatus(10L, LoanApplicationStatus.DISBURSED, "SUCCESS");
     }
 
@@ -76,7 +107,8 @@ class LoanLenderStatusApplierTest {
 
         applier.applyMainRecord(record, callbackStatus("SUCCESS"), "LOAN_CALLBACK");
 
-        verify(loanLenderStatusQueryRepository, never()).upsert(any());
+        verify(loanLenderStatusQueryRepository, never()).insert(any());
+        verify(loanLenderStatusQueryRepository, never()).findLatestByLoanApplyId(any());
         verify(loanApplicationRepository).updateStatus(10L, LoanApplicationStatus.DISBURSED, "SUCCESS");
     }
 
@@ -103,6 +135,26 @@ class LoanLenderStatusApplierTest {
         );
     }
 
+    private static LoanLenderStatusQueryRepository.LoanLenderStatusQueryData existingQuery(String externalStatus) {
+        return new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
+                "LOAN-1",
+                1L,
+                "81234567890",
+                "USR-1",
+                "LN-1",
+                externalStatus,
+                null,
+                new BigDecimal("1500000"),
+                null,
+                null,
+                null,
+                "{\"loanApplyId\":\"LOAN-1\"}",
+                "{\"applyStatus\":\"" + externalStatus + "\"}",
+                null,
+                Instant.now()
+        );
+    }
+
     private static LenderLoanStatusPort.LenderLoanStatusResult lenderStatus(String externalStatus) {
         return new LenderLoanStatusPort.LenderLoanStatusResult(
                 externalStatus,
@@ -126,7 +178,7 @@ class LoanLenderStatusApplierTest {
                 new BigDecimal("1450000"),
                 1782864000000L,
                 1749200000000L,
-                null,
+                "{}",
                 null
         );
     }

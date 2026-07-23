@@ -6,11 +6,11 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface LoanLenderStatusQueryMapper {
-    int upsert(LoanLenderStatusQueryData data);
+    int insert(LoanLenderStatusQueryData data);
 
-    LoanLenderStatusQueryData findByLoanApplyId(@Param("loanApplyId") String loanApplyId);
+    LoanLenderStatusQueryData findLatestByLoanApplyId(@Param("loanApplyId") String loanApplyId);
 
-    LoanLenderStatusQueryData findByLoanApplyIdAndProfileId(
+    LoanLenderStatusQueryData findLatestByLoanApplyIdAndProfileId(
             @Param("loanApplyId") String loanApplyId,
             @Param("profileId") long profileId
     );

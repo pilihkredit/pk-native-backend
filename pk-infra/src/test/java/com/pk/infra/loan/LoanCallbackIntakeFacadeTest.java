@@ -15,7 +15,6 @@ import com.pk.core.external.port.ExternalInteractionCallbackLogRepository;
 import com.pk.core.loan.LoanApplicationStatus;
 import com.pk.core.loan.port.LenderLoanStatusPort;
 import com.pk.core.loan.port.LoanApplicationRepository;
-import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,8 +33,6 @@ class LoanCallbackIntakeFacadeTest {
     @Mock
     private LoanApplicationRepository loanApplicationRepository;
     @Mock
-    private LoanLenderStatusQueryRepository loanLenderStatusQueryRepository;
-    @Mock
     private LoanLenderStatusApplier loanLenderStatusApplier;
 
     private LoanCallbackIntakeFacade facade;
@@ -46,7 +43,6 @@ class LoanCallbackIntakeFacadeTest {
                 externalInteractionCallbackLogRepository,
                 loanCallbackParser,
                 loanApplicationRepository,
-                loanLenderStatusQueryRepository,
                 loanLenderStatusApplier
         );
     }
@@ -68,18 +64,11 @@ class LoanCallbackIntakeFacadeTest {
         assertThat(result.externalInteractionCallbackId()).isEqualTo(99L);
         assertThat(result.duplicate()).isFalse();
         assertThat(result.ignored()).isFalse();
-
-        ArgumentCaptor<LoanLenderStatusQueryRepository.LoanLenderStatusQueryData> statusCaptor =
-                ArgumentCaptor.forClass(LoanLenderStatusQueryRepository.LoanLenderStatusQueryData.class);
-        verify(loanLenderStatusQueryRepository).upsert(statusCaptor.capture());
-        assertThat(statusCaptor.getValue().externalInteractionCallbackId()).isEqualTo(99L);
-        assertThat(statusCaptor.getValue().loanApplyId()).isEqualTo("LOAN-001");
-        assertThat(statusCaptor.getValue().lastLenderRequestJson()).isEqualTo("{}");
-
-        verify(loanLenderStatusApplier).applyMainRecord(
+        verify(loanLenderStatusApplier).apply(
                 eq(record),
                 any(LenderLoanStatusPort.LenderLoanStatusResult.class),
-                eq("LOAN_CALLBACK")
+                eq("LOAN_CALLBACK"),
+                eq(99L)
         );
         verify(externalInteractionCallbackLogRepository).updateResponse(
                 eq(99L),
@@ -102,8 +91,7 @@ class LoanCallbackIntakeFacadeTest {
         assertThat(result.externalInteractionCallbackId()).isEqualTo(7L);
         assertThat(result.duplicate()).isTrue();
         verify(externalInteractionCallbackLogRepository, never()).insert(any());
-        verify(loanLenderStatusQueryRepository, never()).upsert(any());
-        verify(loanLenderStatusApplier, never()).applyMainRecord(any(), any(), any());
+        verify(loanLenderStatusApplier, never()).apply(any(), any(), any(), any());
     }
 
     @Test
@@ -120,8 +108,7 @@ class LoanCallbackIntakeFacadeTest {
         LoanCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
 
         assertThat(result.ignored()).isTrue();
-        verify(loanLenderStatusQueryRepository, never()).upsert(any());
-        verify(loanLenderStatusApplier, never()).applyMainRecord(any(), any(), any());
+        verify(loanLenderStatusApplier, never()).apply(any(), any(), any(), any());
         verify(externalInteractionCallbackLogRepository).updateResponse(
                 eq(55L),
                 eq(null),

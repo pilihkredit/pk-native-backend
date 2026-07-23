@@ -76,7 +76,7 @@ class LoanApplyFacadeTest {
         LoanApplicationRepository.LoanApplicationRecord record = existingLoan();
         when(loanApplicationRepository.findByLoanApplyIdAndProfileId("QUOTE-1", 1L))
                 .thenReturn(Optional.of(record));
-        when(loanLenderStatusQueryRepository.findByLoanApplyIdAndProfileId("QUOTE-1", 1L))
+        when(loanLenderStatusQueryRepository.findLatestByLoanApplyIdAndProfileId("QUOTE-1", 1L))
                 .thenReturn(Optional.empty());
 
         LoanApplyFacade.StatusResult result = facade.getStatus(1L, "QUOTE-1");
@@ -110,7 +110,7 @@ class LoanApplyFacadeTest {
         );
         when(loanApplicationRepository.findByLoanApplyIdAndProfileId("QUOTE-1", 1L))
                 .thenReturn(Optional.of(record));
-        when(loanLenderStatusQueryRepository.findByLoanApplyIdAndProfileId("QUOTE-1", 1L))
+        when(loanLenderStatusQueryRepository.findLatestByLoanApplyIdAndProfileId("QUOTE-1", 1L))
                 .thenReturn(Optional.of(new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
                         "QUOTE-1",
                         1L,
