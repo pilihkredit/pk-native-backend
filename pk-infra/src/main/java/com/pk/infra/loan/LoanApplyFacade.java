@@ -73,11 +73,10 @@ public class LoanApplyFacade {
                 .findByApplyIdAndProfileId(command.applyId(), profileId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
 
-        BigDecimal applyAmt = LoanAmountValidator.normalize(command.applyAmt());
         String quoteNo = command.quoteNo().trim();
-        Long quoteId = loanQuoteRepository.findByQuoteNo(quoteNo)
-                .map(LoanQuoteRepository.LoanQuoteRecord::id)
-                .orElse(null);
+        LoanQuoteRepository.LoanQuoteRecord quote = loanQuoteRepository.findByQuoteNo(quoteNo).orElse(null);
+        ResolvedApplyScalars scalars = resolveScalars(command, quote);
+        Long quoteId = quote == null ? null : quote.id();
 
         OnboardingProgressFacade.OnboardingProgressResult onboarding = onboardingProgressFacade.getProgress(
                 profileId,
@@ -102,10 +101,10 @@ public class LoanApplyFacade {
                     quoteNo,
                     profileId,
                     profileVersionId,
-                    applyAmt,
-                    command.productCode(),
-                    command.repayMethod(),
-                    command.couponId(),
+                    scalars.applyAmt(),
+                    scalars.productCode(),
+                    scalars.repayMethod(),
+                    scalars.couponId(),
                     command.loanPurpose(),
                     command.lat(),
                     command.lng(),
@@ -125,11 +124,11 @@ public class LoanApplyFacade {
                     loanApplicationId,
                     loanApplyId,
                     creditRecord.applyId(),
-                    applyAmt,
-                    command.productCode(),
-                    command.repayMethod(),
+                    scalars.applyAmt(),
+                    scalars.productCode(),
+                    scalars.repayMethod(),
                     command.loanPurpose(),
-                    command.couponId(),
+                    scalars.couponId(),
                     command.lat(),
                     command.lng(),
                     command.ip(),
@@ -181,14 +180,13 @@ public class LoanApplyFacade {
                 || command.applyId().length() > 64
                 || command.quoteNo() == null
                 || command.quoteNo().isBlank()
-                || command.quoteNo().length() > 64
-                || command.productCode() == null
-                || command.productCode().isBlank()
-                || command.productCode().length() > 64
-                || command.repayMethod() == null
-                || command.repayMethod().isBlank()
-                || command.repayMethod().length() > 64
-                || command.applyAmt() == null) {
+                || command.quoteNo().length() > 64) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (command.productCode() != null && command.productCode().length() > 64) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (command.repayMethod() != null && command.repayMethod().length() > 64) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
         if (command.appList() == null) {
@@ -200,6 +198,58 @@ public class LoanApplyFacade {
         if (command.address() != null && command.address().length() > 512) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
+    }
+
+    /**
+     * Prefer request scalars when present; otherwise fill from trial quote snapshot.
+     * Published BFF contract: frontend may omit these and only send {@code quoteNo}.
+     */
+    private static ResolvedApplyScalars resolveScalars(
+            ApplyCommand command,
+            LoanQuoteRepository.LoanQuoteRecord quote
+    ) {
+        BigDecimal applyAmt = command.applyAmt();
+        String productCode = blankToNull(command.productCode());
+        String repayMethod = blankToNull(command.repayMethod());
+        Long couponId = command.couponId();
+        if (quote != null) {
+            if (applyAmt == null) {
+                applyAmt = quote.applyAmt();
+            }
+            if (productCode == null) {
+                productCode = blankToNull(quote.productCode());
+            }
+            if (repayMethod == null) {
+                repayMethod = blankToNull(quote.repayMethod());
+            }
+            if (couponId == null) {
+                couponId = quote.couponId();
+            }
+        }
+        if (applyAmt == null || productCode == null || repayMethod == null) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        return new ResolvedApplyScalars(
+                LoanAmountValidator.normalize(applyAmt),
+                productCode,
+                repayMethod,
+                couponId
+        );
+    }
+
+    private static String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private record ResolvedApplyScalars(
+            BigDecimal applyAmt,
+            String productCode,
+            String repayMethod,
+            Long couponId
+    ) {
     }
 
     private static ApplyResult toApplyResult(LoanApplicationRepository.LoanApplicationRecord record) {
