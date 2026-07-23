@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.profile.dto.request.ProfileAppsFlyerInstallSaveRequest;
+import com.pk.app.profile.dto.request.ProfileBankCardListAccessRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardDeleteRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
@@ -11,6 +12,7 @@ import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
 import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
+import com.pk.app.profile.dto.response.ProfileBankCardListAccessResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardDeleteResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
@@ -22,6 +24,7 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.profile.sync.LenderDeviceContext;
+import com.pk.infra.profile.BankCardListAccessFacade;
 import com.pk.infra.profile.ProfileServiceFacade;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
@@ -29,15 +32,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProfileApplicationService {
     private final ProfileServiceFacade profileServiceFacade;
+    private final BankCardListAccessFacade bankCardListAccessFacade;
     private final PendanaanProperties pendanaanProperties;
     private final ObjectMapper objectMapper;
 
     public ProfileApplicationService(
             ProfileServiceFacade profileServiceFacade,
+            BankCardListAccessFacade bankCardListAccessFacade,
             PendanaanProperties pendanaanProperties,
             ObjectMapper objectMapper
     ) {
         this.profileServiceFacade = profileServiceFacade;
+        this.bankCardListAccessFacade = bankCardListAccessFacade;
         this.pendanaanProperties = pendanaanProperties;
         this.objectMapper = objectMapper;
     }
@@ -143,6 +149,21 @@ public class ProfileApplicationService {
                 )
         );
         return new ProfileBankCardDeleteResponse(result.requestId(), result.deleted());
+    }
+
+    public ProfileBankCardListAccessResponse checkBankCardListAccess(
+            AuthenticatedPrincipal principal,
+            ProfileBankCardListAccessRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        BankCardListAccessFacade.BankCardListAccessResult result = bankCardListAccessFacade.checkAccess(
+                principal.partnerUserId(),
+                resolveDevice(request.device(), httpRequest)
+        );
+        return new ProfileBankCardListAccessResponse(result.canShowList());
     }
 
     public ProfileLoginLogSaveResponse saveLoginLog(

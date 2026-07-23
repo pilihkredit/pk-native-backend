@@ -69,6 +69,11 @@ public enum ApiCode {
             "Jumlah kartu bank yang dapat ditambahkan sudah maksimal",
             ApiCodeLayer.PLATFORM_VALIDATION
     ),
+    BANK_CARD_LIST_ACCESS_DENIED(
+            "K000343",
+            "Status saat ini tidak memungkinkan modifikasi, silakan coba lagi nanti",
+            ApiCodeLayer.PLATFORM_VALIDATION
+    ),
 
     QUOTE_SNAPSHOT_EXPIRED("B000003", "Quote snapshot expired", ApiCodeLayer.PLATFORM_ORCHESTRATION),
     QUOTE_SNAPSHOT_MISMATCH("B000004", "Quote snapshot mismatch", ApiCodeLayer.PLATFORM_ORCHESTRATION),

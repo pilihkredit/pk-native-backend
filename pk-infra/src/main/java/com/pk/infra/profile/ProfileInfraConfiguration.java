@@ -165,6 +165,14 @@ public class ProfileInfraConfiguration {
     }
 
     @Bean
+    BankCardListAccessFacade bankCardListAccessFacade(
+            ProfileQueryFacade profileQueryFacade,
+            com.pk.core.home.port.LenderUserStatusPort lenderUserStatusPort
+    ) {
+        return new BankCardListAccessFacade(profileQueryFacade, lenderUserStatusPort);
+    }
+
+    @Bean
     BankCardMaxConfigLoader bankCardMaxConfigLoader(
             com.pk.core.appconfig.port.AppConfigRepository appConfigRepository,
             ObjectMapper objectMapper

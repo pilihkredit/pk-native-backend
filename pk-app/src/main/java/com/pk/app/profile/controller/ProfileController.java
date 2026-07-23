@@ -7,6 +7,7 @@ import com.pk.app.profile.application.ProfileQueryApplicationService;
 import com.pk.app.profile.application.ProfileEnumApplicationService;
 import com.pk.app.profile.application.ProfileApplicationService;
 import com.pk.app.profile.dto.request.ProfileAppsFlyerInstallSaveRequest;
+import com.pk.app.profile.dto.request.ProfileBankCardListAccessRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardDeleteRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
@@ -15,6 +16,7 @@ import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
 import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
+import com.pk.app.profile.dto.response.ProfileBankCardListAccessResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardDeleteResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
@@ -148,6 +150,22 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileApplicationService.deleteBankCard(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Whether the client may open the bank card list (real-time lender gate). */
+    @PostMapping("/bank-card/list-access")
+    public ApiResponse<ProfileBankCardListAccessResponse> checkBankCardListAccess(
+            @Valid @RequestBody ProfileBankCardListAccessRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.checkBankCardListAccess(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }
