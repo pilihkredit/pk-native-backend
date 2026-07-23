@@ -10,6 +10,7 @@ public record ProfileBankCardData(
         String verifyStatus,
         String verifyErrorCode,
         boolean defaultFlag,
+        boolean deletedFlag,
         String moduleStatus,
         String lastRequestId,
         String lastLenderRequestJson,

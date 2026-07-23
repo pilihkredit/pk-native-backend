@@ -297,6 +297,7 @@ CREATE TABLE user_profile_bank_card (
     verify_status VARCHAR(32) NOT NULL COMMENT 'Verification status',
     verify_error_code VARCHAR(32) NULL COMMENT 'Verification error code when failed',
     default_flag TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Default bank card flag',
+    deleted_flag TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Soft delete flag: 1 deleted',
     module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
     last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
     last_lender_request_json JSON NULL COMMENT 'Last lender user/info/upsert request audit JSON',
@@ -306,6 +307,7 @@ CREATE TABLE user_profile_bank_card (
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_profile_bank_card_hash (card_no_hash),
     KEY idx_user_profile_bank_card_profile_id (profile_id),
+    KEY idx_user_profile_bank_card_profile_deleted (profile_id, deleted_flag),
     KEY idx_user_profile_bank_card_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bank card onboarding module';
 

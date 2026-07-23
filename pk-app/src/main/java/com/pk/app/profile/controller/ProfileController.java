@@ -7,6 +7,7 @@ import com.pk.app.profile.application.ProfileQueryApplicationService;
 import com.pk.app.profile.application.ProfileEnumApplicationService;
 import com.pk.app.profile.application.ProfileApplicationService;
 import com.pk.app.profile.dto.request.ProfileAppsFlyerInstallSaveRequest;
+import com.pk.app.profile.dto.request.ProfileBankCardDeleteRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileInfoQueryRequest;
@@ -14,6 +15,7 @@ import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
 import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
+import com.pk.app.profile.dto.response.ProfileBankCardDeleteResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileEnumsResponse;
@@ -130,6 +132,22 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileApplicationService.saveBankCard(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Soft-delete a non-default bank card. */
+    @PostMapping("/bank-card/delete")
+    public ApiResponse<ProfileBankCardDeleteResponse> deleteBankCard(
+            @Valid @RequestBody ProfileBankCardDeleteRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.deleteBankCard(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

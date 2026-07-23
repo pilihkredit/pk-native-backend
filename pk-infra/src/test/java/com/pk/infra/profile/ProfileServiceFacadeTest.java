@@ -9,11 +9,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileContactsModuleData;
 import com.pk.core.profile.ProfilePersonalData;
+import com.pk.core.profile.port.LenderBankCardPort;
+import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
@@ -21,8 +25,9 @@ import com.pk.core.profile.port.ProfileLoginLogRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import com.pk.core.profile.port.ProfileTongdunRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
-import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.UserProfileBindingRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.reference.BankReferenceFacade;
 import java.util.List;
@@ -42,6 +47,8 @@ class ProfileServiceFacadeTest {
     private ProfileSyncOrchestrator profileSyncOrchestrator;
     private OnboardingProgressFacade onboardingProgressFacade;
     private UserProfileBindingRepository userProfileBindingRepository;
+    private ProfileQueryFacade profileQueryFacade;
+    private LenderBankCardPort lenderBankCardPort;
     private ProfileServiceFacade facade;
 
     @BeforeEach
@@ -57,6 +64,8 @@ class ProfileServiceFacadeTest {
         profileSyncOrchestrator = mock(ProfileSyncOrchestrator.class);
         onboardingProgressFacade = mock(OnboardingProgressFacade.class);
         userProfileBindingRepository = mock(UserProfileBindingRepository.class);
+        profileQueryFacade = mock(ProfileQueryFacade.class);
+        lenderBankCardPort = mock(LenderBankCardPort.class);
         SensitiveFieldEncryptor encryptor = new SensitiveFieldEncryptor() {
             @Override
             public EncryptedField encrypt(String plaintext) {
@@ -91,7 +100,9 @@ class ProfileServiceFacadeTest {
                 bankReferenceFacade,
                 profileSyncOrchestrator,
                 onboardingProgressFacade,
-                userProfileBindingRepository
+                userProfileBindingRepository,
+                profileQueryFacade,
+                lenderBankCardPort
         );
         when(onboardingProgressFacade.getProgress(anyLong(), any()))
                 .thenReturn(new OnboardingProgressFacade.OnboardingProgressResult(
@@ -304,6 +315,7 @@ class ProfileServiceFacadeTest {
                         "PASSED",
                         null,
                         false,
+                        false,
                         "COMPLETED",
                         "req-old",
                         null,
@@ -353,6 +365,7 @@ class ProfileServiceFacadeTest {
                         "PASSED",
                         null,
                         true,
+                        false,
                         "COMPLETED",
                         "req-other",
                         null,
@@ -364,6 +377,110 @@ class ProfileServiceFacadeTest {
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.BANK_CARD_ALREADY_BOUND);
+    }
+
+    @Test
+    void softDeletesNonDefaultBankCardAfterLenderDelete() throws Exception {
+        when(profileBankCardRepository.findActiveByProfileIdAndCardNoHash(anyLong(), any())).thenReturn(Optional.of(
+                new com.pk.core.profile.ProfileBankCardData(
+                        8L,
+                        10L,
+                        "81234567890",
+                        "BCA",
+                        new EncryptedField("cipher", new byte[12], new byte[16]),
+                        "hash",
+                        "PASSED",
+                        null,
+                        false,
+                        false,
+                        "COMPLETED",
+                        "req-old",
+                        null,
+                        null
+                )
+        ));
+        ObjectNode root = new ObjectMapper().createObjectNode();
+        ObjectNode item = root.putArray("bankCardList").addObject();
+        item.put("bankCardId", 10001L);
+        item.put("cardNumber", "1234567890");
+        when(profileQueryFacade.query(any(), any())).thenReturn(root);
+
+        var result = facade.deleteBankCard(
+                10L,
+                "U10001",
+                "81234567890",
+                new ProfileServiceFacade.BankCardDeleteCommand("req-del-1", "1234567890", sampleDevice())
+        );
+
+        assertThat(result.deleted()).isTrue();
+        verify(lenderBankCardPort).deleteBankCard(any());
+        verify(profileBankCardRepository).softDeleteById(8L, "req-del-1");
+    }
+
+    @Test
+    void rejectsDeletingDefaultBankCard() {
+        when(profileBankCardRepository.findActiveByProfileIdAndCardNoHash(anyLong(), any())).thenReturn(Optional.of(
+                new com.pk.core.profile.ProfileBankCardData(
+                        8L,
+                        10L,
+                        "81234567890",
+                        "BCA",
+                        new EncryptedField("cipher", new byte[12], new byte[16]),
+                        "hash",
+                        "PASSED",
+                        null,
+                        true,
+                        false,
+                        "COMPLETED",
+                        "req-old",
+                        null,
+                        null
+                )
+        ));
+
+        assertThatThrownBy(() -> facade.deleteBankCard(
+                10L,
+                "U10001",
+                "81234567890",
+                new ProfileServiceFacade.BankCardDeleteCommand("req-del-2", "1234567890", sampleDevice())
+        ))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.BANK_CARD_DEFAULT_CANNOT_DELETE);
+        verify(lenderBankCardPort, never()).deleteBankCard(any());
+    }
+
+    @Test
+    void returnsIdempotentSuccessWhenBankCardAlreadySoftDeletedForSameRequestId() {
+        when(profileBankCardRepository.findByLastRequestId("req-del-3")).thenReturn(Optional.of(
+                new com.pk.core.profile.ProfileBankCardData(
+                        8L,
+                        10L,
+                        "81234567890",
+                        "BCA",
+                        new EncryptedField("cipher", new byte[12], new byte[16]),
+                        "hash",
+                        "PASSED",
+                        null,
+                        false,
+                        true,
+                        "COMPLETED",
+                        "req-del-3",
+                        null,
+                        null
+                )
+        ));
+
+        var result = facade.deleteBankCard(
+                10L,
+                "U10001",
+                "81234567890",
+                new ProfileServiceFacade.BankCardDeleteCommand("req-del-3", "1234567890", sampleDevice())
+        );
+
+        assertThat(result.deleted()).isTrue();
+        verify(lenderBankCardPort, never()).deleteBankCard(any());
+        verify(profileBankCardRepository, never()).softDeleteById(anyLong(), any());
     }
 
     @Test

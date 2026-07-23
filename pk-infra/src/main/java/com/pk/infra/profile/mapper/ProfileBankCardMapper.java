@@ -12,11 +12,18 @@ public interface ProfileBankCardMapper {
 
     ProfileBankCardRow findByCardNoHash(@Param("cardNoHash") String cardNoHash);
 
+    ProfileBankCardRow findActiveByProfileIdAndCardNoHash(
+            @Param("profileId") long profileId,
+            @Param("cardNoHash") String cardNoHash
+    );
+
     int insert(ProfileBankCardRow row);
 
     int updateById(ProfileBankCardRow row);
 
     int clearDefaultByProfileId(@Param("profileId") long profileId);
+
+    int softDeleteById(@Param("id") long id, @Param("lastRequestId") String lastRequestId);
 
     int updateLastLenderAudit(
             @Param("lastRequestId") String lastRequestId,

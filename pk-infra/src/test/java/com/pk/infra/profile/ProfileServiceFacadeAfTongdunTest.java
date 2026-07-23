@@ -92,7 +92,9 @@ class ProfileServiceFacadeAfTongdunTest {
                 mock(BankReferenceFacade.class),
                 profileSyncOrchestrator,
                 onboardingProgressFacade,
-                mock(UserProfileBindingRepository.class)
+                mock(UserProfileBindingRepository.class),
+                mock(ProfileQueryFacade.class),
+                mock(com.pk.core.profile.port.LenderBankCardPort.class)
         );
     }
 

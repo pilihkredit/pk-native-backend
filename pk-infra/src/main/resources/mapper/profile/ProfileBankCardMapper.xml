@@ -14,6 +14,7 @@
             <arg column="verify_status" javaType="string"/>
             <arg column="verify_error_code" javaType="string"/>
             <arg column="default_flag" javaType="_boolean" typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
+            <arg column="deleted_flag" javaType="_boolean" typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
             <arg column="module_status" javaType="string"/>
             <arg column="last_request_id" javaType="string"/>
             <arg column="last_lender_request_json" javaType="string"/>
@@ -22,13 +23,14 @@
     </resultMap>
     <sql id="bankCardColumns">
         id, profile_id, mobile_no, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
-        verify_status, verify_error_code, default_flag, module_status, last_request_id,
+        verify_status, verify_error_code, default_flag, deleted_flag, module_status, last_request_id,
         last_lender_request_json, last_lender_response_json
     </sql>
     <select id="findDefaultByProfileId" resultMap="bankCardRowMap">
         SELECT <include refid="bankCardColumns"/>
         FROM user_profile_bank_card
         WHERE profile_id = #{profileId}
+          AND deleted_flag = 0
         ORDER BY default_flag DESC, id DESC
         LIMIT 1
     </select>
@@ -45,14 +47,23 @@
         WHERE card_no_hash = #{cardNoHash}
         LIMIT 1
     </select>
+    <select id="findActiveByProfileIdAndCardNoHash" resultMap="bankCardRowMap">
+        SELECT <include refid="bankCardColumns"/>
+        FROM user_profile_bank_card
+        WHERE profile_id = #{profileId}
+          AND card_no_hash = #{cardNoHash}
+          AND deleted_flag = 0
+        LIMIT 1
+    </select>
     <insert id="insert">
         INSERT INTO user_profile_bank_card (
             profile_id, mobile_no, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
-            verify_status, verify_error_code, default_flag, module_status, last_request_id
+            verify_status, verify_error_code, default_flag, deleted_flag, module_status, last_request_id
         ) VALUES (
             #{profileId}, #{mobileNo}, #{bankCode}, #{cardNoHash}, #{cardNoCiphertext}, #{cardNoNonce}, #{cardNoTag},
             #{verifyStatus}, #{verifyErrorCode},
             #{defaultFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            #{deletedFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
             #{moduleStatus}, #{lastRequestId}
         )
     </insert>
@@ -67,6 +78,7 @@
             verify_status = #{verifyStatus},
             verify_error_code = #{verifyErrorCode},
             default_flag = #{defaultFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            deleted_flag = #{deletedFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
             module_status = #{moduleStatus},
             last_request_id = #{lastRequestId}
         WHERE id = #{id}
@@ -75,7 +87,16 @@
         UPDATE user_profile_bank_card
         SET default_flag = 0
         WHERE profile_id = #{profileId}
+          AND deleted_flag = 0
           AND default_flag = 1
+    </update>
+    <update id="softDeleteById">
+        UPDATE user_profile_bank_card
+        SET deleted_flag = 1,
+            default_flag = 0,
+            last_request_id = #{lastRequestId}
+        WHERE id = #{id}
+          AND deleted_flag = 0
     </update>
     <update id="updateLastLenderAudit">
         UPDATE user_profile_bank_card

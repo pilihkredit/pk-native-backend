@@ -62,6 +62,8 @@ public enum ApiCode {
     BANK_CARD_VA_NOT_ALLOWED("L000104", "Virtual account card not allowed", ApiCodeLayer.UPSTREAM_BUSINESS),
     BANK_CARD_VERIFICATION_FAILED("L000321", "Bank card verification failed", ApiCodeLayer.UPSTREAM_BUSINESS),
     BANK_CARD_ALREADY_BOUND("L000339", "Bank card already bound", ApiCodeLayer.UPSTREAM_BUSINESS),
+    BANK_CARD_NOT_FOUND("K000340", "Bank card not found", ApiCodeLayer.PLATFORM_VALIDATION),
+    BANK_CARD_DEFAULT_CANNOT_DELETE("K000341", "Default bank card cannot be deleted", ApiCodeLayer.PLATFORM_VALIDATION),
 
     QUOTE_SNAPSHOT_EXPIRED("B000003", "Quote snapshot expired", ApiCodeLayer.PLATFORM_ORCHESTRATION),
     QUOTE_SNAPSHOT_MISMATCH("B000004", "Quote snapshot mismatch", ApiCodeLayer.PLATFORM_ORCHESTRATION),

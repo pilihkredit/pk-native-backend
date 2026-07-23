@@ -31,6 +31,12 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
     }
 
     @Override
+    public Optional<ProfileBankCardData> findActiveByProfileIdAndCardNoHash(long profileId, String cardNoHash) {
+        return Optional.ofNullable(profileBankCardMapper.findActiveByProfileIdAndCardNoHash(profileId, cardNoHash))
+                .map(this::toData);
+    }
+
+    @Override
     public void insert(ProfileBankCardData data) {
         profileBankCardMapper.insert(toRow(data));
     }
@@ -43,6 +49,11 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
     @Override
     public void clearDefaultByProfileId(long profileId) {
         profileBankCardMapper.clearDefaultByProfileId(profileId);
+    }
+
+    @Override
+    public void softDeleteById(long id, String lastRequestId) {
+        profileBankCardMapper.softDeleteById(id, lastRequestId);
     }
 
     @Override
@@ -63,6 +74,7 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
                 data.verifyStatus(),
                 data.verifyErrorCode(),
                 data.defaultFlag(),
+                data.deletedFlag(),
                 data.moduleStatus(),
                 data.lastRequestId(),
                 data.lastLenderRequestJson(),
@@ -81,6 +93,7 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
                 row.verifyStatus(),
                 row.verifyErrorCode(),
                 row.defaultFlag(),
+                row.deletedFlag(),
                 row.moduleStatus(),
                 row.lastRequestId(),
                 row.lastLenderRequestJson(),

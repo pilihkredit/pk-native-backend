@@ -1,5 +1,6 @@
 package com.pk.infra.profile;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.profile.EncryptedField;
@@ -10,6 +11,7 @@ import com.pk.core.profile.ProfileContactsModuleData;
 import com.pk.core.profile.ProfileLoginLogData;
 import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.ProfileTongdunData;
+import com.pk.core.profile.port.LenderBankCardPort;
 import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
@@ -25,6 +27,7 @@ import com.pk.infra.auth.MobileNumberValidator;
 import com.pk.infra.reference.BankReferenceFacade;
 import java.math.BigDecimal;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -48,6 +51,8 @@ public class ProfileServiceFacade {
     private final ProfileSyncOrchestrator profileSyncOrchestrator;
     private final OnboardingProgressFacade onboardingProgressFacade;
     private final UserProfileBindingRepository userProfileBindingRepository;
+    private final ProfileQueryFacade profileQueryFacade;
+    private final LenderBankCardPort lenderBankCardPort;
 
     public ProfileServiceFacade(
             ProfilePersonalRepository profilePersonalRepository,
@@ -62,7 +67,9 @@ public class ProfileServiceFacade {
             BankReferenceFacade bankReferenceFacade,
             ProfileSyncOrchestrator profileSyncOrchestrator,
             OnboardingProgressFacade onboardingProgressFacade,
-            UserProfileBindingRepository userProfileBindingRepository
+            UserProfileBindingRepository userProfileBindingRepository,
+            ProfileQueryFacade profileQueryFacade,
+            LenderBankCardPort lenderBankCardPort
     ) {
         this.profilePersonalRepository = profilePersonalRepository;
         this.profileContactRepository = profileContactRepository;
@@ -77,6 +84,8 @@ public class ProfileServiceFacade {
         this.profileSyncOrchestrator = profileSyncOrchestrator;
         this.onboardingProgressFacade = onboardingProgressFacade;
         this.userProfileBindingRepository = userProfileBindingRepository;
+        this.profileQueryFacade = profileQueryFacade;
+        this.lenderBankCardPort = lenderBankCardPort;
     }
 
     public PersonalSaveResult savePersonal(
@@ -188,7 +197,9 @@ public class ProfileServiceFacade {
         validateBankCard(command);
 
         var sameRequest = profileBankCardRepository.findByLastRequestId(command.requestId());
-        if (sameRequest.isPresent() && sameRequest.get().profileId() == profileId) {
+        if (sameRequest.isPresent()
+                && sameRequest.get().profileId() == profileId
+                && !sameRequest.get().deletedFlag()) {
             return toBankCardSaveResult(command.requestId(), command.cardNumber());
         }
 
@@ -211,6 +222,7 @@ public class ProfileServiceFacade {
                 CardNumberSupport.VERIFY_PASSED,
                 null,
                 true,
+                false,
                 MODULE_COMPLETED,
                 command.requestId(),
                 null,
@@ -237,6 +249,60 @@ public class ProfileServiceFacade {
         refreshUserProfileMaster(profileId, partnerUserId);
 
         return toBankCardSaveResult(command.requestId(), normalizedCardNumber);
+    }
+
+    public BankCardDeleteResult deleteBankCard(
+            long profileId,
+            String partnerUserId,
+            String mobileNo,
+            BankCardDeleteCommand command
+    ) {
+        if (command == null
+                || command.requestId() == null || command.requestId().isBlank()
+                || command.cardNumber() == null || command.cardNumber().isBlank()
+                || command.device() == null) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+
+        var sameRequest = profileBankCardRepository.findByLastRequestId(command.requestId().trim());
+        if (sameRequest.isPresent()
+                && sameRequest.get().profileId() == profileId
+                && sameRequest.get().deletedFlag()) {
+            return new BankCardDeleteResult(command.requestId().trim(), true);
+        }
+
+        String normalizedCardNumber = CardNumberSupport.normalize(command.cardNumber());
+        String cardNoHash = CardNumberSupport.sha256Hex(normalizedCardNumber);
+        ProfileBankCardData localCard = profileBankCardRepository
+                .findActiveByProfileIdAndCardNoHash(profileId, cardNoHash)
+                .orElseThrow(() -> new ApiException(ApiCode.BANK_CARD_NOT_FOUND));
+        if (localCard.defaultFlag()) {
+            throw new ApiException(ApiCode.BANK_CARD_DEFAULT_CANNOT_DELETE);
+        }
+
+        long bankCardId = resolveLenderBankCardId(partnerUserId, normalizedCardNumber);
+        lenderBankCardPort.deleteBankCard(new LenderBankCardPort.DeleteBankCardCommand(partnerUserId, bankCardId));
+
+        profileBankCardRepository.softDeleteById(localCard.id(), command.requestId().trim());
+        persistDevice(profileId, partnerUserId, command.requestId().trim(), command.device());
+
+        return new BankCardDeleteResult(command.requestId().trim(), true);
+    }
+
+    private long resolveLenderBankCardId(String partnerUserId, String normalizedCardNumber) {
+        JsonNode root = profileQueryFacade.query(partnerUserId, List.of("bankCard"));
+        JsonNode list = root.path("bankCardList");
+        if (!list.isArray()) {
+            throw new ApiException(ApiCode.BANK_CARD_NOT_FOUND);
+        }
+        for (Iterator<JsonNode> it = list.elements(); it.hasNext(); ) {
+            JsonNode item = it.next();
+            String lenderCardNumber = CardNumberSupport.normalize(item.path("cardNumber").asText(null));
+            if (normalizedCardNumber.equals(lenderCardNumber) && item.hasNonNull("bankCardId")) {
+                return item.get("bankCardId").asLong();
+            }
+        }
+        throw new ApiException(ApiCode.BANK_CARD_NOT_FOUND);
     }
 
     public LoginLogSaveResult saveLoginLog(
@@ -639,6 +705,16 @@ public class ProfileServiceFacade {
     }
 
     public record BankCardSaveResult(String requestId, String verifyStatus, String cardNoMasked) {
+    }
+
+    public record BankCardDeleteCommand(
+            String requestId,
+            String cardNumber,
+            LenderDeviceContext device
+    ) {
+    }
+
+    public record BankCardDeleteResult(String requestId, boolean deleted) {
     }
 
     public record LoginLogSaveCommand(

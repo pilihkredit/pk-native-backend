@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.profile.dto.request.ProfileAppsFlyerInstallSaveRequest;
+import com.pk.app.profile.dto.request.ProfileBankCardDeleteRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
 import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
+import com.pk.app.profile.dto.response.ProfileBankCardDeleteResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
@@ -120,6 +122,27 @@ public class ProfileApplicationService {
                 result.verifyStatus(),
                 result.cardNoMasked()
         );
+    }
+
+    public ProfileBankCardDeleteResponse deleteBankCard(
+            AuthenticatedPrincipal principal,
+            ProfileBankCardDeleteRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        ProfileServiceFacade.BankCardDeleteResult result = profileServiceFacade.deleteBankCard(
+                principal.profileId(),
+                principal.partnerUserId(),
+                principal.mobileNo(),
+                new ProfileServiceFacade.BankCardDeleteCommand(
+                        request.requestId(),
+                        request.cardNumber(),
+                        resolveDevice(request.device(), httpRequest)
+                )
+        );
+        return new ProfileBankCardDeleteResponse(result.requestId(), result.deleted());
     }
 
     public ProfileLoginLogSaveResponse saveLoginLog(

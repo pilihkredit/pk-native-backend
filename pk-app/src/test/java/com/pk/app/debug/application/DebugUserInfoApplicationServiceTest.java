@@ -170,6 +170,7 @@ class DebugUserInfoApplicationServiceTest {
                         "FAILED",
                         "A000322",
                         true,
+                        false,
                         "COMPLETED",
                         "req-bank-1",
                         null,

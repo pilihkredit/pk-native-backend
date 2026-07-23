@@ -178,7 +178,9 @@ public class ProfileInfraConfiguration {
             com.pk.infra.reference.BankReferenceFacade bankReferenceFacade,
             ProfileSyncOrchestrator profileSyncOrchestrator,
             OnboardingProgressFacade onboardingProgressFacade,
-            com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository
+            com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
+            ProfileQueryFacade profileQueryFacade,
+            com.pk.core.profile.port.LenderBankCardPort lenderBankCardPort
     ) {
         return new ProfileServiceFacade(
                 profilePersonalRepository,
@@ -193,7 +195,9 @@ public class ProfileInfraConfiguration {
                 bankReferenceFacade,
                 profileSyncOrchestrator,
                 onboardingProgressFacade,
-                userProfileBindingRepository
+                userProfileBindingRepository,
+                profileQueryFacade,
+                lenderBankCardPort
         );
     }
 }

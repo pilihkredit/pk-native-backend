@@ -10,11 +10,15 @@ public interface ProfileBankCardRepository {
 
     Optional<ProfileBankCardData> findByCardNoHash(String cardNoHash);
 
+    Optional<ProfileBankCardData> findActiveByProfileIdAndCardNoHash(long profileId, String cardNoHash);
+
     void insert(ProfileBankCardData data);
 
     void updateById(ProfileBankCardData data);
 
     void clearDefaultByProfileId(long profileId);
+
+    void softDeleteById(long id, String lastRequestId);
 
     void updateLastLenderAudit(String lastRequestId, String requestDataJson, String responseDataJson);
 }

@@ -13,6 +13,8 @@ final class PendanaanOpenApiPaths {
     static final String AREA_LIST = PREFIX + "/area/list";
     static final String USER_INFO_UPSERT = PREFIX + "/user/info/upsert";
     static final String USER_INFO_QUERY = PREFIX + "/user/info/query";
+    static final String USER_BANK_CARD_DEFAULT = PREFIX + "/user/bank-card/default";
+    static final String USER_BANK_CARD_DELETE = PREFIX + "/user/bank-card/delete";
     static final String USER_STATUS = PREFIX + "/user/status";
     static final String CREDIT_APPLY = PREFIX + "/credit/apply";
     static final String CREDIT_APPLY_STATUS = PREFIX + "/credit/applyStatus";
