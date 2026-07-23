@@ -216,10 +216,11 @@ public class ProfileServiceFacade {
         boolean sameProfileActiveCard = boundByHash.isPresent()
                 && boundByHash.get().profileId() == profileId
                 && !boundByHash.get().deletedFlag();
+        // New card (or revive soft-deleted): block at/above configured max — do not insert.
         if (!sameProfileActiveCard) {
             int maxCount = bankCardMaxConfigLoader.loadMaxCount();
             int activeCount = profileBankCardRepository.countActiveByProfileId(profileId);
-            if (activeCount > maxCount) {
+            if (activeCount >= maxCount) {
                 throw new ApiException(ApiCode.BANK_CARD_MAX_LIMIT_REACHED);
             }
         }

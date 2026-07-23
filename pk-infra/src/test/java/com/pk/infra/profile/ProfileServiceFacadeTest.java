@@ -307,25 +307,16 @@ class ProfileServiceFacadeTest {
     }
 
     @Test
-    void rejectsBankCardWhenActiveCountExceedsMax() {
-        when(profileBankCardRepository.countActiveByProfileId(10L)).thenReturn(6);
+    void rejectsBankCardWhenActiveCountReachesMaxWithoutInsert() {
+        when(profileBankCardRepository.countActiveByProfileId(10L)).thenReturn(5);
 
         assertThatThrownBy(() -> facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-max")))
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.BANK_CARD_MAX_LIMIT_REACHED);
         verify(profileBankCardRepository, never()).insert(any());
+        verify(profileBankCardRepository, never()).updateById(any());
         verify(profileSyncOrchestrator, never()).syncNow(any());
-    }
-
-    @Test
-    void allowsBankCardWhenActiveCountEqualsMax() {
-        when(profileBankCardRepository.countActiveByProfileId(10L)).thenReturn(5);
-
-        var result = facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-eq-max"));
-
-        assertThat(result.verifyStatus()).isEqualTo("PASSED");
-        verify(profileBankCardRepository).insert(any());
     }
 
     @Test
