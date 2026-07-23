@@ -30,6 +30,7 @@ class LenderDevicePayloadBuilderTest {
         Map<String, Object> payload = LenderDevicePayloadBuilder.buildProfileSyncDevice(device);
         assertEquals("LenderApp", payload.get("appName"));
         assertEquals("Huawei", payload.get("phoneBrand"));
+        assertEquals(LenderDevicePayloadBuilder.FIXED_CLIENT_IP, payload.get("ip"));
         @SuppressWarnings("unchecked")
         Map<String, Object> storedOther = (Map<String, Object>) payload.get("deviceOtherInfo");
         assertEquals("80", storedOther.get("battery"));
