@@ -44,14 +44,16 @@ public class CallbackInfraConfiguration {
 
     @Bean
     CreditCallbackIntakeFacade creditCallbackIntakeFacade(
-            CallbackEventRepository callbackEventRepository,
-            CreditCallbackOutboxPublisher creditCallbackOutboxPublisher,
-            CreditCallbackParser creditCallbackParser
+            ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository,
+            CreditCallbackParser creditCallbackParser,
+            CreditApplicationRepository creditApplicationRepository,
+            CreditLenderStatusApplier creditLenderStatusApplier
     ) {
         return new CreditCallbackIntakeFacade(
-                callbackEventRepository,
-                creditCallbackOutboxPublisher,
-                creditCallbackParser
+                externalInteractionCallbackLogRepository,
+                creditCallbackParser,
+                creditApplicationRepository,
+                creditLenderStatusApplier
         );
     }
 

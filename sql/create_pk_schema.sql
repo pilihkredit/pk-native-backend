@@ -709,6 +709,7 @@ CREATE TABLE credit_lender_status_query (
     fake_credit_limit DECIMAL(18,2) NULL COMMENT 'Displayed fake credit limit',
     borrow_amt_step_size DECIMAL(18,2) NULL COMMENT 'Borrow amount step size',
     external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id for this snapshot (nullable for callbacks)',
+    external_interaction_callback_id BIGINT UNSIGNED NULL COMMENT 'external_interaction_callback.id for callback-driven updates',
     queried_at DATETIME(3) NOT NULL COMMENT 'Snapshot query time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',

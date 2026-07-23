@@ -41,6 +41,7 @@ class CreditLenderStatusApplierTest {
                 ArgumentCaptor.forClass(CreditLenderStatusQueryRepository.CreditLenderStatusQueryData.class);
         verify(creditLenderStatusQueryRepository).insert(captor.capture());
         org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionId()).isEqualTo(101L);
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionCallbackId()).isNull();
         org.assertj.core.api.Assertions.assertThat(captor.getValue().externalStatus()).isEqualTo("SUCCESS");
     }
 
@@ -67,6 +68,21 @@ class CreditLenderStatusApplierTest {
                 ArgumentCaptor.forClass(CreditLenderStatusQueryRepository.CreditLenderStatusQueryData.class);
         verify(creditLenderStatusQueryRepository).insert(captor.capture());
         org.assertj.core.api.Assertions.assertThat(captor.getValue().externalStatus()).isEqualTo("REFUSED");
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionId()).isNull();
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionCallbackId()).isNull();
+    }
+
+    @Test
+    void insertsCallbackIdWhenProvided() {
+        CreditApplicationRepository.CreditApplicationRecord record = applicationRecord();
+        when(creditLenderStatusQueryRepository.findLatestByApplyId("APPLY-1")).thenReturn(Optional.empty());
+
+        applier.apply(record, lenderStatus("SUCCESS", null), "CREDIT_CALLBACK", "LENDER_CALLBACK", 77L);
+
+        ArgumentCaptor<CreditLenderStatusQueryRepository.CreditLenderStatusQueryData> captor =
+                ArgumentCaptor.forClass(CreditLenderStatusQueryRepository.CreditLenderStatusQueryData.class);
+        verify(creditLenderStatusQueryRepository).insert(captor.capture());
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionCallbackId()).isEqualTo(77L);
         org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionId()).isNull();
     }
 
@@ -128,6 +144,7 @@ class CreditLenderStatusApplierTest {
                 BigDecimal.TEN,
                 BigDecimal.ONE,
                 9L,
+                null,
                 Instant.now()
         );
     }

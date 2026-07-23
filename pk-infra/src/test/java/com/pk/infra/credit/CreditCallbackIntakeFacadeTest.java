@@ -2,17 +2,19 @@ package com.pk.infra.credit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.pk.core.callback.CallbackProcessStatus;
 import com.pk.core.callback.CallbackTypes;
-import com.pk.core.callback.port.CallbackEventRepository;
 import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.credit.CreditProviderCode;
+import com.pk.core.credit.port.CreditApplicationRepository;
+import com.pk.core.credit.port.LenderCreditPort;
+import com.pk.core.external.ExternalInteractionCallbackLog;
+import com.pk.core.external.port.ExternalInteractionCallbackLogRepository;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,64 +26,133 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class CreditCallbackIntakeFacadeTest {
     @Mock
-    private CallbackEventRepository callbackEventRepository;
-    @Mock
-    private CreditCallbackOutboxPublisher creditCallbackOutboxPublisher;
+    private ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository;
     @Mock
     private CreditCallbackParser callbackParser;
+    @Mock
+    private CreditApplicationRepository creditApplicationRepository;
+    @Mock
+    private CreditLenderStatusApplier creditLenderStatusApplier;
 
     private CreditCallbackIntakeFacade facade;
 
     @BeforeEach
     void setUp() {
         facade = new CreditCallbackIntakeFacade(
-                callbackEventRepository,
-                creditCallbackOutboxPublisher,
-                callbackParser
+                externalInteractionCallbackLogRepository,
+                callbackParser,
+                creditApplicationRepository,
+                creditLenderStatusApplier
         );
     }
 
     @Test
-    void publishesOutboxForNewCallback() {
+    void processesCallbackSynchronouslyForKnownApplyId() {
+        CreditApplicationRepository.CreditApplicationRecord record = applicationRecord();
         when(callbackParser.parse("{}")).thenReturn(parsedCallback());
-        when(callbackEventRepository.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        when(callbackEventRepository.insert(any())).thenReturn(42L);
+        when(externalInteractionCallbackLogRepository.findIdByIdempotencyKey(any())).thenReturn(Optional.empty());
+        when(externalInteractionCallbackLogRepository.insert(any(ExternalInteractionCallbackLog.class))).thenAnswer(invocation -> {
+            ExternalInteractionCallbackLog log = invocation.getArgument(0);
+            log.setId(99L);
+            return 99L;
+        });
+        when(creditApplicationRepository.findByApplyId("AP-001")).thenReturn(Optional.of(record));
 
         CreditCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
 
-        assertThat(result.callbackEventId()).isEqualTo(42L);
+        assertThat(result.externalInteractionCallbackId()).isEqualTo(99L);
         assertThat(result.duplicate()).isFalse();
-        verify(creditCallbackOutboxPublisher).publish(42L, "AP-001");
+        assertThat(result.ignored()).isFalse();
+        verify(creditLenderStatusApplier).apply(
+                eq(record),
+                any(LenderCreditPort.LenderCreditStatusResult.class),
+                eq("CREDIT_CALLBACK"),
+                eq("LENDER_CALLBACK"),
+                eq(99L)
+        );
+        verify(externalInteractionCallbackLogRepository).updateResponse(
+                eq(99L),
+                eq("81234567890"),
+                eq("000000"),
+                eq("success"),
+                eq("{\"code\":\"000000\",\"msg\":\"success\"}"),
+                eq(true),
+                any(Integer.class)
+        );
     }
 
     @Test
-    void skipsOutboxForDuplicateCallback() {
+    void skipsBusinessUpdateForDuplicateCallback() {
         when(callbackParser.parse("{}")).thenReturn(parsedCallback());
-        when(callbackEventRepository.findByIdempotencyKey(any())).thenReturn(Optional.of(existingRecord()));
+        when(externalInteractionCallbackLogRepository.findIdByIdempotencyKey(any())).thenReturn(Optional.of(7L));
 
         CreditCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
 
-        assertThat(result.callbackEventId()).isEqualTo(7L);
+        assertThat(result.externalInteractionCallbackId()).isEqualTo(7L);
         assertThat(result.duplicate()).isTrue();
-        verify(creditCallbackOutboxPublisher, never()).publish(any(Long.class), any());
+        verify(externalInteractionCallbackLogRepository, never()).insert(any());
+        verify(creditLenderStatusApplier, never()).apply(any(), any(), any(), any(), any());
     }
 
     @Test
-    void buildsExpectedIdempotencyKey() {
+    void ignoresUnknownApplyIdAfterAuditInsert() {
         when(callbackParser.parse("{}")).thenReturn(parsedCallback());
-        when(callbackEventRepository.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        when(callbackEventRepository.insert(any())).thenReturn(1L);
+        when(externalInteractionCallbackLogRepository.findIdByIdempotencyKey(any())).thenReturn(Optional.empty());
+        when(externalInteractionCallbackLogRepository.insert(any(ExternalInteractionCallbackLog.class))).thenAnswer(invocation -> {
+            ExternalInteractionCallbackLog log = invocation.getArgument(0);
+            log.setId(55L);
+            return 55L;
+        });
+        when(creditApplicationRepository.findByApplyId("AP-001")).thenReturn(Optional.empty());
+
+        CreditCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
+
+        assertThat(result.ignored()).isTrue();
+        verify(creditLenderStatusApplier, never()).apply(any(), any(), any(), any(), any());
+        verify(externalInteractionCallbackLogRepository).updateResponse(
+                eq(55L),
+                eq(null),
+                eq("000000"),
+                eq("success"),
+                eq("{\"code\":\"000000\",\"msg\":\"success\"}"),
+                eq(true),
+                any(Integer.class)
+        );
+    }
+
+    @Test
+    void buildsExpectedIdempotencyKeyOnInsert() {
+        when(callbackParser.parse("{}")).thenReturn(parsedCallback());
+        when(externalInteractionCallbackLogRepository.findIdByIdempotencyKey(any())).thenReturn(Optional.empty());
+        when(externalInteractionCallbackLogRepository.insert(any(ExternalInteractionCallbackLog.class))).thenAnswer(invocation -> {
+            ExternalInteractionCallbackLog log = invocation.getArgument(0);
+            log.setId(1L);
+            return 1L;
+        });
+        when(creditApplicationRepository.findByApplyId("AP-001")).thenReturn(Optional.empty());
 
         facade.intake("{}");
 
-        ArgumentCaptor<CallbackEventRepository.CallbackEventInsert> captor =
-                ArgumentCaptor.forClass(CallbackEventRepository.CallbackEventInsert.class);
-        verify(callbackEventRepository).insert(captor.capture());
-        assertThat(captor.getValue().idempotencyKey())
+        ArgumentCaptor<ExternalInteractionCallbackLog> captor =
+                ArgumentCaptor.forClass(ExternalInteractionCallbackLog.class);
+        verify(externalInteractionCallbackLogRepository).insert(captor.capture());
+        assertThat(captor.getValue().getIdempotencyKey())
                 .isEqualTo("pendanaan:CREDIT_RESULT:AP-001:SUCCESS:CA-001");
-        assertThat(captor.getValue().callbackType()).isEqualTo(CallbackTypes.CREDIT_RESULT);
-        assertThat(captor.getValue().providerCode()).isEqualTo(CreditProviderCode.PENDANAAN);
-        assertThat(captor.getValue().processStatus()).isEqualTo(CallbackProcessStatus.RECEIVED);
+        assertThat(captor.getValue().getBusinessType()).isEqualTo(CallbackTypes.CREDIT_RESULT);
+        assertThat(captor.getValue().getProviderCode()).isEqualTo(CreditProviderCode.PENDANAAN);
+    }
+
+    private static CreditApplicationRepository.CreditApplicationRecord applicationRecord() {
+        return new CreditApplicationRepository.CreditApplicationRecord(
+                10L,
+                "AP-001",
+                "req-1",
+                CreditProviderCode.PENDANAAN,
+                1L,
+                "partner-1",
+                "81234567890",
+                null
+        );
     }
 
     private static CreditCallbackParser.ParsedCreditCallback parsedCallback() {
@@ -96,20 +167,6 @@ class CreditCallbackIntakeFacadeTest {
                 BigDecimal.TEN,
                 BigDecimal.TEN,
                 BigDecimal.ONE
-        );
-    }
-
-    private static CallbackEventRepository.CallbackEventRecord existingRecord() {
-        return new CallbackEventRepository.CallbackEventRecord(
-                7L,
-                "CB-1",
-                CreditProviderCode.PENDANAAN,
-                CallbackTypes.CREDIT_RESULT,
-                "AP-001",
-                "key",
-                "SUCCESS",
-                "{}",
-                CallbackProcessStatus.PROCESSED
         );
     }
 }

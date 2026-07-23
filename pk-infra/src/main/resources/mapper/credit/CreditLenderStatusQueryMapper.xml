@@ -21,6 +21,7 @@
             <arg column="fake_credit_limit" javaType="java.math.BigDecimal"/>
             <arg column="borrow_amt_step_size" javaType="java.math.BigDecimal"/>
             <arg column="external_interaction_id" javaType="java.lang.Long"/>
+            <arg column="external_interaction_callback_id" javaType="java.lang.Long"/>
             <arg column="queried_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
         </constructor>
@@ -30,7 +31,7 @@
         apply_id, profile_id, mobile_no, partner_user_id, lender_user_id, credit_apply_no, external_status,
         credit_contract_expire_time, freeze_end_time, risk_min_limit, risk_max_limit,
         psychological_credit_limit, fake_credit_limit, borrow_amt_step_size,
-        external_interaction_id, queried_at
+        external_interaction_id, external_interaction_callback_id, queried_at
     </sql>
 
     <insert id="insert">
@@ -50,6 +51,7 @@
             fake_credit_limit,
             borrow_amt_step_size,
             external_interaction_id,
+            external_interaction_callback_id,
             queried_at
         ) VALUES (
             #{applyId},
@@ -67,6 +69,7 @@
             #{fakeCreditLimit},
             #{borrowAmtStepSize},
             #{externalInteractionId},
+            #{externalInteractionCallbackId},
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
     </insert>

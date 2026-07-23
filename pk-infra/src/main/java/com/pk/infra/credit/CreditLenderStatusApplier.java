@@ -21,6 +21,16 @@ public class CreditLenderStatusApplier {
             String source,
             String limitSource
     ) {
+        apply(record, status, source, limitSource, null);
+    }
+
+    public void apply(
+            CreditApplicationRepository.CreditApplicationRecord record,
+            LenderCreditPort.LenderCreditStatusResult status,
+            String source,
+            String limitSource,
+            Long externalInteractionCallbackId
+    ) {
         Optional<CreditLenderStatusQueryRepository.CreditLenderStatusQueryData> latest =
                 creditLenderStatusQueryRepository.findLatestByApplyId(record.applyId());
 
@@ -41,6 +51,7 @@ public class CreditLenderStatusApplier {
                         status.fakeCreditLimit(),
                         status.borrowAmtStepSize(),
                         status.externalInteractionId(),
+                        externalInteractionCallbackId,
                         Instant.now()
                 );
 
