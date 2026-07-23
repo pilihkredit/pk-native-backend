@@ -4,11 +4,17 @@ import com.pk.core.profile.ProfileBankCardData;
 import java.util.Optional;
 
 public interface ProfileBankCardRepository {
-    Optional<ProfileBankCardData> findByProfileId(long profileId);
+    Optional<ProfileBankCardData> findDefaultByProfileId(long profileId);
+
+    Optional<ProfileBankCardData> findByLastRequestId(String lastRequestId);
 
     Optional<ProfileBankCardData> findByCardNoHash(String cardNoHash);
 
-    void upsert(ProfileBankCardData data);
+    void insert(ProfileBankCardData data);
 
-    void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson);
+    void updateById(ProfileBankCardData data);
+
+    void clearDefaultByProfileId(long profileId);
+
+    void updateLastLenderAudit(String lastRequestId, String requestDataJson, String responseDataJson);
 }

@@ -71,10 +71,10 @@ public class LenderSyncAuditRequestBuilder {
             if (mobileNo != null && !mobileNo.isBlank()) {
                 userInfo.put("mobileNo", mobileNo.trim());
             }
-            applyModuleAudit(userInfo, module, payload, profileId);
+            applyModuleAudit(userInfo, module, payload, profileId, requestId);
             if (companions != null) {
                 for (com.pk.core.profile.port.LenderProfileSyncPort.SyncCompanion companion : companions) {
-                    applyModuleAudit(userInfo, companion.module(), companion.payload(), profileId);
+                    applyModuleAudit(userInfo, companion.module(), companion.payload(), profileId, requestId);
                 }
             }
             userInfo.set("device", buildLenderDeviceNode(device));
@@ -91,12 +91,13 @@ public class LenderSyncAuditRequestBuilder {
             ObjectNode userInfo,
             ProfileSyncModule module,
             ProfileSyncPayload payload,
-            long profileId
+            long profileId,
+            String requestId
     ) {
         switch (module) {
             case PERSONAL -> applyPersonalAudit(userInfo, profileId);
             case CONTACT -> applyContactAudit(userInfo, profileId);
-            case BANK_CARD -> applyBankCardAudit(userInfo, profileId);
+            case BANK_CARD -> applyBankCardAudit(userInfo, profileId, requestId);
             case IDENTITY -> applyIdentityAudit(userInfo, (ProfileSyncPayload.IdentityProfilePayload) payload);
             case LOGIN_LOG -> applyLoginLogAudit(userInfo, profileId);
             case APPSFLYER_INSTALL -> applyAppsFlyerAudit(
@@ -185,8 +186,9 @@ public class LenderSyncAuditRequestBuilder {
         }
     }
 
-    private void applyBankCardAudit(ObjectNode userInfo, long profileId) {
-        ProfileBankCardData data = profileBankCardRepository.findByProfileId(profileId)
+    private void applyBankCardAudit(ObjectNode userInfo, long profileId, String requestId) {
+        ProfileBankCardData data = profileBankCardRepository.findByLastRequestId(requestId)
+                .or(() -> profileBankCardRepository.findDefaultByProfileId(profileId))
                 .orElseThrow(() -> new IllegalStateException("bank card module data is missing"));
         ObjectNode bankCard = userInfo.putObject("bankCard");
         bankCard.put("bankCode", data.bankCode());

@@ -187,20 +187,22 @@ public class ProfileServiceFacade {
         String normalizedMobileNo = normalizeMobile(mobileNo);
         validateBankCard(command);
 
-        var existing = profileBankCardRepository.findByProfileId(profileId);
-        if (existing.isPresent() && command.requestId().equals(existing.get().lastRequestId())) {
+        var sameRequest = profileBankCardRepository.findByLastRequestId(command.requestId());
+        if (sameRequest.isPresent() && sameRequest.get().profileId() == profileId) {
             return toBankCardSaveResult(command.requestId(), command.cardNumber());
         }
 
         String normalizedCardNumber = CardNumberSupport.normalize(command.cardNumber());
         String cardNoHash = CardNumberSupport.sha256Hex(normalizedCardNumber);
-        var boundElsewhere = profileBankCardRepository.findByCardNoHash(cardNoHash);
-        if (boundElsewhere.isPresent() && boundElsewhere.get().profileId() != profileId) {
+        var boundByHash = profileBankCardRepository.findByCardNoHash(cardNoHash);
+        if (boundByHash.isPresent() && boundByHash.get().profileId() != profileId) {
             throw new ApiException(ApiCode.BANK_CARD_ALREADY_BOUND);
         }
 
         EncryptedField encryptedCardNumber = sensitiveFieldEncryptor.encrypt(normalizedCardNumber);
-        profileBankCardRepository.upsert(new ProfileBankCardData(
+        profileBankCardRepository.clearDefaultByProfileId(profileId);
+        ProfileBankCardData cardData = new ProfileBankCardData(
+                boundByHash.map(ProfileBankCardData::id).orElse(null),
                 profileId,
                 normalizedMobileNo,
                 command.bankCode().trim(),
@@ -208,11 +210,17 @@ public class ProfileServiceFacade {
                 cardNoHash,
                 CardNumberSupport.VERIFY_PASSED,
                 null,
+                true,
                 MODULE_COMPLETED,
                 command.requestId(),
                 null,
                 null
-        ));
+        );
+        if (boundByHash.isPresent() && boundByHash.get().profileId() == profileId) {
+            profileBankCardRepository.updateById(cardData);
+        } else {
+            profileBankCardRepository.insert(cardData);
+        }
 
         persistDevice(profileId, partnerUserId, command.requestId(), command.device());
 

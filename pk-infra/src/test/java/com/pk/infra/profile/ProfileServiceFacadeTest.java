@@ -102,7 +102,7 @@ class ProfileServiceFacadeTest {
                 ));
         when(profilePersonalRepository.findByProfileId(10L)).thenReturn(Optional.empty());
         when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.empty());
-        when(profileBankCardRepository.findByProfileId(10L)).thenReturn(Optional.empty());
+        when(profileBankCardRepository.findByLastRequestId(any())).thenReturn(Optional.empty());
         when(profileLoginLogRepository.findByProfileId(10L)).thenReturn(Optional.empty());
         when(profileAfRepository.findByRequestId(any())).thenReturn(Optional.empty());
         when(profileTongdunRepository.findByRequestId(any())).thenReturn(Optional.empty());
@@ -287,7 +287,37 @@ class ProfileServiceFacadeTest {
         assertThat(result.cardNoMasked()).isEqualTo("****7890");
         verify(profileSyncOrchestrator).syncNow(any());
         verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
-        verify(profileBankCardRepository).upsert(any());
+        verify(profileBankCardRepository).clearDefaultByProfileId(10L);
+        verify(profileBankCardRepository).insert(any());
+    }
+
+    @Test
+    void updatesExistingBankCardForSameProfileAndSetsDefault() {
+        when(profileBankCardRepository.findByCardNoHash(any())).thenReturn(Optional.of(
+                new com.pk.core.profile.ProfileBankCardData(
+                        7L,
+                        10L,
+                        "81234567890",
+                        "BCA",
+                        new EncryptedField("cipher", new byte[12], new byte[16]),
+                        "hash",
+                        "PASSED",
+                        null,
+                        false,
+                        "COMPLETED",
+                        "req-old",
+                        null,
+                        null
+                )
+        ));
+
+        var result = facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-update"));
+
+        assertThat(result.verifyStatus()).isEqualTo("PASSED");
+        verify(profileBankCardRepository).clearDefaultByProfileId(10L);
+        verify(profileBankCardRepository).updateById(any());
+        verify(profileBankCardRepository, never()).insert(any());
+        verify(profileSyncOrchestrator).syncNow(any());
     }
 
     @Test
@@ -314,6 +344,7 @@ class ProfileServiceFacadeTest {
     void rejectsBankCardAlreadyBoundToAnotherProfile() {
         when(profileBankCardRepository.findByCardNoHash(any())).thenReturn(Optional.of(
                 new com.pk.core.profile.ProfileBankCardData(
+                        1L,
                         99L,
                         "81234567890",
                         "BCA",
@@ -321,6 +352,7 @@ class ProfileServiceFacadeTest {
                         "hash",
                         "PASSED",
                         null,
+                        true,
                         "COMPLETED",
                         "req-other",
                         null,

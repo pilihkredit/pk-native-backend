@@ -115,7 +115,7 @@ public class DebugUserInfoApplicationService {
                 ),
                 profilePersonalRepository.findByProfileId(profileId).map(this::toPersonalInfo).orElse(null),
                 toContactsInfo(profileId),
-                profileBankCardRepository.findByProfileId(profileId).map(this::toBankCardInfo).orElse(null),
+                profileBankCardRepository.findDefaultByProfileId(profileId).map(this::toBankCardInfo).orElse(null),
                 readMapper.findDevicesByProfileId(profileId).stream().map(this::toDeviceInfo).toList(),
                 ocrSession.map(this::toOcrSessionInfo).orElse(null)
         );

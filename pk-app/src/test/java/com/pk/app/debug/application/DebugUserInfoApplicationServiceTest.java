@@ -159,8 +159,9 @@ class DebugUserInfoApplicationServiceTest {
         when(profileContactRepository.findContactsByProfileId(10L)).thenReturn(List.of(
                 new ProfileContactData("801234567", 0, 1, "SITI", "81234567801")
         ));
-        when(profileBankCardRepository.findByProfileId(10L)).thenReturn(Optional.of(
+        when(profileBankCardRepository.findDefaultByProfileId(10L)).thenReturn(Optional.of(
                 new ProfileBankCardData(
+                        1L,
                         10L,
                         "801234567",
                         "OCBC",
@@ -168,6 +169,7 @@ class DebugUserInfoApplicationServiceTest {
                         "hash-card",
                         "FAILED",
                         "A000322",
+                        true,
                         "COMPLETED",
                         "req-bank-1",
                         null,

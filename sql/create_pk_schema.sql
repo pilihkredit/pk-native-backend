@@ -286,6 +286,7 @@ CREATE TABLE user_profile_contact (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User emergency contact entries';
 
 CREATE TABLE user_profile_bank_card (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
     mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',
@@ -302,8 +303,9 @@ CREATE TABLE user_profile_bank_card (
     last_lender_response_json JSON NULL COMMENT 'Last lender user/info/upsert response data JSON',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (profile_id),
+    PRIMARY KEY (id),
     UNIQUE KEY uk_user_profile_bank_card_hash (card_no_hash),
+    KEY idx_user_profile_bank_card_profile_id (profile_id),
     KEY idx_user_profile_bank_card_mobile_no (mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bank card onboarding module';
 

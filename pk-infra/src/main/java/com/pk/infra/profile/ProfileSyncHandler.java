@@ -167,7 +167,7 @@ public class ProfileSyncHandler {
                     responseDataJson
             );
             case BANK_CARD -> profileBankCardRepository.updateLastLenderAudit(
-                    profileId,
+                    requestId,
                     requestDataJson,
                     responseDataJson
             );

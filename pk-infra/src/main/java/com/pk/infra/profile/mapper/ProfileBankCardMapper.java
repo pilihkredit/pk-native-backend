@@ -6,8 +6,21 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface ProfileBankCardMapper {
-    ProfileBankCardRow findByProfileId(@Param("profileId") long profileId);
+    ProfileBankCardRow findDefaultByProfileId(@Param("profileId") long profileId);
+
+    ProfileBankCardRow findByLastRequestId(@Param("lastRequestId") String lastRequestId);
+
     ProfileBankCardRow findByCardNoHash(@Param("cardNoHash") String cardNoHash);
-    int upsert(ProfileBankCardRow row);
-    int updateLastLenderAudit(@Param("profileId") long profileId, @Param("requestDataJson") String requestDataJson, @Param("responseDataJson") String responseDataJson);
+
+    int insert(ProfileBankCardRow row);
+
+    int updateById(ProfileBankCardRow row);
+
+    int clearDefaultByProfileId(@Param("profileId") long profileId);
+
+    int updateLastLenderAudit(
+            @Param("lastRequestId") String lastRequestId,
+            @Param("requestDataJson") String requestDataJson,
+            @Param("responseDataJson") String responseDataJson
+    );
 }
