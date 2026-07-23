@@ -77,6 +77,14 @@ VALUES (
 ON DUPLICATE KEY UPDATE
     `value` = VALUES(`value`);
 
+INSERT INTO app_config (`key`, `value`)
+VALUES (
+    'bank_card_max_count',
+    CAST('5' AS JSON)
+)
+ON DUPLICATE KEY UPDATE
+    `value` = VALUES(`value`);
+
 CREATE TABLE ref_bank (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',

@@ -165,6 +165,14 @@ public class ProfileInfraConfiguration {
     }
 
     @Bean
+    BankCardMaxConfigLoader bankCardMaxConfigLoader(
+            com.pk.core.appconfig.port.AppConfigRepository appConfigRepository,
+            ObjectMapper objectMapper
+    ) {
+        return new BankCardMaxConfigLoader(appConfigRepository, objectMapper);
+    }
+
+    @Bean
     ProfileServiceFacade profileServiceFacade(
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
@@ -180,7 +188,8 @@ public class ProfileInfraConfiguration {
             OnboardingProgressFacade onboardingProgressFacade,
             com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
             ProfileQueryFacade profileQueryFacade,
-            com.pk.core.profile.port.LenderBankCardPort lenderBankCardPort
+            com.pk.core.profile.port.LenderBankCardPort lenderBankCardPort,
+            BankCardMaxConfigLoader bankCardMaxConfigLoader
     ) {
         return new ProfileServiceFacade(
                 profilePersonalRepository,
@@ -197,7 +206,8 @@ public class ProfileInfraConfiguration {
                 onboardingProgressFacade,
                 userProfileBindingRepository,
                 profileQueryFacade,
-                lenderBankCardPort
+                lenderBankCardPort,
+                bankCardMaxConfigLoader
         );
     }
 }

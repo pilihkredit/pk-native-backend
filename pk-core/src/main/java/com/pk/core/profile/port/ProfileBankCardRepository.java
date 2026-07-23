@@ -12,6 +12,8 @@ public interface ProfileBankCardRepository {
 
     Optional<ProfileBankCardData> findActiveByProfileIdAndCardNoHash(long profileId, String cardNoHash);
 
+    int countActiveByProfileId(long profileId);
+
     void insert(ProfileBankCardData data);
 
     void updateById(ProfileBankCardData data);

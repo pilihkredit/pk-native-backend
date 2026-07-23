@@ -55,6 +55,12 @@
           AND deleted_flag = 0
         LIMIT 1
     </select>
+    <select id="countActiveByProfileId" resultType="int">
+        SELECT COUNT(1)
+        FROM user_profile_bank_card
+        WHERE profile_id = #{profileId}
+          AND deleted_flag = 0
+    </select>
     <insert id="insert">
         INSERT INTO user_profile_bank_card (
             profile_id, mobile_no, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,

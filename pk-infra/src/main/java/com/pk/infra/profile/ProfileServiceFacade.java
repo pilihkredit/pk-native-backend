@@ -53,6 +53,7 @@ public class ProfileServiceFacade {
     private final UserProfileBindingRepository userProfileBindingRepository;
     private final ProfileQueryFacade profileQueryFacade;
     private final LenderBankCardPort lenderBankCardPort;
+    private final BankCardMaxConfigLoader bankCardMaxConfigLoader;
 
     public ProfileServiceFacade(
             ProfilePersonalRepository profilePersonalRepository,
@@ -69,7 +70,8 @@ public class ProfileServiceFacade {
             OnboardingProgressFacade onboardingProgressFacade,
             UserProfileBindingRepository userProfileBindingRepository,
             ProfileQueryFacade profileQueryFacade,
-            LenderBankCardPort lenderBankCardPort
+            LenderBankCardPort lenderBankCardPort,
+            BankCardMaxConfigLoader bankCardMaxConfigLoader
     ) {
         this.profilePersonalRepository = profilePersonalRepository;
         this.profileContactRepository = profileContactRepository;
@@ -86,6 +88,7 @@ public class ProfileServiceFacade {
         this.userProfileBindingRepository = userProfileBindingRepository;
         this.profileQueryFacade = profileQueryFacade;
         this.lenderBankCardPort = lenderBankCardPort;
+        this.bankCardMaxConfigLoader = bankCardMaxConfigLoader;
     }
 
     public PersonalSaveResult savePersonal(
@@ -208,6 +211,17 @@ public class ProfileServiceFacade {
         var boundByHash = profileBankCardRepository.findByCardNoHash(cardNoHash);
         if (boundByHash.isPresent() && boundByHash.get().profileId() != profileId) {
             throw new ApiException(ApiCode.BANK_CARD_ALREADY_BOUND);
+        }
+
+        boolean sameProfileActiveCard = boundByHash.isPresent()
+                && boundByHash.get().profileId() == profileId
+                && !boundByHash.get().deletedFlag();
+        if (!sameProfileActiveCard) {
+            int maxCount = bankCardMaxConfigLoader.loadMaxCount();
+            int activeCount = profileBankCardRepository.countActiveByProfileId(profileId);
+            if (activeCount > maxCount) {
+                throw new ApiException(ApiCode.BANK_CARD_MAX_LIMIT_REACHED);
+            }
         }
 
         EncryptedField encryptedCardNumber = sensitiveFieldEncryptor.encrypt(normalizedCardNumber);

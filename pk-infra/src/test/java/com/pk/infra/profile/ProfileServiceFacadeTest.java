@@ -66,6 +66,8 @@ class ProfileServiceFacadeTest {
         userProfileBindingRepository = mock(UserProfileBindingRepository.class);
         profileQueryFacade = mock(ProfileQueryFacade.class);
         lenderBankCardPort = mock(LenderBankCardPort.class);
+        BankCardMaxConfigLoader bankCardMaxConfigLoader = mock(BankCardMaxConfigLoader.class);
+        when(bankCardMaxConfigLoader.loadMaxCount()).thenReturn(5);
         SensitiveFieldEncryptor encryptor = new SensitiveFieldEncryptor() {
             @Override
             public EncryptedField encrypt(String plaintext) {
@@ -102,7 +104,8 @@ class ProfileServiceFacadeTest {
                 onboardingProgressFacade,
                 userProfileBindingRepository,
                 profileQueryFacade,
-                lenderBankCardPort
+                lenderBankCardPort,
+                bankCardMaxConfigLoader
         );
         when(onboardingProgressFacade.getProgress(anyLong(), any()))
                 .thenReturn(new OnboardingProgressFacade.OnboardingProgressResult(
@@ -118,6 +121,7 @@ class ProfileServiceFacadeTest {
         when(profileAfRepository.findByRequestId(any())).thenReturn(Optional.empty());
         when(profileTongdunRepository.findByRequestId(any())).thenReturn(Optional.empty());
         when(profileBankCardRepository.findByCardNoHash(any())).thenReturn(Optional.empty());
+        when(profileBankCardRepository.countActiveByProfileId(anyLong())).thenReturn(0);
         when(bankReferenceFacade.isValidBankCode("BCA")).thenReturn(true);
         when(profileSyncOrchestrator.scheduleAfterSave(any())).thenReturn(
                 new LenderProfileSyncPort.LenderProfileSyncResult(
@@ -299,6 +303,28 @@ class ProfileServiceFacadeTest {
         verify(profileSyncOrchestrator).syncNow(any());
         verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
         verify(profileBankCardRepository).clearDefaultByProfileId(10L);
+        verify(profileBankCardRepository).insert(any());
+    }
+
+    @Test
+    void rejectsBankCardWhenActiveCountExceedsMax() {
+        when(profileBankCardRepository.countActiveByProfileId(10L)).thenReturn(6);
+
+        assertThatThrownBy(() -> facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-max")))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.BANK_CARD_MAX_LIMIT_REACHED);
+        verify(profileBankCardRepository, never()).insert(any());
+        verify(profileSyncOrchestrator, never()).syncNow(any());
+    }
+
+    @Test
+    void allowsBankCardWhenActiveCountEqualsMax() {
+        when(profileBankCardRepository.countActiveByProfileId(10L)).thenReturn(5);
+
+        var result = facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-eq-max"));
+
+        assertThat(result.verifyStatus()).isEqualTo("PASSED");
         verify(profileBankCardRepository).insert(any());
     }
 

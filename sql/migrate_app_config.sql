@@ -49,3 +49,11 @@ VALUES (
 )
 ON DUPLICATE KEY UPDATE
     `value` = VALUES(`value`);
+
+INSERT INTO app_config (`key`, `value`)
+VALUES (
+    'bank_card_max_count',
+    CAST('5' AS JSON)
+)
+ON DUPLICATE KEY UPDATE
+    `value` = VALUES(`value`);

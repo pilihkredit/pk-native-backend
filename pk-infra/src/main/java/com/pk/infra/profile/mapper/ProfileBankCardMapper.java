@@ -17,6 +17,8 @@ public interface ProfileBankCardMapper {
             @Param("cardNoHash") String cardNoHash
     );
 
+    int countActiveByProfileId(@Param("profileId") long profileId);
+
     int insert(ProfileBankCardRow row);
 
     int updateById(ProfileBankCardRow row);

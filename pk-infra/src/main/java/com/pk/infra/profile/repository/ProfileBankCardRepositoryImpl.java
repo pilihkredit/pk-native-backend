@@ -37,6 +37,11 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
     }
 
     @Override
+    public int countActiveByProfileId(long profileId) {
+        return profileBankCardMapper.countActiveByProfileId(profileId);
+    }
+
+    @Override
     public void insert(ProfileBankCardData data) {
         profileBankCardMapper.insert(toRow(data));
     }
