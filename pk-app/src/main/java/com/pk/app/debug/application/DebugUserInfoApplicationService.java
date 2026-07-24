@@ -258,6 +258,7 @@ public class DebugUserInfoApplicationService {
                 device.idfv(),
                 device.idfa(),
                 device.extParam(),
+                device.ip(),
                 device.deviceJson(),
                 device.lastRequestId(),
                 device.updatedAt()

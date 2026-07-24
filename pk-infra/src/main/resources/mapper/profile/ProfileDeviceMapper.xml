@@ -22,6 +22,7 @@
             <arg column="idfv" javaType="string"/>
             <arg column="idfa" javaType="string"/>
             <arg column="ext_param" javaType="string"/>
+            <arg column="ip" javaType="string"/>
             <arg column="device_json" javaType="string"/>
             <arg column="last_request_id" javaType="string"/>
         </constructor>
@@ -32,7 +33,7 @@
     <select id="findByDeviceNo" resultMap="deviceMap">
         SELECT profile_id, partner_user_id, device_no, system_platform, app_name, app_version,
                package_name, phone_brand, phone_brand_model, mac, system_version, delivery_platform,
-               cpu_cores, memory_total, sd_card_total, ad_id, idfv, idfa, ext_param,
+               cpu_cores, memory_total, sd_card_total, ad_id, idfv, idfa, ext_param, ip,
                device_json, last_request_id
         FROM user_device WHERE device_no = #{deviceNo}
     </select>
@@ -40,12 +41,12 @@
         INSERT INTO user_device (
             profile_id, partner_user_id, device_no, system_platform, app_name, app_version, package_name,
             phone_brand, phone_brand_model, mac, system_version, delivery_platform,
-            cpu_cores, memory_total, sd_card_total, ad_id, idfv, idfa, ext_param,
+            cpu_cores, memory_total, sd_card_total, ad_id, idfv, idfa, ext_param, ip,
             device_json, last_request_id
         ) VALUES (
             #{profileId}, #{partnerUserId}, #{deviceNo}, #{systemPlatform}, #{appName}, #{appVersion}, #{packageName},
             #{phoneBrand}, #{phoneBrandModel}, #{mac}, #{systemVersion}, #{deliveryPlatform},
-            #{cpuCores}, #{memoryTotal}, #{sdCardTotal}, #{adId}, #{idfv}, #{idfa}, #{extParam},
+            #{cpuCores}, #{memoryTotal}, #{sdCardTotal}, #{adId}, #{idfv}, #{idfa}, #{extParam}, #{ip},
             #{deviceJson}, #{lastRequestId}
         )
         ON DUPLICATE KEY UPDATE
@@ -67,6 +68,7 @@
             idfv=VALUES(idfv),
             idfa=VALUES(idfa),
             ext_param=VALUES(ext_param),
+            ip=VALUES(ip),
             device_json=VALUES(device_json),
             last_request_id=VALUES(last_request_id),
             updated_at=CURRENT_TIMESTAMP(3)

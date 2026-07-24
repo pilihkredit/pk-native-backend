@@ -12,11 +12,12 @@ public record DeviceExtendedAttributes(
         String idfv,
         String idfa,
         String extParam,
-        String adChannel
+        String adChannel,
+        String ip
 ) {
     public static DeviceExtendedAttributes empty() {
         return new DeviceExtendedAttributes(
-                null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null, null, null
         );
     }
 }

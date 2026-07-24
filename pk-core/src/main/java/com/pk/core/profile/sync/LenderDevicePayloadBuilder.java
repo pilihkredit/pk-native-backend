@@ -5,9 +5,6 @@ import java.util.Map;
 
 /** Builds lender {@code userInfo.device} / {@code openUserDevice} shaped maps (no Jackson). */
 public final class LenderDevicePayloadBuilder {
-    /** Temporary fixed client IP until frontend/header IP is wired through. */
-    public static final String FIXED_CLIENT_IP = "147.139.188.108";
-
     private LenderDevicePayloadBuilder() {
     }
 
@@ -29,7 +26,7 @@ public final class LenderDevicePayloadBuilder {
         applyExtendedAttributes(payload, device.resolvedExtendedAttributes());
         putIfPresent(payload, "adId", device.adId());
         putIfPresent(payload, "adChannel", device.resolvedExtendedAttributes().adChannel());
-        payload.put("ip", FIXED_CLIENT_IP);
+        putIfPresent(payload, "ip", device.resolvedExtendedAttributes().ip());
         Map<String, Object> filteredOther = DeviceOtherInfoDocumentFields.filter(device.deviceOtherInfo());
         if (requireDeviceOtherInfo) {
             payload.put("deviceOtherInfo", filteredOther.isEmpty() ? new LinkedHashMap<>() : new LinkedHashMap<>(filteredOther));

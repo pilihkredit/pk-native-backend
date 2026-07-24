@@ -33,6 +33,7 @@ public record ProfileDeviceRequest(
         @Size(max = 64) String idfv,
         @Size(max = 64) String idfa,
         @Size(max = 1024) String extParam,
+        @NotBlank @Size(max = 64) String ip,
         Map<String, Object> deviceOtherInfo
 ) {
 }

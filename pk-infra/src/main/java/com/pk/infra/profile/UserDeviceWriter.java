@@ -61,6 +61,7 @@ public class UserDeviceWriter {
                 normalizeOptional(attrs.idfv()),
                 normalizeOptional(attrs.idfa()),
                 normalizeOptional(attrs.extParam()),
+                normalizeOptional(attrs.ip()),
                 deviceJson,
                 requestId.trim()
         ));

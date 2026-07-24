@@ -14,7 +14,6 @@ import com.pk.core.profile.port.ProfileLoginLogRepository;
 import com.pk.core.profile.port.ProfilePersonalRepository;
 import com.pk.core.profile.sync.DeviceExtendedAttributes;
 import com.pk.core.profile.sync.LenderDeviceContext;
-import com.pk.core.profile.sync.LenderDevicePayloadBuilder;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
 import java.util.Base64;
@@ -257,7 +256,7 @@ public class LenderSyncAuditRequestBuilder {
         applyExtendedAttributes(deviceNode, device.resolvedExtendedAttributes());
         putIfPresent(deviceNode, "adId", device.adId());
         putIfPresent(deviceNode, "adChannel", device.resolvedExtendedAttributes().adChannel());
-        deviceNode.put("ip", LenderDevicePayloadBuilder.FIXED_CLIENT_IP);
+        putIfPresent(deviceNode, "ip", device.resolvedExtendedAttributes().ip());
         applyDeviceOtherInfo(deviceNode, device.deviceOtherInfo());
         return deviceNode;
     }

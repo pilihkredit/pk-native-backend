@@ -41,6 +41,7 @@ class UserDeviceWriterTest {
         ArgumentCaptor<ProfileDeviceData> deviceCaptor = ArgumentCaptor.forClass(ProfileDeviceData.class);
         verify(profileDeviceRepository).upsertByDeviceNo(deviceCaptor.capture());
         assertEquals("LenderApp", deviceCaptor.getValue().appName());
+        assertEquals("1.2.3.4", deviceCaptor.getValue().ip());
         assertEquals(true, deviceCaptor.getValue().deviceJson().contains("\"battery\":\"80\""));
         assertEquals(false, deviceCaptor.getValue().deviceJson().contains("unknownExtra"));
 
@@ -70,7 +71,9 @@ class UserDeviceWriterTest {
                 "ad-1",
                 other,
                 "ClientApp",
-                DeviceExtendedAttributes.empty()
+                new DeviceExtendedAttributes(
+                        null, null, null, null, null, null, null, null, null, null, null, null, "1.2.3.4"
+                )
         );
     }
 }

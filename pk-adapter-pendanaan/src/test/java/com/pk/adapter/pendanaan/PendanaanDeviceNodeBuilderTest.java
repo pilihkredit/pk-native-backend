@@ -60,6 +60,7 @@ class PendanaanDeviceNodeBuilderTest {
                         "idfv-1",
                         "idfa-1",
                         null,
+                        null,
                         null
                 )
         );

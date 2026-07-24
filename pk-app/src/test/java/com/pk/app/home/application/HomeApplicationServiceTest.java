@@ -90,6 +90,7 @@ class HomeApplicationServiceTest {
                 null,
                 null,
                 null,
+                "1.2.3.4",
                 Map.of("isRoot", false)
         );
     }

@@ -20,6 +20,7 @@ public record ProfileDeviceData(
         String idfv,
         String idfa,
         String extParam,
+        String ip,
         String deviceJson,
         String lastRequestId
 ) {

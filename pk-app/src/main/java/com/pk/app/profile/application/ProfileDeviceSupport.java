@@ -68,7 +68,8 @@ public final class ProfileDeviceSupport {
                 normalizeOptional(deviceRequest.idfv()),
                 normalizeOptional(deviceRequest.idfa()),
                 normalizeOptional(deviceRequest.extParam()),
-                normalizeOptional(deviceRequest.adChannel())
+                normalizeOptional(deviceRequest.adChannel()),
+                deviceRequest.ip().trim()
         );
     }
 

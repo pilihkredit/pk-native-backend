@@ -24,13 +24,13 @@ class LenderDevicePayloadBuilderTest {
                 other,
                 "ClientAppName",
                 new DeviceExtendedAttributes(
-                        "Huawei", "P30", null, "12", null, 8, null, null, null, null, null, null
+                        "Huawei", "P30", null, "12", null, 8, null, null, null, null, null, null, "1.2.3.4"
                 )
         );
         Map<String, Object> payload = LenderDevicePayloadBuilder.buildProfileSyncDevice(device);
         assertEquals("LenderApp", payload.get("appName"));
         assertEquals("Huawei", payload.get("phoneBrand"));
-        assertEquals(LenderDevicePayloadBuilder.FIXED_CLIENT_IP, payload.get("ip"));
+        assertEquals("1.2.3.4", payload.get("ip"));
         @SuppressWarnings("unchecked")
         Map<String, Object> storedOther = (Map<String, Object>) payload.get("deviceOtherInfo");
         assertEquals("80", storedOther.get("battery"));
@@ -49,12 +49,23 @@ class LenderDevicePayloadBuilderTest {
                 null,
                 "ClientAppName",
                 new DeviceExtendedAttributes(
-                        null, null, null, null, null, null, null, null, null, null, null, "facebook"
+                        null, null, null, null, null, null, null, null, null, null, null, "facebook", "1.2.3.4"
                 )
         );
         Map<String, Object> payload = LenderDevicePayloadBuilder.buildProfileSyncDevice(device);
         assertEquals("facebook", payload.get("adChannel"));
         assertEquals("ad-1", payload.get("adId"));
+        assertEquals("1.2.3.4", payload.get("ip"));
+    }
+
+    @Test
+    void omitsIpWhenMissing() {
+        LenderDeviceContext device = new LenderDeviceContext(
+                "LenderApp", "1.0.0", "com.example", "dev-1", "android",
+                null, null, "Client", DeviceExtendedAttributes.empty()
+        );
+        Map<String, Object> payload = LenderDevicePayloadBuilder.buildProfileSyncDevice(device);
+        assertFalse(payload.containsKey("ip"));
     }
 
     @Test

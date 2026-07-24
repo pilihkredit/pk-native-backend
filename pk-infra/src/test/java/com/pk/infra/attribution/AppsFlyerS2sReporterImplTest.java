@@ -92,6 +92,7 @@ class AppsFlyerS2sReporterImplTest {
                         "idfv-1",
                         "idfa-1",
                         null,
+                        null,
                         "{\"appsflyerId\":\"af-device-1\",\"idfv\":\"idfv-1\",\"idfa\":\"idfa-1\"}",
                         "req-1"
                 )));

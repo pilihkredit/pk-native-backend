@@ -461,6 +461,7 @@ CREATE TABLE user_device (
     idfv VARCHAR(64) NULL COMMENT 'idfv',
     idfa VARCHAR(64) NULL COMMENT 'idfa',
     ext_param VARCHAR(1024) NULL COMMENT 'extParam',
+    ip VARCHAR(64) NULL COMMENT 'Client IP (lender device.ip)',
     device_json JSON NOT NULL COMMENT 'Lender userInfo.device shaped JSON',
     last_request_id VARCHAR(64) NOT NULL COMMENT 'Last request id that updated this device',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',

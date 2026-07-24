@@ -35,7 +35,7 @@ public final class StoredDevicePayloadReader {
                     textOrNull(root.get("adId")),
                     readDeviceOtherInfo(root.get("deviceOtherInfo")),
                     textOrDefault(root, "appName", stored.appName()),
-                    readExtendedAttributes(root)
+                    readExtendedAttributes(root, stored.ip())
             );
         } catch (ApiException exception) {
             throw exception;
@@ -44,7 +44,11 @@ public final class StoredDevicePayloadReader {
         }
     }
 
-    private static DeviceExtendedAttributes readExtendedAttributes(JsonNode root) {
+    private static DeviceExtendedAttributes readExtendedAttributes(JsonNode root, String storedIp) {
+        String ip = textOrNull(root.get("ip"));
+        if (ip == null && storedIp != null && !storedIp.isBlank()) {
+            ip = storedIp.trim();
+        }
         return new DeviceExtendedAttributes(
                 textOrNull(root.get("phoneBrand")),
                 textOrNull(root.get("phoneBrandModel")),
@@ -57,7 +61,8 @@ public final class StoredDevicePayloadReader {
                 textOrNull(root.get("idfv")),
                 textOrNull(root.get("idfa")),
                 textOrNull(root.get("extParam")),
-                textOrNull(root.get("adChannel"))
+                textOrNull(root.get("adChannel")),
+                ip
         );
     }
 

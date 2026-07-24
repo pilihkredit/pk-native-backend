@@ -56,6 +56,7 @@ public interface DebugUserInfoReadMapper {
             String idfv,
             String idfa,
             String extParam,
+            String ip,
             String deviceJson,
             String lastRequestId,
             Instant updatedAt

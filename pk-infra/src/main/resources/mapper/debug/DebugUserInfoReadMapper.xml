@@ -78,6 +78,7 @@
             <arg column="idfv" javaType="string"/>
             <arg column="idfa" javaType="string"/>
             <arg column="ext_param" javaType="string"/>
+            <arg column="ip" javaType="string"/>
             <arg column="device_json" javaType="string"/>
             <arg column="last_request_id" javaType="string"/>
             <arg column="updated_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
@@ -102,6 +103,7 @@
                idfv,
                idfa,
                ext_param,
+               ip,
                device_json,
                last_request_id,
                updated_at
