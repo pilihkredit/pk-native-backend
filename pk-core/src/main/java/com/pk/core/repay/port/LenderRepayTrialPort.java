@@ -29,7 +29,7 @@ public interface LenderRepayTrialPort {
             com.pk.core.repay.LenderRepayVa spareVa,
             com.pk.core.repay.LenderRepayVa disabledDefaultVa,
             List<LenderRepayTrialResult> billTrials,
-            String rawResponseJson
+            Long externalInteractionId
     ) {
     }
 }

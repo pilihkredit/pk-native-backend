@@ -123,8 +123,7 @@ class LoanApplyFacadeTest {
                         new BigDecimal("1455000"),
                         Instant.parse("2026-07-01T00:00:00Z"),
                         null,
-                        "{}",
-                        "{}",
+                        99L,
                         null,
                         Instant.parse("2026-07-01T00:00:00Z")
                 )));

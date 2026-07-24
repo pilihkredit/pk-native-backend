@@ -13,8 +13,7 @@ public interface LenderLoanStatusPort {
             BigDecimal payAmount,
             Long payTime,
             Long freezeEndTime,
-            String requestJson,
-            String responseDataJson
+            Long externalInteractionId
     ) {
     }
 }

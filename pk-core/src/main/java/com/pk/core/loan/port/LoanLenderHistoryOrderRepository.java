@@ -22,8 +22,7 @@ public interface LoanLenderHistoryOrderRepository {
             Instant payTime,
             Long freezeEndTime,
             Long lenderCreateTime,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson,
+            Long externalInteractionId,
             Instant queriedAt
     ) {
     }

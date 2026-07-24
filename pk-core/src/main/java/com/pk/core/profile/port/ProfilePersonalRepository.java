@@ -10,5 +10,5 @@ public interface ProfilePersonalRepository {
 
     void updateEmail(long profileId, String userEmail);
 
-    void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson);
+    void updateLastLenderInteraction(long profileId, Long externalInteractionId);
 }

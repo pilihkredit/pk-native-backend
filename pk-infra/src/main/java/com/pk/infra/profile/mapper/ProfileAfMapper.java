@@ -12,11 +12,7 @@ public interface ProfileAfMapper {
 
     int insert(ProfileAfRow row);
 
-    int updateLastLenderAudit(
-            @Param("requestId") String requestId,
-            @Param("requestDataJson") String requestDataJson,
-            @Param("responseDataJson") String responseDataJson
-    );
+    int updateLastLenderInteraction(@Param("requestId") String requestId, @Param("externalInteractionId") Long externalInteractionId);
 
     int bindProfileIfNull(
             @Param("id") long id,

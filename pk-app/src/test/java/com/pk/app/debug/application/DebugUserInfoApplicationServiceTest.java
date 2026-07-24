@@ -97,7 +97,8 @@ class DebugUserInfoApplicationServiceTest {
                         "id-card-ref",
                         "face-ref",
                         "ADVANCE_AI",
-                        "{\"gender\":\"MALE\",\"address\":\"Jakarta\"}",
+                        88L,
+                        99L,
                         Instant.parse("2026-07-01T01:00:00Z")
                 )
         );
@@ -120,6 +121,7 @@ class DebugUserInfoApplicationServiceTest {
                         null,
                         null,
                         null,
+                        "127.0.0.1",
                         "{\"model\":\"Pixel\"}",
                         "req-device-1",
                         Instant.parse("2026-07-01T02:00:00Z")
@@ -132,11 +134,7 @@ class DebugUserInfoApplicationServiceTest {
                         "DAVID HARTANTO",
                         idNo,
                         "hash-id",
-                        "COMPLETED",
-                        "req-id-1",
-                        null,
-                        null
-                )
+                        "COMPLETED", null, null)
         ));
         when(profilePersonalRepository.findByProfileId(10L)).thenReturn(Optional.of(
                 new ProfilePersonalData(
@@ -149,12 +147,10 @@ class DebugUserInfoApplicationServiceTest {
                         "personal@example.com",
                         "COMPLETED",
                         "req-personal-1",
-                        null,
-                        null
-                )
+                        null)
         ));
         when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.of(
-                new ProfileContactsModuleData(10L, "801234567", "COMPLETED", "req-contact-1", null, null)
+                new ProfileContactsModuleData(10L, "801234567", "COMPLETED", "req-contact-1", null)
         ));
         when(profileContactRepository.findContactsByProfileId(10L)).thenReturn(List.of(
                 new ProfileContactData("801234567", 0, 1, "SITI", "81234567801")
@@ -173,9 +169,7 @@ class DebugUserInfoApplicationServiceTest {
                         false,
                         "COMPLETED",
                         "req-bank-1",
-                        null,
-                        null
-                )
+                        null)
         ));
         when(ocrSessionStore.find(10L)).thenReturn(Optional.of(
                 new OcrSessionState(
@@ -202,6 +196,7 @@ class DebugUserInfoApplicationServiceTest {
                                 "Kebayoran"
                         ),
                         "id-card-ref",
+                        88L,
                         Instant.parse("2026-07-01T01:30:00Z")
                 )
         ));

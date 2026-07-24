@@ -22,14 +22,16 @@ public class PendanaanLoanHistoryAdapter implements LenderLoanHistoryPort {
     @Override
     public LenderLoanHistoryResult queryHistory(String partnerUserId) {
         String requestBody = PendanaanLoanRequestMapper.buildHistoryListBody(partnerUserId);
-        JsonNode data = httpClient.post(HISTORY_LIST_PATH, requestBody, BUSINESS_TYPE, partnerUserId);
+        PendanaanHttpClient.ExchangeResult exchange =
+                httpClient.postWithInteraction(HISTORY_LIST_PATH, requestBody, BUSINESS_TYPE, partnerUserId);
+        JsonNode data = exchange.data();
         List<LenderLoanHistoryOrder> orders = new ArrayList<>();
         if (data != null && data.isArray()) {
             for (JsonNode item : data) {
                 orders.add(toOrder(item));
             }
         }
-        return new LenderLoanHistoryResult(requestBody, orders);
+        return new LenderLoanHistoryResult(exchange.interactionId(), orders);
     }
 
     private LenderLoanHistoryOrder toOrder(JsonNode item) {
@@ -43,8 +45,7 @@ public class PendanaanLoanHistoryAdapter implements LenderLoanHistoryPort {
                 decimalOrNull(item.get("payAmount")),
                 longOrNull(item.get("payTime")),
                 longOrNull(item.get("freezeEndTime")),
-                longOrNull(item.get("createTime")),
-                serialize(item)
+                longOrNull(item.get("createTime"))
         );
     }
 

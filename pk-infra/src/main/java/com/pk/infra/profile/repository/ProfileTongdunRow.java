@@ -9,6 +9,5 @@ public class ProfileTongdunRow {
     public String tongdunKey;
     public String moduleStatus;
     public String requestId;
-    public String lastLenderRequestJson;
-    public String lastLenderResponseJson;
+    public Long externalInteractionId;
 }

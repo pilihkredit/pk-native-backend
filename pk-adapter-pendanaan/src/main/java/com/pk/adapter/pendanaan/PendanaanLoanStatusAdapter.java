@@ -22,7 +22,9 @@ public class PendanaanLoanStatusAdapter implements LenderLoanStatusPort {
     @Override
     public LenderLoanStatusResult queryStatus(String loanApplyId) {
         String requestBody = PendanaanLoanRequestMapper.buildStatusBody(loanApplyId);
-        JsonNode data = httpClient.post(APPLY_STATUS_PATH, requestBody, BUSINESS_TYPE, loanApplyId);
+        PendanaanHttpClient.ExchangeResult exchange =
+                httpClient.postWithInteraction(APPLY_STATUS_PATH, requestBody, BUSINESS_TYPE, loanApplyId);
+        JsonNode data = exchange.data();
         if (data == null || data.isNull()) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
@@ -34,8 +36,7 @@ public class PendanaanLoanStatusAdapter implements LenderLoanStatusPort {
                 decimalOrNull(data.get("payAmount")),
                 longOrNull(data.get("payTime")),
                 longOrNull(data.get("freezeEndTime")),
-                requestBody,
-                serializeResponseData(data)
+                exchange.interactionId()
         );
     }
 

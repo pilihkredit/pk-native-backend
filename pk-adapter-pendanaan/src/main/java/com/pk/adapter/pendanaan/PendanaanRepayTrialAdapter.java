@@ -26,31 +26,31 @@ public class PendanaanRepayTrialAdapter implements LenderRepayTrialPort {
 
     @Override
     public LenderRepayTrialResult trial(LenderRepayTrialCommand command) {
-        JsonNode data = httpClient.post(
+        PendanaanHttpClient.ExchangeResult exchange = httpClient.postWithInteraction(
                 REPAY_TRIAL_PATH,
                 buildTrialRequestBody(command),
                 BUSINESS_TYPE_TRIAL,
                 command.loanApplyId()
         );
-        return mapTrialResult(data);
+        return mapTrialResult(exchange.data(), exchange.interactionId());
     }
 
     @Override
     public LenderRepayTrialBatchResult trialBatch(LenderRepayTrialBatchCommand command) {
-        JsonNode data = httpClient.post(
+        PendanaanHttpClient.ExchangeResult exchange = httpClient.postWithInteraction(
                 REPAY_TRIAL_BATCH_PATH,
                 buildBatchRequestBody(command),
                 BUSINESS_TYPE_TRIAL_BATCH,
                 command.repayOrders().isEmpty() ? null : command.repayOrders().getFirst().loanApplyId()
         );
-        String rawResponseJson = data == null ? "{}" : data.toString();
+        JsonNode data = exchange.data();
         JsonNode billTrialsNode = data.get("billTrials");
         if (billTrialsNode == null || !billTrialsNode.isArray()) {
             throw new com.pk.core.api.ApiException(com.pk.core.api.ApiCode.SERVICE_UNAVAILABLE);
         }
         List<LenderRepayTrialResult> billTrials = new ArrayList<>();
         for (JsonNode trialNode : billTrialsNode) {
-            billTrials.add(mapTrialResult(trialNode));
+            billTrials.add(mapTrialResult(trialNode, exchange.interactionId()));
         }
         JsonNode defaultVaNode = data.get("defaultVa");
         return new LenderRepayTrialBatchResult(
@@ -62,7 +62,7 @@ public class PendanaanRepayTrialAdapter implements LenderRepayTrialPort {
                 mapOptionalVa(data.get("spareVa")),
                 mapOptionalVa(data.get("disabledDefaultVa")),
                 List.copyOf(billTrials),
-                rawResponseJson
+                exchange.interactionId()
         );
     }
 
@@ -100,11 +100,10 @@ public class PendanaanRepayTrialAdapter implements LenderRepayTrialPort {
         }
     }
 
-    private LenderRepayTrialResult mapTrialResult(JsonNode data) {
+    private LenderRepayTrialResult mapTrialResult(JsonNode data, Long externalInteractionId) {
         if (data == null || data.isNull()) {
             throw new com.pk.core.api.ApiException(com.pk.core.api.ApiCode.SERVICE_UNAVAILABLE);
         }
-        String rawResponseJson = data.toString();
         JsonNode defaultVaNode = data.get("defaultVa");
         return new LenderRepayTrialResult(
                 PendanaanJsonSupport.requireText(data.get("loanApplyId"), "loanApplyId"),
@@ -177,7 +176,7 @@ public class PendanaanRepayTrialAdapter implements LenderRepayTrialPort {
                 PendanaanJsonSupport.intOrNull(data.get("termNo")),
                 millisToInstant(PendanaanJsonSupport.longOrNull(data.get("termDueDate"))),
                 mapTrialTerms(data.get("termInfo")),
-                rawResponseJson
+                externalInteractionId
         );
     }
 

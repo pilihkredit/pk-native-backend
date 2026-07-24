@@ -10,7 +10,6 @@ public record ProfilePersonalData(
         String userEmail,
         String moduleStatus,
         String lastRequestId,
-        String lastLenderRequestJson,
-        String lastLenderResponseJson
+        Long externalInteractionId
 ) {
 }

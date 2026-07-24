@@ -122,7 +122,7 @@ public class RepayTrialFacade {
                         lenderResult.defaultVa(),
                         lenderResult.spareVa(),
                         lenderResult.disabledDefaultVa(),
-                        lenderResult.rawResponseJson()
+                        lenderResult.externalInteractionId()
                 ),
                 List.of(new RepaymentTrialSnapshotRepository.TrialOrderInsert(
                         loan.loanApplicationId(),
@@ -168,7 +168,7 @@ public class RepayTrialFacade {
                         lenderResult.defaultVa(),
                         lenderResult.spareVa(),
                         lenderResult.disabledDefaultVa(),
-                        lenderResult.rawResponseJson()
+                        lenderResult.externalInteractionId()
                 ),
                 orderInserts
         );

@@ -149,7 +149,7 @@ public class DebugUserInfoApplicationService {
         }
 
         OcrSessionState.OcrParsedFields parsed = ocrSession == null ? null : ocrSession.parsed();
-        JsonNode ocrJson = parseOcrResultJson(identityAsset == null ? null : identityAsset.ocrResultJson());
+        JsonNode ocrJson = null;
 
         String idCardRef = firstNonBlank(
                 identityAsset == null ? null : identityAsset.idCardImageEncryptedRef(),
@@ -183,11 +183,9 @@ public class DebugUserInfoApplicationService {
                 text(parsed, "province"),
                 text(parsed, "city"),
                 text(parsed, "district"),
-                firstNonBlank(
-                        identityAsset == null ? null : identityAsset.ocrChannel(),
-                        jsonText(ocrJson, "ocrChannel")
-                ),
-                identityAsset == null ? null : identityAsset.ocrResultJson(),
+                identityAsset == null ? null : identityAsset.ocrChannel(),
+                identityAsset == null ? null : identityAsset.ocrVendorCallLogId(),
+                identityAsset == null ? null : identityAsset.externalInteractionId(),
                 loadImageDataUrl(idCardRef),
                 loadImageDataUrl(faceRef),
                 identityAsset == null ? null : identityAsset.createdAt()

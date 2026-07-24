@@ -14,8 +14,7 @@
             <arg column="id_no_hash" javaType="string"/>
             <arg column="module_status" javaType="string"/>
             <arg column="last_request_id" javaType="string"/>
-            <arg column="last_lender_request_json" javaType="string"/>
-            <arg column="last_lender_response_json" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
             <arg column="profile_version_id" javaType="java.lang.Long"/>
             <arg column="id_card_image_encrypted_ref" javaType="string"/>
             <arg column="face_photo_image_encrypted_ref" javaType="string"/>
@@ -25,7 +24,7 @@
             <arg column="biometric_image_retention_until" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
             <arg column="ocr_channel" javaType="string"/>
-            <arg column="ocr_result_json" javaType="string"/>
+            <arg column="ocr_vendor_call_log_id" javaType="java.lang.Long"/>
         </constructor>
     </resultMap>
 
@@ -33,12 +32,12 @@
         SELECT profile_id, mobile_no, full_name,
                id_no_ciphertext, id_no_nonce, id_no_tag,
                id_no_hash, module_status, last_request_id,
-               last_lender_request_json, last_lender_response_json,
+               external_interaction_id,
                profile_version_id,
                id_card_image_encrypted_ref, face_photo_image_encrypted_ref,
                encryption_key_ref,
                identity_data_retention_until, biometric_image_retention_until,
-               ocr_channel, ocr_result_json
+               ocr_channel, ocr_vendor_call_log_id
         FROM user_profile_identity
         WHERE profile_id = #{profileId}
     </select>
@@ -48,21 +47,23 @@
             profile_id, mobile_no, full_name,
             id_no_ciphertext, id_no_nonce, id_no_tag,
             id_no_hash, module_status, last_request_id,
+            external_interaction_id,
             profile_version_id,
             id_card_image_encrypted_ref, face_photo_image_encrypted_ref,
             encryption_key_ref,
             identity_data_retention_until, biometric_image_retention_until,
-            ocr_channel, ocr_result_json
+            ocr_channel, ocr_vendor_call_log_id
         ) VALUES (
             #{profileId}, #{mobileNo}, #{fullName},
             #{idNoCiphertext}, #{idNoNonce}, #{idNoTag},
             #{idNoHash}, #{moduleStatus}, #{lastRequestId},
+            #{externalInteractionId},
             #{profileVersionId},
             #{idCardImageEncryptedRef}, #{facePhotoImageEncryptedRef},
             #{encryptionKeyRef},
             #{identityDataRetentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
             #{biometricImageRetentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
-            #{ocrChannel}, #{ocrResultJson}
+            #{ocrChannel}, #{ocrVendorCallLogId}
         )
         ON DUPLICATE KEY UPDATE
             mobile_no = VALUES(mobile_no),
@@ -73,6 +74,7 @@
             id_no_hash = VALUES(id_no_hash),
             module_status = VALUES(module_status),
             last_request_id = VALUES(last_request_id),
+            external_interaction_id = COALESCE(VALUES(external_interaction_id), external_interaction_id),
             profile_version_id = COALESCE(VALUES(profile_version_id), profile_version_id),
             id_card_image_encrypted_ref = COALESCE(VALUES(id_card_image_encrypted_ref), id_card_image_encrypted_ref),
             face_photo_image_encrypted_ref = COALESCE(VALUES(face_photo_image_encrypted_ref), face_photo_image_encrypted_ref),
@@ -80,13 +82,12 @@
             identity_data_retention_until = COALESCE(VALUES(identity_data_retention_until), identity_data_retention_until),
             biometric_image_retention_until = COALESCE(VALUES(biometric_image_retention_until), biometric_image_retention_until),
             ocr_channel = COALESCE(VALUES(ocr_channel), ocr_channel),
-            ocr_result_json = COALESCE(VALUES(ocr_result_json), ocr_result_json)
+            ocr_vendor_call_log_id = COALESCE(VALUES(ocr_vendor_call_log_id), ocr_vendor_call_log_id)
     </insert>
 
-    <update id="updateLastLenderAudit">
+    <update id="updateLastLenderInteraction">
         UPDATE user_profile_identity
-        SET last_lender_request_json = #{requestJson},
-            last_lender_response_json = #{responseJson}
+        SET external_interaction_id = #{externalInteractionId}
         WHERE profile_id = #{profileId}
     </update>
     <update id="scheduleRetentionAfterAccountClosure">

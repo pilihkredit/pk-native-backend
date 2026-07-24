@@ -9,8 +9,7 @@
             <arg column="mobile_no" javaType="string"/>
             <arg column="module_status" javaType="string"/>
             <arg column="last_request_id" javaType="string"/>
-            <arg column="last_lender_request_json" javaType="string"/>
-            <arg column="last_lender_response_json" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
         </constructor>
     </resultMap>
 
@@ -26,7 +25,7 @@
 
     <select id="findModuleByProfileId" resultMap="moduleMap">
         SELECT profile_id, mobile_no, module_status, last_request_id,
-               last_lender_request_json, last_lender_response_json
+               external_interaction_id
         FROM user_profile_contacts
         WHERE profile_id = #{profileId}
     </select>
@@ -57,10 +56,9 @@
         ) VALUES (#{profileId}, #{mobileNo}, #{sortNo}, #{relationship}, #{contactName}, #{contactMobile})
     </insert>
 
-    <update id="updateLastLenderAudit">
+        <update id="updateLastLenderInteraction">
         UPDATE user_profile_contacts
-        SET last_lender_request_json = #{requestDataJson},
-            last_lender_response_json = #{responseDataJson}
+        SET external_interaction_id = #{externalInteractionId}
         WHERE profile_id = #{profileId}
     </update>
 </mapper>

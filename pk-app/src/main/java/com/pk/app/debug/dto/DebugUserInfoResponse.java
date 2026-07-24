@@ -59,7 +59,8 @@ public record DebugUserInfoResponse(
             String city,
             String district,
             String ocrChannel,
-            String ocrResultJson,
+            Long ocrVendorCallLogId,
+            Long externalInteractionId,
             String idCardImageDataUrl,
             String facePhotoDataUrl,
             Instant assetCreatedAt

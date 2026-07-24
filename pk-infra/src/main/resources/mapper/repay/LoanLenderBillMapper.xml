@@ -16,8 +16,7 @@
             <arg column="bill_status" javaType="string"/>
             <arg column="term_due_date" javaType="java.lang.Long"/>
             <arg column="next_due_amount" javaType="java.math.BigDecimal"/>
-            <arg column="last_lender_request_json" javaType="string"/>
-            <arg column="last_lender_response_json" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
             <arg column="queried_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
         </constructor>
@@ -26,7 +25,7 @@
     <sql id="loanLenderBillColumns">
         loan_apply_id, profile_id, mobile_no, external_loan_apply_no, lender_user_id, bill_no,
         apply_amt, bill_status, term_due_date, next_due_amount,
-        last_lender_request_json, last_lender_response_json, queried_at
+        external_interaction_id, queried_at
     </sql>
 
     <insert id="upsert">
@@ -41,8 +40,7 @@
             bill_status,
             term_due_date,
             next_due_amount,
-            last_lender_request_json,
-            last_lender_response_json,
+            external_interaction_id,
             queried_at
         ) VALUES (
             #{loanApplyId},
@@ -55,8 +53,7 @@
             #{billStatus},
             #{termDueDate},
             #{nextDueAmount},
-            #{lastLenderRequestJson},
-            #{lastLenderResponseJson},
+            #{externalInteractionId},
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
         ON DUPLICATE KEY UPDATE
@@ -69,8 +66,7 @@
             bill_status = VALUES(bill_status),
             term_due_date = VALUES(term_due_date),
             next_due_amount = VALUES(next_due_amount),
-            last_lender_request_json = VALUES(last_lender_request_json),
-            last_lender_response_json = VALUES(last_lender_response_json),
+            external_interaction_id = VALUES(external_interaction_id),
             queried_at = VALUES(queried_at)
     </insert>
 

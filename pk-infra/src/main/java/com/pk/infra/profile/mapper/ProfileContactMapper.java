@@ -30,9 +30,5 @@ public interface ProfileContactMapper {
             @Param("contactMobile") String contactMobile
     );
 
-    int updateLastLenderAudit(
-            @Param("profileId") long profileId,
-            @Param("requestDataJson") String requestDataJson,
-            @Param("responseDataJson") String responseDataJson
-    );
+    int updateLastLenderInteraction(@Param("profileId") long profileId, @Param("externalInteractionId") Long externalInteractionId);
 }

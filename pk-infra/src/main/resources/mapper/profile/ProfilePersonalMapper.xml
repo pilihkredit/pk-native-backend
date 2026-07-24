@@ -11,14 +11,13 @@
             <arg column="mother_surname_tag" javaType="_byte[]"/>
             <arg column="user_email" javaType="string"/><arg column="module_status" javaType="string"/>
             <arg column="last_request_id" javaType="string"/>
-            <arg column="last_lender_request_json" javaType="string"/>
-            <arg column="last_lender_response_json" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
         </constructor>
     </resultMap>
     <select id="findByProfileId" resultMap="personalRowMap">
         SELECT profile_id, mobile_no, education_degree, industry, income,
                mother_surname_ciphertext, mother_surname_nonce, mother_surname_tag,
-               user_email, module_status, last_request_id, last_lender_request_json, last_lender_response_json
+               user_email, module_status, last_request_id, external_interaction_id
         FROM user_profile_personal WHERE profile_id = #{profileId}
     </select>
     <insert id="upsert">
@@ -32,8 +31,9 @@
             user_email=VALUES(user_email), module_status=VALUES(module_status), last_request_id=VALUES(last_request_id)
     </insert>
     <update id="updateEmail">UPDATE user_profile SET email = #{userEmail} WHERE id = #{profileId} AND deleted_at IS NULL</update>
-    <update id="updateLastLenderAudit">
-        UPDATE user_profile_personal SET last_lender_request_json=#{requestDataJson}, last_lender_response_json=#{responseDataJson}
-        WHERE profile_id=#{profileId}
+        <update id="updateLastLenderInteraction">
+        UPDATE user_profile_personal
+        SET external_interaction_id = #{externalInteractionId}
+        WHERE profile_id = #{profileId}
     </update>
 </mapper>

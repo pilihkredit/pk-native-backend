@@ -15,6 +15,5 @@ public record ProfileBankCardRow(
         boolean deletedFlag,
         String moduleStatus,
         String lastRequestId,
-        String lastLenderRequestJson,
-        String lastLenderResponseJson
+        Long externalInteractionId
 ) {}

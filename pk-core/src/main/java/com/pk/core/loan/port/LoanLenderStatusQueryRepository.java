@@ -23,8 +23,7 @@ public interface LoanLenderStatusQueryRepository {
             BigDecimal payAmount,
             Instant payTime,
             Long freezeEndTime,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson,
+            Long externalInteractionId,
             Long externalInteractionCallbackId,
             Instant queriedAt
     ) {

@@ -3,7 +3,7 @@
 <mapper namespace="com.pk.infra.profile.mapper.ProfileTongdunMapper">
     <sql id="tongdunColumns">
         id, profile_id, mobile_no, scene_type, tongdun_key, module_status, request_id,
-        last_lender_request_json, last_lender_response_json
+        external_interaction_id
     </sql>
     <select id="findByRequestId" resultType="com.pk.infra.profile.repository.ProfileTongdunRow">
         SELECT <include refid="tongdunColumns"/>
@@ -19,10 +19,9 @@
             #{profileId}, #{mobileNo}, #{sceneType}, #{tongdunKey}, #{moduleStatus}, #{requestId}
         )
     </insert>
-    <update id="updateLastLenderAudit">
+        <update id="updateLastLenderInteraction">
         UPDATE user_profile_tongdun
-        SET last_lender_request_json = #{requestDataJson},
-            last_lender_response_json = #{responseDataJson}
+        SET external_interaction_id = #{externalInteractionId}
         WHERE request_id = #{requestId}
     </update>
 </mapper>

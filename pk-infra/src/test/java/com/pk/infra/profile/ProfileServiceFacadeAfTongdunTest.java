@@ -135,14 +135,13 @@ class ProfileServiceFacadeAfTongdunTest {
                         null, null, null, null, null, null, null, null, null,
                         "COMPLETED",
                         "req-1",
-                        null,
-                        "{\"cached\":true}"
+                        null
                 )
         ));
 
         var result = facade.saveAppsFlyerInstall(1L, "U1", "81234567890", afCommand("req-1", "AF1"));
 
-        assertThat(result.lenderResponseJson()).contains("cached");
+        assertThat(result.lenderResponseJson()).isNull();
         verify(profileAfRepository, never()).insert(any());
         verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
     }

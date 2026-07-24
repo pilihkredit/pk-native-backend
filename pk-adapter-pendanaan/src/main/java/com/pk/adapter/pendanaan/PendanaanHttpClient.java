@@ -51,6 +51,15 @@ public class PendanaanHttpClient {
     }
 
     public JsonNode postEnvelope(String path, String jsonBody, String businessType, String businessId) {
+        return postEnvelopeWithInteraction(path, jsonBody, businessType, businessId).envelope();
+    }
+
+    public EnvelopeResult postEnvelopeWithInteraction(
+            String path,
+            String jsonBody,
+            String businessType,
+            String businessId
+    ) {
         return exchangeEnvelope("POST", path, jsonBody, businessType, businessId);
     }
 
@@ -106,7 +115,7 @@ public class PendanaanHttpClient {
         return new ExchangeResult(data, outcome.interactionId);
     }
 
-    private JsonNode exchangeEnvelope(
+    private EnvelopeResult exchangeEnvelope(
             String method,
             String path,
             String jsonBody,
@@ -139,7 +148,7 @@ public class PendanaanHttpClient {
             outcome.transportFailure = PendanaanHttpSupport.formatTransportFailure(exception);
             failure = new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         } finally {
-            logInteraction(
+            outcome.interactionId = logInteraction(
                     interactionNo,
                     businessType,
                     businessId,
@@ -153,7 +162,7 @@ public class PendanaanHttpClient {
         if (failure != null) {
             throw failure;
         }
-        return envelope;
+        return new EnvelopeResult(envelope, outcome.interactionId);
     }
 
     private HttpResponse<String> send(String method, String endpoint, String requestBody)
@@ -204,5 +213,8 @@ public class PendanaanHttpClient {
     }
 
     public record ExchangeResult(JsonNode data, Long interactionId) {
+    }
+
+    public record EnvelopeResult(JsonNode envelope, Long interactionId) {
     }
 }

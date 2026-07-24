@@ -19,8 +19,7 @@
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
             <arg column="freeze_end_time" javaType="java.lang.Long"/>
             <arg column="lender_create_time" javaType="java.lang.Long"/>
-            <arg column="last_lender_request_json" javaType="string"/>
-            <arg column="last_lender_response_json" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
             <arg column="queried_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
         </constructor>
@@ -29,7 +28,7 @@
     <sql id="loanLenderHistoryOrderColumns">
         loan_apply_id, profile_id, mobile_no, external_loan_apply_no, lender_user_id, external_status,
         bill_no, apply_amt, pay_amount, pay_time, freeze_end_time, lender_create_time,
-        last_lender_request_json, last_lender_response_json, queried_at
+        external_interaction_id, queried_at
     </sql>
 
     <insert id="upsert">
@@ -46,8 +45,7 @@
             pay_time,
             freeze_end_time,
             lender_create_time,
-            last_lender_request_json,
-            last_lender_response_json,
+            external_interaction_id,
             queried_at
         ) VALUES (
             #{loanApplyId},
@@ -62,8 +60,7 @@
             #{payTime, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
             #{freezeEndTime},
             #{lenderCreateTime},
-            #{lastLenderRequestJson},
-            #{lastLenderResponseJson},
+            #{externalInteractionId},
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
         ON DUPLICATE KEY UPDATE
@@ -78,8 +75,7 @@
             pay_time = VALUES(pay_time),
             freeze_end_time = VALUES(freeze_end_time),
             lender_create_time = VALUES(lender_create_time),
-            last_lender_request_json = VALUES(last_lender_request_json),
-            last_lender_response_json = VALUES(last_lender_response_json),
+            external_interaction_id = VALUES(external_interaction_id),
             queried_at = VALUES(queried_at)
     </insert>
 

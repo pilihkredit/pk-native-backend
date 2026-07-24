@@ -8,5 +8,5 @@ public interface ProfileTongdunRepository {
 
     long insert(ProfileTongdunData data);
 
-    void updateLastLenderAudit(String requestId, String requestDataJson, String responseDataJson);
+    void updateLastLenderInteraction(String requestId, Long externalInteractionId);
 }

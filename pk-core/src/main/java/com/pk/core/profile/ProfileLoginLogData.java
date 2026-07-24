@@ -11,7 +11,6 @@ public record ProfileLoginLogData(
         BigDecimal loginLng,
         String moduleStatus,
         String lastRequestId,
-        String lastLenderRequestJson,
-        String lastLenderResponseJson
+        Long externalInteractionId
 ) {
 }

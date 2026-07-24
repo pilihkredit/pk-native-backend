@@ -48,8 +48,7 @@ class HomeSummaryFacadeTest {
                         0,
                         1780300800000L,
                         true,
-                        "{\"partnerUserId\":\"U10001\"}",
-                        "{\"userId\":\"USR-1\"}"
+                        99L
                 )
         );
 

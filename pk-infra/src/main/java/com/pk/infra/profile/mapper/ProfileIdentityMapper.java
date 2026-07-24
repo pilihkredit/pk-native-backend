@@ -10,10 +10,9 @@ public interface ProfileIdentityMapper {
 
     int upsert(ProfileIdentityRow row);
 
-    int updateLastLenderAudit(
+    int updateLastLenderInteraction(
             @Param("profileId") long profileId,
-            @Param("requestJson") String requestJson,
-            @Param("responseJson") String responseJson
+            @Param("externalInteractionId") Long externalInteractionId
     );
 
     int scheduleRetentionAfterAccountClosure(

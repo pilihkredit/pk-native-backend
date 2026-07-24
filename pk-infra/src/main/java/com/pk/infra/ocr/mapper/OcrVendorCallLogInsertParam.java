@@ -3,6 +3,7 @@ package com.pk.infra.ocr.mapper;
 import java.math.BigDecimal;
 
 public class OcrVendorCallLogInsertParam {
+    private Long id;
     private Long profileId;
     private String partnerUserId;
     private String mobileNo;
@@ -23,6 +24,14 @@ public class OcrVendorCallLogInsertParam {
     private String responseJson;
     private String idCardImageEncryptedRef;
     private String livenessImageEncryptedRef;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public Long getProfileId() {
         return profileId;

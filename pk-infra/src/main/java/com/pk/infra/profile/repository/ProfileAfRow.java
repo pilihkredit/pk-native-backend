@@ -48,6 +48,5 @@ public class ProfileAfRow {
     public String gpInstallBegin;
     public String moduleStatus;
     public String requestId;
-    public String lastLenderRequestJson;
-    public String lastLenderResponseJson;
+    public Long externalInteractionId;
 }

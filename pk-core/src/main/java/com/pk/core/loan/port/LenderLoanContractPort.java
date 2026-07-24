@@ -16,8 +16,7 @@ public interface LenderLoanContractPort {
             String loanApplyId,
             String loanApplyNo,
             String billNo,
-            String requestJson,
-            String responseDataJson,
+            Long externalInteractionId,
             List<LenderLoanContract> contracts
     ) {
     }

@@ -29,7 +29,6 @@ import com.pk.infra.ocr.AdvanceAiRawOcrDetailBuilder;
 import com.pk.infra.ocr.OcrFieldParser;
 import com.pk.infra.ocr.OcrImageSupport;
 import com.pk.infra.ocr.OcrProperties;
-import com.pk.infra.ocr.OcrSensitiveJsonSupport;
 import java.time.Instant;
 import java.util.List;
 
@@ -49,7 +48,6 @@ public class IdentityOcrFacade {
     private final ProfileVersionRepository profileVersionRepository;
     private final UserProfileBindingRepository userProfileBindingRepository;
     private final OnboardingProgressFacade onboardingProgressFacade;
-    private final OcrSensitiveJsonSupport sensitiveJsonSupport;
     private final OcrProperties ocrProperties;
     private final ObjectMapper objectMapper;
 
@@ -65,7 +63,6 @@ public class IdentityOcrFacade {
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
             OnboardingProgressFacade onboardingProgressFacade,
-            OcrSensitiveJsonSupport sensitiveJsonSupport,
             OcrProperties ocrProperties,
             ObjectMapper objectMapper
     ) {
@@ -80,7 +77,6 @@ public class IdentityOcrFacade {
         this.profileVersionRepository = profileVersionRepository;
         this.userProfileBindingRepository = userProfileBindingRepository;
         this.onboardingProgressFacade = onboardingProgressFacade;
-        this.sensitiveJsonSupport = sensitiveJsonSupport;
         this.ocrProperties = ocrProperties;
         this.objectMapper = objectMapper;
     }
@@ -107,6 +103,7 @@ public class IdentityOcrFacade {
                     true,
                     false,
                     false,
+                    null,
                     null,
                     null,
                     null,
@@ -164,15 +161,6 @@ public class IdentityOcrFacade {
                 EktpValidator.hash(idNo),
                 MODULE_DRAFT,
                 command.requestId().trim(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
                 null
         ));
         return new BasicSaveResult(command.requestId().trim(), MODULE_DRAFT);
@@ -196,8 +184,10 @@ public class IdentityOcrFacade {
                 traceId
         ));
         String ocrResponseJson;
+        Long ocrCheckVendorCallLogId;
         try {
             ocrResponseJson = advanceAiOcrPort.ocrCheckIdCard(imageBytes);
+            ocrCheckVendorCallLogId = OcrCallContextHolder.lastVendorCallLogId();
         } finally {
             OcrCallContextHolder.clear();
         }
@@ -221,6 +211,7 @@ public class IdentityOcrFacade {
                 rawJson,
                 parsed,
                 idCardImageEncryptedRef,
+                ocrCheckVendorCallLogId,
                 Instant.now()
         ));
         return toOcrCheckResult(parsed);
@@ -260,6 +251,7 @@ public class IdentityOcrFacade {
                     current.ocrRawJson(),
                     current.parsed(),
                     current.idCardImageEncryptedRef(),
+                    current.ocrCheckVendorCallLogId(),
                     Instant.now()
             ));
             return new LivenessCheckResult(result.livenessScore(), true, ocrProperties.livenessThreshold());
@@ -371,10 +363,6 @@ public class IdentityOcrFacade {
                 List.of("identity"),
                 "IDENTITY_OCR"
         );
-        String ocrResultJson = sensitiveJsonSupport.sanitizeForStorage(
-                buildOcrResultJson(parsed, lenderRawOcrDetail(session.ocrRawJson())),
-                normalizedMobileNo
-        );
         profileIdentityRepository.upsert(new ProfileIdentityData(
                 profileId,
                 normalizedMobileNo,
@@ -384,7 +372,6 @@ public class IdentityOcrFacade {
                 MODULE_COMPLETED,
                 command.requestId().trim(),
                 null,
-                null,
                 profileVersionId,
                 idCardImageEncryptedRef,
                 faceImageEncryptedRef,
@@ -392,7 +379,7 @@ public class IdentityOcrFacade {
                 null,
                 null,
                 OCR_CHANNEL,
-                ocrResultJson
+                session.ocrCheckVendorCallLogId()
         ));
         userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
 
@@ -554,13 +541,7 @@ public class IdentityOcrFacade {
         );
         String idCardImageEncryptedRef = storeDevImage(mobileNo, BiometricImageKind.ID_CARD, command.idCardBase64());
         String facePhotoImageEncryptedRef = storeDevImage(mobileNo, BiometricImageKind.FACE, command.faceBase64());
-        String ocrResultJson = sensitiveJsonSupport.sanitizeForStorage(
-                buildOcrResultJson(
-                        toDevParsedFields(command),
-                        lenderRawOcrDetail(buildDevRawOcrDetail(command))
-                ),
-                mobileNo
-        );
+        Long ocrVendorCallLogId = OcrCallContextHolder.lastVendorCallLogId();
         profileIdentityRepository.upsert(new ProfileIdentityData(
                 profileId,
                 mobileNo,
@@ -570,7 +551,6 @@ public class IdentityOcrFacade {
                 MODULE_COMPLETED,
                 command.requestId().trim(),
                 null,
-                null,
                 profileVersionId,
                 idCardImageEncryptedRef,
                 facePhotoImageEncryptedRef,
@@ -578,7 +558,7 @@ public class IdentityOcrFacade {
                 null,
                 null,
                 OCR_CHANNEL,
-                ocrResultJson
+                ocrVendorCallLogId
         ));
         userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
         refreshKycStatus(profileId, partnerUserId);
@@ -679,27 +659,6 @@ public class IdentityOcrFacade {
         return biometricImageStore.store(normalizedMobileNo, kind, imageBytes);
     }
 
-    private String buildOcrResultJson(OcrSessionState.OcrParsedFields parsed, String rawOcrDetail) {
-        try {
-            ObjectNode node = objectMapper.createObjectNode();
-            putIfPresent(node, "ocrName", parsed.ocrName());
-            putIfPresent(node, "gender", parsed.gender());
-            putIfPresent(node, "religion", parsed.religion());
-            putIfPresent(node, "maritalStatus", parsed.maritalStatus());
-            putIfPresent(node, "birthday", parsed.birthday());
-            putIfPresent(node, "birthPlace", parsed.birthPlace());
-            putIfPresent(node, "address", parsed.address());
-            putIfPresent(node, "occupation", parsed.occupation());
-            putIfPresent(node, "nationality", parsed.nationality());
-            putIfPresent(node, "bloodType", parsed.bloodType());
-            putIfPresent(node, "expiryDate", parsed.expiryDate());
-            putIfPresent(node, "rawOcrDetail", rawOcrDetail);
-            putIfPresent(node, "ocrChannel", OCR_CHANNEL);
-            return objectMapper.writeValueAsString(node);
-        } catch (Exception exception) {
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
-        }
-    }
 
     private ProfileSyncPayload.IdentityProfilePayload buildIdentityPayload(
             String name,
@@ -739,7 +698,7 @@ public class IdentityOcrFacade {
                 true,
                 ocrProperties.faceThreshold(),
                 existing.moduleStatus(),
-                parseLenderResponse(existing.lastLenderResponseJson())
+                null
         );
     }
 
@@ -775,14 +734,9 @@ public class IdentityOcrFacade {
     }
 
     private static OcrSessionState emptySession() {
-        return new OcrSessionState(false, false, false, null, null, null, null, Instant.now());
+        return new OcrSessionState(false, false, false, null, null, null, null, null, Instant.now());
     }
 
-    private static void putIfPresent(ObjectNode node, String field, String value) {
-        if (value != null && !value.isBlank()) {
-            node.put(field, value.trim());
-        }
-    }
 
     private static String normalizeMobile(String mobileNo) {
         return mobileNo == null ? "" : mobileNo.trim();

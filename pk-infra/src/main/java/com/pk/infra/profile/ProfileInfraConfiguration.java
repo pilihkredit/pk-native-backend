@@ -87,9 +87,7 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
             com.pk.core.profile.port.ProfileLoginLogRepository profileLoginLogRepository,
             com.pk.core.profile.port.ProfileAfRepository profileAfRepository,
-            com.pk.core.profile.port.ProfileTongdunRepository profileTongdunRepository,
-            LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder,
-            com.pk.infra.ocr.OcrSensitiveJsonSupport ocrSensitiveJsonSupport
+            com.pk.core.profile.port.ProfileTongdunRepository profileTongdunRepository
     ) {
         return new ProfileSyncHandler(
                 lenderProfileSyncPort,
@@ -101,9 +99,7 @@ public class ProfileInfraConfiguration {
                 profileIdentityRepository,
                 profileLoginLogRepository,
                 profileAfRepository,
-                profileTongdunRepository,
-                lenderSyncAuditRequestBuilder,
-                ocrSensitiveJsonSupport
+                profileTongdunRepository
         );
     }
 
@@ -142,7 +138,6 @@ public class ProfileInfraConfiguration {
             com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
             com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
             OnboardingProgressFacade onboardingProgressFacade,
-            com.pk.infra.ocr.OcrSensitiveJsonSupport ocrSensitiveJsonSupport,
             com.pk.infra.ocr.OcrProperties ocrProperties,
             ObjectMapper objectMapper
     ) {
@@ -158,7 +153,6 @@ public class ProfileInfraConfiguration {
                 profileVersionRepository,
                 userProfileBindingRepository,
                 onboardingProgressFacade,
-                ocrSensitiveJsonSupport,
                 ocrProperties,
                 objectMapper
         );

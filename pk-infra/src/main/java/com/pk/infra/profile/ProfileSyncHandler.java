@@ -14,7 +14,6 @@ import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
 import com.pk.infra.auth.MobileNumberValidator;
-import com.pk.infra.ocr.OcrSensitiveJsonSupport;
 
 public class ProfileSyncHandler {
     private final LenderProfileSyncPort lenderProfileSyncPort;
@@ -27,8 +26,6 @@ public class ProfileSyncHandler {
     private final ProfileLoginLogRepository profileLoginLogRepository;
     private final ProfileAfRepository profileAfRepository;
     private final ProfileTongdunRepository profileTongdunRepository;
-    private final LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder;
-    private final OcrSensitiveJsonSupport ocrSensitiveJsonSupport;
 
     public ProfileSyncHandler(
             LenderProfileSyncPort lenderProfileSyncPort,
@@ -40,9 +37,7 @@ public class ProfileSyncHandler {
             ProfileIdentityRepository profileIdentityRepository,
             ProfileLoginLogRepository profileLoginLogRepository,
             ProfileAfRepository profileAfRepository,
-            ProfileTongdunRepository profileTongdunRepository,
-            LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder,
-            OcrSensitiveJsonSupport ocrSensitiveJsonSupport
+            ProfileTongdunRepository profileTongdunRepository
     ) {
         this.lenderProfileSyncPort = lenderProfileSyncPort;
         this.profileSyncPayloadLoader = profileSyncPayloadLoader;
@@ -54,8 +49,6 @@ public class ProfileSyncHandler {
         this.profileLoginLogRepository = profileLoginLogRepository;
         this.profileAfRepository = profileAfRepository;
         this.profileTongdunRepository = profileTongdunRepository;
-        this.lenderSyncAuditRequestBuilder = lenderSyncAuditRequestBuilder;
-        this.ocrSensitiveJsonSupport = ocrSensitiveJsonSupport;
     }
 
     public LenderProfileSyncPort.LenderProfileSyncResult sync(ProfileSyncJob job) {
@@ -75,36 +68,22 @@ public class ProfileSyncHandler {
                 job.companions()
         ));
         userProfileBindingRepository.recordLenderProfileSync(job.profileId(), result.externalUserId());
-        if (result.responseDataJson() != null) {
-            String auditRequestJson = lenderSyncAuditRequestBuilder.buildProfileUpsertAudit(
-                    job.requestId(),
-                    job.partnerUserId(),
-                    mobileNo,
-                    job.module(),
-                    payload,
-                    job.device(),
-                    job.profileId(),
-                    job.companions()
-            );
-            persistLenderAudit(
+        if (result.externalInteractionId() != null) {
+            persistLenderInteraction(
                     job.profileId(),
                     job.requestId(),
-                    mobileNo,
                     job.module(),
-                    auditRequestJson,
-                    result.responseDataJson()
+                    result.externalInteractionId()
             );
             for (LenderProfileSyncPort.SyncCompanion companion : job.companions()) {
                 String companionAuditId = companion.auditRequestId() == null || companion.auditRequestId().isBlank()
                         ? job.requestId()
                         : companion.auditRequestId();
-                persistLenderAudit(
+                persistLenderInteraction(
                         job.profileId(),
                         companionAuditId,
-                        mobileNo,
                         companion.module(),
-                        auditRequestJson,
-                        result.responseDataJson()
+                        result.externalInteractionId()
                 );
                 if (companion.module() == ProfileSyncModule.APPSFLYER_INSTALL
                         && companion.auditRequestId() != null
@@ -147,49 +126,40 @@ public class ProfileSyncHandler {
         return normalized;
     }
 
-    private void persistLenderAudit(
+    private void persistLenderInteraction(
             long profileId,
             String requestId,
-            String mobileNo,
             ProfileSyncModule module,
-            String requestDataJson,
-            String responseDataJson
+            Long externalInteractionId
     ) {
         switch (module) {
-            case PERSONAL -> profilePersonalRepository.updateLastLenderAudit(
+            case PERSONAL -> profilePersonalRepository.updateLastLenderInteraction(
                     profileId,
-                    requestDataJson,
-                    responseDataJson
+                    externalInteractionId
             );
-            case CONTACT -> profileContactRepository.updateLastLenderAudit(
+            case CONTACT -> profileContactRepository.updateLastLenderInteraction(
                     profileId,
-                    requestDataJson,
-                    responseDataJson
+                    externalInteractionId
             );
-            case BANK_CARD -> profileBankCardRepository.updateLastLenderAudit(
+            case BANK_CARD -> profileBankCardRepository.updateLastLenderInteraction(
                     requestId,
-                    requestDataJson,
-                    responseDataJson
+                    externalInteractionId
             );
-            case IDENTITY -> profileIdentityRepository.updateLastLenderAudit(
+            case IDENTITY -> profileIdentityRepository.updateLastLenderInteraction(
                     profileId,
-                    ocrSensitiveJsonSupport.sanitizeForStorage(requestDataJson, mobileNo),
-                    ocrSensitiveJsonSupport.sanitizeForStorage(responseDataJson, mobileNo)
+                    externalInteractionId
             );
-            case LOGIN_LOG -> profileLoginLogRepository.updateLastLenderAudit(
+            case LOGIN_LOG -> profileLoginLogRepository.updateLastLenderInteraction(
                     profileId,
-                    requestDataJson,
-                    responseDataJson
+                    externalInteractionId
             );
-            case APPSFLYER_INSTALL -> profileAfRepository.updateLastLenderAudit(
+            case APPSFLYER_INSTALL -> profileAfRepository.updateLastLenderInteraction(
                     requestId,
-                    requestDataJson,
-                    responseDataJson
+                    externalInteractionId
             );
-            case TONGDUN_DEVICE -> profileTongdunRepository.updateLastLenderAudit(
+            case TONGDUN_DEVICE -> profileTongdunRepository.updateLastLenderInteraction(
                     requestId,
-                    requestDataJson,
-                    responseDataJson
+                    externalInteractionId
             );
         }
     }

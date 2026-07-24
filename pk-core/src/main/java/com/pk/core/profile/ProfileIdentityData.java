@@ -10,8 +10,7 @@ public record ProfileIdentityData(
         String idNoHash,
         String moduleStatus,
         String lastRequestId,
-        String lastLenderRequestJson,
-        String lastLenderResponseJson,
+        Long externalInteractionId,
         Long profileVersionId,
         String idCardImageEncryptedRef,
         String facePhotoImageEncryptedRef,
@@ -19,7 +18,7 @@ public record ProfileIdentityData(
         Instant identityDataRetentionUntil,
         Instant biometricImageRetentionUntil,
         String ocrChannel,
-        String ocrResultJson
+        Long ocrVendorCallLogId
 ) {
     /** Compatibility constructor used by onboarding / simple upserts without asset fields. */
     public ProfileIdentityData(
@@ -30,8 +29,7 @@ public record ProfileIdentityData(
             String idNoHash,
             String moduleStatus,
             String lastRequestId,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson
+            Long externalInteractionId
     ) {
         this(
                 profileId,
@@ -41,8 +39,7 @@ public record ProfileIdentityData(
                 idNoHash,
                 moduleStatus,
                 lastRequestId,
-                lastLenderRequestJson,
-                lastLenderResponseJson,
+                externalInteractionId,
                 null,
                 null,
                 null,

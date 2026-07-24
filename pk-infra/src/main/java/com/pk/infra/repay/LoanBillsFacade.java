@@ -27,7 +27,7 @@ public class LoanBillsFacade {
         Instant queriedAt = Instant.now();
         List<BillResult> bills = result.bills().stream()
                 .map(bill -> {
-                    persist(profileId, mobileNo, result.requestJson(), bill, queriedAt);
+                    persist(profileId, mobileNo, result.externalInteractionId(), bill, queriedAt);
                     return toBillResult(bill);
                 })
                 .toList();
@@ -37,7 +37,7 @@ public class LoanBillsFacade {
     private void persist(
             long profileId,
             String mobileNo,
-            String requestJson,
+            Long externalInteractionId,
             LenderLoanBillListPort.LenderLoanBill bill,
             Instant queriedAt
     ) {
@@ -52,8 +52,7 @@ public class LoanBillsFacade {
                 bill.billStatus(),
                 bill.termDueDate(),
                 bill.nextDueAmount(),
-                requestJson,
-                bill.responseItemJson(),
+                externalInteractionId,
                 queriedAt
         ));
     }

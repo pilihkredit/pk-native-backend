@@ -34,7 +34,7 @@ class LoanBillsFacadeTest {
     void syncsActiveBillsFromLenderAndUpsertsByLoanApplyId() {
         when(lenderLoanBillListPort.listBills("partner-1", List.of("NORMAL", "OVERDUE"))).thenReturn(
                 new LenderLoanBillListPort.LenderLoanBillListResult(
-                        "{\"partnerUserId\":\"partner-1\",\"billStatus\":[\"NORMAL\",\"OVERDUE\"]}",
+                        99L,
                         List.of(bill("LOAN-1", RepayBillStatus.NORMAL))
                 )
         );
@@ -50,9 +50,7 @@ class LoanBillsFacadeTest {
         assertThat(saved.profileId()).isEqualTo(1L);
         assertThat(saved.mobileNo()).isEqualTo("81234567890");
         assertThat(saved.billStatus()).isEqualTo(RepayBillStatus.NORMAL);
-        assertThat(saved.lastLenderRequestJson())
-                .isEqualTo("{\"partnerUserId\":\"partner-1\",\"billStatus\":[\"NORMAL\",\"OVERDUE\"]}");
-        assertThat(saved.lastLenderResponseJson()).isEqualTo("{\"loanApplyId\":\"LOAN-1\"}");
+        assertThat(saved.externalInteractionId()).isEqualTo(99L);
 
         assertThat(result.bills()).hasSize(1);
         assertThat(result.bills().getFirst().loanApplyId()).isEqualTo("LOAN-1");
@@ -66,7 +64,7 @@ class LoanBillsFacadeTest {
     void syncsSettledBillsFromLender() {
         when(lenderLoanBillListPort.listBills("partner-1", List.of("SETTLE"))).thenReturn(
                 new LenderLoanBillListPort.LenderLoanBillListResult(
-                        "{\"partnerUserId\":\"partner-1\",\"billStatus\":[\"SETTLE\"]}",
+                        99L,
                         List.of(bill("LOAN-2", RepayBillStatus.SETTLE))
                 )
         );
@@ -87,8 +85,7 @@ class LoanBillsFacadeTest {
                 new BigDecimal("1500000"),
                 billStatus,
                 1749792000000L,
-                new BigDecimal("295000"),
-                "{\"loanApplyId\":\"" + loanApplyId + "\"}"
+                new BigDecimal("295000")
         );
     }
 }

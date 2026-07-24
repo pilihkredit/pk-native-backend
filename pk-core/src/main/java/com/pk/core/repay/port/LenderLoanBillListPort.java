@@ -7,7 +7,7 @@ public interface LenderLoanBillListPort {
     LenderLoanBillListResult listBills(String partnerUserId, List<String> billStatuses);
 
     record LenderLoanBillListResult(
-            String requestJson,
+            Long externalInteractionId,
             List<LenderLoanBill> bills
     ) {
     }
@@ -20,8 +20,7 @@ public interface LenderLoanBillListPort {
             BigDecimal applyAmt,
             String billStatus,
             Long termDueDate,
-            BigDecimal nextDueAmount,
-            String responseItemJson
+            BigDecimal nextDueAmount
     ) {
     }
 }

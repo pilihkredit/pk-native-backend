@@ -24,16 +24,16 @@ public class PendanaanRepayVaAdapter implements LenderRepayVaPort {
     @Override
     public LenderRepayVaListResult listVas(String partnerUserId) {
         String requestBody = "{\"partnerUserId\":\"" + partnerUserId + "\"}";
-        JsonNode data = httpClient.post(VA_LIST_PATH, requestBody, BUSINESS_TYPE_LIST, partnerUserId);
-        String rawResponseJson = data == null ? "{}" : data.toString();
+        PendanaanHttpClient.ExchangeResult exchange =
+                httpClient.postWithInteraction(VA_LIST_PATH, requestBody, BUSINESS_TYPE_LIST, partnerUserId);
+        JsonNode data = exchange.data();
         JsonNode defaultVaNode = data.get("defaultVa");
         return new LenderRepayVaListResult(
                 PendanaanJsonSupport.requireText(data.get("partnerUserId"), "partnerUserId"),
                 PendanaanJsonSupport.requireText(data.get("userId"), "userId"),
                 defaultVaNode == null || defaultVaNode.isNull() ? null : mapVa(defaultVaNode),
                 mapVaList(data.get("vas")),
-                requestBody,
-                rawResponseJson
+                exchange.interactionId()
         );
     }
 

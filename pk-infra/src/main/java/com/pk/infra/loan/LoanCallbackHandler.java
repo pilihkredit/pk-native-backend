@@ -49,7 +49,6 @@ public class LoanCallbackHandler {
                 parsed.payAmount(),
                 parsed.payTime(),
                 parsed.freezeEndTime(),
-                null,
                 null
         );
         loanLenderStatusApplier.apply(application.get(), status, SOURCE);

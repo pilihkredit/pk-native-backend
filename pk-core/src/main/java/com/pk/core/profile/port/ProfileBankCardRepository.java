@@ -22,5 +22,5 @@ public interface ProfileBankCardRepository {
 
     void softDeleteById(long id, String lastRequestId);
 
-    void updateLastLenderAudit(String lastRequestId, String requestDataJson, String responseDataJson);
+    void updateLastLenderInteraction(String lastRequestId, Long externalInteractionId);
 }

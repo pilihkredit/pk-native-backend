@@ -7,7 +7,7 @@ public interface LenderLoanHistoryPort {
     LenderLoanHistoryResult queryHistory(String partnerUserId);
 
     record LenderLoanHistoryResult(
-            String requestJson,
+            Long externalInteractionId,
             List<LenderLoanHistoryOrder> orders
     ) {
     }
@@ -22,8 +22,7 @@ public interface LenderLoanHistoryPort {
             BigDecimal payAmount,
             Long payTime,
             Long freezeEndTime,
-            Long createTime,
-            String responseItemJson
+            Long createTime
     ) {
     }
 }

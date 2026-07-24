@@ -7,8 +7,7 @@
         device_type, os_version, country_code, city, postal_code, ip, operator, device_category, platform, device_model,
         idfv, idfa, af_ad, af_channel, attributed_touch_type, af_ad_id, af_ad_type, contributor1_touch_type,
         contributor1_touch_time, contributor1_af_prt, contributor1_match_type, contributor1_engagement_type,
-        bundle_id, match_type, gp_install_begin, module_status, request_id, last_lender_request_json,
-        last_lender_response_json
+        bundle_id, match_type, gp_install_begin, module_status, request_id, external_interaction_id
     </sql>
     <select id="findByRequestId" resultType="com.pk.infra.profile.repository.ProfileAfRow">
         SELECT <include refid="afColumns"/>
@@ -42,10 +41,9 @@
             #{moduleStatus}, #{requestId}
         )
     </insert>
-    <update id="updateLastLenderAudit">
+        <update id="updateLastLenderInteraction">
         UPDATE user_profile_af
-        SET last_lender_request_json = #{requestDataJson},
-            last_lender_response_json = #{responseDataJson}
+        SET external_interaction_id = #{externalInteractionId}
         WHERE request_id = #{requestId}
     </update>
     <update id="bindProfileIfNull">

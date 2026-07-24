@@ -52,7 +52,7 @@ public class ProfileContactRepositoryImpl implements ProfileContactRepository {
     }
 
     @Override
-    public void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson) {
-        profileContactMapper.updateLastLenderAudit(profileId, requestDataJson, responseDataJson);
+    public void updateLastLenderInteraction(long profileId, Long externalInteractionId) {
+        profileContactMapper.updateLastLenderInteraction(profileId, externalInteractionId);
     }
 }

@@ -50,8 +50,7 @@ public class HomeSummaryFacade {
                 lenderStatus.onLoanCount(),
                 lenderStatus.creditContractExpireTime(),
                 lenderStatus.autoCredit(),
-                lenderStatus.requestJson(),
-                lenderStatus.responseDataJson(),
+                lenderStatus.externalInteractionId(),
                 queriedAt
         ));
         return new HomeSummaryResult(

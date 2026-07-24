@@ -19,7 +19,6 @@ import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.infra.ocr.OcrProperties;
-import com.pk.infra.ocr.OcrSensitiveJsonSupport;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +46,6 @@ class IdentityOcrFacadeBasicSaveTest {
                 mock(ProfileVersionRepository.class),
                 mock(UserProfileBindingRepository.class),
                 mock(OnboardingProgressFacade.class),
-                mock(OcrSensitiveJsonSupport.class),
                 ocrProperties,
                 new ObjectMapper()
         );
@@ -88,7 +86,6 @@ class IdentityOcrFacadeBasicSaveTest {
                         "hash",
                         IdentityOcrFacade.MODULE_COMPLETED,
                         "old-req",
-                        null,
                         null
                 )
         ));

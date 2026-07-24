@@ -23,20 +23,24 @@ public class PendanaanProfileSyncAdapter implements LenderProfileSyncPort {
     @Override
     public LenderProfileSyncResult syncModule(LenderProfileSyncCommand command) {
         String requestBody = buildRequestBody(command);
-        JsonNode envelope = httpClient.postEnvelope(
+        PendanaanHttpClient.EnvelopeResult exchange = httpClient.postEnvelopeWithInteraction(
                 UPSERT_PATH,
                 requestBody,
                 BUSINESS_TYPE,
                 command.partnerUserId()
         );
+        JsonNode envelope = exchange.envelope();
         String responseCode = PendanaanHttpSupport.textOrEmpty(envelope.get("code"));
         if (ApiCode.SUCCESS.code().equals(responseCode)) {
             JsonNode data = envelope.get("data");
             String externalUserId = data == null || data.isNull()
                     ? null
                     : PendanaanJsonSupport.textOrNull(data.get("userId"));
-            String responseDataJson = serializeResponseData(data);
-            return new LenderProfileSyncResult(externalUserId, responseDataJson);
+            return new LenderProfileSyncResult(
+                    externalUserId,
+                    serializeResponseData(data),
+                    exchange.interactionId()
+            );
         }
         throw PendanaanProfileCodeMapper.toApiException(
                 responseCode,

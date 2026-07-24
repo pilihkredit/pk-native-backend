@@ -55,8 +55,8 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
     }
 
     @Override
-    public void updateLastLenderAudit(long id, String requestJson, String responseJson) {
-        creditApplicationMapper.updateLastLenderAudit(id, requestJson, responseJson);
+    public void updateLastLenderInteraction(long id, Long externalInteractionId) {
+        creditApplicationMapper.updateLastLenderInteraction(id, externalInteractionId);
     }
 
     public static class CreditApplicationInsertParam {

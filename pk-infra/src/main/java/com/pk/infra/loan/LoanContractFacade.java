@@ -38,8 +38,7 @@ public class LoanContractFacade {
                     contract.contractType(),
                     contract.contractName(),
                     contract.contractUrl(),
-                    lenderResult.requestJson(),
-                    lenderResult.responseDataJson(),
+                    lenderResult.externalInteractionId(),
                     fetchedAt
             ));
         }

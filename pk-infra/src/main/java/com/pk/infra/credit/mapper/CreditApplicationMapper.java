@@ -25,9 +25,8 @@ public interface CreditApplicationMapper {
 
     int updateApplyNo(@Param("id") long id, @Param("applyNo") String applyNo);
 
-    int updateLastLenderAudit(
+    int updateLastLenderInteraction(
             @Param("id") long id,
-            @Param("requestJson") String requestJson,
-            @Param("responseJson") String responseJson
+            @Param("externalInteractionId") Long externalInteractionId
     );
 }

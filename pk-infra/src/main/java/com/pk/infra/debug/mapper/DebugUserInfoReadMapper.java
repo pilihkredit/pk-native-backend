@@ -33,7 +33,8 @@ public interface DebugUserInfoReadMapper {
             String idCardImageEncryptedRef,
             String facePhotoImageEncryptedRef,
             String ocrChannel,
-            String ocrResultJson,
+            Long ocrVendorCallLogId,
+            Long externalInteractionId,
             Instant createdAt
     ) {
     }

@@ -33,7 +33,7 @@ class LoanHistoryFacadeTest {
     void upsertsEachLenderOrderByLoanApplyIdAndReturnsList() {
         when(lenderLoanHistoryPort.queryHistory("partner-1")).thenReturn(
                 new LenderLoanHistoryPort.LenderLoanHistoryResult(
-                        "{\"partnerUserId\":\"partner-1\"}",
+                        99L,
                         List.of(
                                 order("LOAN-1", "SUCCESS"),
                                 order("LOAN-2", "REFUSED")
@@ -56,8 +56,7 @@ class LoanHistoryFacadeTest {
         assertThat(first.externalLoanApplyNo()).isEqualTo("LN-LOAN-1");
         assertThat(first.lenderUserId()).isEqualTo("USR-1");
         assertThat(first.externalStatus()).isEqualTo("SUCCESS");
-        assertThat(first.lastLenderRequestJson()).isEqualTo("{\"partnerUserId\":\"partner-1\"}");
-        assertThat(first.lastLenderResponseJson()).isEqualTo("{\"loanApplyId\":\"LOAN-1\"}");
+        assertThat(first.externalInteractionId()).isEqualTo(99L);
         assertThat(first.queriedAt()).isNotNull();
 
         assertThat(result.orders()).hasSize(2);
@@ -76,8 +75,7 @@ class LoanHistoryFacadeTest {
                 "SUCCESS".equals(status) ? new BigDecimal("970000.00") : null,
                 "SUCCESS".equals(status) ? 1749792000000L : null,
                 "REFUSED".equals(status) ? 1749200000000L : null,
-                1749791000000L,
-                "{\"loanApplyId\":\"" + loanApplyId + "\"}"
+                1749791000000L
         );
     }
 }

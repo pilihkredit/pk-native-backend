@@ -18,8 +18,7 @@
             <arg column="pay_time" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
             <arg column="freeze_end_time" javaType="java.lang.Long"/>
-            <arg column="last_lender_request_json" javaType="string"/>
-            <arg column="last_lender_response_json" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
             <arg column="external_interaction_callback_id" javaType="java.lang.Long"/>
             <arg column="queried_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
@@ -28,8 +27,8 @@
 
     <sql id="loanLenderStatusQueryColumns">
         loan_apply_id, profile_id, mobile_no, lender_user_id, external_loan_apply_no, external_status,
-        bill_no, apply_amt, pay_amount, pay_time, freeze_end_time, last_lender_request_json,
-        last_lender_response_json, external_interaction_callback_id, queried_at
+        bill_no, apply_amt, pay_amount, pay_time, freeze_end_time, external_interaction_id,
+        external_interaction_callback_id, queried_at
     </sql>
 
     <insert id="insert">
@@ -45,8 +44,7 @@
             pay_amount,
             pay_time,
             freeze_end_time,
-            last_lender_request_json,
-            last_lender_response_json,
+            external_interaction_id,
             external_interaction_callback_id,
             queried_at
         ) VALUES (
@@ -61,8 +59,7 @@
             #{payAmount},
             #{payTime, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
             #{freezeEndTime},
-            #{lastLenderRequestJson},
-            #{lastLenderResponseJson},
+            #{externalInteractionId},
             #{externalInteractionCallbackId},
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )

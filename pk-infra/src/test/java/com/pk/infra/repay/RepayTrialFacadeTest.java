@@ -61,7 +61,7 @@ class RepayTrialFacadeTest {
                     insert.totalShouldAmount(),
                     insert.totalReductionAmount(),
                     insert.totalPaidAmount(),
-                    insert.rawResponseJson(),
+                    insert.externalInteractionId(),
                     Instant.now()
             );
         });
@@ -97,7 +97,7 @@ class RepayTrialFacadeTest {
                         new BigDecimal("295000"),
                         BigDecimal.ZERO,
                         BigDecimal.ZERO,
-                        "{}",
+                        99L,
                         Instant.now()
                 ));
 
@@ -126,7 +126,7 @@ class RepayTrialFacadeTest {
                     insert.totalShouldAmount(),
                     insert.totalReductionAmount(),
                     insert.totalPaidAmount(),
-                    insert.rawResponseJson(),
+                    insert.externalInteractionId(),
                     Instant.now()
             );
         });
@@ -167,7 +167,7 @@ class RepayTrialFacadeTest {
                 null,
                 null,
                 List.of(lenderTrialResult()),
-                "{}"
+                99L
         );
     }
 
@@ -210,8 +210,6 @@ class RepayTrialFacadeTest {
                 null, null, null,
                 null, null, null, null,
                 null, null,
-                List.of(),
-                "{}"
-        );
+                List.of(), 99L);
     }
 }

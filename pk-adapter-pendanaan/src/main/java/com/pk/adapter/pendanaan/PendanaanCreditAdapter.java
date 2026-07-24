@@ -24,12 +24,13 @@ public class PendanaanCreditAdapter implements LenderCreditPort {
     @Override
     public LenderCreditApplyResult apply(LenderCreditApplyCommand command) {
         String requestBody = PendanaanCreditRequestMapper.buildApplyBody(command);
-        JsonNode envelope = httpClient.postEnvelope(
+        PendanaanHttpClient.EnvelopeResult exchange = httpClient.postEnvelopeWithInteraction(
                 APPLY_PATH,
                 requestBody,
                 BUSINESS_TYPE_APPLY,
                 command.applyId()
         );
+        JsonNode envelope = exchange.envelope();
         String responseCode = PendanaanHttpSupport.textOrEmpty(envelope.get("code"));
         if (!ApiCode.SUCCESS.code().equals(responseCode)) {
             throw PendanaanHttpSupport.mapFailureCode(
@@ -44,8 +45,7 @@ public class PendanaanCreditAdapter implements LenderCreditPort {
         return new LenderCreditApplyResult(
                 PendanaanHttpSupport.textOrEmpty(data.get("creditApplyNo")),
                 textOrNull(data.get("userId")),
-                requestBody,
-                serializeResponseData(data)
+                exchange.interactionId()
         );
     }
 

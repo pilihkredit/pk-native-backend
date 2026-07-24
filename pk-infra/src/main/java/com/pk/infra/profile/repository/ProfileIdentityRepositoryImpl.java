@@ -32,8 +32,7 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
                 data.idNoHash(),
                 data.moduleStatus(),
                 data.lastRequestId(),
-                null,
-                null,
+                data.externalInteractionId(),
                 data.profileVersionId(),
                 data.idCardImageEncryptedRef(),
                 data.facePhotoImageEncryptedRef(),
@@ -41,13 +40,13 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
                 data.identityDataRetentionUntil(),
                 data.biometricImageRetentionUntil(),
                 data.ocrChannel(),
-                data.ocrResultJson()
+                data.ocrVendorCallLogId()
         ));
     }
 
     @Override
-    public void updateLastLenderAudit(long profileId, String requestJson, String responseJson) {
-        profileIdentityMapper.updateLastLenderAudit(profileId, requestJson, responseJson);
+    public void updateLastLenderInteraction(long profileId, Long externalInteractionId) {
+        profileIdentityMapper.updateLastLenderInteraction(profileId, externalInteractionId);
     }
 
     @Override
@@ -64,8 +63,7 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
                 row.idNoHash(),
                 row.moduleStatus(),
                 row.lastRequestId(),
-                row.lastLenderRequestJson(),
-                row.lastLenderResponseJson(),
+                row.externalInteractionId(),
                 row.profileVersionId(),
                 row.idCardImageEncryptedRef(),
                 row.facePhotoImageEncryptedRef(),
@@ -73,7 +71,7 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
                 row.identityDataRetentionUntil(),
                 row.biometricImageRetentionUntil(),
                 row.ocrChannel(),
-                row.ocrResultJson()
+                row.ocrVendorCallLogId()
         );
     }
 }

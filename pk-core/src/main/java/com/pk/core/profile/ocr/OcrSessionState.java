@@ -10,6 +10,7 @@ public record OcrSessionState(
         String ocrRawJson,
         OcrParsedFields parsed,
         String idCardImageEncryptedRef,
+        Long ocrCheckVendorCallLogId,
         Instant updatedAt
 ) {
     public record OcrParsedFields(

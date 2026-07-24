@@ -22,14 +22,16 @@ public class PendanaanLoanBillListAdapter implements LenderLoanBillListPort {
     @Override
     public LenderLoanBillListResult listBills(String partnerUserId, List<String> billStatuses) {
         String requestBody = PendanaanLoanRequestMapper.buildBillListBody(partnerUserId, billStatuses);
-        JsonNode data = httpClient.post(BILL_LIST_PATH, requestBody, BUSINESS_TYPE, partnerUserId);
+        PendanaanHttpClient.ExchangeResult exchange =
+                httpClient.postWithInteraction(BILL_LIST_PATH, requestBody, BUSINESS_TYPE, partnerUserId);
+        JsonNode data = exchange.data();
         List<LenderLoanBill> bills = new ArrayList<>();
         if (data != null && data.isArray()) {
             for (JsonNode item : data) {
                 bills.add(toBill(item));
             }
         }
-        return new LenderLoanBillListResult(requestBody, bills);
+        return new LenderLoanBillListResult(exchange.interactionId(), bills);
     }
 
     private LenderLoanBill toBill(JsonNode item) {
@@ -41,8 +43,7 @@ public class PendanaanLoanBillListAdapter implements LenderLoanBillListPort {
                 decimalOrNull(item.get("applyAmt")),
                 textOrNull(item.get("billStatus")),
                 longOrNull(item.get("termDueDate")),
-                sumShouldAmounts(item),
-                serialize(item)
+                sumShouldAmounts(item)
         );
     }
 

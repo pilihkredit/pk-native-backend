@@ -13,7 +13,6 @@ public record ProfileBankCardData(
         boolean deletedFlag,
         String moduleStatus,
         String lastRequestId,
-        String lastLenderRequestJson,
-        String lastLenderResponseJson
+        Long externalInteractionId
 ) {
 }

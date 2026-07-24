@@ -95,7 +95,6 @@ public class LoanCallbackIntakeFacade {
                 callback.payAmount(),
                 callback.payTime(),
                 callback.freezeEndTime(),
-                requestBody,
                 null
         );
         loanLenderStatusApplier.apply(record, status, SOURCE, interactionCallbackId);

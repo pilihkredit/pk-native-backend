@@ -8,7 +8,6 @@ public record ProfileTongdunData(
         String tongdunKey,
         String moduleStatus,
         String requestId,
-        String lastLenderRequestJson,
-        String lastLenderResponseJson
+        Long externalInteractionId
 ) {
 }

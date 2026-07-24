@@ -12,8 +12,7 @@ public record ProfileIdentityRow(
         String idNoHash,
         String moduleStatus,
         String lastRequestId,
-        String lastLenderRequestJson,
-        String lastLenderResponseJson,
+        Long externalInteractionId,
         Long profileVersionId,
         String idCardImageEncryptedRef,
         String facePhotoImageEncryptedRef,
@@ -21,6 +20,6 @@ public record ProfileIdentityRow(
         Instant identityDataRetentionUntil,
         Instant biometricImageRetentionUntil,
         String ocrChannel,
-        String ocrResultJson
+        Long ocrVendorCallLogId
 ) {
 }

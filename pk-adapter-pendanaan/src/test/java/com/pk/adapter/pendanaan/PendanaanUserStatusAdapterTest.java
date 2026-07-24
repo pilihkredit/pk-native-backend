@@ -21,12 +21,12 @@ class PendanaanUserStatusAdapterTest {
     void mapsLenderUserStatusResponse() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         PendanaanUserStatusAdapter adapter = new PendanaanUserStatusAdapter(httpClient, objectMapper);
-        when(httpClient.post(
+        when(httpClient.postWithInteraction(
                 eq(PendanaanUserStatusAdapter.USER_STATUS_PATH),
                 org.mockito.ArgumentMatchers.anyString(),
                 eq(PendanaanUserStatusAdapter.BUSINESS_TYPE),
                 eq("U10001")
-        )).thenReturn(objectMapper.readTree("""
+        )).thenReturn(new PendanaanHttpClient.ExchangeResult(objectMapper.readTree("""
                 {
                   "partnerUserId": "U10001",
                   "userId": "USR-1",
@@ -40,7 +40,7 @@ class PendanaanUserStatusAdapterTest {
                   "creditContractExpireTime": 1780300800000,
                   "autoCredit": true
                 }
-                """));
+                """), 99L));
 
         LenderUserStatusPort.LenderUserStatusResult result = adapter.queryStatus(
                 new LenderUserStatusPort.LenderUserStatusCommand(
@@ -68,9 +68,6 @@ class PendanaanUserStatusAdapterTest {
         assertThat(result.onLoanCount()).isZero();
         assertThat(result.creditContractExpireTime()).isEqualTo(1780300800000L);
         assertThat(result.autoCredit()).isTrue();
-        assertThat(result.requestJson()).contains("partnerUserId");
-        assertThat(result.responseDataJson()).contains("\"autoCredit\":true");
-        assertThat(result.responseDataJson()).contains("\"firstLoan\":true");
-        assertThat(result.responseDataJson()).contains("USR-1");
+        assertThat(result.externalInteractionId()).isEqualTo(99L);
     }
 }

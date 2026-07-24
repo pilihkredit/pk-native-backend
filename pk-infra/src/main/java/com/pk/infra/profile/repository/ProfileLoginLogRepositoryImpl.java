@@ -30,14 +30,13 @@ public class ProfileLoginLogRepositoryImpl implements ProfileLoginLogRepository 
                 data.loginLng(),
                 data.moduleStatus(),
                 data.lastRequestId(),
-                null,
-                null
+                data.externalInteractionId()
         ));
     }
 
     @Override
-    public void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson) {
-        profileLoginLogMapper.updateLastLenderAudit(profileId, requestDataJson, responseDataJson);
+    public void updateLastLenderInteraction(long profileId, Long externalInteractionId) {
+        profileLoginLogMapper.updateLastLenderInteraction(profileId, externalInteractionId);
     }
 
     private ProfileLoginLogData toData(ProfileLoginLogRow row) {
@@ -50,8 +49,7 @@ public class ProfileLoginLogRepositoryImpl implements ProfileLoginLogRepository 
                 row.loginLng(),
                 row.moduleStatus(),
                 row.lastRequestId(),
-                row.lastLenderRequestJson(),
-                row.lastLenderResponseJson()
+                row.externalInteractionId()
         );
     }
 }

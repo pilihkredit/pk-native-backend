@@ -35,8 +35,8 @@ public class ProfileAfRepositoryImpl implements ProfileAfRepository {
     }
 
     @Override
-    public void updateLastLenderAudit(String requestId, String requestDataJson, String responseDataJson) {
-        profileAfMapper.updateLastLenderAudit(requestId, requestDataJson, responseDataJson);
+    public void updateLastLenderInteraction(String requestId, Long externalInteractionId) {
+        profileAfMapper.updateLastLenderInteraction(requestId, externalInteractionId);
     }
 
     @Override
@@ -92,8 +92,7 @@ public class ProfileAfRepositoryImpl implements ProfileAfRepository {
                 row.gpInstallBegin,
                 row.moduleStatus,
                 row.requestId,
-                row.lastLenderRequestJson,
-                row.lastLenderResponseJson
+                row.externalInteractionId
         );
     }
 

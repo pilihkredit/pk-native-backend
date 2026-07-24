@@ -62,8 +62,8 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
     }
 
     @Override
-    public void updateLastLenderAudit(String lastRequestId, String requestDataJson, String responseDataJson) {
-        profileBankCardMapper.updateLastLenderAudit(lastRequestId, requestDataJson, responseDataJson);
+    public void updateLastLenderInteraction(String lastRequestId, Long externalInteractionId) {
+        profileBankCardMapper.updateLastLenderInteraction(lastRequestId, externalInteractionId);
     }
 
     private ProfileBankCardRow toRow(ProfileBankCardData data) {
@@ -82,8 +82,7 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
                 data.deletedFlag(),
                 data.moduleStatus(),
                 data.lastRequestId(),
-                data.lastLenderRequestJson(),
-                data.lastLenderResponseJson()
+                data.externalInteractionId()
         );
     }
 
@@ -101,8 +100,7 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
                 row.deletedFlag(),
                 row.moduleStatus(),
                 row.lastRequestId(),
-                row.lastLenderRequestJson(),
-                row.lastLenderResponseJson()
+                row.externalInteractionId()
         );
     }
 }

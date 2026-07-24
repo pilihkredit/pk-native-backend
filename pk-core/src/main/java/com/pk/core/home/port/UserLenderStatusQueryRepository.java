@@ -22,8 +22,7 @@ public interface UserLenderStatusQueryRepository {
             Integer onLoanCount,
             Long creditContractExpireTime,
             Boolean autoCredit,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson,
+            Long externalInteractionId,
             Instant queriedAt
     ) {
     }

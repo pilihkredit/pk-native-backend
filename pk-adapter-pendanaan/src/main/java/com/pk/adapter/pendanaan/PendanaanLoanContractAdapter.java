@@ -23,7 +23,9 @@ public class PendanaanLoanContractAdapter implements LenderLoanContractPort {
     @Override
     public LenderLoanContractListResult listContracts(String loanApplyId) {
         String requestBody = PendanaanLoanRequestMapper.buildContractListBody(loanApplyId);
-        JsonNode data = httpClient.post(CONTRACT_LIST_PATH, requestBody, BUSINESS_TYPE, loanApplyId);
+        PendanaanHttpClient.ExchangeResult exchange =
+                httpClient.postWithInteraction(CONTRACT_LIST_PATH, requestBody, BUSINESS_TYPE, loanApplyId);
+        JsonNode data = exchange.data();
         if (data == null || data.isNull()) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
@@ -31,8 +33,7 @@ public class PendanaanLoanContractAdapter implements LenderLoanContractPort {
                 requiredText(data, "loanApplyId"),
                 textOrNull(data.get("loanApplyNo")),
                 textOrNull(data.get("billNo")),
-                requestBody,
-                serializeResponseData(data),
+                exchange.interactionId(),
                 mapContracts(data.get("contracts"))
         );
     }

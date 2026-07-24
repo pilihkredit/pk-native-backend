@@ -156,15 +156,14 @@ class ProfileServiceFacadeTest {
                         "user@example.com",
                         "COMPLETED",
                         "req-1",
-                        null,
-                        "{\"userId\":\"USR202506020001\"}"
+                        null
                 )
         ));
 
         var result = facade.savePersonal(10L, "U10001", "81234567890", sampleCommand("req-1"));
 
         assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
-        assertThat(result.lenderResponseJson()).contains("USR202506020001");
+        assertThat(result.lenderResponseJson()).isNull();
         verify(profilePersonalRepository, never()).upsert(any());
         verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
     }
@@ -201,7 +200,7 @@ class ProfileServiceFacadeTest {
     @Test
     void returnsCompletedWithoutRewriteForSameContactsRequestId() {
         when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.of(
-                new ProfileContactsModuleData(10L, "81234567890", "COMPLETED", "req-contact-1", null, null)
+                new ProfileContactsModuleData(10L, "81234567890", "COMPLETED", "req-contact-1", null)
         ));
 
         var result = facade.saveContacts(10L, "U10001", "81234567890", sampleContactsCommand("req-contact-1"));
@@ -335,9 +334,7 @@ class ProfileServiceFacadeTest {
                         false,
                         "COMPLETED",
                         "req-old",
-                        null,
-                        null
-                )
+                        null)
         ));
 
         var result = facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-update"));
@@ -385,7 +382,6 @@ class ProfileServiceFacadeTest {
                         false,
                         "COMPLETED",
                         "req-other",
-                        null,
                         null
                 )
         ));
@@ -412,7 +408,6 @@ class ProfileServiceFacadeTest {
                         false,
                         "COMPLETED",
                         "req-old",
-                        null,
                         null
                 )
         ));
@@ -450,7 +445,6 @@ class ProfileServiceFacadeTest {
                         false,
                         "COMPLETED",
                         "req-old",
-                        null,
                         null
                 )
         ));
@@ -483,7 +477,6 @@ class ProfileServiceFacadeTest {
                         true,
                         "COMPLETED",
                         "req-del-3",
-                        null,
                         null
                 )
         ));
@@ -525,15 +518,14 @@ class ProfileServiceFacadeTest {
                         null,
                         "COMPLETED",
                         "req-login-1",
-                        null,
-                        "{\"userId\":\"USR202506020001\"}"
+                        null
                 )
         ));
 
         var result = facade.saveLoginLog(10L, "U10001", "81234567890", sampleLoginLogCommand("req-login-1"));
 
         assertThat(result.moduleStatus()).isEqualTo("COMPLETED");
-        assertThat(result.lenderResponseJson()).contains("USR202506020001");
+        assertThat(result.lenderResponseJson()).isNull();
         verify(profileLoginLogRepository, never()).upsert(any());
         verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
     }

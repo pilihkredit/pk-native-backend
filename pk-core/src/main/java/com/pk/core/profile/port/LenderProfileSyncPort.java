@@ -45,6 +45,9 @@ public interface LenderProfileSyncPort {
         }
     }
 
-    record LenderProfileSyncResult(String externalUserId, String responseDataJson) {
+    record LenderProfileSyncResult(String externalUserId, String responseDataJson, Long externalInteractionId) {
+        public LenderProfileSyncResult(String externalUserId, String responseDataJson) {
+            this(externalUserId, responseDataJson, null);
+        }
     }
 }

@@ -29,7 +29,7 @@ public final class RepaymentTrialPersistenceMapper {
         param.setTotalReductionAmount(insert.totalReductionAmount());
         param.setTotalPaidAmount(insert.totalPaidAmount());
         fillSnapshotVaFields(param, insert.defaultVa(), insert.spareVa(), insert.disabledDefaultVa());
-        param.setRawResponseJson(insert.rawResponseJson());
+        param.setExternalInteractionId(insert.externalInteractionId());
     }
 
     public static void fillOrderInsertParam(long trialId, RepaymentTrialOrderInsertParam param, TrialOrderInsert order) {
@@ -198,7 +198,7 @@ public final class RepaymentTrialPersistenceMapper {
                 param.getTotalShouldAmount(),
                 param.getTotalReductionAmount(),
                 param.getTotalPaidAmount(),
-                param.getRawResponseJson(),
+                param.getExternalInteractionId(),
                 createdAt
         );
     }

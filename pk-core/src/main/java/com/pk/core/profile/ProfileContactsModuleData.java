@@ -5,7 +5,6 @@ public record ProfileContactsModuleData(
         String mobileNo,
         String moduleStatus,
         String lastRequestId,
-        String lastLenderRequestJson,
-        String lastLenderResponseJson
+        Long externalInteractionId
 ) {
 }

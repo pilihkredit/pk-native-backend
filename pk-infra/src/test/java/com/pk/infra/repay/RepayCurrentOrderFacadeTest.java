@@ -57,7 +57,7 @@ class RepayCurrentOrderFacadeTest {
                         null,
                         null,
                         null,
-                        "{}",
+                        99L,
                         Instant.now()
                 )
         ));

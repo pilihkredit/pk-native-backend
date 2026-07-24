@@ -57,7 +57,7 @@ class LoanLenderStatusApplierTest {
         LoanLenderStatusQueryRepository.LoanLenderStatusQueryData saved = captor.getValue();
         org.assertj.core.api.Assertions.assertThat(saved.loanApplyId()).isEqualTo("LOAN-1");
         org.assertj.core.api.Assertions.assertThat(saved.externalStatus()).isEqualTo("PROCESSING");
-        org.assertj.core.api.Assertions.assertThat(saved.lastLenderRequestJson()).isEqualTo("{\"loanApplyId\":\"LOAN-1\"}");
+        org.assertj.core.api.Assertions.assertThat(saved.externalInteractionId()).isEqualTo(99L);
         org.assertj.core.api.Assertions.assertThat(saved.externalInteractionCallbackId()).isNull();
     }
 
@@ -148,8 +148,7 @@ class LoanLenderStatusApplierTest {
                 null,
                 null,
                 null,
-                "{\"loanApplyId\":\"LOAN-1\"}",
-                "{\"applyStatus\":\"" + externalStatus + "\"}",
+                99L,
                 null,
                 Instant.now()
         );
@@ -164,8 +163,7 @@ class LoanLenderStatusApplierTest {
                 null,
                 null,
                 null,
-                "{\"loanApplyId\":\"LOAN-1\"}",
-                "{\"applyStatus\":\"" + externalStatus + "\"}"
+                99L
         );
     }
 
@@ -178,7 +176,6 @@ class LoanLenderStatusApplierTest {
                 new BigDecimal("1450000"),
                 1782864000000L,
                 1749200000000L,
-                "{}",
                 null
         );
     }

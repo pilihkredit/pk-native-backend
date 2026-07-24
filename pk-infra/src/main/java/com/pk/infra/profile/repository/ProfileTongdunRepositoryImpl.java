@@ -27,8 +27,8 @@ public class ProfileTongdunRepositoryImpl implements ProfileTongdunRepository {
     }
 
     @Override
-    public void updateLastLenderAudit(String requestId, String requestDataJson, String responseDataJson) {
-        profileTongdunMapper.updateLastLenderAudit(requestId, requestDataJson, responseDataJson);
+    public void updateLastLenderInteraction(String requestId, Long externalInteractionId) {
+        profileTongdunMapper.updateLastLenderInteraction(requestId, externalInteractionId);
     }
 
     private ProfileTongdunData toData(ProfileTongdunRow row) {
@@ -40,8 +40,7 @@ public class ProfileTongdunRepositoryImpl implements ProfileTongdunRepository {
                 row.tongdunKey,
                 row.moduleStatus,
                 row.requestId,
-                row.lastLenderRequestJson,
-                row.lastLenderResponseJson
+                row.externalInteractionId
         );
     }
 

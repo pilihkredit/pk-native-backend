@@ -9,8 +9,8 @@
 <arg column="disabled" javaType="_boolean" typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
 <arg column="bank_channels_json" javaType="string"/>
 <arg column="fetched_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>
-<insert id="insertSnapshot">INSERT INTO repay_va_snapshot (profile_id,snapshot_no,va_no,bank_code,bank_name,default_flag,disabled,bank_channels_json,last_lender_request_json,last_lender_response_json,fetched_at)
-VALUES (#{profileId},#{snapshotNo},#{vaNo},#{bankCode},#{bankName},#{defaultFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},#{disabled,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},#{bankChannelsJson},#{lastLenderRequestJson},#{lastLenderResponseJson},#{fetchedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})</insert>
+<insert id="insertSnapshot">INSERT INTO repay_va_snapshot (profile_id,snapshot_no,va_no,bank_code,bank_name,default_flag,disabled,bank_channels_json,external_interaction_id,fetched_at)
+VALUES (#{profileId},#{snapshotNo},#{vaNo},#{bankCode},#{bankName},#{defaultFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},#{disabled,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},#{bankChannelsJson},#{externalInteractionId},#{fetchedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})</insert>
 <select id="findLatestByProfileId" resultMap="vaMap">SELECT rvs.id,rvs.profile_id,rvs.snapshot_no,rvs.va_no,rvs.bank_code,rvs.bank_name,rvs.default_flag,rvs.disabled,rvs.bank_channels_json,rvs.fetched_at
 FROM repay_va_snapshot rvs INNER JOIN (SELECT snapshot_no FROM repay_va_snapshot WHERE profile_id=#{profileId} ORDER BY fetched_at DESC LIMIT 1) latest ON latest.snapshot_no=rvs.snapshot_no
 WHERE rvs.profile_id=#{profileId} ORDER BY rvs.default_flag DESC,rvs.id ASC</select>

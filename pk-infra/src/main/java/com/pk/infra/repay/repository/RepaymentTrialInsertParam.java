@@ -35,7 +35,7 @@ public class RepaymentTrialInsertParam {
     private Boolean disabledDefaultVaDefaultFlag;
     private Boolean disabledDefaultVaDisabled;
     private Boolean disabledDefaultVaShow;
-    private String rawResponseJson;
+    private Long externalInteractionId;
 
     public long getId() {
         return id;
@@ -293,11 +293,11 @@ public class RepaymentTrialInsertParam {
         this.disabledDefaultVaShow = disabledDefaultVaShow;
     }
 
-    public String getRawResponseJson() {
-        return rawResponseJson;
+    public Long getExternalInteractionId() {
+        return externalInteractionId;
     }
 
-    public void setRawResponseJson(String rawResponseJson) {
-        this.rawResponseJson = rawResponseJson;
+    public void setExternalInteractionId(Long externalInteractionId) {
+        this.externalInteractionId = externalInteractionId;
     }
 }

@@ -75,6 +75,6 @@ public record LenderRepayTrialResult(
         Integer termNo,
         Instant termDueDate,
         List<LenderRepayTrialTerm> termInfo,
-        String rawResponseJson
+        Long externalInteractionId
 ) {
 }

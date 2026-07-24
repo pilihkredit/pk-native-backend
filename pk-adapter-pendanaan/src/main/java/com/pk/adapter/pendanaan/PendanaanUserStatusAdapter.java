@@ -21,12 +21,13 @@ public class PendanaanUserStatusAdapter implements LenderUserStatusPort {
     @Override
     public LenderUserStatusResult queryStatus(LenderUserStatusCommand command) {
         String requestBody = PendanaanUserStatusRequestMapper.buildBody(command);
-        JsonNode data = httpClient.post(
+        PendanaanHttpClient.ExchangeResult exchange = httpClient.postWithInteraction(
                 USER_STATUS_PATH,
                 requestBody,
                 BUSINESS_TYPE,
                 command.partnerUserId()
         );
+        JsonNode data = exchange.data();
         return new LenderUserStatusResult(
                 textOrNull(data.get("partnerUserId")),
                 textOrNull(data.get("userId")),
@@ -39,8 +40,7 @@ public class PendanaanUserStatusAdapter implements LenderUserStatusPort {
                 intOrNull(data.get("onLoanCount")),
                 longOrNull(data.get("creditContractExpireTime")),
                 booleanOrNull(data.get("autoCredit")),
-                requestBody,
-                serializeResponseData(data)
+                exchange.interactionId()
         );
     }
 

@@ -8,5 +8,5 @@ public interface ProfileLoginLogRepository {
 
     void upsert(ProfileLoginLogData data);
 
-    void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson);
+    void updateLastLenderInteraction(long profileId, Long externalInteractionId);
 }

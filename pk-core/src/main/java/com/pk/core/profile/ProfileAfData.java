@@ -47,7 +47,6 @@ public record ProfileAfData(
         String gpInstallBegin,
         String moduleStatus,
         String requestId,
-        String lastLenderRequestJson,
-        String lastLenderResponseJson
+        Long externalInteractionId
 ) {
 }

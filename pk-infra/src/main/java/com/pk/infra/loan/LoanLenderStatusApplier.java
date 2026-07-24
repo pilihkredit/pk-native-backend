@@ -126,8 +126,7 @@ public class LoanLenderStatusApplier {
                         status.payAmount(),
                         status.payTime() == null ? null : Instant.ofEpochMilli(status.payTime()),
                         status.freezeEndTime(),
-                        status.requestJson(),
-                        status.responseDataJson(),
+                        status.externalInteractionId(),
                         externalInteractionCallbackId,
                         Instant.now()
                 );

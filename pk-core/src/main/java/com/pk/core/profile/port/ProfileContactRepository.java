@@ -11,5 +11,5 @@ public interface ProfileContactRepository {
 
     void replaceContacts(long profileId, ProfileContactsModuleData module, java.util.List<ProfileContactData> contacts);
 
-    void updateLastLenderAudit(long profileId, String requestDataJson, String responseDataJson);
+    void updateLastLenderInteraction(long profileId, Long externalInteractionId);
 }

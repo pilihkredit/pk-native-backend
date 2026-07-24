@@ -23,8 +23,7 @@
             <arg column="credit_contract_expire_time" javaType="java.lang.Long"/>
             <arg column="auto_credit" javaType="java.lang.Boolean"
                  typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
-            <arg column="last_lender_request_json" javaType="string"/>
-            <arg column="last_lender_response_json" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
             <arg column="queried_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
         </constructor>
@@ -45,8 +44,7 @@
             on_loan_count,
             credit_contract_expire_time,
             auto_credit,
-            last_lender_request_json,
-            last_lender_response_json,
+            external_interaction_id,
             queried_at
         ) VALUES (
             #{profileId},
@@ -62,8 +60,7 @@
             #{onLoanCount},
             #{creditContractExpireTime},
             #{autoCredit, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
-            #{lastLenderRequestJson},
-            #{lastLenderResponseJson},
+            #{externalInteractionId},
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
         ON DUPLICATE KEY UPDATE
@@ -79,8 +76,7 @@
             on_loan_count = VALUES(on_loan_count),
             credit_contract_expire_time = VALUES(credit_contract_expire_time),
             auto_credit = VALUES(auto_credit),
-            last_lender_request_json = VALUES(last_lender_request_json),
-            last_lender_response_json = VALUES(last_lender_response_json),
+            external_interaction_id = VALUES(external_interaction_id),
             queried_at = VALUES(queried_at)
     </insert>
 
@@ -89,7 +85,7 @@
                user_loan_life_time_status, user_loan_life_time_last_action,
                freeze_end_time, first_loan, first_credit_apply, first_loan_apply,
                on_loan_count, credit_contract_expire_time,
-               auto_credit, last_lender_request_json, last_lender_response_json, queried_at
+               auto_credit, external_interaction_id, queried_at
         FROM user_lender_status_query
         WHERE profile_id = #{profileId}
     </select>

@@ -3,7 +3,6 @@ package com.pk.core.repay.port;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 public interface RepaymentPlanTermRepository {
     void upsertTerms(
@@ -11,8 +10,7 @@ public interface RepaymentPlanTermRepository {
             String loanApplyId,
             String billNo,
             List<TermUpsert> terms,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson,
+            Long externalInteractionId,
             Instant syncedAt
     );
 

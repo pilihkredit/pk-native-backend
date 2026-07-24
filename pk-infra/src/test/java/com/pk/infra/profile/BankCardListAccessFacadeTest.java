@@ -86,10 +86,7 @@ class BankCardListAccessFacadeTest {
                 true,
                 0,
                 null,
-                false,
-                "{}",
-                "{}"
-        );
+                false, 99L);
     }
 
     private static LenderDeviceContext sampleDevice() {

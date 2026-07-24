@@ -59,8 +59,7 @@ public class RepayVaFacade {
                 profileId,
                 snapshotNo,
                 inserts,
-                lenderResult.requestJson(),
-                lenderResult.rawResponseJson(),
+                lenderResult.externalInteractionId(),
                 fetchedAt
         );
     }

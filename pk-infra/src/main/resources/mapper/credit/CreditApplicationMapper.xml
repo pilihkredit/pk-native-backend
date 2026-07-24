@@ -84,10 +84,9 @@
         WHERE id = #{id}
     </update>
 
-    <update id="updateLastLenderAudit">
+    <update id="updateLastLenderInteraction">
         UPDATE credit_application
-        SET last_lender_request_json = #{requestJson},
-            last_lender_response_json = #{responseJson}
+        SET external_interaction_id = #{externalInteractionId}
         WHERE id = #{id}
     </update>
 </mapper>

@@ -20,8 +20,7 @@ public interface LoanLenderBillRepository {
             String billStatus,
             Long termDueDate,
             BigDecimal nextDueAmount,
-            String lastLenderRequestJson,
-            String lastLenderResponseJson,
+            Long externalInteractionId,
             Instant queriedAt
     ) {
     }

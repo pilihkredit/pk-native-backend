@@ -106,7 +106,7 @@ public class ProfileServiceFacade {
             return new PersonalSaveResult(
                     command.requestId(),
                     MODULE_COMPLETED,
-                    existing.get().lastLenderResponseJson()
+                    null
             );
         }
 
@@ -123,7 +123,6 @@ public class ProfileServiceFacade {
                 normalizedEmail,
                 MODULE_COMPLETED,
                 command.requestId(),
-                null,
                 null
         ));
 
@@ -170,7 +169,7 @@ public class ProfileServiceFacade {
         List<ProfileContactData> contacts = toContactData(normalizedMobileNo, command.contacts());
         profileContactRepository.replaceContacts(
                 profileId,
-                new ProfileContactsModuleData(profileId, normalizedMobileNo, MODULE_COMPLETED, command.requestId(), null, null),
+                new ProfileContactsModuleData(profileId, normalizedMobileNo, MODULE_COMPLETED, command.requestId(), null),
                 contacts
         );
 
@@ -240,7 +239,6 @@ public class ProfileServiceFacade {
                 false,
                 MODULE_COMPLETED,
                 command.requestId(),
-                null,
                 null
         );
         if (boundByHash.isPresent() && boundByHash.get().profileId() == profileId) {
@@ -334,7 +332,7 @@ public class ProfileServiceFacade {
             return new LoginLogSaveResult(
                     command.requestId(),
                     MODULE_COMPLETED,
-                    existing.get().lastLenderResponseJson()
+                    null
             );
         }
 
@@ -348,7 +346,6 @@ public class ProfileServiceFacade {
                 command.loginLng(),
                 MODULE_COMPLETED,
                 command.requestId(),
-                null,
                 null
         ));
 
@@ -396,7 +393,7 @@ public class ProfileServiceFacade {
             return new AppsFlyerSaveResult(
                     command.requestId(),
                     MODULE_COMPLETED,
-                    existing.get().lastLenderResponseJson()
+                    null
             );
         }
 
@@ -448,7 +445,6 @@ public class ProfileServiceFacade {
                 trimToNull(command.gpInstallBegin()),
                 MODULE_COMPLETED,
                 command.requestId().trim(),
-                null,
                 null
         ));
 
@@ -475,7 +471,7 @@ public class ProfileServiceFacade {
             return new TongdunSaveResult(
                     command.requestId(),
                     MODULE_COMPLETED,
-                    existing.get().lastLenderResponseJson()
+                    null
             );
         }
 
@@ -487,7 +483,6 @@ public class ProfileServiceFacade {
                 tongdunKey,
                 MODULE_COMPLETED,
                 command.requestId().trim(),
-                null,
                 null
         ));
 

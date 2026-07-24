@@ -10,7 +10,7 @@ public interface ProfileAfRepository {
 
     long insert(ProfileAfData data);
 
-    void updateLastLenderAudit(String requestId, String requestDataJson, String responseDataJson);
+    void updateLastLenderInteraction(String requestId, Long externalInteractionId);
 
     /** Backfill profile/mobile when AF was saved before login. */
     void bindProfileIfNull(long id, long profileId, String mobileNo);

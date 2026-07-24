@@ -50,8 +50,7 @@ class LoanContractFacadeTest {
                         "LOAN-1",
                         "LN-1",
                         "BILL-1",
-                        "{\"loanApplyId\":\"LOAN-1\"}",
-                        "{\"loanApplyId\":\"LOAN-1\",\"contracts\":[{\"contractType\":\"LOAN_AGREEMENT\"}]}",
+                        99L,
                         List.of(new LenderLoanContractPort.LenderLoanContract(
                                 "LOAN_AGREEMENT",
                                 "Loan Agreement",
@@ -67,8 +66,7 @@ class LoanContractFacadeTest {
                         "LOAN_AGREEMENT",
                         "Loan Agreement",
                         "https://example.com/contract.pdf",
-                        "{\"loanApplyId\":\"LOAN-1\"}",
-                        "{\"loanApplyId\":\"LOAN-1\",\"contracts\":[{\"contractType\":\"LOAN_AGREEMENT\"}]}",
+                        99L,
                         Instant.parse("2026-06-24T00:00:00Z")
                 )
         ));
@@ -88,9 +86,7 @@ class LoanContractFacadeTest {
         assertThat(upsertCaptor.getValue().loanApplicationId()).isEqualTo(10L);
         assertThat(upsertCaptor.getValue().billNo()).isEqualTo("BILL-1");
         assertThat(upsertCaptor.getValue().contractType()).isEqualTo("LOAN_AGREEMENT");
-        assertThat(upsertCaptor.getValue().lastLenderRequestJson()).isEqualTo("{\"loanApplyId\":\"LOAN-1\"}");
-        assertThat(upsertCaptor.getValue().lastLenderResponseJson())
-                .isEqualTo("{\"loanApplyId\":\"LOAN-1\",\"contracts\":[{\"contractType\":\"LOAN_AGREEMENT\"}]}");
+        assertThat(upsertCaptor.getValue().externalInteractionId()).isEqualTo(99L);
     }
 
     @Test

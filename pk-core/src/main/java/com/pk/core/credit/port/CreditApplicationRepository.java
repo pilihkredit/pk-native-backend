@@ -17,7 +17,7 @@ public interface CreditApplicationRepository {
 
     void updateApplyNo(long id, String applyNo);
 
-    void updateLastLenderAudit(long id, String requestJson, String responseJson);
+    void updateLastLenderInteraction(long id, Long externalInteractionId);
 
     record CreditApplicationInsert(
             String applyId,

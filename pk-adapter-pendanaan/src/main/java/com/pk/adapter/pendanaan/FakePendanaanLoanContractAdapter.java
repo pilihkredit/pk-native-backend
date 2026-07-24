@@ -6,6 +6,6 @@ import java.util.List;
 public class FakePendanaanLoanContractAdapter implements LenderLoanContractPort {
     @Override
     public LenderLoanContractListResult listContracts(String loanApplyId) {
-        return new LenderLoanContractListResult(loanApplyId, null, null, null, null, List.of());
+        return new LenderLoanContractListResult(loanApplyId, null, null, null, List.of());
     }
 }

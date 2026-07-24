@@ -27,9 +27,5 @@ public interface ProfileBankCardMapper {
 
     int softDeleteById(@Param("id") long id, @Param("lastRequestId") String lastRequestId);
 
-    int updateLastLenderAudit(
-            @Param("lastRequestId") String lastRequestId,
-            @Param("requestDataJson") String requestDataJson,
-            @Param("responseDataJson") String responseDataJson
-    );
+    int updateLastLenderInteraction(@Param("lastRequestId") String lastRequestId, @Param("externalInteractionId") Long externalInteractionId);
 }

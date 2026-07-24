@@ -37,11 +37,10 @@ public class CreditApplyHandler {
                 )
         );
 
-        if (result.responseDataJson() != null) {
-            creditApplicationRepository.updateLastLenderAudit(
+        if (result.externalInteractionId() != null) {
+            creditApplicationRepository.updateLastLenderInteraction(
                     job.creditApplicationId(),
-                    result.requestJson(),
-                    result.responseDataJson()
+                    result.externalInteractionId()
             );
         }
         if (result.creditApplyNo() != null && !result.creditApplyNo().isBlank()) {

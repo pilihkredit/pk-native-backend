@@ -23,8 +23,7 @@ public interface LenderUserStatusPort {
             Integer onLoanCount,
             Long creditContractExpireTime,
             Boolean autoCredit,
-            String requestJson,
-            String responseDataJson
+            Long externalInteractionId
     ) {
     }
 }

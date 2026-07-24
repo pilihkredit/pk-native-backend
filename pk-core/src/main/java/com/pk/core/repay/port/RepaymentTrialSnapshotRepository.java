@@ -23,7 +23,7 @@ public interface RepaymentTrialSnapshotRepository {
             LenderRepayVa defaultVa,
             LenderRepayVa spareVa,
             LenderRepayVa disabledDefaultVa,
-            String rawResponseJson
+            Long externalInteractionId
     ) {
     }
 
@@ -44,7 +44,7 @@ public interface RepaymentTrialSnapshotRepository {
             BigDecimal totalShouldAmount,
             BigDecimal totalReductionAmount,
             BigDecimal totalPaidAmount,
-            String rawResponseJson,
+            Long externalInteractionId,
             Instant createdAt
     ) {
     }

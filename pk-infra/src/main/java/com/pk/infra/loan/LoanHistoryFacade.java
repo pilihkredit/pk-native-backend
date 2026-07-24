@@ -24,7 +24,7 @@ public class LoanHistoryFacade {
         Instant queriedAt = Instant.now();
         List<HistoryOrder> orders = result.orders().stream()
                 .map(order -> {
-                    persist(profileId, mobileNo, result.requestJson(), order, queriedAt);
+                    persist(profileId, mobileNo, result.externalInteractionId(), order, queriedAt);
                     return toHistoryOrder(order);
                 })
                 .toList();
@@ -34,7 +34,7 @@ public class LoanHistoryFacade {
     private void persist(
             long profileId,
             String mobileNo,
-            String requestJson,
+            Long externalInteractionId,
             LenderLoanHistoryPort.LenderLoanHistoryOrder order,
             Instant queriedAt
     ) {
@@ -51,8 +51,7 @@ public class LoanHistoryFacade {
                 order.payTime() == null ? null : Instant.ofEpochMilli(order.payTime()),
                 order.freezeEndTime(),
                 order.createTime(),
-                requestJson,
-                order.responseItemJson(),
+                externalInteractionId,
                 queriedAt
         ));
     }

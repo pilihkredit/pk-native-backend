@@ -6,7 +6,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.port.LenderProfileSyncPort;
@@ -21,8 +20,6 @@ import com.pk.core.profile.sync.DeviceExtendedAttributes;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.core.profile.sync.ProfileSyncModule;
 import com.pk.core.profile.sync.ProfileSyncPayload;
-import com.pk.core.profile.port.BiometricImageStore;
-import com.pk.infra.ocr.OcrSensitiveJsonSupport;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -43,18 +40,6 @@ class ProfileSyncHandlerTest {
                 profileContactRepository,
                 mock(SensitiveFieldEncryptor.class)
         );
-        OcrSensitiveJsonSupport ocrSensitiveJsonSupport = new OcrSensitiveJsonSupport(
-                new ObjectMapper(),
-                mock(SensitiveFieldEncryptor.class),
-                mock(BiometricImageStore.class)
-        );
-        LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder = new LenderSyncAuditRequestBuilder(
-                profilePersonalRepository,
-                profileContactRepository,
-                profileBankCardRepository,
-                profileLoginLogRepository,
-                new ObjectMapper()
-        );
 
         when(profilePersonalRepository.findByProfileId(7L)).thenReturn(java.util.Optional.of(
                 new ProfilePersonalData(
@@ -67,14 +52,14 @@ class ProfileSyncHandlerTest {
                         null,
                         "COMPLETED",
                         "REQ-1",
-                        null,
                         null
                 )
         ));
         when(lenderProfileSyncPort.syncModule(any()))
                 .thenReturn(new LenderProfileSyncPort.LenderProfileSyncResult(
                         "USR202506020001",
-                        "{\"userId\":\"USR202506020001\"}"
+                        "{\"userId\":\"USR202506020001\"}",
+                        99L
                 ));
 
         ProfileSyncHandler handler = new ProfileSyncHandler(
@@ -87,9 +72,7 @@ class ProfileSyncHandlerTest {
                 profileIdentityRepository,
                 profileLoginLogRepository,
                 mock(com.pk.core.profile.port.ProfileAfRepository.class),
-                mock(com.pk.core.profile.port.ProfileTongdunRepository.class),
-                lenderSyncAuditRequestBuilder,
-                ocrSensitiveJsonSupport
+                mock(com.pk.core.profile.port.ProfileTongdunRepository.class)
         );
 
         handler.sync(new ProfileSyncJob(
@@ -103,11 +86,7 @@ class ProfileSyncHandlerTest {
         ));
 
         verify(userProfileBindingRepository).recordLenderProfileSync(7L, "USR202506020001");
-        verify(profilePersonalRepository).updateLastLenderAudit(
-                eq(7L),
-                any(),
-                eq("{\"userId\":\"USR202506020001\"}")
-        );
+        verify(profilePersonalRepository).updateLastLenderInteraction(eq(7L), eq(99L));
     }
 
     private static LenderDeviceContext sampleDevice() {

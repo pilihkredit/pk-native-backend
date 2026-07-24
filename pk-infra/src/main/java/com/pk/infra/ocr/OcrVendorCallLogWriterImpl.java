@@ -1,5 +1,6 @@
 package com.pk.infra.ocr;
 
+import com.pk.core.profile.ocr.OcrCallContextHolder;
 import com.pk.core.profile.port.OcrVendorCallLogWriter;
 import com.pk.infra.ocr.mapper.OcrVendorCallLogInsertParam;
 import com.pk.infra.ocr.mapper.OcrVendorCallLogMapper;
@@ -19,9 +20,9 @@ public class OcrVendorCallLogWriterImpl implements OcrVendorCallLogWriter {
     }
 
     @Override
-    public void write(OcrVendorCallLogEntry entry) {
+    public long write(OcrVendorCallLogEntry entry) {
         if (entry == null) {
-            return;
+            return 0L;
         }
         try {
             OcrVendorCallLogInsertParam param = new OcrVendorCallLogInsertParam();
@@ -46,6 +47,11 @@ public class OcrVendorCallLogWriterImpl implements OcrVendorCallLogWriter {
             param.setIdCardImageEncryptedRef(entry.idCardImageEncryptedRef());
             param.setLivenessImageEncryptedRef(entry.livenessImageEncryptedRef());
             mapper.insert(param);
+            long id = param.getId() == null ? 0L : param.getId();
+            if (id > 0) {
+                OcrCallContextHolder.setLastVendorCallLogId(id);
+            }
+            return id;
         } catch (Exception exception) {
             log.warn(
                     "Failed to persist ocr_vendor_call_log operation={} status={} profileId={}",
@@ -54,6 +60,7 @@ public class OcrVendorCallLogWriterImpl implements OcrVendorCallLogWriter {
                     entry.profileId(),
                     exception
             );
+            return 0L;
         }
     }
 

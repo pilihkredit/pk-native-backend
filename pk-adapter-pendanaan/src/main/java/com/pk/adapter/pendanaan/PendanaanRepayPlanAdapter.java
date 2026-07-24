@@ -23,15 +23,15 @@ public class PendanaanRepayPlanAdapter implements LenderRepayPlanPort {
     @Override
     public LenderRepayPlanResult fetchPlan(String loanApplyId) {
         String requestBody = "{\"loanApplyId\":\"" + loanApplyId + "\"}";
-        JsonNode data = httpClient.post(REPAY_PLAN_PATH, requestBody, BUSINESS_TYPE, loanApplyId);
-        String rawResponseJson = data == null ? "{}" : data.toString();
+        PendanaanHttpClient.ExchangeResult exchange =
+                httpClient.postWithInteraction(REPAY_PLAN_PATH, requestBody, BUSINESS_TYPE, loanApplyId);
+        JsonNode data = exchange.data();
         return new LenderRepayPlanResult(
                 PendanaanJsonSupport.requireText(data.get("loanApplyId"), "loanApplyId"),
                 PendanaanJsonSupport.requireText(data.get("loanApplyNo"), "loanApplyNo"),
                 PendanaanJsonSupport.requireText(data.get("billNo"), "billNo"),
                 mapTerms(data.get("terms")),
-                requestBody,
-                rawResponseJson
+                exchange.interactionId()
         );
     }
 

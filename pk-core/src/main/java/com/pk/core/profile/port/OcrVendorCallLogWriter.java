@@ -5,7 +5,10 @@ import com.pk.core.profile.ocr.OcrVendorOperationType;
 import java.math.BigDecimal;
 
 public interface OcrVendorCallLogWriter {
-    void write(OcrVendorCallLogEntry entry);
+    /**
+     * Persist OCR vendor call audit. Returns generated id, or {@code 0} when skipped/failed.
+     */
+    long write(OcrVendorCallLogEntry entry);
 
     record OcrVendorCallLogEntry(
             Long profileId,

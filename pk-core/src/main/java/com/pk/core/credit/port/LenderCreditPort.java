@@ -25,8 +25,7 @@ public interface LenderCreditPort {
     record LenderCreditApplyResult(
             String creditApplyNo,
             String externalUserId,
-            String requestJson,
-            String responseDataJson
+            Long externalInteractionId
     ) {
     }
 

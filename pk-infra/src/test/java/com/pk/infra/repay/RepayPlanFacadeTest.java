@@ -55,7 +55,7 @@ class RepayPlanFacadeTest {
 
         ArgumentCaptor<List<RepaymentPlanTermRepository.TermUpsert>> captor = ArgumentCaptor.forClass(List.class);
         verify(repaymentPlanTermRepository)
-                .upsertTerms(eq(100L), eq("LOAN-1"), eq("BN-1"), captor.capture(), any(), any(), any());
+                .upsertTerms(eq(100L), eq("LOAN-1"), eq("BN-1"), captor.capture(), any(), any());
         assertThat(captor.getValue().getFirst().termStatus()).isEqualTo(RepayTermStatus.UNPAID);
     }
 
@@ -125,8 +125,7 @@ class RepayPlanFacadeTest {
                         "N",
                         "{\"shouldPrincipal\":250000,\"shouldInterest\":45000}"
                 )),
-                "{\"loanApplyId\":\"" + loanApplyId + "\"}",
-                "{}"
+                99L
         );
     }
 
