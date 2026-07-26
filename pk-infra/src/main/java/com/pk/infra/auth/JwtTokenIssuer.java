@@ -36,12 +36,12 @@ public class JwtTokenIssuer implements TokenIssuer {
     }
 
     @Override
-    public TokenPair issue(long profileId, String partnerUserId, String mobileNo, long sessionVersion, String deviceId) {
+    public TokenPair issue(long userId, String partnerUserId, String mobileNo, long sessionVersion, String deviceId) {
         try {
             Instant now = Instant.now();
             Instant expiresAt = now.plus(authProperties.accessTokenTtl());
             JWTClaimsSet claims = new JWTClaimsSet.Builder()
-                    .subject(Long.toString(profileId))
+                    .subject(Long.toString(userId))
                     .claim("partnerUserId", partnerUserId)
                     .claim("mobile", mobileNo)
                     .claim("sv", sessionVersion)
@@ -81,11 +81,11 @@ public class JwtTokenIssuer implements TokenIssuer {
                 );
                 throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
             }
-            long profileId = Long.parseLong(Objects.requireNonNull(claims.getSubject()));
+            long userId = Long.parseLong(Objects.requireNonNull(claims.getSubject()));
             long sessionVersion = claims.getLongClaim("sv");
             String partnerUserId = claims.getStringClaim("partnerUserId");
             String mobileNo = claims.getStringClaim("mobile");
-            return new AuthenticatedPrincipal(profileId, partnerUserId, mobileNo, sessionVersion);
+            return new AuthenticatedPrincipal(userId, partnerUserId, mobileNo, sessionVersion);
         } catch (ApiException exception) {
             throw exception;
         } catch (Exception exception) {

@@ -16,15 +16,14 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
     }
 
     @Override
-    public Optional<ProfileIdentityData> findByProfileId(long profileId) {
-        return Optional.ofNullable(profileIdentityMapper.findByProfileId(profileId)).map(this::toData);
+    public Optional<ProfileIdentityData> findByUserId(long userId) {
+        return Optional.ofNullable(profileIdentityMapper.findByUserId(userId)).map(this::toData);
     }
 
     @Override
     public void upsert(ProfileIdentityData data) {
         profileIdentityMapper.upsert(new ProfileIdentityRow(
-                data.profileId(),
-                data.mobileNo(),
+                data.userId(),
                 data.fullName(),
                 data.idNo().ciphertextBase64(),
                 data.idNo().nonce(),
@@ -45,19 +44,18 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
     }
 
     @Override
-    public void updateLastLenderInteraction(long profileId, Long externalInteractionId) {
-        profileIdentityMapper.updateLastLenderInteraction(profileId, externalInteractionId);
+    public void updateLastLenderInteraction(long userId, Long externalInteractionId) {
+        profileIdentityMapper.updateLastLenderInteraction(userId, externalInteractionId);
     }
 
     @Override
-    public void scheduleRetentionAfterAccountClosure(long profileId, java.time.Instant retentionUntil) {
-        profileIdentityMapper.scheduleRetentionAfterAccountClosure(profileId, retentionUntil);
+    public void scheduleRetentionAfterAccountClosure(long userId, java.time.Instant retentionUntil) {
+        profileIdentityMapper.scheduleRetentionAfterAccountClosure(userId, retentionUntil);
     }
 
     private ProfileIdentityData toData(ProfileIdentityRow row) {
         return new ProfileIdentityData(
-                row.profileId(),
-                row.mobileNo(),
+                row.userId(),
                 row.fullName(),
                 new EncryptedField(row.idNoCiphertext(), row.idNoNonce(), row.idNoTag()),
                 row.idNoHash(),

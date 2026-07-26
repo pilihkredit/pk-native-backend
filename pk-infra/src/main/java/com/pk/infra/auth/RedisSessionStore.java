@@ -17,8 +17,8 @@ public class RedisSessionStore implements SessionStore {
     }
 
     @Override
-    public Optional<AuthSession> findByProfileId(long profileId) {
-        String raw = redisTemplate.opsForValue().get(key(profileId));
+    public Optional<AuthSession> findByUserId(long userId) {
+        String raw = redisTemplate.opsForValue().get(key(userId));
         if (raw == null || raw.isBlank()) {
             return Optional.empty();
         }
@@ -28,7 +28,7 @@ public class RedisSessionStore implements SessionStore {
             return Optional.empty();
         }
         return Optional.of(new AuthSession(
-                profileId,
+                userId,
                 Long.parseLong(parts[0]),
                 parts[1],
                 parts[2],
@@ -37,21 +37,21 @@ public class RedisSessionStore implements SessionStore {
     }
 
     @Override
-    public void save(long profileId, AuthSession session, Duration ttl) {
+    public void save(long userId, AuthSession session, Duration ttl) {
         String value = session.sessionVersion()
                 + "|" + session.deviceId()
                 + "|" + session.loginChannel()
                 + "|" + session.issuedAt().toString()
                 + "|";
-        redisTemplate.opsForValue().set(key(profileId), value, ttl);
+        redisTemplate.opsForValue().set(key(userId), value, ttl);
     }
 
     @Override
-    public void delete(long profileId) {
-        redisTemplate.delete(key(profileId));
+    public void delete(long userId) {
+        redisTemplate.delete(key(userId));
     }
 
-    private static String key(long profileId) {
-        return KEY_PREFIX + profileId;
+    private static String key(long userId) {
+        return KEY_PREFIX + userId;
     }
 }

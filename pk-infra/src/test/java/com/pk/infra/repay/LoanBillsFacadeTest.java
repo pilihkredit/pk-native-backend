@@ -47,8 +47,7 @@ class LoanBillsFacadeTest {
 
         LoanLenderBillRepository.LoanLenderBillData saved = captor.getValue();
         assertThat(saved.loanApplyId()).isEqualTo("LOAN-1");
-        assertThat(saved.profileId()).isEqualTo(1L);
-        assertThat(saved.mobileNo()).isEqualTo("81234567890");
+        assertThat(saved.userId()).isEqualTo(1L);
         assertThat(saved.billStatus()).isEqualTo(RepayBillStatus.NORMAL);
         assertThat(saved.externalInteractionId()).isEqualTo(99L);
 

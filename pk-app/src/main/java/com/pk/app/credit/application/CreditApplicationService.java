@@ -48,13 +48,13 @@ public class CreditApplicationService {
                 pendanaanProperties
         );
         userDeviceWriter.upsertFromRequest(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 request.requestId(),
                 device
         );
         CreditApplyFacade.ApplyResult result = creditApplyFacade.apply(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new CreditApplyFacade.ApplyCommand(
@@ -74,7 +74,7 @@ public class CreditApplicationService {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        CreditApplyFacade.StatusResult result = creditApplyFacade.getStatus(principal.profileId());
+        CreditApplyFacade.StatusResult result = creditApplyFacade.getStatus(principal.userId());
         return new CreditStatusResponse(
                 result.applyId(),
                 result.status(),

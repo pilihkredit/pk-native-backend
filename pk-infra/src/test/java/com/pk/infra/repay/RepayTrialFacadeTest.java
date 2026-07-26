@@ -47,7 +47,7 @@ class RepayTrialFacadeTest {
 
     @Test
     void trialPersistsSnapshotAndReturnsDisplayFields() {
-        when(loanBillReadRepository.findByProfileIdAndLoanApplyId(1L, "LOAN-1"))
+        when(loanBillReadRepository.findByUserIdAndLoanApplyId(1L, "LOAN-1"))
                 .thenReturn(Optional.of(loanRecord()));
         when(lenderRepayTrialPort.trial(any())).thenReturn(lenderTrialResult());
         when(repaymentTrialSnapshotRepository.insert(any(), any())).thenAnswer(invocation -> {
@@ -55,7 +55,7 @@ class RepayTrialFacadeTest {
             return new RepaymentTrialSnapshotRepository.TrialSnapshotRecord(
                     10L,
                     insert.trialNo(),
-                    insert.profileId(),
+                    insert.userId(),
                     insert.trialType(),
                     insert.totalBillCount(),
                     insert.totalShouldAmount(),
@@ -79,7 +79,7 @@ class RepayTrialFacadeTest {
 
     @Test
     void trialEarlySettleWhenTermNosOmitted() {
-        when(loanBillReadRepository.findByProfileIdAndLoanApplyId(1L, "LOAN-1"))
+        when(loanBillReadRepository.findByUserIdAndLoanApplyId(1L, "LOAN-1"))
                 .thenReturn(Optional.of(loanRecord()));
         when(lenderRepayTrialPort.trial(any())).thenAnswer(invocation -> {
             LenderRepayTrialPort.LenderRepayTrialCommand command = invocation.getArgument(0);
@@ -111,7 +111,7 @@ class RepayTrialFacadeTest {
 
     @Test
     void trialBatchPersistsSnapshotAndReturnsAggregatedResult() {
-        when(loanBillReadRepository.findByProfileIdAndLoanApplyId(1L, "LOAN-1"))
+        when(loanBillReadRepository.findByUserIdAndLoanApplyId(1L, "LOAN-1"))
                 .thenReturn(Optional.of(loanRecord()));
         when(lenderRepayTrialPort.trialBatch(any())).thenReturn(lenderBatchResult());
         when(repaymentTrialSnapshotRepository.insert(any(), any())).thenAnswer(invocation -> {
@@ -120,7 +120,7 @@ class RepayTrialFacadeTest {
             return new RepaymentTrialSnapshotRepository.TrialSnapshotRecord(
                     11L,
                     insert.trialNo(),
-                    insert.profileId(),
+                    insert.userId(),
                     insert.trialType(),
                     insert.totalBillCount(),
                     insert.totalShouldAmount(),

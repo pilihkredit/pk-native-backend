@@ -7,11 +7,11 @@ import java.util.List;
 public interface LoanLenderBillRepository {
     void upsert(LoanLenderBillData data);
 
-    List<LoanLenderBillData> findByProfileIdAndBillStatuses(long profileId, List<String> billStatuses);
+    List<LoanLenderBillData> findByUserIdAndBillStatuses(long userId, List<String> billStatuses);
 
     record LoanLenderBillData(
             String loanApplyId,
-            long profileId,
+            long userId,
             String mobileNo,
             String externalLoanApplyNo,
             String lenderUserId,

@@ -24,8 +24,13 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
     }
 
     @Override
-    public Optional<UserProfileSummary> findByProfileId(long profileId) {
-        return Optional.ofNullable(userAuthMapper.findByProfileId(profileId));
+    public Optional<UserProfileSummary> findActiveByMobileNoExcludingUserId(String mobileNo, long userId) {
+        return Optional.ofNullable(userAuthMapper.findActiveByMobileNoExcludingUserId(mobileNo, userId));
+    }
+
+    @Override
+    public Optional<UserProfileSummary> findByUserId(long userId) {
+        return Optional.ofNullable(userAuthMapper.findByUserId(userId));
     }
 
     @Override
@@ -39,7 +44,7 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
         userAuthMapper.insertProfile(partnerUserId, mobileNo);
         return findByMobileNo(mobileNo)
                 .map(profile -> new UserProfileSummary(
-                        profile.profileId(),
+                        profile.userId(),
                         profile.partnerUserId(),
                         profile.mobileNo(),
                         true
@@ -65,8 +70,8 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
         }
 
         String originalPartnerUserId = closed.partnerUserId();
-        String relinquished = originalPartnerUserId + "_closed_" + closed.profileId();
-        int updated = userAuthMapper.relinquishPartnerUserId(closed.profileId(), relinquished);
+        String relinquished = originalPartnerUserId + "_closed_" + closed.userId();
+        int updated = userAuthMapper.relinquishPartnerUserId(closed.userId(), relinquished);
         if (updated != 1) {
             return findByMobileNo(mobileNo).orElseGet(() -> createByMobileNo(mobileNo));
         }
@@ -74,7 +79,7 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
         userAuthMapper.insertProfile(originalPartnerUserId, mobileNo);
         return findByMobileNo(mobileNo)
                 .map(profile -> new UserProfileSummary(
-                        profile.profileId(),
+                        profile.userId(),
                         profile.partnerUserId(),
                         profile.mobileNo(),
                         true
@@ -84,48 +89,53 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
 
     @Override
     public void saveSessionTokens(
-            long profileId,
+            long userId,
             String accessToken,
             String refreshToken,
             Instant accessTokenExpiresAt
     ) {
-        userAuthMapper.saveSessionTokens(profileId, accessToken, refreshToken, accessTokenExpiresAt);
+        userAuthMapper.saveSessionTokens(userId, accessToken, refreshToken, accessTokenExpiresAt);
     }
 
     @Override
-    public void saveAccessToken(long profileId, String accessToken, Instant accessTokenExpiresAt) {
-        userAuthMapper.saveAccessToken(profileId, accessToken, accessTokenExpiresAt);
+    public void saveAccessToken(long userId, String accessToken, Instant accessTokenExpiresAt) {
+        userAuthMapper.saveAccessToken(userId, accessToken, accessTokenExpiresAt);
     }
 
     @Override
-    public void clearSessionTokens(long profileId) {
-        userAuthMapper.clearSessionTokens(profileId);
+    public void clearSessionTokens(long userId) {
+        userAuthMapper.clearSessionTokens(userId);
     }
 
     @Override
-    public void updateLastLoginAt(long profileId, Instant lastLoginAt) {
-        userAuthMapper.updateLastLoginAt(profileId, lastLoginAt);
+    public void updateMobileNo(long userId, String mobileNo) {
+        userAuthMapper.updateMobileNo(userId, mobileNo);
     }
 
     @Override
-    public void updateLastLogoutAt(long profileId, Instant lastLogoutAt) {
-        userAuthMapper.updateLastLogoutAt(profileId, lastLogoutAt);
+    public void updateLastLoginAt(long userId, Instant lastLoginAt) {
+        userAuthMapper.updateLastLoginAt(userId, lastLoginAt);
     }
 
     @Override
-    public boolean isPasswordSet(long profileId) {
-        return userAuthMapper.countPasswordSet(profileId) > 0;
+    public void updateLastLogoutAt(long userId, Instant lastLogoutAt) {
+        userAuthMapper.updateLastLogoutAt(userId, lastLogoutAt);
     }
 
     @Override
-    public Optional<PasswordCredential> findPasswordCredential(long profileId) {
-        return Optional.ofNullable(userAuthMapper.findPasswordCredential(profileId)).map(this::toCredential);
+    public boolean isPasswordSet(long userId) {
+        return userAuthMapper.countPasswordSet(userId) > 0;
     }
 
     @Override
-    public void savePassword(long profileId, EncryptedField password) {
+    public Optional<PasswordCredential> findPasswordCredential(long userId) {
+        return Optional.ofNullable(userAuthMapper.findPasswordCredential(userId)).map(this::toCredential);
+    }
+
+    @Override
+    public void savePassword(long userId, EncryptedField password) {
         userAuthMapper.savePassword(
-                profileId,
+                userId,
                 password.ciphertextBase64(),
                 password.nonce(),
                 password.tag()
@@ -134,7 +144,7 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
 
     private PasswordCredential toCredential(PasswordCredentialRow row) {
         return new PasswordCredential(
-                row.profileId(),
+                row.userId(),
                 new EncryptedField(row.passwordCiphertext(), row.passwordNonce(), row.passwordTag())
         );
     }

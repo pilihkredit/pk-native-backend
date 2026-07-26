@@ -9,7 +9,7 @@ public record AgreementRecordResponse(
         String mobileNo,
         String partnerUserId,
         String deviceNo,
-        Long profileId,
+        Long userId,
         String agreementType,
         Boolean agreed,
         Instant agreedAt
@@ -20,7 +20,7 @@ public record AgreementRecordResponse(
                 data.mobileNo(),
                 data.partnerUserId(),
                 data.deviceNo(),
-                data.profileId(),
+                data.userId(),
                 data.agreementType(),
                 data.agreed(),
                 data.agreedAt()

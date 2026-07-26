@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public class LenderProductUnevenRateInsertParam {
     private Long id;
     private long repayMethodId;
-    private String mobileNo;
+    private long userId;
     private int termNum;
     private BigDecimal repaymentRate;
 
@@ -25,14 +25,6 @@ public class LenderProductUnevenRateInsertParam {
         this.repayMethodId = repayMethodId;
     }
 
-    public String getMobileNo() {
-        return mobileNo;
-    }
-
-    public void setMobileNo(String mobileNo) {
-        this.mobileNo = mobileNo;
-    }
-
     public int getTermNum() {
         return termNum;
     }
@@ -48,4 +40,7 @@ public class LenderProductUnevenRateInsertParam {
     public void setRepaymentRate(BigDecimal repaymentRate) {
         this.repaymentRate = repaymentRate;
     }
+
+    public long getUserId() { return userId; }
+    public void setUserId(long userId) { this.userId = userId; }
 }

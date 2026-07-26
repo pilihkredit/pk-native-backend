@@ -98,7 +98,7 @@ public class AuthApplicationService {
                 profile.newlyCreated() ? "REGISTER" : "LOGIN",
                 profile.newlyCreated(),
                 result.passwordSet(),
-                resolveUserStageForLogin(profile.profileId(), profile.partnerUserId())
+                resolveUserStageForLogin(profile.userId(), profile.partnerUserId())
         );
     }
 
@@ -107,9 +107,9 @@ public class AuthApplicationService {
      * e.g. modules incomplete / not yet synced. Treat as ONBOARDING so the client can continue.
      * Other callers of onboarding progress still surface L000010 unchanged.
      */
-    private String resolveUserStageForLogin(long profileId, String partnerUserId) {
+    private String resolveUserStageForLogin(long userId, String partnerUserId) {
         try {
-            return homeApplicationService.resolveUserStage(profileId, partnerUserId);
+            return homeApplicationService.resolveUserStage(userId, partnerUserId);
         } catch (ApiException exception) {
             if (exception.apiCode() == ApiCode.UPSTREAM_APPLICATION_NOT_FOUND) {
                 return HomeUserStage.ONBOARDING;
@@ -122,7 +122,7 @@ public class AuthApplicationService {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        authServiceFacade.setPassword(principal.profileId(), request.password(), request.confirmPassword());
+        authServiceFacade.setPassword(principal.userId(), request.password(), request.confirmPassword());
         return new PasswordSetResponse(true);
     }
 
@@ -150,7 +150,7 @@ public class AuthApplicationService {
                 "LOGIN",
                 false,
                 passwordSet,
-                resolveUserStageForLogin(profile.profileId(), profile.partnerUserId())
+                resolveUserStageForLogin(profile.userId(), profile.partnerUserId())
         );
     }
 
@@ -175,7 +175,7 @@ public class AuthApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         if (request != null && request.reason() != null && !request.reason().isBlank()) {
-            log.info("Account close requested profileId={} reason={}", principal.profileId(), request.reason().trim());
+            log.info("Account close requested userId={} reason={}", principal.userId(), request.reason().trim());
         }
         AccountCloseResult result = authServiceFacade.closeAccount(principal);
         return new AccountCloseResponse(

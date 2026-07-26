@@ -22,8 +22,8 @@ import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 
 class MybatisMappedStatementTest {
-    private static final String USER_AUTH_FIND_BY_PROFILE_ID =
-            "com.pk.infra.auth.mapper.UserAuthMapper.findByProfileId";
+    private static final String USER_AUTH_FIND_BY_USER_ID =
+            "com.pk.infra.auth.mapper.UserAuthMapper.findByUserId";
     private static final String USER_PROFILE_SUMMARY_MAP =
             "com.pk.infra.auth.mapper.UserAuthMapper.userProfileSummaryMap";
     private static final String INFRA_MAPPER_CLASSES = "classpath*:com/pk/infra/**/mapper/*Mapper.class";
@@ -38,7 +38,7 @@ class MybatisMappedStatementTest {
         contextRunner.run(context -> {
             SqlSessionFactory sqlSessionFactory = context.getBean(SqlSessionFactory.class);
 
-            assertThat(sqlSessionFactory.getConfiguration().hasStatement(USER_AUTH_FIND_BY_PROFILE_ID)).isTrue();
+            assertThat(sqlSessionFactory.getConfiguration().hasStatement(USER_AUTH_FIND_BY_USER_ID)).isTrue();
             ResultMap resultMap = sqlSessionFactory.getConfiguration().getResultMap(USER_PROFILE_SUMMARY_MAP);
             List<? extends Class<?>> constructorTypes = resultMap.getConstructorResultMappings().stream()
                     .map(mapping -> mapping.getJavaType())

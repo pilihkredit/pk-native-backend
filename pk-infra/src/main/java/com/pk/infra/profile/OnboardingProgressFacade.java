@@ -46,7 +46,7 @@ public class OnboardingProgressFacade {
         this.objectMapper = objectMapper;
     }
 
-    public OnboardingProgressResult getProgress(long profileId, String partnerUserId) {
+    public OnboardingProgressResult getProgress(long userId, String partnerUserId) {
         JsonNode lenderData = queryLender(partnerUserId);
 
         List<String> completedModules = new ArrayList<>();

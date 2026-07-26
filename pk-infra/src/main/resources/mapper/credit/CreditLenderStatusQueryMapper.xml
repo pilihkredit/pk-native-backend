@@ -7,8 +7,7 @@
                type="com.pk.core.credit.port.CreditLenderStatusQueryRepository$CreditLenderStatusQueryData">
         <constructor>
             <arg column="apply_id" javaType="string"/>
-            <arg column="profile_id" javaType="_long"/>
-            <arg column="mobile_no" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
             <arg column="partner_user_id" javaType="string"/>
             <arg column="lender_user_id" javaType="string"/>
             <arg column="credit_apply_no" javaType="string"/>
@@ -28,7 +27,7 @@
     </resultMap>
 
     <sql id="creditLenderStatusQueryColumns">
-        apply_id, profile_id, mobile_no, partner_user_id, lender_user_id, credit_apply_no, external_status,
+        apply_id, user_id, partner_user_id, lender_user_id, credit_apply_no, external_status,
         credit_contract_expire_time, freeze_end_time, risk_min_limit, risk_max_limit,
         psychological_credit_limit, fake_credit_limit, borrow_amt_step_size,
         external_interaction_id, external_interaction_callback_id, queried_at
@@ -37,8 +36,7 @@
     <insert id="insert">
         INSERT INTO credit_lender_status_query (
             apply_id,
-            profile_id,
-            mobile_no,
+            user_id,
             partner_user_id,
             lender_user_id,
             credit_apply_no,
@@ -55,8 +53,7 @@
             queried_at
         ) VALUES (
             #{applyId},
-            #{profileId},
-            #{mobileNo},
+            #{userId},
             #{partnerUserId},
             #{lenderUserId},
             #{creditApplyNo},
@@ -82,11 +79,11 @@
         LIMIT 1
     </select>
 
-    <select id="findLatestByApplyIdAndProfileId" resultMap="creditLenderStatusQueryMap">
+    <select id="findLatestByApplyIdAndUserId" resultMap="creditLenderStatusQueryMap">
         SELECT <include refid="creditLenderStatusQueryColumns"/>
         FROM credit_lender_status_query
         WHERE apply_id = #{applyId}
-          AND profile_id = #{profileId}
+          AND user_id = #{userId}
         ORDER BY id DESC
         LIMIT 1
     </select>

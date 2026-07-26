@@ -35,14 +35,14 @@ class AgreementFacadeTest {
             UserAgreementRecordRepository.UserAgreementRecordInsert insert = invocation.getArgument(0);
             return new UserAgreementRecordData(
                     11L,
-                    insert.mobileNo(),
                     insert.partnerUserId(),
                     insert.deviceNo(),
-                    insert.profileId(),
+                    insert.userId(),
                     insert.agreementType(),
                     insert.agreed(),
                     insert.agreedAt(),
-                    insert.clickedAtMs()
+                    insert.clickedAtMs(),
+                    null
             );
         });
 
@@ -98,14 +98,14 @@ class AgreementFacadeTest {
             UserAgreementRecordRepository.UserAgreementRecordInsert insert = invocation.getArgument(0);
             return new UserAgreementRecordData(
                     12L,
-                    insert.mobileNo(),
                     insert.partnerUserId(),
                     insert.deviceNo(),
-                    insert.profileId(),
+                    insert.userId(),
                     insert.agreementType(),
                     insert.agreed(),
                     insert.agreedAt(),
-                    insert.clickedAtMs()
+                    insert.clickedAtMs(),
+                    null
             );
         });
 
@@ -130,14 +130,14 @@ class AgreementFacadeTest {
         when(repository.findLatestByMobileNo("81234567890", List.of("PRIVACY_POLICY")))
                 .thenReturn(List.of(new UserAgreementRecordData(
                         1L,
-                        "81234567890",
                         "U10001",
                         "device-1",
                         10L,
                         "PRIVACY_POLICY",
                         true,
                         Instant.parse("2026-07-20T03:00:00Z"),
-                        Instant.parse("2026-07-20T03:00:00Z").toEpochMilli()
+                        Instant.parse("2026-07-20T03:00:00Z").toEpochMilli(),
+                        "81234567890"
                 )));
 
         var result = facade.latestByMobileNo("81234567890", List.of("PRIVACY_POLICY"));

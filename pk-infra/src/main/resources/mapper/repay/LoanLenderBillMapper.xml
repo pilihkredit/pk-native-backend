@@ -7,8 +7,7 @@
                type="com.pk.core.repay.port.LoanLenderBillRepository$LoanLenderBillData">
         <constructor>
             <arg column="loan_apply_id" javaType="string"/>
-            <arg column="profile_id" javaType="_long"/>
-            <arg column="mobile_no" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
             <arg column="external_loan_apply_no" javaType="string"/>
             <arg column="lender_user_id" javaType="string"/>
             <arg column="bill_no" javaType="string"/>
@@ -23,7 +22,7 @@
     </resultMap>
 
     <sql id="loanLenderBillColumns">
-        loan_apply_id, profile_id, mobile_no, external_loan_apply_no, lender_user_id, bill_no,
+        loan_apply_id, user_id, external_loan_apply_no, lender_user_id, bill_no,
         apply_amt, bill_status, term_due_date, next_due_amount,
         external_interaction_id, queried_at
     </sql>
@@ -31,8 +30,7 @@
     <insert id="upsert">
         INSERT INTO loan_lender_bill (
             loan_apply_id,
-            profile_id,
-            mobile_no,
+            user_id,
             external_loan_apply_no,
             lender_user_id,
             bill_no,
@@ -44,8 +42,7 @@
             queried_at
         ) VALUES (
             #{loanApplyId},
-            #{profileId},
-            #{mobileNo},
+            #{userId},
             #{externalLoanApplyNo},
             #{lenderUserId},
             #{billNo},
@@ -57,8 +54,7 @@
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
         ON DUPLICATE KEY UPDATE
-            profile_id = VALUES(profile_id),
-            mobile_no = VALUES(mobile_no),
+            user_id = VALUES(user_id),
             external_loan_apply_no = VALUES(external_loan_apply_no),
             lender_user_id = VALUES(lender_user_id),
             bill_no = VALUES(bill_no),
@@ -70,10 +66,10 @@
             queried_at = VALUES(queried_at)
     </insert>
 
-    <select id="findByProfileIdAndBillStatuses" resultMap="loanLenderBillMap">
+    <select id="findByUserIdAndBillStatuses" resultMap="loanLenderBillMap">
         SELECT <include refid="loanLenderBillColumns"/>
         FROM loan_lender_bill
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
         <if test="billStatuses != null and billStatuses.size() > 0">
             AND bill_status IN
             <foreach collection="billStatuses" item="status" open="(" separator="," close=")">

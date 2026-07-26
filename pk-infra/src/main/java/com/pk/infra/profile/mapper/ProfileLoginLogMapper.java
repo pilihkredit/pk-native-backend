@@ -6,9 +6,9 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface ProfileLoginLogMapper {
-    ProfileLoginLogRow findByProfileId(@Param("profileId") long profileId);
+    ProfileLoginLogRow findByUserId(@Param("userId") long userId);
 
     int upsert(ProfileLoginLogRow row);
 
-    int updateLastLenderInteraction(@Param("profileId") long profileId, @Param("externalInteractionId") Long externalInteractionId);
+    int updateLastLenderInteraction(@Param("userId") long userId, @Param("externalInteractionId") Long externalInteractionId);
 }

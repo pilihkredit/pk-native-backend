@@ -3,7 +3,7 @@ package com.pk.core.profile;
 import java.util.Map;
 
 public record UserDeviceOtherInfoData(
-        long profileId,
+        long userId,
         String partnerUserId,
         String deviceNo,
         Boolean allowMockLocation,
@@ -72,7 +72,7 @@ public record UserDeviceOtherInfoData(
         String deviceOtherInfoJson
 ) {
     public static UserDeviceOtherInfoData fromFilteredMap(
-            long profileId,
+            long userId,
             String partnerUserId,
             String deviceNo,
             Map<String, Object> filtered,
@@ -80,7 +80,7 @@ public record UserDeviceOtherInfoData(
     ) {
         Map<String, Object> src = filtered == null ? Map.of() : filtered;
         return new UserDeviceOtherInfoData(
-                profileId,
+                userId,
                 partnerUserId,
                 deviceNo,
                 asBoolean(src.get("allowMockLocation")),

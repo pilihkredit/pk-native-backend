@@ -16,8 +16,8 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
     }
 
     @Override
-    public Optional<ProfileBankCardData> findDefaultByProfileId(long profileId) {
-        return Optional.ofNullable(profileBankCardMapper.findDefaultByProfileId(profileId)).map(this::toData);
+    public Optional<ProfileBankCardData> findDefaultByUserId(long userId) {
+        return Optional.ofNullable(profileBankCardMapper.findDefaultByUserId(userId)).map(this::toData);
     }
 
     @Override
@@ -31,14 +31,14 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
     }
 
     @Override
-    public Optional<ProfileBankCardData> findActiveByProfileIdAndCardNoHash(long profileId, String cardNoHash) {
-        return Optional.ofNullable(profileBankCardMapper.findActiveByProfileIdAndCardNoHash(profileId, cardNoHash))
+    public Optional<ProfileBankCardData> findActiveByUserIdAndCardNoHash(long userId, String cardNoHash) {
+        return Optional.ofNullable(profileBankCardMapper.findActiveByUserIdAndCardNoHash(userId, cardNoHash))
                 .map(this::toData);
     }
 
     @Override
-    public int countActiveByProfileId(long profileId) {
-        return profileBankCardMapper.countActiveByProfileId(profileId);
+    public int countActiveByUserId(long userId) {
+        return profileBankCardMapper.countActiveByUserId(userId);
     }
 
     @Override
@@ -52,8 +52,8 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
     }
 
     @Override
-    public void clearDefaultByProfileId(long profileId) {
-        profileBankCardMapper.clearDefaultByProfileId(profileId);
+    public void clearDefaultByUserId(long userId) {
+        profileBankCardMapper.clearDefaultByUserId(userId);
     }
 
     @Override
@@ -69,8 +69,7 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
     private ProfileBankCardRow toRow(ProfileBankCardData data) {
         return new ProfileBankCardRow(
                 data.id(),
-                data.profileId(),
-                data.mobileNo(),
+                data.userId(),
                 data.bankCode(),
                 data.cardNumber().ciphertextBase64(),
                 data.cardNumber().nonce(),
@@ -89,8 +88,7 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
     private ProfileBankCardData toData(ProfileBankCardRow row) {
         return new ProfileBankCardData(
                 row.id(),
-                row.profileId(),
-                row.mobileNo(),
+                row.userId(),
                 row.bankCode(),
                 new EncryptedField(row.cardNoCiphertext(), row.cardNoNonce(), row.cardNoTag()),
                 row.cardNoHash(),

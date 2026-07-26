@@ -24,7 +24,7 @@ public class LoanLenderStatusQueryRepositoryImpl implements LoanLenderStatusQuer
     }
 
     @Override
-    public Optional<LoanLenderStatusQueryData> findLatestByLoanApplyIdAndProfileId(String loanApplyId, long profileId) {
-        return Optional.ofNullable(mapper.findLatestByLoanApplyIdAndProfileId(loanApplyId, profileId));
+    public Optional<LoanLenderStatusQueryData> findLatestByLoanApplyIdAndUserId(String loanApplyId, long userId) {
+        return Optional.ofNullable(mapper.findLatestByLoanApplyIdAndUserId(loanApplyId, userId));
     }
 }

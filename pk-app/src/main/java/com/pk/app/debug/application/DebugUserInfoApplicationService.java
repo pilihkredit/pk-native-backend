@@ -92,13 +92,13 @@ public class DebugUserInfoApplicationService {
     }
 
     private DebugUserInfoResponse buildResponse(UserProfileSummary user) {
-        long profileId = user.profileId();
-        DebugUserInfoReadMapper.UserAccountRecord account = readMapper.findAccountByProfileId(profileId);
+        long userId = user.userId();
+        DebugUserInfoReadMapper.UserAccountRecord account = readMapper.findAccountByUserId(userId);
         OnboardingProgressFacade.OnboardingProgressResult progress =
-                onboardingProgressFacade.getProgress(profileId, user.partnerUserId());
-        Optional<OcrSessionState> ocrSession = ocrSessionStore.find(profileId);
+                onboardingProgressFacade.getProgress(userId, user.partnerUserId());
+        Optional<OcrSessionState> ocrSession = ocrSessionStore.find(userId);
         DebugUserInfoReadMapper.IdentityAssetRecord identityAsset =
-                readMapper.findLatestIdentityAssetByProfileId(profileId);
+                readMapper.findLatestIdentityAssetByUserId(userId);
 
         return new DebugUserInfoResponse(
                 true,
@@ -109,14 +109,14 @@ public class DebugUserInfoApplicationService {
                         progress.missingModules()
                 ),
                 buildIdentityInfo(
-                        profileIdentityRepository.findByProfileId(profileId).orElse(null),
+                        profileIdentityRepository.findByUserId(userId).orElse(null),
                         identityAsset,
                         ocrSession.orElse(null)
                 ),
-                profilePersonalRepository.findByProfileId(profileId).map(this::toPersonalInfo).orElse(null),
-                toContactsInfo(profileId),
-                profileBankCardRepository.findDefaultByProfileId(profileId).map(this::toBankCardInfo).orElse(null),
-                readMapper.findDevicesByProfileId(profileId).stream().map(this::toDeviceInfo).toList(),
+                profilePersonalRepository.findByUserId(userId).map(this::toPersonalInfo).orElse(null),
+                toContactsInfo(userId),
+                profileBankCardRepository.findDefaultByUserId(userId).map(this::toBankCardInfo).orElse(null),
+                readMapper.findDevicesByUserId(userId).stream().map(this::toDeviceInfo).toList(),
                 ocrSession.map(this::toOcrSessionInfo).orElse(null)
         );
     }
@@ -126,7 +126,7 @@ public class DebugUserInfoApplicationService {
             return null;
         }
         return new DebugUserInfoResponse.AccountInfo(
-                account.profileId(),
+                account.userId(),
                 account.partnerUserId(),
                 account.externalUserId(),
                 account.mobileNo(),
@@ -204,12 +204,12 @@ public class DebugUserInfoApplicationService {
         );
     }
 
-    private DebugUserInfoResponse.ContactsInfo toContactsInfo(long profileId) {
-        return profileContactRepository.findModuleByProfileId(profileId)
+    private DebugUserInfoResponse.ContactsInfo toContactsInfo(long userId) {
+        return profileContactRepository.findModuleByUserId(userId)
                 .map(module -> new DebugUserInfoResponse.ContactsInfo(
                         module.moduleStatus(),
                         module.lastRequestId(),
-                        profileContactRepository.findContactsByProfileId(profileId).stream()
+                        profileContactRepository.findContactsByUserId(userId).stream()
                                 .map(this::toContactItem)
                                 .toList()
                 ))

@@ -7,14 +7,14 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface DebugUserInfoReadMapper {
-    UserAccountRecord findAccountByProfileId(@Param("profileId") long profileId);
+    UserAccountRecord findAccountByUserId(@Param("userId") long userId);
 
-    IdentityAssetRecord findLatestIdentityAssetByProfileId(@Param("profileId") long profileId);
+    IdentityAssetRecord findLatestIdentityAssetByUserId(@Param("userId") long userId);
 
-    List<DeviceRecord> findDevicesByProfileId(@Param("profileId") long profileId);
+    List<DeviceRecord> findDevicesByUserId(@Param("userId") long userId);
 
     record UserAccountRecord(
-            long profileId,
+            long userId,
             String partnerUserId,
             String externalUserId,
             String mobileNo,

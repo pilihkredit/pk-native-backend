@@ -5,7 +5,6 @@ import java.math.BigDecimal;
 public class LenderProductUnevenRateRow {
     private long id;
     private long repayMethodId;
-    private String mobileNo;
     private int termNum;
     private BigDecimal repaymentRate;
 
@@ -23,14 +22,6 @@ public class LenderProductUnevenRateRow {
 
     public void setRepayMethodId(long repayMethodId) {
         this.repayMethodId = repayMethodId;
-    }
-
-    public String getMobileNo() {
-        return mobileNo;
-    }
-
-    public void setMobileNo(String mobileNo) {
-        this.mobileNo = mobileNo;
     }
 
     public int getTermNum() {

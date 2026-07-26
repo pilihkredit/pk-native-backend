@@ -3,8 +3,7 @@ package com.pk.infra.profile.repository;
 /** Mutable row for MyBatis insert (generated id) and select. */
 public class ProfileAfRow {
     public Long id;
-    public Long profileId;
-    public String mobileNo;
+    public Long userId;
     public String deviceNo;
     public String appsflyerId;
     public String advertisingId;

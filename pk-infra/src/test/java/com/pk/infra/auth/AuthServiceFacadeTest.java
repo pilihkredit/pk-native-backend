@@ -241,7 +241,7 @@ class AuthServiceFacadeTest {
         TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
         SessionStore sessionStore = mock(SessionStore.class);
         RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
-        when(sessionStore.findByProfileId(7L)).thenReturn(Optional.empty());
+        when(sessionStore.findByUserId(7L)).thenReturn(Optional.empty());
 
         AuthServiceFacade verifyFacade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);
 
@@ -283,7 +283,7 @@ class AuthServiceFacadeTest {
         TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
         SessionStore sessionStore = mock(SessionStore.class);
         RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
-        when(sessionStore.findByProfileId(9L)).thenReturn(Optional.empty());
+        when(sessionStore.findByUserId(9L)).thenReturn(Optional.empty());
 
         AuthServiceFacade verifyFacade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);
 
@@ -434,7 +434,7 @@ class AuthServiceFacadeTest {
         TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
         SessionStore sessionStore = mock(SessionStore.class);
         RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
-        when(sessionStore.findByProfileId(7L)).thenReturn(Optional.empty());
+        when(sessionStore.findByUserId(7L)).thenReturn(Optional.empty());
         when(otpChallengeStore.findByToken("unused-token")).thenReturn(Optional.empty());
         when(userAuthRepository.findOrCreateActiveByMobileNo("8123456789"))
                 .thenReturn(new UserProfileSummary(7L, "UABC", "8123456789", false));

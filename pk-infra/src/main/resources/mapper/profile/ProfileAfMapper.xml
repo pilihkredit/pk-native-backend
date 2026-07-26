@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.profile.mapper.ProfileAfMapper">
     <sql id="afColumns">
-        id, profile_id, mobile_no, device_no, appsflyer_id, advertising_id, android_id, attributed_touch_time, gp_click_time,
+        id, user_id, device_no, appsflyer_id, advertising_id, android_id, attributed_touch_time, gp_click_time,
         install_time, media_source, af_prt, af_adset_id, af_adset, af_siteid, af_c_id, campaign, app_version, app_id,
         device_type, os_version, country_code, city, postal_code, ip, operator, device_category, platform, device_model,
         idfv, idfa, af_ad, af_channel, attributed_touch_type, af_ad_id, af_ad_type, contributor1_touch_type,
@@ -25,14 +25,14 @@
     </select>
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO user_profile_af (
-            profile_id, mobile_no, device_no, appsflyer_id, advertising_id, android_id, attributed_touch_time, gp_click_time,
+            user_id, device_no, appsflyer_id, advertising_id, android_id, attributed_touch_time, gp_click_time,
             install_time, media_source, af_prt, af_adset_id, af_adset, af_siteid, af_c_id, campaign, app_version, app_id,
             device_type, os_version, country_code, city, postal_code, ip, operator, device_category, platform, device_model,
             idfv, idfa, af_ad, af_channel, attributed_touch_type, af_ad_id, af_ad_type, contributor1_touch_type,
             contributor1_touch_time, contributor1_af_prt, contributor1_match_type, contributor1_engagement_type,
             bundle_id, match_type, gp_install_begin, module_status, request_id
         ) VALUES (
-            #{profileId}, #{mobileNo}, #{deviceNo}, #{appsflyerId}, #{advertisingId}, #{androidId}, #{attributedTouchTime}, #{gpClickTime},
+            #{userId}, #{deviceNo}, #{appsflyerId}, #{advertisingId}, #{androidId}, #{attributedTouchTime}, #{gpClickTime},
             #{installTime}, #{mediaSource}, #{afPrt}, #{afAdsetId}, #{afAdset}, #{afSiteid}, #{afCId}, #{campaign},
             #{appVersion}, #{appId}, #{deviceType}, #{osVersion}, #{countryCode}, #{city}, #{postalCode}, #{ip}, #{operator},
             #{deviceCategory}, #{platform}, #{deviceModel}, #{idfv}, #{idfa}, #{afAd}, #{afChannel}, #{attributedTouchType},
@@ -48,9 +48,8 @@
     </update>
     <update id="bindProfileIfNull">
         UPDATE user_profile_af
-        SET profile_id = #{profileId},
-            mobile_no = #{mobileNo}
+        SET user_id = #{userId}
         WHERE id = #{id}
-          AND profile_id IS NULL
+          AND user_id IS NULL
     </update>
 </mapper>

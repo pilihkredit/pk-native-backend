@@ -9,11 +9,11 @@ public interface CreditLenderStatusQueryRepository {
 
     Optional<CreditLenderStatusQueryData> findLatestByApplyId(String applyId);
 
-    Optional<CreditLenderStatusQueryData> findLatestByApplyIdAndProfileId(String applyId, long profileId);
+    Optional<CreditLenderStatusQueryData> findLatestByApplyIdAndUserId(String applyId, long userId);
 
     record CreditLenderStatusQueryData(
             String applyId,
-            long profileId,
+            long userId,
             String mobileNo,
             String partnerUserId,
             String lenderUserId,

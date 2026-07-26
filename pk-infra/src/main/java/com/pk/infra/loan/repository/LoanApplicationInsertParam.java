@@ -11,7 +11,7 @@ public class LoanApplicationInsertParam {
     private long creditApplicationId;
     private Long quoteId;
     private String quoteNo;
-    private long profileId;
+    private long userId;
     private long profileVersionId;
     private String status;
     private BigDecimal applyAmt;
@@ -34,7 +34,7 @@ public class LoanApplicationInsertParam {
         p.creditApplicationId = insert.creditApplicationId();
         p.quoteId = insert.quoteId();
         p.quoteNo = insert.quoteNo();
-        p.profileId = insert.profileId();
+        p.userId = insert.userId();
         p.profileVersionId = insert.profileVersionId();
         p.status = insert.status();
         p.applyAmt = insert.applyAmt();
@@ -78,8 +78,8 @@ public class LoanApplicationInsertParam {
         return quoteNo;
     }
 
-    public long getProfileId() {
-        return profileId;
+    public long getUserId() {
+        return userId;
     }
 
     public long getProfileVersionId() {

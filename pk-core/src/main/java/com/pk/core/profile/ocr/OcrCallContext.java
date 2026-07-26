@@ -4,31 +4,31 @@ package com.pk.core.profile.ocr;
  * Request-scoped context for OCR vendor call auditing.
  */
 public record OcrCallContext(
-        Long profileId,
+        Long userId,
         String partnerUserId,
         String mobileNo,
         String clientRequestId,
         String traceId
 ) {
-    public static OcrCallContext of(long profileId) {
-        return new OcrCallContext(profileId, null, null, null, null);
+    public static OcrCallContext of(long userId) {
+        return new OcrCallContext(userId, null, null, null, null);
     }
 
-    public static OcrCallContext of(long profileId, String mobileNo) {
-        return new OcrCallContext(profileId, null, mobileNo, null, null);
+    public static OcrCallContext of(long userId, String mobileNo) {
+        return new OcrCallContext(userId, null, mobileNo, null, null);
     }
 
-    public static OcrCallContext of(long profileId, String partnerUserId, String mobileNo) {
-        return new OcrCallContext(profileId, partnerUserId, mobileNo, null, null);
+    public static OcrCallContext of(long userId, String partnerUserId, String mobileNo) {
+        return new OcrCallContext(userId, partnerUserId, mobileNo, null, null);
     }
 
     public static OcrCallContext of(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             String clientRequestId,
             String traceId
     ) {
-        return new OcrCallContext(profileId, partnerUserId, mobileNo, clientRequestId, traceId);
+        return new OcrCallContext(userId, partnerUserId, mobileNo, clientRequestId, traceId);
     }
 }

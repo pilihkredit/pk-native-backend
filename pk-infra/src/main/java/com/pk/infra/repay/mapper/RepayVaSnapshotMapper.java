@@ -5,5 +5,5 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper; import org.apache.ibatis.annotations.Param;
 @Mapper public interface RepayVaSnapshotMapper {
     int insertSnapshot(RepayVaSnapshotInsertParam param);
-    List<VaSnapshotRecord> findLatestByProfileId(@Param("profileId") long profileId);
+    List<VaSnapshotRecord> findLatestByUserId(@Param("userId") long userId);
 }

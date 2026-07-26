@@ -5,14 +5,14 @@ import java.util.List;
 
 public interface RepayVaSnapshotRepository {
     void replaceSnapshots(
-            long profileId,
+            long userId,
             String snapshotNo,
             List<VaSnapshotInsert> snapshots,
             Long externalInteractionId,
             Instant fetchedAt
     );
 
-    List<VaSnapshotRecord> findLatestByProfileId(long profileId);
+    List<VaSnapshotRecord> findLatestByUserId(long userId);
 
     record VaSnapshotInsert(
             String vaNo,
@@ -26,7 +26,7 @@ public interface RepayVaSnapshotRepository {
 
     record VaSnapshotRecord(
             long id,
-            long profileId,
+            long userId,
             String snapshotNo,
             String vaNo,
             String bankCode,

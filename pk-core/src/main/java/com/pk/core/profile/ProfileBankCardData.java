@@ -2,9 +2,8 @@ package com.pk.core.profile;
 
 public record ProfileBankCardData(
         Long id,
-        long profileId,
-        String mobileNo,
-        String bankCode,
+        long userId,
+String bankCode,
         EncryptedField cardNumber,
         String cardNoHash,
         String verifyStatus,

@@ -37,7 +37,7 @@
             <arg column="event_datetime" javaType="string"/>
             <arg column="payload_json" javaType="string"/>
             <arg column="partner_user_id" javaType="string"/>
-            <arg column="profile_id" javaType="java.lang.Long"/>
+            <arg column="user_id" javaType="java.lang.Long"/>
             <arg column="source" javaType="string"/>
             <arg column="created_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
         </constructor>
@@ -48,11 +48,11 @@
             <if test="criteria.clientNo != null and criteria.clientNo != ''">
                 AND client_no = #{criteria.clientNo}
             </if>
-            <if test="criteria.profileId != null or (criteria.userIds != null and criteria.userIds.size() &gt; 0)">
+            <if test="criteria.userId != null or (criteria.userIds != null and criteria.userIds.size() &gt; 0)">
                 AND (
                     <trim prefixOverrides="OR">
-                        <if test="criteria.profileId != null">
-                            OR profile_id = #{criteria.profileId}
+                        <if test="criteria.userId != null">
+                            OR user_id = #{criteria.userId}
                         </if>
                         <if test="criteria.userIds != null and criteria.userIds.size() &gt; 0">
                             OR partner_user_id IN
@@ -89,7 +89,7 @@
                trace_id, client_no, client_manufacture, client_model, client_category,
                client_os, client_os_version, ai, av, wv, bn, bv, android_id, gaid, idfv, idfa,
                ip, event_datetime, CAST(payload_json AS CHAR) AS payload_json,
-               partner_user_id, profile_id, source, created_at
+               partner_user_id, user_id, source, created_at
         FROM tracking_event
         <include refid="criteriaWhere"/>
         ORDER BY event_timestamp DESC, id DESC

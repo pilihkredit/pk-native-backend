@@ -27,14 +27,14 @@ class AgreementApplicationServiceTest {
         long clickedAt = Instant.parse("2026-07-20T03:00:00Z").toEpochMilli();
         when(facade.createRecords(any())).thenReturn(List.of(new UserAgreementRecordData(
                 1L,
-                "81234567890",
                 "U10001",
                 "device-1",
                 10L,
                 "PRIVACY_POLICY",
                 true,
                 Instant.ofEpochMilli(clickedAt),
-                clickedAt
+                clickedAt,
+                "81234567890"
         )));
 
         var response = service.create(
@@ -53,7 +53,7 @@ class AgreementApplicationServiceTest {
         verify(facade).createRecords(captor.capture());
         assertThat(captor.getValue().mobileNo()).isEqualTo("81234567890");
         assertThat(captor.getValue().partnerUserId()).isEqualTo("U10001");
-        assertThat(captor.getValue().profileId()).isEqualTo(10L);
+        assertThat(captor.getValue().userId()).isEqualTo(10L);
         assertThat(captor.getValue().clickedAtMs()).isEqualTo(clickedAt);
     }
 
@@ -79,7 +79,7 @@ class AgreementApplicationServiceTest {
         verify(facade).createRecords(captor.capture());
         assertThat(captor.getValue().mobileNo()).isNull();
         assertThat(captor.getValue().partnerUserId()).isNull();
-        assertThat(captor.getValue().profileId()).isNull();
+        assertThat(captor.getValue().userId()).isNull();
         assertThat(captor.getValue().deviceNo()).isEqualTo("device-1");
         assertThat(captor.getValue().clickedAtMs()).isEqualTo(clickedAt);
     }
@@ -105,7 +105,7 @@ class AgreementApplicationServiceTest {
         verify(facade).createRecords(captor.capture());
         assertThat(captor.getValue().partnerUserId()).isEqualTo("U10001");
         assertThat(captor.getValue().mobileNo()).isNull();
-        assertThat(captor.getValue().profileId()).isNull();
+        assertThat(captor.getValue().userId()).isNull();
     }
 
     @Test

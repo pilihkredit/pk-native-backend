@@ -5,9 +5,8 @@
 
     <resultMap id="headerMap" type="com.pk.infra.loan.repository.LenderProductListHeaderRow">
         <id column="id" property="id"/>
-        <result column="profile_id" property="profileId"/>
+        <result column="user_id" property="userId"/>
         <result column="credit_application_id" property="creditApplicationId"/>
-        <result column="mobile_no" property="mobileNo"/>
         <result column="apply_id" property="applyId"/>
         <result column="credit_apply_no" property="creditApplyNo"/>
         <result column="lender_user_id" property="lenderUserId"/>
@@ -22,7 +21,6 @@
     <resultMap id="productMap" type="com.pk.infra.loan.repository.LenderProductRow">
         <id column="id" property="id"/>
         <result column="product_list_id" property="productListId"/>
-        <result column="mobile_no" property="mobileNo"/>
         <result column="product_code" property="productCode"/>
         <result column="min_amount" property="minAmount"/>
         <result column="max_amount" property="maxAmount"/>
@@ -33,7 +31,6 @@
     <resultMap id="repayMethodMap" type="com.pk.infra.loan.repository.LenderProductRepayMethodRow">
         <id column="id" property="id"/>
         <result column="product_id" property="productId"/>
-        <result column="mobile_no" property="mobileNo"/>
         <result column="repay_method" property="repayMethod"/>
         <result column="cycle_type" property="cycleType"/>
         <result column="cycle_interval" property="cycleInterval"/>
@@ -45,21 +42,19 @@
     <resultMap id="unevenRateMap" type="com.pk.infra.loan.repository.LenderProductUnevenRateRow">
         <id column="id" property="id"/>
         <result column="repay_method_id" property="repayMethodId"/>
-        <result column="mobile_no" property="mobileNo"/>
         <result column="term_num" property="termNum"/>
         <result column="repayment_rate" property="repaymentRate"/>
     </resultMap>
 
     <sql id="headerColumns">
-        id, profile_id, credit_application_id, mobile_no, apply_id, credit_apply_no, lender_user_id,
+        id, user_id, credit_application_id, apply_id, credit_apply_no, lender_user_id,
         credit_status, product_status, content_hash, external_interaction_id, fetched_at
     </sql>
 
     <insert id="insertList" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO pk_lender_product_list (
-            profile_id,
+            user_id,
             credit_application_id,
-            mobile_no,
             apply_id,
             credit_apply_no,
             lender_user_id,
@@ -69,9 +64,8 @@
             external_interaction_id,
             fetched_at
         ) VALUES (
-            #{profileId},
+            #{userId},
             #{creditApplicationId},
-            #{mobileNo},
             #{applyId},
             #{creditApplyNo},
             #{lenderUserId},
@@ -86,7 +80,7 @@
     <insert id="insertProduct" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO pk_lender_product (
             product_list_id,
-            mobile_no,
+            user_id,
             product_code,
             min_amount,
             max_amount,
@@ -94,7 +88,7 @@
             comprehensive_rate
         ) VALUES (
             #{productListId},
-            #{mobileNo},
+            #{userId},
             #{productCode},
             #{minAmount},
             #{maxAmount},
@@ -106,7 +100,7 @@
     <insert id="insertRepayMethod" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO pk_lender_product_repay_method (
             product_id,
-            mobile_no,
+            user_id,
             repay_method,
             cycle_type,
             cycle_interval,
@@ -115,7 +109,7 @@
             repay_method_type
         ) VALUES (
             #{productId},
-            #{mobileNo},
+            #{userId},
             #{repayMethod},
             #{cycleType},
             #{cycleInterval},
@@ -128,12 +122,12 @@
     <insert id="insertUnevenRate" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO pk_lender_product_uneven_rate (
             repay_method_id,
-            mobile_no,
+            user_id,
             term_num,
             repayment_rate
         ) VALUES (
             #{repayMethodId},
-            #{mobileNo},
+            #{userId},
             #{termNum},
             #{repaymentRate}
         )
@@ -154,7 +148,7 @@
     </select>
 
     <select id="findProductsByListId" resultMap="productMap">
-        SELECT id, product_list_id, mobile_no, product_code, min_amount, max_amount,
+        SELECT id, product_list_id, product_code, min_amount, max_amount,
                comprehensive_rate_unit, comprehensive_rate
         FROM pk_lender_product
         WHERE product_list_id = #{productListId}
@@ -162,7 +156,7 @@
     </select>
 
     <select id="findRepayMethodsByProductIds" resultMap="repayMethodMap">
-        SELECT id, product_id, mobile_no, repay_method, cycle_type, cycle_interval, cycle_count,
+        SELECT id, product_id, repay_method, cycle_type, cycle_interval, cycle_count,
                total_cycle_interval, repay_method_type
         FROM pk_lender_product_repay_method
         WHERE product_id IN
@@ -173,7 +167,7 @@
     </select>
 
     <select id="findUnevenRatesByRepayMethodIds" resultMap="unevenRateMap">
-        SELECT id, repay_method_id, mobile_no, term_num, repayment_rate
+        SELECT id, repay_method_id, term_num, repayment_rate
         FROM pk_lender_product_uneven_rate
         WHERE repay_method_id IN
         <foreach collection="repayMethodIds" item="id" open="(" separator="," close=")">

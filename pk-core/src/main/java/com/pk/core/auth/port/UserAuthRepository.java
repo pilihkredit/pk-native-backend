@@ -8,7 +8,9 @@ import java.util.Optional;
 public interface UserAuthRepository {
     Optional<UserProfileSummary> findByMobileNo(String mobileNo);
 
-    Optional<UserProfileSummary> findByProfileId(long profileId);
+    Optional<UserProfileSummary> findActiveByMobileNoExcludingUserId(String mobileNo, long userId);
+
+    Optional<UserProfileSummary> findByUserId(long userId);
 
     Optional<UserProfileSummary> findByPartnerUserId(String partnerUserId);
 
@@ -21,28 +23,30 @@ public interface UserAuthRepository {
     UserProfileSummary findOrCreateActiveByMobileNo(String mobileNo);
 
     void saveSessionTokens(
-            long profileId,
+            long userId,
             String accessToken,
             String refreshToken,
             Instant accessTokenExpiresAt
     );
 
-    void saveAccessToken(long profileId, String accessToken, Instant accessTokenExpiresAt);
+    void saveAccessToken(long userId, String accessToken, Instant accessTokenExpiresAt);
 
-    void clearSessionTokens(long profileId);
+    void clearSessionTokens(long userId);
 
-    void updateLastLoginAt(long profileId, Instant lastLoginAt);
+    void updateMobileNo(long userId, String mobileNo);
 
-    void updateLastLogoutAt(long profileId, Instant lastLogoutAt);
+    void updateLastLoginAt(long userId, Instant lastLoginAt);
 
-    boolean isPasswordSet(long profileId);
+    void updateLastLogoutAt(long userId, Instant lastLogoutAt);
 
-    Optional<PasswordCredential> findPasswordCredential(long profileId);
+    boolean isPasswordSet(long userId);
 
-    void savePassword(long profileId, EncryptedField password);
+    Optional<PasswordCredential> findPasswordCredential(long userId);
+
+    void savePassword(long userId, EncryptedField password);
 
     record PasswordCredential(
-            long profileId,
+            long userId,
             EncryptedField password
     ) {
     }

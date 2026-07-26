@@ -4,7 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface ProfileDeviceMapper {
-    boolean existsByProfileId(@Param("profileId") long profileId);
+    boolean existsByUserId(@Param("userId") long userId);
     ProfileDeviceData findByDeviceNo(@Param("deviceNo") String deviceNo);
     int upsertByDeviceNo(ProfileDeviceData data);
 }

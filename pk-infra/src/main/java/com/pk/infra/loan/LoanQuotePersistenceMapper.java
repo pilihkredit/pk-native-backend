@@ -13,9 +13,8 @@ public final class LoanQuotePersistenceMapper {
 
     public static LoanQuoteRepository.LoanQuoteInsert toInsert(
             String quoteNo,
-            Long profileId,
+            Long userId,
             long creditApplicationId,
-            String mobileNo,
             Long couponId,
             Long externalInteractionId,
             LoanTrialQuoteDetail quote,
@@ -23,9 +22,8 @@ public final class LoanQuotePersistenceMapper {
     ) {
         return new LoanQuoteRepository.LoanQuoteInsert(
                 quoteNo,
-                profileId,
+                userId,
                 creditApplicationId,
-                mobileNo,
                 couponId,
                 externalInteractionId,
                 quote,
@@ -36,14 +34,13 @@ public final class LoanQuotePersistenceMapper {
     public static void fillInsertParam(LoanQuoteInsertParam param, LoanQuoteRepository.LoanQuoteInsert command) {
         LoanTrialQuoteDetail quote = command.quote();
         param.setQuoteNo(command.quoteNo());
-        param.setProfileId(command.profileId());
+        param.setUserId(command.userId());
         param.setCreditApplicationId(command.creditApplicationId());
-        param.setMobileNo(command.mobileNo());
-        param.setCouponId(command.couponId());
+                param.setCouponId(command.couponId());
         param.setExternalInteractionId(command.externalInteractionId());
         param.setApplyId(quote.applyId());
         param.setCreditApplyNo(quote.creditApplyNo());
-        param.setUserId(quote.userId());
+        param.setLenderUserId(quote.lenderUserId());
         param.setProductCode(quote.productCode());
         param.setRepayMethod(quote.repayMethod());
         param.setApplyAmt(quote.applyAmt());
@@ -105,8 +102,8 @@ public final class LoanQuotePersistenceMapper {
     ) {
         LenderTrialTerm detail = term.term();
         param.setQuoteId(quoteId);
-        param.setMobileNo(term.mobileNo());
-        param.setTermNo(detail.termNo());
+        param.setUserId(term.userId());
+                param.setTermNo(detail.termNo());
         param.setValueDate(detail.valueDate());
         param.setDueDate(detail.dueDate());
         param.setGraceDate(detail.graceDate());
@@ -142,9 +139,8 @@ public final class LoanQuotePersistenceMapper {
         return new LoanQuoteRepository.LoanQuoteRecord(
                 row.getId(),
                 row.getQuoteNo(),
-                row.getProfileId(),
+                row.getUserId(),
                 row.getCreditApplicationId(),
-                row.getMobileNo(),
                 row.getCouponId(),
                 row.getExternalInteractionId(),
                 toQuoteDetail(row),
@@ -156,7 +152,7 @@ public final class LoanQuotePersistenceMapper {
         return new LoanTrialQuoteDetail(
                 row.getApplyId(),
                 row.getCreditApplyNo(),
-                row.getUserId(),
+                row.getLenderUserId(),
                 row.getApplyAmt(),
                 row.getProductCode(),
                 row.getRepayMethod(),

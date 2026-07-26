@@ -2,13 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.repay.mapper.RepayCurrentOrderMapper">
 <resultMap id="currentOrderMap" type="com.pk.core.repay.port.RepayCurrentOrderRepository$CurrentOrderRecord">
-<constructor><arg column="id" javaType="_long"/><arg column="profile_id" javaType="_long"/>
+<constructor><arg column="id" javaType="_long"/><arg column="user_id" javaType="_long"/>
 <arg column="current_order_no" javaType="string"/><arg column="trial_id" javaType="_long"/>
 <arg column="repay_orders_json" javaType="string"/><arg column="coupon_id" javaType="java.lang.Long"/>
 <arg column="status" javaType="string"/>
 <arg column="submitted_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/></constructor></resultMap>
-<update id="deactivateActive">UPDATE repay_current_order SET status='INACTIVE' WHERE profile_id=#{profileId} AND status='ACTIVE'</update>
-<insert id="insertActive" useGeneratedKeys="true" keyProperty="id" keyColumn="id">INSERT INTO repay_current_order (profile_id,current_order_no,trial_id,repay_orders_json,coupon_id,status,submitted_at)
-VALUES (#{profileId},#{currentOrderNo},#{trialId},#{repayOrdersJson},#{couponId},'ACTIVE',#{submittedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})</insert>
-<select id="findActiveByProfileId" resultMap="currentOrderMap">SELECT id,profile_id,current_order_no,trial_id,repay_orders_json,coupon_id,status,submitted_at FROM repay_current_order WHERE profile_id=#{profileId} AND status='ACTIVE' ORDER BY id DESC LIMIT 1</select>
+<update id="deactivateActive">UPDATE repay_current_order SET status='INACTIVE' WHERE user_id=#{userId} AND status='ACTIVE'</update>
+<insert id="insertActive" useGeneratedKeys="true" keyProperty="id" keyColumn="id">INSERT INTO repay_current_order (user_id,current_order_no,trial_id,repay_orders_json,coupon_id,status,submitted_at)
+VALUES (#{userId},#{currentOrderNo},#{trialId},#{repayOrdersJson},#{couponId},'ACTIVE',#{submittedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})</insert>
+<select id="findActiveByUserId" resultMap="currentOrderMap">SELECT id,user_id,current_order_no,trial_id,repay_orders_json,coupon_id,status,submitted_at FROM repay_current_order WHERE user_id=#{userId} AND status='ACTIVE' ORDER BY id DESC LIMIT 1</select>
 </mapper>

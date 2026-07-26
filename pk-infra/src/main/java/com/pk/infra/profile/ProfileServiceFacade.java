@@ -92,7 +92,7 @@ public class ProfileServiceFacade {
     }
 
     public PersonalSaveResult savePersonal(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             PersonalSaveCommand command
@@ -101,7 +101,7 @@ public class ProfileServiceFacade {
         String normalizedMobileNo = normalizeMobile(mobileNo);
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
-        var existing = profilePersonalRepository.findByProfileId(profileId);
+        var existing = profilePersonalRepository.findByUserId(userId);
         if (existing.isPresent() && command.requestId().equals(existing.get().lastRequestId())) {
             return new PersonalSaveResult(
                     command.requestId(),
@@ -114,8 +114,7 @@ public class ProfileServiceFacade {
         String normalizedEmail = normalizeEmail(command.userEmail());
 
         profilePersonalRepository.upsert(new ProfilePersonalData(
-                profileId,
-                normalizedMobileNo,
+                userId,
                 command.educationDegree(),
                 command.industry(),
                 command.income().trim(),
@@ -126,15 +125,15 @@ public class ProfileServiceFacade {
                 null
         ));
 
-        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
+        persistDevice(userId, partnerUserId, command.requestId(), command.device());
 
         if (normalizedEmail != null) {
-            profilePersonalRepository.updateEmail(profileId, normalizedEmail);
+            profilePersonalRepository.updateEmail(userId, normalizedEmail);
         }
 
         com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult syncResult =
                 profileSyncOrchestrator.scheduleAfterSave(ProfileSyncJob.fromStoredModule(
-                profileId,
+                userId,
                 partnerUserId,
                 normalizedMobileNo,
                 command.requestId(),
@@ -142,7 +141,7 @@ public class ProfileServiceFacade {
                 command.device()
         ));
 
-        refreshUserProfileMaster(profileId, partnerUserId);
+        refreshUserProfileMaster(userId, partnerUserId);
 
         return new PersonalSaveResult(
                 command.requestId(),
@@ -152,7 +151,7 @@ public class ProfileServiceFacade {
     }
 
     public ContactsSaveResult saveContacts(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             ContactsSaveCommand command
@@ -161,22 +160,22 @@ public class ProfileServiceFacade {
         validateContacts(command, normalizedMobileNo);
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
-        var existing = profileContactRepository.findModuleByProfileId(profileId);
+        var existing = profileContactRepository.findModuleByUserId(userId);
         if (existing.isPresent() && command.requestId().equals(existing.get().lastRequestId())) {
             return new ContactsSaveResult(command.requestId(), MODULE_COMPLETED);
         }
 
         List<ProfileContactData> contacts = toContactData(normalizedMobileNo, command.contacts());
         profileContactRepository.replaceContacts(
-                profileId,
-                new ProfileContactsModuleData(profileId, normalizedMobileNo, MODULE_COMPLETED, command.requestId(), null),
+                userId,
+                new ProfileContactsModuleData(userId, MODULE_COMPLETED, command.requestId(), null),
                 contacts
         );
 
-        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
+        persistDevice(userId, partnerUserId, command.requestId(), command.device());
 
         profileSyncOrchestrator.scheduleAfterSave(ProfileSyncJob.fromStoredModule(
-                profileId,
+                userId,
                 partnerUserId,
                 normalizedMobileNo,
                 command.requestId(),
@@ -184,13 +183,13 @@ public class ProfileServiceFacade {
                 command.device()
         ));
 
-        refreshUserProfileMaster(profileId, partnerUserId);
+        refreshUserProfileMaster(userId, partnerUserId);
 
         return new ContactsSaveResult(command.requestId(), MODULE_COMPLETED);
     }
 
     public BankCardSaveResult saveBankCard(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             BankCardSaveCommand command
@@ -200,7 +199,7 @@ public class ProfileServiceFacade {
 
         var sameRequest = profileBankCardRepository.findByLastRequestId(command.requestId());
         if (sameRequest.isPresent()
-                && sameRequest.get().profileId() == profileId
+                && sameRequest.get().userId() == userId
                 && !sameRequest.get().deletedFlag()) {
             return toBankCardSaveResult(command.requestId(), command.cardNumber());
         }
@@ -208,28 +207,27 @@ public class ProfileServiceFacade {
         String normalizedCardNumber = CardNumberSupport.normalize(command.cardNumber());
         String cardNoHash = CardNumberSupport.sha256Hex(normalizedCardNumber);
         var boundByHash = profileBankCardRepository.findByCardNoHash(cardNoHash);
-        if (boundByHash.isPresent() && boundByHash.get().profileId() != profileId) {
+        if (boundByHash.isPresent() && boundByHash.get().userId() != userId) {
             throw new ApiException(ApiCode.BANK_CARD_ALREADY_BOUND);
         }
 
         boolean sameProfileActiveCard = boundByHash.isPresent()
-                && boundByHash.get().profileId() == profileId
+                && boundByHash.get().userId() == userId
                 && !boundByHash.get().deletedFlag();
         // New card (or revive soft-deleted): block at/above configured max — do not insert.
         if (!sameProfileActiveCard) {
             int maxCount = bankCardMaxConfigLoader.loadMaxCount();
-            int activeCount = profileBankCardRepository.countActiveByProfileId(profileId);
+            int activeCount = profileBankCardRepository.countActiveByUserId(userId);
             if (activeCount >= maxCount) {
                 throw new ApiException(ApiCode.BANK_CARD_MAX_LIMIT_REACHED);
             }
         }
 
         EncryptedField encryptedCardNumber = sensitiveFieldEncryptor.encrypt(normalizedCardNumber);
-        profileBankCardRepository.clearDefaultByProfileId(profileId);
+        profileBankCardRepository.clearDefaultByUserId(userId);
         ProfileBankCardData cardData = new ProfileBankCardData(
                 boundByHash.map(ProfileBankCardData::id).orElse(null),
-                profileId,
-                normalizedMobileNo,
+                userId,
                 command.bankCode().trim(),
                 encryptedCardNumber,
                 cardNoHash,
@@ -241,16 +239,16 @@ public class ProfileServiceFacade {
                 command.requestId(),
                 null
         );
-        if (boundByHash.isPresent() && boundByHash.get().profileId() == profileId) {
+        if (boundByHash.isPresent() && boundByHash.get().userId() == userId) {
             profileBankCardRepository.updateById(cardData);
         } else {
             profileBankCardRepository.insert(cardData);
         }
 
-        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
+        persistDevice(userId, partnerUserId, command.requestId(), command.device());
 
         profileSyncOrchestrator.syncNow(new ProfileSyncJob(
-                profileId,
+                userId,
                 partnerUserId,
                 normalizedMobileNo,
                 command.requestId(),
@@ -259,13 +257,13 @@ public class ProfileServiceFacade {
                 new ProfileSyncPayload.BankCardProfilePayload(command.bankCode().trim(), normalizedCardNumber)
         ));
 
-        refreshUserProfileMaster(profileId, partnerUserId);
+        refreshUserProfileMaster(userId, partnerUserId);
 
         return toBankCardSaveResult(command.requestId(), normalizedCardNumber);
     }
 
     public BankCardDeleteResult deleteBankCard(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             BankCardDeleteCommand command
@@ -279,7 +277,7 @@ public class ProfileServiceFacade {
 
         var sameRequest = profileBankCardRepository.findByLastRequestId(command.requestId().trim());
         if (sameRequest.isPresent()
-                && sameRequest.get().profileId() == profileId
+                && sameRequest.get().userId() == userId
                 && sameRequest.get().deletedFlag()) {
             return new BankCardDeleteResult(command.requestId().trim(), true);
         }
@@ -287,7 +285,7 @@ public class ProfileServiceFacade {
         String normalizedCardNumber = CardNumberSupport.normalize(command.cardNumber());
         String cardNoHash = CardNumberSupport.sha256Hex(normalizedCardNumber);
         ProfileBankCardData localCard = profileBankCardRepository
-                .findActiveByProfileIdAndCardNoHash(profileId, cardNoHash)
+                .findActiveByUserIdAndCardNoHash(userId, cardNoHash)
                 .orElseThrow(() -> new ApiException(ApiCode.BANK_CARD_NOT_FOUND));
         if (localCard.defaultFlag()) {
             throw new ApiException(ApiCode.BANK_CARD_DEFAULT_CANNOT_DELETE);
@@ -297,7 +295,7 @@ public class ProfileServiceFacade {
         lenderBankCardPort.deleteBankCard(new LenderBankCardPort.DeleteBankCardCommand(partnerUserId, bankCardId));
 
         profileBankCardRepository.softDeleteById(localCard.id(), command.requestId().trim());
-        persistDevice(profileId, partnerUserId, command.requestId().trim(), command.device());
+        persistDevice(userId, partnerUserId, command.requestId().trim(), command.device());
 
         return new BankCardDeleteResult(command.requestId().trim(), true);
     }
@@ -319,7 +317,7 @@ public class ProfileServiceFacade {
     }
 
     public LoginLogSaveResult saveLoginLog(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             LoginLogSaveCommand command
@@ -327,7 +325,7 @@ public class ProfileServiceFacade {
         String normalizedMobileNo = normalizeMobile(mobileNo);
         validateLoginLog(command);
 
-        var existing = profileLoginLogRepository.findByProfileId(profileId);
+        var existing = profileLoginLogRepository.findByUserId(userId);
         if (existing.isPresent() && command.requestId().equals(existing.get().lastRequestId())) {
             return new LoginLogSaveResult(
                     command.requestId(),
@@ -338,8 +336,7 @@ public class ProfileServiceFacade {
 
         String normalizedLoginIp = command.loginIp().trim();
         profileLoginLogRepository.upsert(new ProfileLoginLogData(
-                profileId,
-                normalizedMobileNo,
+                userId,
                 command.loginType(),
                 normalizedLoginIp,
                 command.loginLat(),
@@ -349,11 +346,11 @@ public class ProfileServiceFacade {
                 null
         ));
 
-        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
+        persistDevice(userId, partnerUserId, command.requestId(), command.device());
 
         com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult syncResult =
                 profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
-                        profileId,
+                        userId,
                         partnerUserId,
                         normalizedMobileNo,
                         command.requestId(),
@@ -375,13 +372,13 @@ public class ProfileServiceFacade {
     }
 
     public AppsFlyerSaveResult saveAppsFlyerInstall(
-            Long profileId,
+            Long userId,
             String partnerUserId,
             String mobileNo,
             AppsFlyerSaveCommand command
     ) {
         validateAppsFlyer(command);
-        boolean loggedIn = profileId != null
+        boolean loggedIn = userId != null
                 && partnerUserId != null
                 && !partnerUserId.isBlank()
                 && mobileNo != null
@@ -400,8 +397,7 @@ public class ProfileServiceFacade {
         String deviceNo = command.device().deviceNo().trim();
         profileAfRepository.insert(new ProfileAfData(
                 null,
-                profileId,
-                normalizedMobileNo,
+                userId,
                 deviceNo,
                 command.appsflyerId().trim(),
                 trimToNull(command.advertisingId()),
@@ -450,13 +446,13 @@ public class ProfileServiceFacade {
 
         // Store-only: lender appsFlyerInstall is attached on identity upsert.
         if (loggedIn) {
-            persistDevice(profileId, partnerUserId, command.requestId(), command.device());
+            persistDevice(userId, partnerUserId, command.requestId(), command.device());
         }
         return new AppsFlyerSaveResult(command.requestId().trim(), MODULE_COMPLETED, null);
     }
 
     public TongdunSaveResult saveTongdunDevice(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             TongdunSaveCommand command
@@ -477,8 +473,7 @@ public class ProfileServiceFacade {
 
         profileTongdunRepository.insert(new ProfileTongdunData(
                 null,
-                profileId,
-                normalizedMobileNo,
+                userId,
                 sceneType,
                 tongdunKey,
                 MODULE_COMPLETED,
@@ -486,11 +481,11 @@ public class ProfileServiceFacade {
                 null
         ));
 
-        persistDevice(profileId, partnerUserId, command.requestId(), command.device());
+        persistDevice(userId, partnerUserId, command.requestId(), command.device());
 
         com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult syncResult =
                 profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
-                        profileId,
+                        userId,
                         partnerUserId,
                         normalizedMobileNo,
                         command.requestId().trim(),
@@ -626,7 +621,6 @@ public class ProfileServiceFacade {
         for (int index = 0; index < contacts.size(); index++) {
             ContactItemCommand contact = contacts.get(index);
             result.add(new ProfileContactData(
-                    ownerMobileNo,
                     index + 1,
                     contact.relationship(),
                     contact.contactName().trim(),
@@ -659,20 +653,20 @@ public class ProfileServiceFacade {
     }
 
     private void persistDevice(
-            long profileId,
+            long userId,
             String partnerUserId,
             String requestId,
             LenderDeviceContext device
     ) {
-        userDeviceWriter.upsertFromRequest(profileId, partnerUserId, requestId, device);
+        userDeviceWriter.upsertFromRequest(userId, partnerUserId, requestId, device);
     }
 
-    private void refreshUserProfileMaster(long profileId, String partnerUserId) {
+    private void refreshUserProfileMaster(long userId, String partnerUserId) {
         OnboardingProgressFacade.OnboardingProgressResult progress = onboardingProgressFacade.getProgress(
-                profileId,
+                userId,
                 partnerUserId
         );
-        userProfileBindingRepository.updateKycStatus(profileId, progress.kycStatus());
+        userProfileBindingRepository.updateKycStatus(userId, progress.kycStatus());
     }
 
     public record PersonalSaveCommand(

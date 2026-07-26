@@ -28,7 +28,7 @@ public class UserDeviceWriter {
     }
 
     public void upsertFromRequest(
-            long profileId,
+            long userId,
             String partnerUserId,
             String requestId,
             LenderDeviceContext device
@@ -42,7 +42,7 @@ public class UserDeviceWriter {
         }
         DeviceExtendedAttributes attrs = device.resolvedExtendedAttributes();
         profileDeviceRepository.upsertByDeviceNo(new ProfileDeviceData(
-                profileId,
+                userId,
                 partnerUserId.trim(),
                 device.deviceNo().trim(),
                 device.systemPlatform().trim().toLowerCase(),
@@ -78,7 +78,7 @@ public class UserDeviceWriter {
                 throw new IllegalStateException("Failed to serialize deviceOtherInfo JSON", exception);
             }
             userDeviceOtherInfoRepository.upsert(UserDeviceOtherInfoData.fromFilteredMap(
-                    profileId,
+                    userId,
                     partnerUserId.trim(),
                     deviceNo,
                     filtered,

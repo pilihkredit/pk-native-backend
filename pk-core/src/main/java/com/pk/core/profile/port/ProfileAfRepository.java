@@ -13,5 +13,5 @@ public interface ProfileAfRepository {
     void updateLastLenderInteraction(String requestId, Long externalInteractionId);
 
     /** Backfill profile/mobile when AF was saved before login. */
-    void bindProfileIfNull(long id, long profileId, String mobileNo);
+    void bindProfileIfNull(long id, long userId);
 }

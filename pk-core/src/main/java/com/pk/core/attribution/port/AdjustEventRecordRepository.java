@@ -8,7 +8,7 @@ public interface AdjustEventRecordRepository {
     record AdjustEventRecordInsert(
             Long callbackEventId,
             String partnerUserId,
-            Long profileId,
+            Long userId,
             String deviceUuid,
             String eventName,
             String appToken,

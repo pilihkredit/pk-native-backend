@@ -7,9 +7,9 @@ public interface CreditApplicationRepository {
 
     Optional<CreditApplicationRecord> findByRequestId(String requestId);
 
-    Optional<CreditApplicationRecord> findByApplyIdAndProfileId(String applyId, long profileId);
+    Optional<CreditApplicationRecord> findByApplyIdAndUserId(String applyId, long userId);
 
-    Optional<CreditApplicationRecord> findLatestByProfileId(long profileId);
+    Optional<CreditApplicationRecord> findLatestByUserId(long userId);
 
     Optional<CreditApplicationRecord> findByApplyId(String applyId);
 
@@ -23,7 +23,7 @@ public interface CreditApplicationRepository {
             String applyId,
             String requestId,
             String providerCode,
-            long profileId,
+            long userId,
             String mobileNo
     ) {
     }
@@ -33,7 +33,7 @@ public interface CreditApplicationRepository {
             String applyId,
             String requestId,
             String providerCode,
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             String applyNo

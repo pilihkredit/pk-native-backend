@@ -3,14 +3,14 @@
 <mapper namespace="com.pk.infra.profile.mapper.UserProfileBindingMapper">
     <update id="recordLenderProfileSyncWithExternalUser">
         UPDATE user_profile SET external_user_id = #{externalUserId}, last_synced_at = CURRENT_TIMESTAMP(3)
-        WHERE id = #{profileId} AND deleted_at IS NULL
+        WHERE id = #{userId} AND deleted_at IS NULL
     </update>
     <update id="recordLenderProfileSyncWithoutExternalUser">
-        UPDATE user_profile SET last_synced_at = CURRENT_TIMESTAMP(3) WHERE id = #{profileId} AND deleted_at IS NULL
+        UPDATE user_profile SET last_synced_at = CURRENT_TIMESTAMP(3) WHERE id = #{userId} AND deleted_at IS NULL
     </update>
     <update id="updateKycStatus">
         UPDATE user_profile SET kyc_status = #{kycStatus}, updated_at = CURRENT_TIMESTAMP(3)
-        WHERE id = #{profileId} AND deleted_at IS NULL
+        WHERE id = #{userId} AND deleted_at IS NULL
     </update>
     <update id="closeAccount">
         UPDATE user_profile
@@ -20,14 +20,14 @@
             refresh_token = NULL,
             access_token_expires_at = NULL,
             updated_at = CURRENT_TIMESTAMP(3)
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
           AND deleted_at IS NULL
     </update>
 
     <select id="findClosure" resultMap="accountClosureMap">
         SELECT id, deleted_at, retention_until
         FROM user_profile
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
         LIMIT 1
     </select>
 

@@ -16,7 +16,7 @@ public interface RepaymentPlanTermRepository {
 
     List<TermRecord> findByLoanApplicationId(long loanApplicationId);
 
-    List<TermRecord> findPendingByProfileId(long profileId);
+    List<TermRecord> findPendingByUserId(long userId);
 
     record TermUpsert(
             int termNo,

@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public class LenderProductInsertParam {
     private Long id;
     private long productListId;
-    private String mobileNo;
+    private long userId;
     private String productCode;
     private BigDecimal minAmount;
     private BigDecimal maxAmount;
@@ -26,14 +26,6 @@ public class LenderProductInsertParam {
 
     public void setProductListId(long productListId) {
         this.productListId = productListId;
-    }
-
-    public String getMobileNo() {
-        return mobileNo;
-    }
-
-    public void setMobileNo(String mobileNo) {
-        this.mobileNo = mobileNo;
     }
 
     public String getProductCode() {
@@ -75,4 +67,7 @@ public class LenderProductInsertParam {
     public void setComprehensiveRate(BigDecimal comprehensiveRate) {
         this.comprehensiveRate = comprehensiveRate;
     }
+
+    public long getUserId() { return userId; }
+    public void setUserId(long userId) { this.userId = userId; }
 }

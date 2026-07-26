@@ -4,13 +4,13 @@ import java.time.Instant;
 
 public record UserAgreementRecordData(
         long id,
-        String mobileNo,
         String partnerUserId,
         String deviceNo,
-        Long profileId,
+        Long userId,
         String agreementType,
         Boolean agreed,
         Instant agreedAt,
-        Long clickedAtMs
+        Long clickedAtMs,
+        String mobileNo
 ) {
 }

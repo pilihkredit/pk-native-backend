@@ -28,7 +28,7 @@
             event_datetime,
             payload_json,
             partner_user_id,
-            profile_id,
+            user_id,
             source
         ) VALUES (
             #{eventTimestamp},
@@ -56,7 +56,7 @@
             #{eventDatetime},
             #{payloadJson},
             #{partnerUserId},
-            #{profileId},
+            #{userId},
             #{source}
         )
     </insert>

@@ -47,7 +47,7 @@ public class RepayApplicationService {
     public RepayPlanListResponse getPlan(AuthenticatedPrincipal principal, String loanApplyId) {
         requirePrincipal(principal);
         requireLenderHttp();
-        List<RepayPlanFacade.PlanResult> plans = repayPlanFacade.getPlan(principal.profileId(), loanApplyId);
+        List<RepayPlanFacade.PlanResult> plans = repayPlanFacade.getPlan(principal.userId(), loanApplyId);
         if (loanApplyId != null && !loanApplyId.isBlank() && plans.size() == 1) {
             return RepayPlanListResponse.single(RepayPlanResponse.from(plans.getFirst()));
         }
@@ -58,7 +58,7 @@ public class RepayApplicationService {
         requirePrincipal(principal);
         requireLenderHttp();
         return RepayVaListResponse.from(repayVaFacade.listVas(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId()
         ));
     }
@@ -67,7 +67,7 @@ public class RepayApplicationService {
         requirePrincipal(principal);
         requireLenderHttp();
         return RepayVaDefaultResponse.from(repayVaFacade.setDefaultVa(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 new RepayVaFacade.VaDefaultCommand(request.vaNo(), request.bankChannel())
         ));
@@ -77,7 +77,7 @@ public class RepayApplicationService {
         requirePrincipal(principal);
         requireLenderHttp();
         return RepayTrialResponse.from(repayTrialFacade.trial(
-                principal.profileId(),
+                principal.userId(),
                 new RepayTrialFacade.TrialCommand(
                         request.requestId(),
                         request.loanApplyId(),
@@ -91,7 +91,7 @@ public class RepayApplicationService {
         requirePrincipal(principal);
         requireLenderHttp();
         return RepayTrialBatchResponse.from(repayTrialFacade.trialBatch(
-                principal.profileId(),
+                principal.userId(),
                 new RepayTrialFacade.BatchTrialCommand(
                         request.requestId(),
                         request.repayOrders().stream()
@@ -112,7 +112,7 @@ public class RepayApplicationService {
         requirePrincipal(principal);
         requireLenderHttp();
         return RepayCurrentOrderResponse.from(repayCurrentOrderFacade.setCurrentOrder(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 new RepayCurrentOrderFacade.CurrentOrderCommand(
                         request.requestId(),

@@ -82,7 +82,7 @@ public class IdentityOcrFacade {
     }
 
     public LicenseTokenResult getLicenseToken(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             Long licenseEffectiveSeconds,
@@ -91,7 +91,7 @@ public class IdentityOcrFacade {
     ) {
         String normalizedMobileNo = requireMobile(mobileNo);
         OcrCallContextHolder.set(OcrCallContext.of(
-                profileId,
+                userId,
                 partnerUserId,
                 normalizedMobileNo,
                 clientRequestId,
@@ -99,7 +99,7 @@ public class IdentityOcrFacade {
         ));
         try {
             AdvanceAiOcrPort.LicenseTokenResult result = advanceAiOcrPort.getLicenseToken(licenseEffectiveSeconds);
-            ocrSessionStore.save(profileId, new OcrSessionState(
+            ocrSessionStore.save(userId, new OcrSessionState(
                     true,
                     false,
                     false,
@@ -120,7 +120,7 @@ public class IdentityOcrFacade {
      * Persist manual legal name + EKTP locally ({@code DRAFT}). Does not sync to lender.
      */
     public BasicSaveResult saveBasic(
-            long profileId,
+            long userId,
             String mobileNo,
             BasicSaveCommand command
     ) {
@@ -140,7 +140,7 @@ public class IdentityOcrFacade {
             throw new ApiException(ApiCode.INVALID_EKTP_FORMAT);
         }
 
-        var existing = profileIdentityRepository.findByProfileId(profileId);
+        var existing = profileIdentityRepository.findByUserId(userId);
         if (existing.isPresent()) {
             ProfileIdentityData identity = existing.get();
             if (command.requestId().trim().equals(identity.lastRequestId())
@@ -154,8 +154,7 @@ public class IdentityOcrFacade {
 
         EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(idNo);
         profileIdentityRepository.upsert(new ProfileIdentityData(
-                profileId,
-                normalizedMobileNo,
+                userId,
                 name,
                 encryptedIdNo,
                 EktpValidator.hash(idNo),
@@ -167,7 +166,7 @@ public class IdentityOcrFacade {
     }
 
     public OcrCheckResult ocrCheck(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             String imageBase64,
@@ -177,7 +176,7 @@ public class IdentityOcrFacade {
         String normalizedMobileNo = requireMobile(mobileNo);
         byte[] imageBytes = OcrImageSupport.decodeBase64Image(imageBase64, ocrProperties.maxImageBytes());
         OcrCallContextHolder.set(OcrCallContext.of(
-                profileId,
+                userId,
                 partnerUserId,
                 normalizedMobileNo,
                 clientRequestId,
@@ -202,8 +201,8 @@ public class IdentityOcrFacade {
                 BiometricImageKind.ID_CARD,
                 imageBytes
         );
-        OcrSessionState current = ocrSessionStore.find(profileId).orElse(emptySession());
-        ocrSessionStore.save(profileId, new OcrSessionState(
+        OcrSessionState current = ocrSessionStore.find(userId).orElse(emptySession());
+        ocrSessionStore.save(userId, new OcrSessionState(
                 current.licenseObtained(),
                 true,
                 current.livenessPassed(),
@@ -218,7 +217,7 @@ public class IdentityOcrFacade {
     }
 
     public LivenessCheckResult livenessCheck(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             String livenessId,
@@ -230,7 +229,7 @@ public class IdentityOcrFacade {
         }
         String normalizedMobileNo = requireMobile(mobileNo);
         OcrCallContextHolder.set(OcrCallContext.of(
-                profileId,
+                userId,
                 partnerUserId,
                 normalizedMobileNo,
                 clientRequestId,
@@ -238,12 +237,12 @@ public class IdentityOcrFacade {
         ));
         try {
             AdvanceAiOcrPort.LivenessResult result = advanceAiOcrPort.livenessCheck(livenessId.trim());
-            OcrSessionState current = ocrSessionStore.find(profileId)
+            OcrSessionState current = ocrSessionStore.find(userId)
                     .orElseThrow(() -> new ApiException(ApiCode.OCR_SESSION_INVALID));
             if (!current.ocrCheckCompleted()) {
                 throw new ApiException(ApiCode.OCR_SESSION_INVALID);
             }
-            ocrSessionStore.save(profileId, new OcrSessionState(
+            ocrSessionStore.save(userId, new OcrSessionState(
                     current.licenseObtained(),
                     current.ocrCheckCompleted(),
                     true,
@@ -261,7 +260,7 @@ public class IdentityOcrFacade {
     }
 
     public FaceRecognitionResult faceRecognition(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             FaceRecognitionCommand command,
@@ -273,7 +272,7 @@ public class IdentityOcrFacade {
         }
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
-        var existing = profileIdentityRepository.findByProfileId(profileId);
+        var existing = profileIdentityRepository.findByUserId(userId);
         if (existing.isEmpty()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "identity basic info required");
         }
@@ -296,7 +295,7 @@ public class IdentityOcrFacade {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "identity basic info required");
         }
 
-        OcrSessionState session = ocrSessionStore.find(profileId)
+        OcrSessionState session = ocrSessionStore.find(userId)
                 .orElseThrow(() -> new ApiException(ApiCode.OCR_SESSION_INVALID));
         if (!session.ocrCheckCompleted() || !session.livenessPassed()) {
             throw new ApiException(ApiCode.OCR_SESSION_INVALID);
@@ -328,7 +327,7 @@ public class IdentityOcrFacade {
         }
 
         OcrCallContextHolder.set(OcrCallContext.of(
-                profileId,
+                userId,
                 partnerUserId,
                 normalizedMobileNo,
                 command.requestId().trim(),
@@ -358,14 +357,13 @@ public class IdentityOcrFacade {
         );
 
         long profileVersionId = profileVersionRepository.createSnapshot(
-                profileId,
+                userId,
                 normalizedMobileNo,
                 List.of("identity"),
                 "IDENTITY_OCR"
         );
         profileIdentityRepository.upsert(new ProfileIdentityData(
-                profileId,
-                normalizedMobileNo,
+                userId,
                 manualName,
                 storedIdentity.idNo(),
                 storedIdentity.idNoHash(),
@@ -381,10 +379,10 @@ public class IdentityOcrFacade {
                 OCR_CHANNEL,
                 session.ocrCheckVendorCallLogId()
         ));
-        userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
+        userDeviceWriter.upsertFromRequest(userId, partnerUserId, command.requestId(), command.device());
 
         var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
-                profileId,
+                userId,
                 partnerUserId,
                 normalizedMobileNo,
                 command.requestId(),
@@ -393,7 +391,7 @@ public class IdentityOcrFacade {
                 payload,
                 appsFlyerCompanions(command.device())
         ));
-        refreshKycStatus(profileId, partnerUserId);
+        refreshKycStatus(userId, partnerUserId);
 
         return new FaceRecognitionResult(
                 command.requestId(),
@@ -410,7 +408,7 @@ public class IdentityOcrFacade {
      * {@code rawOcrDetail} is absent, Advance.ai OCR is invoked to capture lender-ready raw JSON.
      */
     public DevLenderSyncResult devSyncIdentityToLender(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             DevLenderSyncCommand command
@@ -424,7 +422,7 @@ public class IdentityOcrFacade {
         }
         ProfileSyncPayloadLoader.validateDevice(command.device());
         DevLenderSyncCommand resolvedCommand = resolveDevLenderSyncCommand(
-                profileId,
+                userId,
                 partnerUserId,
                 normalizedMobileNo,
                 command
@@ -432,12 +430,12 @@ public class IdentityOcrFacade {
         String ocrName = requireText(resolvedCommand.ocrName(), "ocrName");
         String ocrIdNo = requireText(resolvedCommand.ocrIdNo(), "ocrIdNo");
         ProfileSyncPayload.IdentityProfilePayload payload = buildDevIdentityPayload(resolvedCommand);
-        persistDevIdentityLocalState(profileId, partnerUserId, normalizedMobileNo, resolvedCommand, ocrName, ocrIdNo);
+        persistDevIdentityLocalState(userId, partnerUserId, normalizedMobileNo, resolvedCommand, ocrName, ocrIdNo);
 
         JsonNode lenderResponse;
         try {
             var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
-                    profileId,
+                    userId,
                     partnerUserId,
                     normalizedMobileNo,
                     resolvedCommand.requestId().trim(),
@@ -458,7 +456,7 @@ public class IdentityOcrFacade {
     }
 
     private DevLenderSyncCommand resolveDevLenderSyncCommand(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             DevLenderSyncCommand command
@@ -471,7 +469,7 @@ public class IdentityOcrFacade {
         }
         byte[] imageBytes = OcrImageSupport.decodeBase64Image(command.idCardBase64(), ocrProperties.maxImageBytes());
         OcrCallContextHolder.set(OcrCallContext.of(
-                profileId,
+                userId,
                 partnerUserId,
                 requireMobile(mobileNo),
                 command.requestId(),
@@ -525,7 +523,7 @@ public class IdentityOcrFacade {
     }
 
     private void persistDevIdentityLocalState(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             DevLenderSyncCommand command,
@@ -534,7 +532,7 @@ public class IdentityOcrFacade {
     ) {
         EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(ocrIdNo);
         long profileVersionId = profileVersionRepository.createSnapshot(
-                profileId,
+                userId,
                 mobileNo,
                 List.of("identity"),
                 "IDENTITY_DEV_LENDER_SYNC"
@@ -543,8 +541,7 @@ public class IdentityOcrFacade {
         String facePhotoImageEncryptedRef = storeDevImage(mobileNo, BiometricImageKind.FACE, command.faceBase64());
         Long ocrVendorCallLogId = OcrCallContextHolder.lastVendorCallLogId();
         profileIdentityRepository.upsert(new ProfileIdentityData(
-                profileId,
-                mobileNo,
+                userId,
                 ocrName,
                 encryptedIdNo,
                 EktpValidator.hash(ocrIdNo),
@@ -560,8 +557,8 @@ public class IdentityOcrFacade {
                 OCR_CHANNEL,
                 ocrVendorCallLogId
         ));
-        userDeviceWriter.upsertFromRequest(profileId, partnerUserId, command.requestId(), command.device());
-        refreshKycStatus(profileId, partnerUserId);
+        userDeviceWriter.upsertFromRequest(userId, partnerUserId, command.requestId(), command.device());
+        refreshKycStatus(userId, partnerUserId);
     }
 
     private JsonNode buildLenderSyncFailureNode(ApiException exception) {
@@ -642,12 +639,12 @@ public class IdentityOcrFacade {
         return value.trim();
     }
 
-    private void refreshKycStatus(long profileId, String partnerUserId) {
+    private void refreshKycStatus(long userId, String partnerUserId) {
         OnboardingProgressFacade.OnboardingProgressResult progress = onboardingProgressFacade.getProgress(
-                profileId,
+                userId,
                 partnerUserId
         );
-        userProfileBindingRepository.updateKycStatus(profileId, progress.kycStatus());
+        userProfileBindingRepository.updateKycStatus(userId, progress.kycStatus());
     }
 
     private String storeDevImage(String mobileNo, BiometricImageKind kind, String imageBase64) {

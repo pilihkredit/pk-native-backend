@@ -4,8 +4,8 @@ import com.pk.infra.home.mapper.HomeLifecycleReadMapper;
 import java.util.Optional; import org.springframework.stereotype.Repository;
 @Repository public class HomeLifecycleReadRepositoryImpl implements HomeLifecycleReadRepository {
 private final HomeLifecycleReadMapper mapper; public HomeLifecycleReadRepositoryImpl(HomeLifecycleReadMapper mapper){this.mapper=mapper;}
-@Override public Optional<CreditApplySnapshot> findLatestCreditApply(long profileId){return Optional.ofNullable(mapper.findLatestCreditApply(profileId));}
-@Override public Optional<LoanApplySnapshot> findLatestLoanApply(long profileId){return Optional.ofNullable(mapper.findLatestLoanApply(profileId));}
-@Override public int countPendingRepayLoans(long profileId){return mapper.countPendingRepayLoans(profileId);}
-@Override public boolean hasOverdueRepay(long profileId){return mapper.hasOverdueRepay(profileId);}
-@Override public boolean hasDisbursedLoan(long profileId){return mapper.hasDisbursedLoan(profileId);}}
+@Override public Optional<CreditApplySnapshot> findLatestCreditApply(long userId){return Optional.ofNullable(mapper.findLatestCreditApply(userId));}
+@Override public Optional<LoanApplySnapshot> findLatestLoanApply(long userId){return Optional.ofNullable(mapper.findLatestLoanApply(userId));}
+@Override public int countPendingRepayLoans(long userId){return mapper.countPendingRepayLoans(userId);}
+@Override public boolean hasOverdueRepay(long userId){return mapper.hasOverdueRepay(userId);}
+@Override public boolean hasDisbursedLoan(long userId){return mapper.hasDisbursedLoan(userId);}}

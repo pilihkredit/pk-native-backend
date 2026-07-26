@@ -141,12 +141,30 @@ CREATE TABLE user_profile (
     UNIQUE KEY uk_user_profile_partner_user_id (partner_user_id),
     KEY idx_user_profile_external_user_id (external_user_id),
     KEY idx_user_profile_mobile_no (mobile_no),
-    KEY idx_user_profile_retention_until (retention_until)
+    KEY idx_user_profile_retention_until (retention_until),
+    UNIQUE KEY uk_user_profile_active_mobile ((CASE WHEN deleted_at IS NULL THEN mobile_no ELSE NULL END))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Current user profile master data';
+
+
+CREATE TABLE user_mobile_change_log (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
+    partner_user_id VARCHAR(64) NULL COMMENT 'Partner user identifier at change time',
+    old_mobile_no VARCHAR(32) NOT NULL COMMENT 'Previous mobile number',
+    new_mobile_no VARCHAR(32) NOT NULL COMMENT 'New mobile number',
+    status VARCHAR(32) NOT NULL COMMENT 'SUCCESS / FAILED',
+    operator_type VARCHAR(32) NOT NULL COMMENT 'USER / ADMIN / SYSTEM',
+    face_ticket_id VARCHAR(64) NULL COMMENT 'Optional face verification ticket',
+    otp_ticket_id VARCHAR(64) NULL COMMENT 'Optional OTP ticket',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Change time',
+    PRIMARY KEY (id),
+    KEY idx_user_mobile_change_log_user_created (user_id, created_at),
+    KEY idx_user_mobile_change_log_new_mobile (new_mobile_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mobile number change audit log';
 
 CREATE TABLE sms_send_log (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier when already registered',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id',
     mobile_no VARCHAR(32) NOT NULL COMMENT 'Recipient mobile number',
     device_no VARCHAR(128) NOT NULL COMMENT 'Client device identifier at send time',
     otp_token VARCHAR(128) NULL COMMENT 'OTP challenge token returned to client',
@@ -161,13 +179,13 @@ CREATE TABLE sms_send_log (
     PRIMARY KEY (id),
     KEY idx_sms_send_log_mobile_created (mobile_no, created_at),
     KEY idx_sms_send_log_device_created (device_no, created_at),
-    KEY idx_sms_send_log_profile_created (profile_id, created_at),
+    KEY idx_sms_send_log_user_created (user_id, created_at),
     KEY idx_sms_send_log_otp_token (otp_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SMS OTP send audit log';
 
 CREATE TABLE whatsapp_send_log (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier when already registered',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id',
     mobile_no VARCHAR(32) NOT NULL COMMENT 'Recipient mobile number',
     device_no VARCHAR(128) NOT NULL COMMENT 'Client device identifier at send time',
     otp_token VARCHAR(128) NULL COMMENT 'OTP challenge token returned to client',
@@ -182,14 +200,13 @@ CREATE TABLE whatsapp_send_log (
     PRIMARY KEY (id),
     KEY idx_whatsapp_send_log_mobile_created (mobile_no, created_at),
     KEY idx_whatsapp_send_log_device_created (device_no, created_at),
-    KEY idx_whatsapp_send_log_profile_created (profile_id, created_at),
+    KEY idx_whatsapp_send_log_user_created (user_id, created_at),
     KEY idx_whatsapp_send_log_otp_token (otp_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='WhatsApp OTP send audit log';
 
 CREATE TABLE user_profile_version (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     version_no INT UNSIGNED NOT NULL COMMENT 'Profile version number',
     snapshot_hash CHAR(64) NOT NULL COMMENT 'Snapshot content hash',
     snapshot_json JSON NOT NULL COMMENT 'Profile snapshot JSON',
@@ -201,14 +218,12 @@ CREATE TABLE user_profile_version (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_user_profile_version_no (profile_id, version_no),
-    KEY idx_user_profile_version_hash (profile_id, snapshot_hash),
-    KEY idx_user_profile_version_mobile_no (mobile_no)
+    UNIQUE KEY uk_user_profile_version_no (user_id, version_no),
+    KEY idx_user_profile_version_hash (user_id, snapshot_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Immutable user profile snapshot versions';
 
 CREATE TABLE user_profile_identity (
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
     last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
     full_name VARCHAR(128) NOT NULL COMMENT 'Legal name from OCR',
@@ -227,15 +242,14 @@ CREATE TABLE user_profile_identity (
     external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id for profile upsert',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (profile_id),
+    PRIMARY KEY (user_id),
     KEY idx_user_profile_identity_id_no_hash (id_no_hash),
-    KEY idx_user_profile_identity_mobile_no (mobile_no),
     KEY idx_user_profile_identity_profile_version (profile_version_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest user identity recognition result and lender audit';
 
 CREATE TABLE ocr_vendor_call_log (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id',
     partner_user_id VARCHAR(64) NULL COMMENT 'Partner user identifier',
     mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number',
     operation_type VARCHAR(32) NOT NULL COMMENT 'LICENSE_TOKEN / OCR_CHECK / LIVENESS_CHECK / FACE_COMPARE',
@@ -257,28 +271,25 @@ CREATE TABLE ocr_vendor_call_log (
     liveness_image_encrypted_ref VARCHAR(512) NULL COMMENT 'Encrypted OSS reference of liveness/face image',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     PRIMARY KEY (id),
-    KEY idx_ocr_vendor_call_log_profile_created (profile_id, created_at),
+    KEY idx_ocr_vendor_call_log_user_created (user_id, created_at),
     KEY idx_ocr_vendor_call_log_created_op_status (created_at, operation_type, status),
     KEY idx_ocr_vendor_call_log_op_status_created (operation_type, status, created_at),
     KEY idx_ocr_vendor_call_log_trace (trace_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='OCR vendor call audit log (success and failure)';
 
 CREATE TABLE user_profile_contacts (
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Onboarding module status',
     last_request_id VARCHAR(64) NOT NULL COMMENT 'Last successful request id',
     external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (profile_id),
-    KEY idx_user_profile_contacts_mobile_no (mobile_no)
+    PRIMARY KEY (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User emergency contacts module state';
 
 CREATE TABLE user_profile_contact (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     sort_no INT UNSIGNED NOT NULL COMMENT 'Display and submission order',
     relationship INT NOT NULL COMMENT 'Contact relationship code',
     contact_name VARCHAR(128) NOT NULL COMMENT 'Contact name',
@@ -286,15 +297,13 @@ CREATE TABLE user_profile_contact (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_user_profile_contact_sort (profile_id, sort_no),
-    KEY idx_user_profile_contact_profile (profile_id),
-    KEY idx_user_profile_contact_mobile_no (mobile_no)
+    UNIQUE KEY uk_user_profile_contact_sort (user_id, sort_no),
+    KEY idx_user_profile_contact_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User emergency contact entries';
 
 CREATE TABLE user_profile_bank_card (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',
     card_no_hash CHAR(64) NOT NULL COMMENT 'SHA-256 hash of normalized card number',
     card_no_ciphertext TEXT NOT NULL COMMENT 'AES-256-GCM encrypted card number ciphertext',
@@ -311,14 +320,12 @@ CREATE TABLE user_profile_bank_card (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_profile_bank_card_hash (card_no_hash),
-    KEY idx_user_profile_bank_card_profile_id (profile_id),
-    KEY idx_user_profile_bank_card_profile_deleted (profile_id, deleted_flag),
-    KEY idx_user_profile_bank_card_mobile_no (mobile_no)
+    KEY idx_user_profile_bank_card_user_id (user_id),
+    KEY idx_user_profile_bank_card_user_deleted (user_id, deleted_flag)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bank card onboarding module';
 
 CREATE TABLE user_profile_login_log (
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     login_type INT NOT NULL COMMENT 'Lender loginType: 1 password, 2 OTP, 4 face, 5 gesture',
     login_ip VARCHAR(32) NOT NULL COMMENT 'Login IP address',
     login_lat DECIMAL(10,7) NULL COMMENT 'Login latitude',
@@ -328,14 +335,12 @@ CREATE TABLE user_profile_login_log (
     external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (profile_id),
-    KEY idx_user_profile_login_log_mobile_no (mobile_no)
+    PRIMARY KEY (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User login log module';
 
 CREATE TABLE user_profile_af (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier; null when submitted before login',
-    mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number; null when submitted before login',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id',
     device_no VARCHAR(64) NULL COMMENT 'Client device number from X-Device-No',
     appsflyer_id VARCHAR(64) NOT NULL COMMENT 'AppsFlyer ID',
     advertising_id VARCHAR(128) NULL COMMENT 'Advertising ID',
@@ -384,7 +389,7 @@ CREATE TABLE user_profile_af (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id, created_at),
     KEY idx_user_profile_af_request (request_id, created_at),
-    KEY idx_user_profile_af_profile (profile_id, created_at),
+    KEY idx_user_profile_af_user (user_id, created_at),
     KEY idx_user_profile_af_device (device_no, created_at),
     KEY idx_user_profile_af_appsflyer (appsflyer_id, created_at),
     KEY idx_user_profile_af_advertising (advertising_id, created_at),
@@ -406,8 +411,7 @@ PARTITION BY RANGE COLUMNS (created_at) (
 
 CREATE TABLE user_profile_tongdun (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     scene_type VARCHAR(16) NOT NULL COMMENT 'LOGIN|SIGNUP|IDENTITY|LOAN|CREDIT',
     tongdun_key VARCHAR(256) NOT NULL COMMENT 'Tongdun device fingerprint key',
     module_status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED' COMMENT 'Module status',
@@ -417,8 +421,8 @@ CREATE TABLE user_profile_tongdun (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id, created_at),
     KEY idx_user_profile_tongdun_request (request_id, created_at),
-    KEY idx_user_profile_tongdun_profile (profile_id, created_at),
-    KEY idx_user_profile_tongdun_profile_scene (profile_id, scene_type, created_at)
+    KEY idx_user_profile_tongdun_user (user_id, created_at),
+    KEY idx_user_profile_tongdun_user_scene (user_id, scene_type, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tongdun device fingerprint history synced to lender'
 PARTITION BY RANGE COLUMNS (created_at) (
     PARTITION p2026h2 VALUES LESS THAN ('2027-01-01'),
@@ -436,7 +440,7 @@ PARTITION BY RANGE COLUMNS (created_at) (
 
 CREATE TABLE user_device (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier (FK user_profile.id)',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     partner_user_id VARCHAR(64) NOT NULL COMMENT 'Partner user identifier',
     device_no VARCHAR(128) NOT NULL COMMENT 'Device identifier (upsert key)',
     system_platform VARCHAR(16) NOT NULL COMMENT 'System platform: ios|android',
@@ -462,7 +466,7 @@ CREATE TABLE user_device (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_device_device_no (device_no),
-    KEY idx_user_device_profile_id (profile_id),
+    KEY idx_user_device_user_id (user_id),
     KEY idx_user_device_partner_user_id (partner_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User device records; upserted by device_no';
 
@@ -471,7 +475,7 @@ CREATE TABLE user_device (
 
 CREATE TABLE user_device_other_info (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     partner_user_id VARCHAR(64) NOT NULL COMMENT 'Partner user identifier',
     device_no VARCHAR(128) NOT NULL COMMENT 'Device identifier (upsert key)',
     allow_mock_location TINYINT(1) NULL COMMENT 'allowMockLocation',
@@ -542,13 +546,12 @@ CREATE TABLE user_device_other_info (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_device_other_info_device_no (device_no),
-    KEY idx_user_device_other_info_profile_id (profile_id)
+    KEY idx_user_device_other_info_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Documented deviceOtherInfo columns plus JSON snapshot';
 
 CREATE TABLE user_lender_status_query (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     partner_user_id VARCHAR(64) NULL COMMENT 'PK partner user identifier',
     lender_user_id VARCHAR(64) NULL COMMENT 'Lender user identifier',
     user_loan_life_time_status INT NULL COMMENT 'Lender user loan lifecycle status code',
@@ -565,14 +568,13 @@ CREATE TABLE user_lender_status_query (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_user_lender_status_query_profile (profile_id),
-    KEY idx_user_lender_status_query_partner_user (partner_user_id),
-    KEY idx_user_lender_status_query_mobile_no (mobile_no)
+    UNIQUE KEY uk_user_lender_status_query_user (user_id),
+    KEY idx_user_lender_status_query_partner_user (partner_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest lender user status query results';
 
 CREATE TABLE user_contact_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     profile_version_id BIGINT UNSIGNED NOT NULL COMMENT 'Profile version identifier',
     relationship INT NOT NULL COMMENT 'Contact relationship code',
     contact_name VARCHAR(128) NOT NULL COMMENT 'Contact name',
@@ -605,7 +607,7 @@ CREATE TABLE data_retention_policy (
 CREATE TABLE user_consent_record (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     consent_no VARCHAR(64) NOT NULL COMMENT 'Consent record number',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     consent_type VARCHAR(64) NOT NULL COMMENT 'Consent type',
     processing_purpose VARCHAR(128) NOT NULL COMMENT 'Processing purpose code',
     data_categories_json JSON NOT NULL COMMENT 'Consented data category list JSON',
@@ -621,16 +623,15 @@ CREATE TABLE user_consent_record (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_consent_record_no (consent_no),
-    KEY idx_user_consent_record_profile_type (profile_id, consent_type, consent_status),
+    KEY idx_user_consent_record_user_type (user_id, consent_type, consent_status),
     KEY idx_user_consent_record_purpose (processing_purpose, granted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User consent and withdrawal records';
 
 CREATE TABLE user_agreement_record (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number; null when not logged in',
     partner_user_id VARCHAR(64) NULL COMMENT 'Partner user identifier; optional when not logged in',
     device_no VARCHAR(128) NOT NULL COMMENT 'Device identifier',
-    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier when logged in',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id',
     agreement_type VARCHAR(64) NOT NULL COMMENT 'Agreement type code from client',
     agreed TINYINT(1) NULL COMMENT 'Agreement choice: 1 agree, 0 reject, NULL unknown/viewed',
     agreed_at DATETIME(3) NOT NULL COMMENT 'Client click timestamp converted to DATETIME',
@@ -638,15 +639,14 @@ CREATE TABLE user_agreement_record (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    KEY idx_user_agreement_record_mobile_type_id (mobile_no, agreement_type, id),
     KEY idx_user_agreement_record_partner_user (partner_user_id),
-    KEY idx_user_agreement_record_profile (profile_id)
+    KEY idx_user_agreement_record_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Append-only user agreement records';
 
 CREATE TABLE data_subject_request (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     request_no VARCHAR(64) NOT NULL COMMENT 'Data subject request number',
-    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id',
     partner_user_id VARCHAR(64) NULL COMMENT 'Partner user identifier',
     request_type VARCHAR(64) NOT NULL COMMENT 'Request type',
     request_status VARCHAR(32) NOT NULL COMMENT 'Request processing status',
@@ -662,7 +662,7 @@ CREATE TABLE data_subject_request (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_data_subject_request_no (request_no),
-    KEY idx_data_subject_request_profile (profile_id, requested_at),
+    KEY idx_data_subject_request_user (user_id, requested_at),
     KEY idx_data_subject_request_status_due (request_status, due_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Data subject access, correction, portability, objection, and erasure requests';
 
@@ -671,8 +671,7 @@ CREATE TABLE credit_application (
     apply_id VARCHAR(64) NOT NULL COMMENT 'Server-generated credit application identifier',
     request_id VARCHAR(64) NOT NULL COMMENT 'Idempotency request identifier',
     provider_code VARCHAR(32) NOT NULL COMMENT 'External provider code',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     apply_no VARCHAR(64) NULL COMMENT 'Lender credit application number',
     external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id for credit apply',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
@@ -680,16 +679,14 @@ CREATE TABLE credit_application (
     PRIMARY KEY (id),
     UNIQUE KEY uk_credit_application_apply_id (apply_id),
     UNIQUE KEY uk_credit_application_request_id (request_id),
-    KEY idx_credit_application_profile (profile_id),
-    KEY idx_credit_application_apply_no (apply_no),
-    KEY idx_credit_application_mobile_no (mobile_no)
+    KEY idx_credit_application_user (user_id),
+    KEY idx_credit_application_apply_no (apply_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Credit application records';
 
 CREATE TABLE credit_lender_status_query (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     apply_id VARCHAR(64) NOT NULL COMMENT 'PK credit application identifier used for lender status query',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     partner_user_id VARCHAR(64) NULL COMMENT 'PK partner user identifier',
     lender_user_id VARCHAR(64) NULL COMMENT 'Lender user identifier',
     credit_apply_no VARCHAR(64) NULL COMMENT 'External credit application number',
@@ -708,16 +705,14 @@ CREATE TABLE credit_lender_status_query (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     KEY idx_credit_lender_status_query_apply_id (apply_id, id),
-    KEY idx_credit_lender_status_query_profile (profile_id),
-    KEY idx_credit_lender_status_query_mobile_no (mobile_no),
+    KEY idx_credit_lender_status_query_user (user_id),
     KEY idx_credit_lender_status_query_external_no (credit_apply_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Append-only lender credit status snapshots (insert on business-field change)';
 
 CREATE TABLE pk_lender_product_list (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     credit_application_id BIGINT UNSIGNED NOT NULL COMMENT 'Local credit_application.id',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Mobile number',
     apply_id VARCHAR(64) NOT NULL COMMENT 'Platform credit apply id',
     credit_apply_no VARCHAR(64) NULL COMMENT 'Lender credit apply number',
     lender_user_id VARCHAR(64) NULL COMMENT 'Lender user ID',
@@ -731,13 +726,13 @@ CREATE TABLE pk_lender_product_list (
     PRIMARY KEY (id),
     KEY idx_pk_lender_product_list_apply_id (apply_id, id),
     KEY idx_pk_lender_product_list_credit_app (credit_application_id, id),
-    KEY idx_pk_lender_product_list_profile_fetched (profile_id, fetched_at)
+    KEY idx_pk_lender_product_list_user_fetched (user_id, fetched_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Append-only lender product list header';
 
 CREATE TABLE pk_lender_product (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     product_list_id BIGINT UNSIGNED NOT NULL COMMENT 'pk_lender_product_list.id',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     product_code VARCHAR(64) NOT NULL COMMENT 'Product code',
     min_amount DECIMAL(19,2) NULL COMMENT 'Minimum loan amount',
     max_amount DECIMAL(19,2) NULL COMMENT 'Maximum loan amount',
@@ -752,7 +747,7 @@ CREATE TABLE pk_lender_product (
 CREATE TABLE pk_lender_product_repay_method (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     product_id BIGINT UNSIGNED NOT NULL COMMENT 'pk_lender_product.id',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     repay_method VARCHAR(64) NOT NULL COMMENT 'Repayment method code',
     cycle_type VARCHAR(8) NULL COMMENT 'Cycle type',
     cycle_interval INT NULL COMMENT 'Cycle interval',
@@ -768,7 +763,7 @@ CREATE TABLE pk_lender_product_repay_method (
 CREATE TABLE pk_lender_product_uneven_rate (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     repay_method_id BIGINT UNSIGNED NOT NULL COMMENT 'pk_lender_product_repay_method.id',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     term_num INT NOT NULL COMMENT 'Term number',
     repayment_rate DECIMAL(19,8) NOT NULL COMMENT 'Repayment rate',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
@@ -780,14 +775,13 @@ CREATE TABLE pk_lender_product_uneven_rate (
 CREATE TABLE loan_quote (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     quote_no VARCHAR(64) NOT NULL COMMENT 'Quote number',
-    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id',
     credit_application_id BIGINT UNSIGNED NOT NULL COMMENT 'Credit application identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     coupon_id BIGINT NULL COMMENT 'Lender couponId from trial request',
     external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id',
     apply_id VARCHAR(64) NOT NULL COMMENT 'Lender credit apply ID',
     credit_apply_no VARCHAR(64) NULL COMMENT 'Lender credit apply number',
-    user_id VARCHAR(64) NULL COMMENT 'Lender user ID',
+    lender_user_id VARCHAR(64) NULL COMMENT 'Lender user ID',
     product_code VARCHAR(64) NOT NULL COMMENT 'Product code',
     repay_method VARCHAR(64) NOT NULL COMMENT 'Repayment method code',
     apply_amt DECIMAL(18,2) NOT NULL COMMENT 'Application amount',
@@ -846,14 +840,13 @@ CREATE TABLE loan_quote (
     UNIQUE KEY uk_loan_quote_no (quote_no),
     UNIQUE KEY uk_loan_quote_apply_product_repay (apply_id, product_code, repay_method),
     KEY idx_loan_quote_credit_quoted (credit_application_id, quoted_at),
-    KEY idx_loan_quote_profile_quoted (profile_id, quoted_at),
-    KEY idx_loan_quote_mobile_no (mobile_no)
+    KEY idx_loan_quote_user_quoted (user_id, quoted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest loan trial quote per apply/product/repay';
 
 CREATE TABLE loan_quote_term (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     quote_id BIGINT UNSIGNED NOT NULL COMMENT 'Quote identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     term_no INT NOT NULL COMMENT 'Term number',
     value_date BIGINT NULL COMMENT 'Lender valueDate epoch ms',
     due_date BIGINT NULL COMMENT 'Lender dueDate epoch ms',
@@ -887,8 +880,7 @@ CREATE TABLE loan_quote_term (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_loan_quote_term (quote_id, term_no),
-    KEY idx_loan_quote_term_mobile_no (mobile_no)
+    UNIQUE KEY uk_loan_quote_term (quote_id, term_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loan quote repayment term details';
 
 CREATE TABLE loan_application (
@@ -896,12 +888,11 @@ CREATE TABLE loan_application (
     loan_apply_id VARCHAR(64) NOT NULL COMMENT 'Loan application identifier',
     request_id VARCHAR(64) NOT NULL COMMENT 'Client request identifier for idempotency',
     apply_id VARCHAR(64) NOT NULL COMMENT 'Credit application identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
     credit_application_id BIGINT UNSIGNED NOT NULL COMMENT 'Credit application identifier',
     quote_id BIGINT UNSIGNED NULL COMMENT 'Quote identifier',
     quote_no VARCHAR(64) NULL COMMENT 'Client quoteNo association',
     external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id for loan apply',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     profile_version_id BIGINT UNSIGNED NOT NULL COMMENT 'Profile version identifier',
     external_loan_apply_no VARCHAR(64) NULL COMMENT 'External loan application number',
     lender_user_id VARCHAR(64) NULL COMMENT 'Lender user identifier',
@@ -929,9 +920,8 @@ CREATE TABLE loan_application (
     PRIMARY KEY (id),
     UNIQUE KEY uk_loan_application_apply_id (loan_apply_id),
     UNIQUE KEY uk_loan_application_request_id (request_id),
-    KEY idx_loan_application_profile_status (profile_id, status),
+    KEY idx_loan_application_user_status (user_id, status),
     KEY idx_loan_application_apply_id_lookup (apply_id),
-    KEY idx_loan_application_mobile_no (mobile_no),
     KEY idx_loan_application_bill_no (bill_no),
     KEY idx_loan_application_poll (status, next_poll_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loan application records';
@@ -939,8 +929,7 @@ CREATE TABLE loan_application (
 CREATE TABLE loan_lender_status_query (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     loan_apply_id VARCHAR(64) NOT NULL COMMENT 'Loan application identifier',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     lender_user_id VARCHAR(64) NULL COMMENT 'Lender user identifier',
     external_loan_apply_no VARCHAR(64) NULL COMMENT 'External loan application number',
     external_status VARCHAR(32) NULL COMMENT 'Lender loan status',
@@ -956,8 +945,7 @@ CREATE TABLE loan_lender_status_query (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     KEY idx_loan_lender_status_query_apply_id (loan_apply_id, id),
-    KEY idx_loan_lender_status_query_profile (profile_id),
-    KEY idx_loan_lender_status_query_mobile_no (mobile_no),
+    KEY idx_loan_lender_status_query_user (user_id),
     KEY idx_loan_lender_status_query_external_no (external_loan_apply_no),
     KEY idx_loan_lender_status_query_bill_no (bill_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Append-only lender loan status snapshots (insert on business-field change)';
@@ -970,6 +958,7 @@ CREATE TABLE external_interaction_callback (
     business_type VARCHAR(64) NOT NULL COMMENT 'Callback business type',
     business_id VARCHAR(64) NULL COMMENT 'Business identifier',
     mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id when known',
     http_method VARCHAR(16) NOT NULL COMMENT 'HTTP method',
     endpoint VARCHAR(256) NOT NULL COMMENT 'API endpoint',
     request_id VARCHAR(64) NULL COMMENT 'Request identifier',
@@ -993,8 +982,7 @@ CREATE TABLE external_interaction_callback (
 CREATE TABLE loan_lender_history_order (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     loan_apply_id VARCHAR(64) NOT NULL COMMENT 'Loan application identifier',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     external_loan_apply_no VARCHAR(64) NULL COMMENT 'External loan application number',
     lender_user_id VARCHAR(64) NULL COMMENT 'Lender user identifier',
     external_status VARCHAR(32) NULL COMMENT 'Lender loan status',
@@ -1010,8 +998,7 @@ CREATE TABLE loan_lender_history_order (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_loan_lender_history_order_apply_id (loan_apply_id),
-    KEY idx_loan_lender_history_order_profile (profile_id),
-    KEY idx_loan_lender_history_order_mobile_no (mobile_no),
+    KEY idx_loan_lender_history_order_user (user_id),
     KEY idx_loan_lender_history_order_external_no (external_loan_apply_no),
     KEY idx_loan_lender_history_order_bill_no (bill_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lender historical loan order snapshots';
@@ -1019,8 +1006,7 @@ CREATE TABLE loan_lender_history_order (
 CREATE TABLE loan_lender_bill (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     loan_apply_id VARCHAR(64) NOT NULL COMMENT 'Loan application identifier',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     external_loan_apply_no VARCHAR(64) NULL COMMENT 'External loan application number',
     lender_user_id VARCHAR(64) NULL COMMENT 'Lender user identifier',
     bill_no VARCHAR(64) NULL COMMENT 'Bill number',
@@ -1034,8 +1020,7 @@ CREATE TABLE loan_lender_bill (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_loan_lender_bill_apply_id (loan_apply_id),
-    KEY idx_loan_lender_bill_profile (profile_id),
-    KEY idx_loan_lender_bill_mobile_no (mobile_no),
+    KEY idx_loan_lender_bill_user (user_id),
     KEY idx_loan_lender_bill_bill_no (bill_no),
     KEY idx_loan_lender_bill_status (bill_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lender loan bill list snapshots';
@@ -1097,7 +1082,7 @@ CREATE TABLE repayment_plan_term (
 
 CREATE TABLE repay_va_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     snapshot_no VARCHAR(64) NOT NULL COMMENT 'Snapshot number',
     va_no VARCHAR(128) NOT NULL COMMENT 'Virtual account number',
     bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',
@@ -1110,14 +1095,14 @@ CREATE TABLE repay_va_snapshot (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    KEY idx_repay_va_snapshot_profile_fetched (profile_id, fetched_at),
+    KEY idx_repay_va_snapshot_user_fetched (user_id, fetched_at),
     KEY idx_repay_va_snapshot_va_no (va_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Repayment virtual account snapshots';
 
 CREATE TABLE repayment_trial_snapshot (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     trial_no VARCHAR(64) NOT NULL COMMENT 'Repayment trial number',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     trial_type VARCHAR(32) NOT NULL COMMENT 'Repayment trial type',
     total_bill_count INT UNSIGNED NULL COMMENT 'Total bill count',
     total_should_amount DECIMAL(18,2) NULL COMMENT 'Total amount due',
@@ -1152,7 +1137,7 @@ CREATE TABLE repayment_trial_snapshot (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_repayment_trial_snapshot_no (trial_no),
-    KEY idx_repayment_trial_snapshot_profile_created (profile_id, created_at)
+    KEY idx_repayment_trial_snapshot_user_created (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Repayment trial snapshots';
 
 CREATE TABLE repayment_trial_order (
@@ -1348,7 +1333,7 @@ CREATE TABLE repayment_trial_va_channel (
 
 CREATE TABLE repay_current_order (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     current_order_no VARCHAR(64) NOT NULL COMMENT 'Current repayment order number',
     trial_id BIGINT UNSIGNED NOT NULL COMMENT 'Repayment trial identifier',
     repay_orders_json JSON NOT NULL COMMENT 'Repayment order selection JSON',
@@ -1359,7 +1344,7 @@ CREATE TABLE repay_current_order (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_repay_current_order_no (current_order_no),
-    KEY idx_repay_current_order_profile_status (profile_id, status)
+    KEY idx_repay_current_order_user_status (user_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Current repayment order selections';
 
 CREATE TABLE external_interaction (
@@ -1369,6 +1354,7 @@ CREATE TABLE external_interaction (
     business_type VARCHAR(64) NOT NULL COMMENT 'Business type',
     business_id VARCHAR(64) NULL COMMENT 'Business identifier',
     mobile_no VARCHAR(32) NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id when known',
     http_method VARCHAR(16) NOT NULL COMMENT 'HTTP method',
     endpoint VARCHAR(256) NOT NULL COMMENT 'API endpoint',
     request_id VARCHAR(64) NULL COMMENT 'Request identifier',
@@ -1492,7 +1478,7 @@ CREATE TABLE tracking_event (
     event_datetime VARCHAR(32) NULL COMMENT 'Event datetime filled by server (Asia/Jakarta)',
     payload_json JSON NOT NULL COMMENT 'Full tracking payload as forwarded/saved',
     partner_user_id VARCHAR(64) NULL COMMENT 'Partner user identifier from login context',
-    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id',
     source VARCHAR(32) NOT NULL COMMENT 'Record source',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
@@ -1556,8 +1542,7 @@ CREATE TABLE operator_audit_log (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Operator audit log records';
 
 CREATE TABLE user_profile_personal (
-    profile_id BIGINT UNSIGNED NOT NULL COMMENT 'User profile identifier',
-    mobile_no VARCHAR(32) NOT NULL COMMENT 'Account owner mobile number',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     education_degree INT NOT NULL COMMENT 'Education degree code',
     industry INT NOT NULL COMMENT 'Industry code',
     income VARCHAR(16) NOT NULL COMMENT 'Monthly income as numeric string',
@@ -1570,8 +1555,7 @@ CREATE TABLE user_profile_personal (
     external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (profile_id),
-    KEY idx_user_profile_personal_mobile_no (mobile_no)
+    PRIMARY KEY (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User personal basic information module';
 
 -- ---------------------------------------------------------------------------

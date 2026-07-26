@@ -37,18 +37,18 @@ public class DebugTrackingEventsApplicationService {
             String debugToken,
             String clientNo,
             String mobileNo,
-            String userId,
+            String requestedUserId,
             Integer limit
     ) {
         validateToken(debugToken);
         String normalizedClientNo = blankToNull(clientNo);
         String normalizedMobileNo = blankToNull(mobileNo);
-        String normalizedUserId = blankToNull(userId);
-        if (normalizedClientNo == null && normalizedMobileNo == null && normalizedUserId == null) {
+        String normalizedRequestedUserId = blankToNull(requestedUserId);
+        if (normalizedClientNo == null && normalizedMobileNo == null && normalizedRequestedUserId == null) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
 
-        Long profileId = null;
+        Long userId = null;
         String partnerUserId = null;
         Set<String> userIds = new LinkedHashSet<>();
 
@@ -58,24 +58,24 @@ public class DebugTrackingEventsApplicationService {
                 return DebugTrackingEventsResponse.empty(
                         normalizedClientNo,
                         normalizedMobileNo,
-                        normalizedUserId,
+                        normalizedRequestedUserId,
                         null,
                         null
                 );
             }
-            profileId = user.get().profileId();
+            userId = user.get().userId();
             partnerUserId = user.get().partnerUserId();
             if (partnerUserId != null && !partnerUserId.isBlank()) {
                 userIds.add(partnerUserId.trim());
             }
         }
 
-        if (normalizedUserId != null) {
-            userIds.add(normalizedUserId);
-            Long parsedProfileId = parseProfileId(normalizedUserId);
-            if (parsedProfileId != null) {
-                profileId = profileId == null ? parsedProfileId : profileId;
-                Optional<UserProfileSummary> byProfile = userAuthRepository.findByProfileId(parsedProfileId);
+        if (normalizedRequestedUserId != null) {
+            userIds.add(normalizedRequestedUserId);
+            Long parsedUserId = parseUserId(normalizedRequestedUserId);
+            if (parsedUserId != null) {
+                userId = userId == null ? parsedUserId : userId;
+                Optional<UserProfileSummary> byProfile = userAuthRepository.findByUserId(parsedUserId);
                 if (byProfile.isPresent()) {
                     partnerUserId = partnerUserId == null ? byProfile.get().partnerUserId() : partnerUserId;
                     if (byProfile.get().partnerUserId() != null && !byProfile.get().partnerUserId().isBlank()) {
@@ -87,7 +87,7 @@ public class DebugTrackingEventsApplicationService {
 
         TrackingQueryCriteria criteria = new TrackingQueryCriteria(
                 normalizedClientNo,
-                profileId,
+                userId,
                 List.copyOf(userIds)
         );
         if (normalizedClientNo == null && !criteria.hasUserScope()) {
@@ -100,8 +100,8 @@ public class DebugTrackingEventsApplicationService {
             return DebugTrackingEventsResponse.empty(
                     normalizedClientNo,
                     normalizedMobileNo,
-                    normalizedUserId,
-                    profileId,
+                    normalizedRequestedUserId,
+                    userId,
                     partnerUserId
             );
         }
@@ -119,8 +119,8 @@ public class DebugTrackingEventsApplicationService {
                 true,
                 normalizedClientNo,
                 normalizedMobileNo,
-                normalizedUserId,
-                profileId,
+                normalizedRequestedUserId,
+                userId,
                 partnerUserId,
                 total,
                 events.size(),
@@ -154,7 +154,7 @@ public class DebugTrackingEventsApplicationService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private static Long parseProfileId(String userId) {
+    private static Long parseUserId(String userId) {
         if (!userId.chars().allMatch(Character::isDigit)) {
             return null;
         }
@@ -195,7 +195,7 @@ public class DebugTrackingEventsApplicationService {
                 record.extendJson(),
                 record.payloadJson(),
                 record.partnerUserId(),
-                record.profileId(),
+                record.userId(),
                 record.source(),
                 record.createdAt()
         );

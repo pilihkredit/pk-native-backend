@@ -54,7 +54,7 @@ public class ProfileSyncHandler {
     public LenderProfileSyncPort.LenderProfileSyncResult sync(ProfileSyncJob job) {
         ProfileSyncPayloadLoader.validateDevice(job.device());
         ProfileSyncPayload payload = job.payloadSnapshot() == null
-                ? profileSyncPayloadLoader.load(job.profileId(), job.module())
+                ? profileSyncPayloadLoader.load(job.userId(), job.module())
                 : job.payloadSnapshot();
         String mobileNo = requireMobileNo(job.mobileNo());
         LenderProfileSyncPort.LenderProfileSyncResult result = lenderProfileSyncPort.syncModule(
@@ -67,10 +67,10 @@ public class ProfileSyncHandler {
                 job.device(),
                 job.companions()
         ));
-        userProfileBindingRepository.recordLenderProfileSync(job.profileId(), result.externalUserId());
+        userProfileBindingRepository.recordLenderProfileSync(job.userId(), result.externalUserId());
         if (result.externalInteractionId() != null) {
             persistLenderInteraction(
-                    job.profileId(),
+                    job.userId(),
                     job.requestId(),
                     job.module(),
                     result.externalInteractionId()
@@ -80,7 +80,7 @@ public class ProfileSyncHandler {
                         ? job.requestId()
                         : companion.auditRequestId();
                 persistLenderInteraction(
-                        job.profileId(),
+                        job.userId(),
                         companionAuditId,
                         companion.module(),
                         result.externalInteractionId()
@@ -89,8 +89,8 @@ public class ProfileSyncHandler {
                         && companion.auditRequestId() != null
                         && !companion.auditRequestId().isBlank()) {
                     profileAfRepository.findByRequestId(companion.auditRequestId()).ifPresent(af -> {
-                        if (af.id() != null && af.profileId() == null) {
-                            profileAfRepository.bindProfileIfNull(af.id(), job.profileId(), mobileNo);
+                        if (af.id() != null && af.userId() == null) {
+                            profileAfRepository.bindProfileIfNull(af.id(), job.userId());
                         }
                     });
                 }
@@ -127,18 +127,18 @@ public class ProfileSyncHandler {
     }
 
     private void persistLenderInteraction(
-            long profileId,
+            long userId,
             String requestId,
             ProfileSyncModule module,
             Long externalInteractionId
     ) {
         switch (module) {
             case PERSONAL -> profilePersonalRepository.updateLastLenderInteraction(
-                    profileId,
+                    userId,
                     externalInteractionId
             );
             case CONTACT -> profileContactRepository.updateLastLenderInteraction(
-                    profileId,
+                    userId,
                     externalInteractionId
             );
             case BANK_CARD -> profileBankCardRepository.updateLastLenderInteraction(
@@ -146,11 +146,11 @@ public class ProfileSyncHandler {
                     externalInteractionId
             );
             case IDENTITY -> profileIdentityRepository.updateLastLenderInteraction(
-                    profileId,
+                    userId,
                     externalInteractionId
             );
             case LOGIN_LOG -> profileLoginLogRepository.updateLastLenderInteraction(
-                    profileId,
+                    userId,
                     externalInteractionId
             );
             case APPSFLYER_INSTALL -> profileAfRepository.updateLastLenderInteraction(

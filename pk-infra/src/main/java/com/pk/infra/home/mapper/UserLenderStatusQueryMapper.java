@@ -8,5 +8,5 @@ import org.apache.ibatis.annotations.Param;
 public interface UserLenderStatusQueryMapper {
     int upsert(UserLenderStatusQueryRepository.UserLenderStatusQueryData data);
 
-    UserLenderStatusQueryRepository.UserLenderStatusQueryData findByProfileId(@Param("profileId") long profileId);
+    UserLenderStatusQueryRepository.UserLenderStatusQueryData findByUserId(@Param("userId") long userId);
 }

@@ -3,9 +3,8 @@ package com.pk.core.profile;
 import java.time.Instant;
 
 public record ProfileIdentityData(
-        long profileId,
-        String mobileNo,
-        String fullName,
+        long userId,
+String fullName,
         EncryptedField idNo,
         String idNoHash,
         String moduleStatus,
@@ -22,8 +21,7 @@ public record ProfileIdentityData(
 ) {
     /** Compatibility constructor used by onboarding / simple upserts without asset fields. */
     public ProfileIdentityData(
-            long profileId,
-            String mobileNo,
+            long userId,
             String fullName,
             EncryptedField idNo,
             String idNoHash,
@@ -32,8 +30,7 @@ public record ProfileIdentityData(
             Long externalInteractionId
     ) {
         this(
-                profileId,
-                mobileNo,
+                userId,
                 fullName,
                 idNo,
                 idNoHash,

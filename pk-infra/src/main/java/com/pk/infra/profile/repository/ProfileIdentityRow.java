@@ -3,9 +3,8 @@ package com.pk.infra.profile.repository;
 import java.time.Instant;
 
 public record ProfileIdentityRow(
-        long profileId,
-        String mobileNo,
-        String fullName,
+        long userId,
+String fullName,
         String idNoCiphertext,
         byte[] idNoNonce,
         byte[] idNoTag,

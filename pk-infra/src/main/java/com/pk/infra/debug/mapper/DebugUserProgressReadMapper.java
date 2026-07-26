@@ -7,9 +7,9 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface DebugUserProgressReadMapper {
-    List<String> findCreditApplyIds(@Param("profileId") long profileId);
+    List<String> findCreditApplyIds(@Param("userId") long userId);
 
-    List<String> findLoanApplyIds(@Param("profileId") long profileId);
+    List<String> findLoanApplyIds(@Param("userId") long userId);
 
     List<InteractionRecord> findInteractionsByMobileNo(
             @Param("mobileNo") String mobileNo,

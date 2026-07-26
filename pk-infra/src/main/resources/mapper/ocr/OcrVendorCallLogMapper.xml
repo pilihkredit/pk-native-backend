@@ -4,12 +4,12 @@
 <mapper namespace="com.pk.infra.ocr.mapper.OcrVendorCallLogMapper">
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO ocr_vendor_call_log (
-            profile_id, partner_user_id, mobile_no, operation_type, channel,
+            user_id, partner_user_id, mobile_no, operation_type, channel,
             trace_id, client_request_id, status, api_code, vendor_code, vendor_message,
             score, threshold, endpoint, http_status, duration_ms,
             request_json, response_json, id_card_image_encrypted_ref, liveness_image_encrypted_ref
         ) VALUES (
-            #{profileId}, #{partnerUserId}, #{mobileNo}, #{operationType}, #{channel},
+            #{userId}, #{partnerUserId}, #{mobileNo}, #{operationType}, #{channel},
             #{traceId}, #{clientRequestId}, #{status}, #{apiCode}, #{vendorCode}, #{vendorMessage},
             #{score}, #{threshold}, #{endpoint}, #{httpStatus}, #{durationMs},
             #{requestJson}, #{responseJson}, #{idCardImageEncryptedRef}, #{livenessImageEncryptedRef}

@@ -40,7 +40,7 @@ class RepayPlanFacadeTest {
 
     @Test
     void getPlanSyncsFromLenderAndReturnsDisplayFields() {
-        when(loanBillReadRepository.findByProfileIdAndLoanApplyId(1L, "LOAN-1"))
+        when(loanBillReadRepository.findByUserIdAndLoanApplyId(1L, "LOAN-1"))
                 .thenReturn(Optional.of(loanRecord()));
         when(lenderRepayPlanPort.fetchPlan("LOAN-1")).thenReturn(lenderPlan());
         when(repaymentPlanTermRepository.findByLoanApplicationId(100L))
@@ -61,7 +61,7 @@ class RepayPlanFacadeTest {
 
     @Test
     void getPlanWithoutLoanApplyIdSyncsAllPendingLoans() {
-        when(loanBillReadRepository.findPendingByProfileId(1L))
+        when(loanBillReadRepository.findPendingByUserId(1L))
                 .thenReturn(List.of(loanRecord(), loanRecord("LOAN-2", 101L, "BN-2")));
         when(lenderRepayPlanPort.fetchPlan("LOAN-1")).thenReturn(lenderPlan());
         when(lenderRepayPlanPort.fetchPlan("LOAN-2")).thenReturn(lenderPlan("LOAN-2", "BN-2"));

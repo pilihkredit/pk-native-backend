@@ -7,8 +7,7 @@
                type="com.pk.core.loan.port.LoanLenderHistoryOrderRepository$LoanLenderHistoryOrderData">
         <constructor>
             <arg column="loan_apply_id" javaType="string"/>
-            <arg column="profile_id" javaType="_long"/>
-            <arg column="mobile_no" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
             <arg column="external_loan_apply_no" javaType="string"/>
             <arg column="lender_user_id" javaType="string"/>
             <arg column="external_status" javaType="string"/>
@@ -26,7 +25,7 @@
     </resultMap>
 
     <sql id="loanLenderHistoryOrderColumns">
-        loan_apply_id, profile_id, mobile_no, external_loan_apply_no, lender_user_id, external_status,
+        loan_apply_id, user_id, external_loan_apply_no, lender_user_id, external_status,
         bill_no, apply_amt, pay_amount, pay_time, freeze_end_time, lender_create_time,
         external_interaction_id, queried_at
     </sql>
@@ -34,8 +33,7 @@
     <insert id="upsert">
         INSERT INTO loan_lender_history_order (
             loan_apply_id,
-            profile_id,
-            mobile_no,
+            user_id,
             external_loan_apply_no,
             lender_user_id,
             external_status,
@@ -49,8 +47,7 @@
             queried_at
         ) VALUES (
             #{loanApplyId},
-            #{profileId},
-            #{mobileNo},
+            #{userId},
             #{externalLoanApplyNo},
             #{lenderUserId},
             #{externalStatus},
@@ -64,8 +61,7 @@
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
         ON DUPLICATE KEY UPDATE
-            profile_id = VALUES(profile_id),
-            mobile_no = VALUES(mobile_no),
+            user_id = VALUES(user_id),
             external_loan_apply_no = VALUES(external_loan_apply_no),
             lender_user_id = VALUES(lender_user_id),
             external_status = VALUES(external_status),
@@ -79,10 +75,10 @@
             queried_at = VALUES(queried_at)
     </insert>
 
-    <select id="findByProfileId" resultMap="loanLenderHistoryOrderMap">
+    <select id="findByUserId" resultMap="loanLenderHistoryOrderMap">
         SELECT <include refid="loanLenderHistoryOrderColumns"/>
         FROM loan_lender_history_order
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
         ORDER BY lender_create_time DESC
     </select>
 </mapper>

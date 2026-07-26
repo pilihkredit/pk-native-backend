@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository; import org.springframework.tra
 @Repository public class RepayCurrentOrderRepositoryImpl implements RepayCurrentOrderRepository {
 private final RepayCurrentOrderMapper mapper; public RepayCurrentOrderRepositoryImpl(RepayCurrentOrderMapper mapper){this.mapper=mapper;}
 @Override @Transactional public CurrentOrderRecord upsertActive(CurrentOrderUpsert command){
-    mapper.deactivateActive(command.profileId()); RepayCurrentOrderInsertParam p=RepayCurrentOrderInsertParam.from(command);
-    mapper.insertActive(p); return new CurrentOrderRecord(p.getId(),command.profileId(),command.currentOrderNo(),command.trialId(),command.repayOrdersJson(),command.couponId(),"ACTIVE",command.submittedAt());}
-@Override public Optional<CurrentOrderRecord> findActiveByProfileId(long profileId){return Optional.ofNullable(mapper.findActiveByProfileId(profileId));}}
+    mapper.deactivateActive(command.userId()); RepayCurrentOrderInsertParam p=RepayCurrentOrderInsertParam.from(command);
+    mapper.insertActive(p); return new CurrentOrderRecord(p.getId(),command.userId(),command.currentOrderNo(),command.trialId(),command.repayOrdersJson(),command.couponId(),"ACTIVE",command.submittedAt());}
+@Override public Optional<CurrentOrderRecord> findActiveByUserId(long userId){return Optional.ofNullable(mapper.findActiveByUserId(userId));}}

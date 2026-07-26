@@ -16,15 +16,14 @@ public class ProfilePersonalRepositoryImpl implements ProfilePersonalRepository 
     }
 
     @Override
-    public Optional<ProfilePersonalData> findByProfileId(long profileId) {
-        return Optional.ofNullable(mapper.findByProfileId(profileId)).map(this::toData);
+    public Optional<ProfilePersonalData> findByUserId(long userId) {
+        return Optional.ofNullable(mapper.findByUserId(userId)).map(this::toData);
     }
 
     @Override
     public void upsert(ProfilePersonalData data) {
         mapper.upsert(new ProfilePersonalRow(
-                data.profileId(),
-                data.mobileNo(),
+                data.userId(),
                 data.educationDegree(),
                 data.industry(),
                 data.income(),
@@ -39,19 +38,18 @@ public class ProfilePersonalRepositoryImpl implements ProfilePersonalRepository 
     }
 
     @Override
-    public void updateEmail(long profileId, String userEmail) {
-        mapper.updateEmail(profileId, userEmail);
+    public void updateEmail(long userId, String userEmail) {
+        mapper.updateEmail(userId, userEmail);
     }
 
     @Override
-    public void updateLastLenderInteraction(long profileId, Long externalInteractionId) {
-        mapper.updateLastLenderInteraction(profileId, externalInteractionId);
+    public void updateLastLenderInteraction(long userId, Long externalInteractionId) {
+        mapper.updateLastLenderInteraction(userId, externalInteractionId);
     }
 
     private ProfilePersonalData toData(ProfilePersonalRow row) {
         return new ProfilePersonalData(
-                row.profileId(),
-                row.mobileNo(),
+                row.userId(),
                 row.educationDegree(),
                 row.industry(),
                 row.income(),

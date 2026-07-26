@@ -38,14 +38,14 @@ public class LoanTrialFacade {
         this.loanQuoteProperties = loanQuoteProperties;
     }
 
-    public TrialResult trial(long profileId, TrialCommand command) {
+    public TrialResult trial(long userId, TrialCommand command) {
         validateCommand(command);
         CreditApplicationRepository.CreditApplicationRecord creditRecord = creditApplicationRepository
-                .findByApplyIdAndProfileId(command.applyId(), profileId)
+                .findByApplyIdAndUserId(command.applyId(), userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
 
         CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits = creditLenderStatusQueryRepository
-                .findLatestByApplyIdAndProfileId(command.applyId(), profileId)
+                .findLatestByApplyIdAndUserId(command.applyId(), userId)
                 .orElseThrow(() -> new ApiException(ApiCode.CREDIT_LIMIT_NOT_AVAILABLE));
 
         BigDecimal applyAmt = LoanAmountValidator.normalize(command.applyAmt());
@@ -57,7 +57,7 @@ public class LoanTrialFacade {
         );
 
         ProductListResolver.ResolvedProductList productList = loanProductFacade.resolveProductList(
-                profileId,
+                userId,
                 command.applyId(),
                 true
         );
@@ -81,14 +81,13 @@ public class LoanTrialFacade {
         Instant quotedAt = Instant.now();
         String quoteNo = LoanQuoteNoGenerator.generate();
         List<LoanQuoteRepository.LoanQuoteTermInsert> termInserts = lenderResult.termInfo().stream()
-                .map(term -> new LoanQuoteRepository.LoanQuoteTermInsert(creditRecord.mobileNo(), term))
+                .map(term -> new LoanQuoteRepository.LoanQuoteTermInsert(userId, term))
                 .toList();
         loanQuoteRepository.upsert(
                 LoanQuotePersistenceMapper.toInsert(
                         quoteNo,
-                        profileId,
+                        userId,
                         creditRecord.id(),
-                        creditRecord.mobileNo(),
                         command.couponId(),
                         lenderResult.externalInteractionId(),
                         quote,
@@ -124,7 +123,7 @@ public class LoanTrialFacade {
             return new LoanTrialQuoteDetail(
                     quote.applyId() == null ? command.applyId() : quote.applyId(),
                     quote.creditApplyNo(),
-                    quote.userId(),
+                    quote.lenderUserId(),
                     normalizedApplyAmt,
                     quote.productCode() == null ? command.productCode() : quote.productCode(),
                     quote.repayMethod() == null ? command.repayMethod() : quote.repayMethod(),

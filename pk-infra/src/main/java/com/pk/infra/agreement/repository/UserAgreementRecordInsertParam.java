@@ -4,10 +4,9 @@ import java.time.Instant;
 
 public class UserAgreementRecordInsertParam {
     private Long id;
-    private String mobileNo;
     private String partnerUserId;
     private String deviceNo;
-    private Long profileId;
+    private Long userId;
     private String agreementType;
     private Boolean agreed;
     private Instant agreedAt;
@@ -19,14 +18,6 @@ public class UserAgreementRecordInsertParam {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getMobileNo() {
-        return mobileNo;
-    }
-
-    public void setMobileNo(String mobileNo) {
-        this.mobileNo = mobileNo;
     }
 
     public String getPartnerUserId() {
@@ -45,12 +36,12 @@ public class UserAgreementRecordInsertParam {
         this.deviceNo = deviceNo;
     }
 
-    public Long getProfileId() {
-        return profileId;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setProfileId(Long profileId) {
-        this.profileId = profileId;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getAgreementType() {

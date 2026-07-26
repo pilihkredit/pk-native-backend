@@ -6,10 +6,10 @@ import java.util.Optional;
 public interface UserLenderStatusQueryRepository {
     void upsert(UserLenderStatusQueryData data);
 
-    Optional<UserLenderStatusQueryData> findByProfileId(long profileId);
+    Optional<UserLenderStatusQueryData> findByUserId(long userId);
 
     record UserLenderStatusQueryData(
-            long profileId,
+            long userId,
             String mobileNo,
             String partnerUserId,
             String lenderUserId,

@@ -5,11 +5,11 @@ import com.pk.core.profile.ProfileContactsModuleData;
 import java.util.Optional;
 
 public interface ProfileContactRepository {
-    Optional<ProfileContactsModuleData> findModuleByProfileId(long profileId);
+    Optional<ProfileContactsModuleData> findModuleByUserId(long userId);
 
-    java.util.List<ProfileContactData> findContactsByProfileId(long profileId);
+    java.util.List<ProfileContactData> findContactsByUserId(long userId);
 
-    void replaceContacts(long profileId, ProfileContactsModuleData module, java.util.List<ProfileContactData> contacts);
+    void replaceContacts(long userId, ProfileContactsModuleData module, java.util.List<ProfileContactData> contacts);
 
-    void updateLastLenderInteraction(long profileId, Long externalInteractionId);
+    void updateLastLenderInteraction(long userId, Long externalInteractionId);
 }

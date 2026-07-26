@@ -45,7 +45,7 @@ class RepayCurrentOrderFacadeTest {
 
     @Test
     void setCurrentOrderCallsLenderAndPersistsActiveRecord() {
-        when(loanBillReadRepository.findByProfileIdAndLoanApplyId(1L, "LOAN-1"))
+        when(loanBillReadRepository.findByUserIdAndLoanApplyId(1L, "LOAN-1"))
                 .thenReturn(Optional.of(loanRecord()));
         when(repaymentTrialSnapshotRepository.findByTrialNo("BT-1")).thenReturn(Optional.of(
                 new RepaymentTrialSnapshotRepository.TrialSnapshotRecord(
@@ -65,7 +65,7 @@ class RepayCurrentOrderFacadeTest {
             RepayCurrentOrderRepository.CurrentOrderUpsert upsert = invocation.getArgument(0);
             return new RepayCurrentOrderRepository.CurrentOrderRecord(
                     99L,
-                    upsert.profileId(),
+                    upsert.userId(),
                     upsert.currentOrderNo(),
                     upsert.trialId(),
                     upsert.repayOrdersJson(),
@@ -93,14 +93,14 @@ class RepayCurrentOrderFacadeTest {
 
     @Test
     void setCurrentOrderWithoutBatchTrialNoUsesZeroTrialId() {
-        when(loanBillReadRepository.findByProfileIdAndLoanApplyId(1L, "LOAN-1"))
+        when(loanBillReadRepository.findByUserIdAndLoanApplyId(1L, "LOAN-1"))
                 .thenReturn(Optional.of(loanRecord()));
         when(repayCurrentOrderRepository.upsertActive(any())).thenAnswer(invocation -> {
             RepayCurrentOrderRepository.CurrentOrderUpsert upsert = invocation.getArgument(0);
             assertThat(upsert.trialId()).isZero();
             return new RepayCurrentOrderRepository.CurrentOrderRecord(
                     99L,
-                    upsert.profileId(),
+                    upsert.userId(),
                     upsert.currentOrderNo(),
                     upsert.trialId(),
                     upsert.repayOrdersJson(),

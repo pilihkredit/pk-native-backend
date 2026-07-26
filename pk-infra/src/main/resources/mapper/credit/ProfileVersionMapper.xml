@@ -6,13 +6,12 @@
     <select id="nextVersionNo" resultType="int">
         SELECT COALESCE(MAX(version_no), 0) + 1
         FROM user_profile_version
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
     </select>
 
     <insert id="insert">
         INSERT INTO user_profile_version (
-            profile_id,
-            mobile_no,
+            user_id,
             version_no,
             snapshot_hash,
             snapshot_json,
@@ -21,8 +20,7 @@
             processing_purpose,
             source
         ) VALUES (
-            #{profileId},
-            #{mobileNo},
+            #{userId},
             #{versionNo},
             #{snapshotHash},
             #{snapshotJson},
@@ -33,10 +31,10 @@
         )
     </insert>
 
-    <select id="findIdByProfileIdAndVersionNo" resultType="long">
+    <select id="findIdByUserIdAndVersionNo" resultType="long">
         SELECT id
         FROM user_profile_version
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
           AND version_no = #{versionNo}
     </select>
 </mapper>

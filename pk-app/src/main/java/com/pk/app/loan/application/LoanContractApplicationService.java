@@ -29,7 +29,7 @@ public class LoanContractApplicationService {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
         return LoanContractsResponse.from(
-                loanContractFacade.listContracts(principal.profileId(), loanApplyId)
+                loanContractFacade.listContracts(principal.userId(), loanApplyId)
         );
     }
 }

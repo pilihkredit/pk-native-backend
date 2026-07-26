@@ -57,9 +57,9 @@ class LoanTrialFacadeTest {
 
     @Test
     void trialForceRefreshesProductsPersistsQuoteAndReturnsDisplayFields() {
-        when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditApplicationRepository.findByApplyIdAndUserId("APPLY-1", 1L))
                 .thenReturn(Optional.of(approvedRecord()));
-        when(creditLenderStatusQueryRepository.findLatestByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditLenderStatusQueryRepository.findLatestByApplyIdAndUserId("APPLY-1", 1L))
                 .thenReturn(Optional.of(statusQuery()));
         ProductListResolver.ResolvedProductList resolved = new ProductListResolver.ResolvedProductList(
                 501L,
@@ -75,9 +75,8 @@ class LoanTrialFacadeTest {
             return new LoanQuoteRepository.LoanQuoteRecord(
                     900L,
                     insert.quoteNo(),
-                    insert.profileId(),
+                    insert.userId(),
                     insert.creditApplicationId(),
-                    insert.mobileNo(),
                     insert.couponId(),
                     insert.externalInteractionId(),
                     insert.quote(),
@@ -109,15 +108,13 @@ class LoanTrialFacadeTest {
         ArgumentCaptor<LoanQuoteRepository.LoanQuoteInsert> insertCaptor =
                 ArgumentCaptor.forClass(LoanQuoteRepository.LoanQuoteInsert.class);
         verify(loanQuoteRepository).upsert(insertCaptor.capture(), any());
-        assertThat(insertCaptor.getValue().profileId()).isEqualTo(1L);
-        assertThat(insertCaptor.getValue().mobileNo()).isEqualTo("81234567890");
+        assertThat(insertCaptor.getValue().userId()).isEqualTo(1L);
         assertThat(insertCaptor.getValue().couponId()).isEqualTo(88L);
         assertThat(insertCaptor.getValue().externalInteractionId()).isEqualTo(77L);
         assertThat(insertCaptor.getValue().quote().loanTerm()).isEqualTo(6);
         assertThat(insertCaptor.getValue().quote().handFee()).isEqualByComparingTo("45000");
         verify(loanQuoteRepository).upsert(any(), termCaptor.capture());
         assertThat(termCaptor.getValue()).allSatisfy(term -> {
-            assertThat(term.mobileNo()).isEqualTo("81234567890");
             assertThat(term.term().shouldAmount()).isEqualByComparingTo("295000");
             assertThat(term.term().valueDate()).isEqualTo(1747180800000L);
         });

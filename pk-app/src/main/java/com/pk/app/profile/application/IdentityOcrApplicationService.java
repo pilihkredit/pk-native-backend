@@ -44,7 +44,7 @@ public class IdentityOcrApplicationService {
         String traceId = RequestTrace.resolveTraceId(httpRequest);
         String clientRequestId = RequestTrace.resolveClientRequestId(httpRequest, null);
         IdentityOcrFacade.LicenseTokenResult result = identityOcrFacade.getLicenseToken(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 request == null ? null : request.licenseEffectiveSeconds(),
@@ -62,7 +62,7 @@ public class IdentityOcrApplicationService {
         requirePrincipal(principal);
         RequestTrace.resolveClientRequestId(httpRequest, request.requestId());
         IdentityOcrFacade.BasicSaveResult result = identityOcrFacade.saveBasic(
-                principal.profileId(),
+                principal.userId(),
                 principal.mobileNo(),
                 new IdentityOcrFacade.BasicSaveCommand(
                         request.requestId(),
@@ -82,7 +82,7 @@ public class IdentityOcrApplicationService {
         String traceId = RequestTrace.resolveTraceId(httpRequest);
         String clientRequestId = RequestTrace.resolveClientRequestId(httpRequest, null);
         IdentityOcrFacade.OcrCheckResult result = identityOcrFacade.ocrCheck(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 request.imageBase64(),
@@ -117,7 +117,7 @@ public class IdentityOcrApplicationService {
         String traceId = RequestTrace.resolveTraceId(httpRequest);
         String clientRequestId = RequestTrace.resolveClientRequestId(httpRequest, null);
         IdentityOcrFacade.LivenessCheckResult result = identityOcrFacade.livenessCheck(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 request.livenessId(),
@@ -141,7 +141,7 @@ public class IdentityOcrApplicationService {
         String traceId = RequestTrace.resolveTraceId(httpRequest);
         RequestTrace.resolveClientRequestId(httpRequest, request.requestId());
         IdentityOcrFacade.FaceRecognitionResult result = identityOcrFacade.faceRecognition(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new IdentityOcrFacade.FaceRecognitionCommand(
@@ -166,8 +166,8 @@ public class IdentityOcrApplicationService {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        if (principal.profileId() <= 0) {
-            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST, "profileId is required");
+        if (principal.userId() <= 0) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST, "userId is required");
         }
         if (principal.partnerUserId() == null || principal.partnerUserId().isBlank()) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST, "partnerUserId is required");

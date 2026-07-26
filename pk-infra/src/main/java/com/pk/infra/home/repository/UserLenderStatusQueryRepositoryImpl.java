@@ -19,7 +19,7 @@ public class UserLenderStatusQueryRepositoryImpl implements UserLenderStatusQuer
     }
 
     @Override
-    public Optional<UserLenderStatusQueryData> findByProfileId(long profileId) {
-        return Optional.ofNullable(mapper.findByProfileId(profileId));
+    public Optional<UserLenderStatusQueryData> findByUserId(long userId) {
+        return Optional.ofNullable(mapper.findByUserId(userId));
     }
 }

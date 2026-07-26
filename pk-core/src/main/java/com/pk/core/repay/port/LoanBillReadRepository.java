@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface LoanBillReadRepository {
-    List<LoanBillRecord> findByProfileIdAndBillFilter(long profileId, BillFilter filter);
+    List<LoanBillRecord> findByUserIdAndBillFilter(long userId, BillFilter filter);
 
-    Optional<LoanBillRecord> findByProfileIdAndLoanApplyId(long profileId, String loanApplyId);
+    Optional<LoanBillRecord> findByUserIdAndLoanApplyId(long userId, String loanApplyId);
 
-    List<LoanBillRecord> findPendingByProfileId(long profileId);
+    List<LoanBillRecord> findPendingByUserId(long userId);
 
     enum BillFilter {
         ACTIVE,

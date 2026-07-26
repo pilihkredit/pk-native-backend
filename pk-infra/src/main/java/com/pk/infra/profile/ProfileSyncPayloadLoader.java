@@ -28,10 +28,10 @@ public class ProfileSyncPayloadLoader {
         this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
     }
 
-    public ProfileSyncPayload load(long profileId, ProfileSyncModule module) {
+    public ProfileSyncPayload load(long userId, ProfileSyncModule module) {
         return switch (module) {
-            case PERSONAL -> loadPersonal(profileId);
-            case CONTACT -> loadContacts(profileId);
+            case PERSONAL -> loadPersonal(userId);
+            case CONTACT -> loadContacts(userId);
             case BANK_CARD -> throw new IllegalStateException("Bank card payload must be supplied explicitly");
             case IDENTITY -> throw new IllegalStateException("Identity payload must be supplied explicitly");
             case LOGIN_LOG -> throw new IllegalStateException("Login log payload must be supplied explicitly");
@@ -40,8 +40,8 @@ public class ProfileSyncPayloadLoader {
         };
     }
 
-    private ProfileSyncPayload.PersonalProfilePayload loadPersonal(long profileId) {
-        ProfilePersonalData data = profilePersonalRepository.findByProfileId(profileId)
+    private ProfileSyncPayload.PersonalProfilePayload loadPersonal(long userId) {
+        ProfilePersonalData data = profilePersonalRepository.findByUserId(userId)
                 .orElseThrow(() -> new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS));
         String motherSurname = sensitiveFieldEncryptor.decrypt(data.motherSurname());
         return new ProfileSyncPayload.PersonalProfilePayload(
@@ -53,8 +53,8 @@ public class ProfileSyncPayloadLoader {
         );
     }
 
-    private ProfileSyncPayload.ContactProfilePayload loadContacts(long profileId) {
-        List<ProfileContactData> contacts = profileContactRepository.findContactsByProfileId(profileId);
+    private ProfileSyncPayload.ContactProfilePayload loadContacts(long userId) {
+        List<ProfileContactData> contacts = profileContactRepository.findContactsByUserId(userId);
         if (contacts.isEmpty()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }

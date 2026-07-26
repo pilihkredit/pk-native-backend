@@ -48,9 +48,9 @@ public class LenderSyncAuditRequestBuilder {
             ProfileSyncModule module,
             ProfileSyncPayload payload,
             LenderDeviceContext device,
-            long profileId
+            long userId
     ) {
-        return buildProfileUpsertAudit(requestId, partnerUserId, mobileNo, module, payload, device, profileId, List.of());
+        return buildProfileUpsertAudit(requestId, partnerUserId, mobileNo, module, payload, device, userId, List.of());
     }
 
     public String buildProfileUpsertAudit(
@@ -60,7 +60,7 @@ public class LenderSyncAuditRequestBuilder {
             ProfileSyncModule module,
             ProfileSyncPayload payload,
             LenderDeviceContext device,
-            long profileId,
+            long userId,
             List<com.pk.core.profile.port.LenderProfileSyncPort.SyncCompanion> companions
     ) {
         try {
@@ -71,10 +71,10 @@ public class LenderSyncAuditRequestBuilder {
             if (mobileNo != null && !mobileNo.isBlank()) {
                 userInfo.put("mobileNo", mobileNo.trim());
             }
-            applyModuleAudit(userInfo, module, payload, profileId, requestId);
+            applyModuleAudit(userInfo, module, payload, userId, requestId);
             if (companions != null) {
                 for (com.pk.core.profile.port.LenderProfileSyncPort.SyncCompanion companion : companions) {
-                    applyModuleAudit(userInfo, companion.module(), companion.payload(), profileId, requestId);
+                    applyModuleAudit(userInfo, companion.module(), companion.payload(), userId, requestId);
                 }
             }
             userInfo.set("device", buildLenderDeviceNode(device));
@@ -91,15 +91,15 @@ public class LenderSyncAuditRequestBuilder {
             ObjectNode userInfo,
             ProfileSyncModule module,
             ProfileSyncPayload payload,
-            long profileId,
+            long userId,
             String requestId
     ) {
         switch (module) {
-            case PERSONAL -> applyPersonalAudit(userInfo, profileId);
-            case CONTACT -> applyContactAudit(userInfo, profileId);
-            case BANK_CARD -> applyBankCardAudit(userInfo, profileId, requestId);
+            case PERSONAL -> applyPersonalAudit(userInfo, userId);
+            case CONTACT -> applyContactAudit(userInfo, userId);
+            case BANK_CARD -> applyBankCardAudit(userInfo, userId, requestId);
             case IDENTITY -> applyIdentityAudit(userInfo, (ProfileSyncPayload.IdentityProfilePayload) payload);
-            case LOGIN_LOG -> applyLoginLogAudit(userInfo, profileId);
+            case LOGIN_LOG -> applyLoginLogAudit(userInfo, userId);
             case APPSFLYER_INSTALL -> applyAppsFlyerAudit(
                     userInfo,
                     (ProfileSyncPayload.AppsFlyerInstallPayload) payload
@@ -161,8 +161,8 @@ public class LenderSyncAuditRequestBuilder {
         tongdun.put("tongdunKey", payload.tongdunKey());
     }
 
-    private void applyPersonalAudit(ObjectNode userInfo, long profileId) {
-        ProfilePersonalData data = profilePersonalRepository.findByProfileId(profileId)
+    private void applyPersonalAudit(ObjectNode userInfo, long userId) {
+        ProfilePersonalData data = profilePersonalRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalStateException("personal module data is missing"));
         ObjectNode profile = userInfo.putObject("profile");
         profile.put("educationDegree", data.educationDegree());
@@ -174,8 +174,8 @@ public class LenderSyncAuditRequestBuilder {
         }
     }
 
-    private void applyContactAudit(ObjectNode userInfo, long profileId) {
-        List<ProfileContactData> contacts = profileContactRepository.findContactsByProfileId(profileId);
+    private void applyContactAudit(ObjectNode userInfo, long userId) {
+        List<ProfileContactData> contacts = profileContactRepository.findContactsByUserId(userId);
         ObjectNode contact = userInfo.putObject("contact");
         ArrayNode contactsNode = contact.putArray("userContacts");
         for (ProfileContactData item : contacts) {
@@ -186,17 +186,17 @@ public class LenderSyncAuditRequestBuilder {
         }
     }
 
-    private void applyBankCardAudit(ObjectNode userInfo, long profileId, String requestId) {
+    private void applyBankCardAudit(ObjectNode userInfo, long userId, String requestId) {
         ProfileBankCardData data = profileBankCardRepository.findByLastRequestId(requestId)
-                .or(() -> profileBankCardRepository.findDefaultByProfileId(profileId))
+                .or(() -> profileBankCardRepository.findDefaultByUserId(userId))
                 .orElseThrow(() -> new IllegalStateException("bank card module data is missing"));
         ObjectNode bankCard = userInfo.putObject("bankCard");
         bankCard.put("bankCode", data.bankCode());
         bankCard.set("cardNumber", toEncryptedJsonNode(data.cardNumber()));
     }
 
-    private void applyLoginLogAudit(ObjectNode userInfo, long profileId) {
-        ProfileLoginLogData data = profileLoginLogRepository.findByProfileId(profileId)
+    private void applyLoginLogAudit(ObjectNode userInfo, long userId) {
+        ProfileLoginLogData data = profileLoginLogRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalStateException("login log module data is missing"));
         ObjectNode loginLog = userInfo.putObject("loginLog");
         loginLog.put("loginType", data.loginType());

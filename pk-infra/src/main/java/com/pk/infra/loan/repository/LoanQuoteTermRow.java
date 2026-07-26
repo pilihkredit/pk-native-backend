@@ -3,7 +3,7 @@ package com.pk.infra.loan.repository;
 import java.math.BigDecimal;
 public class LoanQuoteTermRow {
     private long quoteId;
-    private String mobileNo;
+    private long userId;
     private int termNo;
     private Long valueDate;
     private Long dueDate;
@@ -37,8 +37,8 @@ public class LoanQuoteTermRow {
 
     public long getQuoteId() { return quoteId; }
     public void setQuoteId(long quoteId) { this.quoteId = quoteId; }
-    public String getMobileNo() { return mobileNo; }
-    public void setMobileNo(String mobileNo) { this.mobileNo = mobileNo; }
+    public long getUserId() { return userId; }
+    public void setUserId(long userId) { this.userId = userId; }
     public int getTermNo() { return termNo; }
     public void setTermNo(int termNo) { this.termNo = termNo; }
     public Long getValueDate() { return valueDate; }

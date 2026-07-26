@@ -21,11 +21,11 @@ public class AgreementApplicationService {
 
     public AgreementCreateResponse create(AuthenticatedPrincipal principal, AgreementCreateRequest request) {
         String partnerUserId = blankToNull(request.partnerUserId());
-        Long profileId = null;
+        Long userId = null;
         String mobileNo = null;
 
         if (principal != null) {
-            profileId = principal.profileId();
+            userId = principal.userId();
             mobileNo = principal.mobileNo();
             if (partnerUserId != null && !partnerUserId.equals(principal.partnerUserId())) {
                 throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -40,7 +40,7 @@ public class AgreementApplicationService {
                 mobileNo,
                 partnerUserId,
                 request.deviceNo(),
-                profileId,
+                userId,
                 request.clickedAt(),
                 request.items().stream()
                         .map(item -> new AgreementFacade.AgreementItemCommand(

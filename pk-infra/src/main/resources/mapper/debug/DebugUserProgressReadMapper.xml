@@ -24,7 +24,7 @@
     <select id="findCreditApplyIds" resultType="string">
         SELECT apply_id
         FROM credit_application
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
         ORDER BY id DESC
         LIMIT 20
     </select>
@@ -32,7 +32,7 @@
     <select id="findLoanApplyIds" resultType="string">
         SELECT loan_apply_id
         FROM loan_application
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
         ORDER BY id DESC
         LIMIT 20
     </select>

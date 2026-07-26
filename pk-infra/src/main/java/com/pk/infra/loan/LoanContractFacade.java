@@ -23,9 +23,9 @@ public class LoanContractFacade {
         this.contractFileRepository = contractFileRepository;
     }
 
-    public ContractsResult listContracts(long profileId, String loanApplyId) {
+    public ContractsResult listContracts(long userId, String loanApplyId) {
         LoanApplicationRepository.LoanApplicationRecord record = loanApplicationRepository
-                .findByLoanApplyIdAndProfileId(loanApplyId, profileId)
+                .findByLoanApplyIdAndUserId(loanApplyId, userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
 
         LenderLoanContractPort.LenderLoanContractListResult lenderResult =

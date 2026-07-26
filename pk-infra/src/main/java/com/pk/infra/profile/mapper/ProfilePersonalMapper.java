@@ -4,8 +4,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface ProfilePersonalMapper {
-    ProfilePersonalRow findByProfileId(@Param("profileId") long profileId);
+    ProfilePersonalRow findByUserId(@Param("userId") long userId);
     int upsert(ProfilePersonalRow row);
-    int updateEmail(@Param("profileId") long profileId, @Param("userEmail") String userEmail);
-    int updateLastLenderInteraction(@Param("profileId") long profileId, @Param("externalInteractionId") Long externalInteractionId);
+    int updateEmail(@Param("userId") long userId, @Param("userEmail") String userEmail);
+    int updateLastLenderInteraction(@Param("userId") long userId, @Param("externalInteractionId") Long externalInteractionId);
 }

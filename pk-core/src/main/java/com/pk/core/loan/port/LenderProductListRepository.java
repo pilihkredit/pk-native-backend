@@ -13,9 +13,8 @@ public interface LenderProductListRepository {
     ProductListTree insertTree(ProductListInsert command);
 
     record ProductListInsert(
-            long profileId,
+            long userId,
             long creditApplicationId,
-            String mobileNo,
             String applyId,
             String creditApplyNo,
             String lenderUserId,
@@ -30,9 +29,8 @@ public interface LenderProductListRepository {
 
     record ProductListHeader(
             long id,
-            long profileId,
+            long userId,
             long creditApplicationId,
-            String mobileNo,
             String applyId,
             String creditApplyNo,
             String lenderUserId,

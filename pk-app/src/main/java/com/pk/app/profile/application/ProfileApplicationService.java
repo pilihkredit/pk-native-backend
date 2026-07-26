@@ -9,6 +9,7 @@ import com.pk.app.profile.dto.request.ProfileBankCardDeleteRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
+import com.pk.app.profile.dto.request.ProfileMobileChangeRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
 import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
@@ -17,6 +18,7 @@ import com.pk.app.profile.dto.response.ProfileBankCardDeleteResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
+import com.pk.app.profile.dto.response.ProfileMobileChangeResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
 import com.pk.app.profile.dto.response.ProfileTongdunDeviceSaveResponse;
 import com.pk.adapter.pendanaan.PendanaanProperties;
@@ -25,6 +27,7 @@ import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.profile.BankCardListAccessFacade;
+import com.pk.infra.profile.MobileChangeFacade;
 import com.pk.infra.profile.ProfileServiceFacade;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
@@ -33,19 +36,34 @@ import org.springframework.stereotype.Service;
 public class ProfileApplicationService {
     private final ProfileServiceFacade profileServiceFacade;
     private final BankCardListAccessFacade bankCardListAccessFacade;
+    private final MobileChangeFacade mobileChangeFacade;
     private final PendanaanProperties pendanaanProperties;
     private final ObjectMapper objectMapper;
 
     public ProfileApplicationService(
             ProfileServiceFacade profileServiceFacade,
             BankCardListAccessFacade bankCardListAccessFacade,
+            MobileChangeFacade mobileChangeFacade,
             PendanaanProperties pendanaanProperties,
             ObjectMapper objectMapper
     ) {
         this.profileServiceFacade = profileServiceFacade;
         this.bankCardListAccessFacade = bankCardListAccessFacade;
+        this.mobileChangeFacade = mobileChangeFacade;
         this.pendanaanProperties = pendanaanProperties;
         this.objectMapper = objectMapper;
+    }
+
+    public ProfileMobileChangeResponse changeMobile(
+            AuthenticatedPrincipal principal,
+            ProfileMobileChangeRequest request
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        MobileChangeFacade.MobileChangeResult result =
+                mobileChangeFacade.changeMobile(principal.userId(), request.newMobileNo());
+        return new ProfileMobileChangeResponse(result.changed(), result.mobileNo());
     }
 
     public ProfilePersonalSaveResponse savePersonal(
@@ -57,7 +75,7 @@ public class ProfileApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         ProfileServiceFacade.PersonalSaveResult result = profileServiceFacade.savePersonal(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new ProfileServiceFacade.PersonalSaveCommand(
@@ -86,7 +104,7 @@ public class ProfileApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         ProfileServiceFacade.ContactsSaveResult result = profileServiceFacade.saveContacts(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new ProfileServiceFacade.ContactsSaveCommand(
@@ -113,7 +131,7 @@ public class ProfileApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         ProfileServiceFacade.BankCardSaveResult result = profileServiceFacade.saveBankCard(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new ProfileServiceFacade.BankCardSaveCommand(
@@ -139,7 +157,7 @@ public class ProfileApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         ProfileServiceFacade.BankCardDeleteResult result = profileServiceFacade.deleteBankCard(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new ProfileServiceFacade.BankCardDeleteCommand(
@@ -175,7 +193,7 @@ public class ProfileApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         ProfileServiceFacade.LoginLogSaveResult result = profileServiceFacade.saveLoginLog(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new ProfileServiceFacade.LoginLogSaveCommand(
@@ -199,11 +217,11 @@ public class ProfileApplicationService {
             ProfileAppsFlyerInstallSaveRequest request,
             HttpServletRequest httpRequest
     ) {
-        Long profileId = principal == null ? null : principal.profileId();
+        Long userId = principal == null ? null : principal.userId();
         String partnerUserId = principal == null ? null : principal.partnerUserId();
         String mobileNo = principal == null ? null : principal.mobileNo();
         ProfileServiceFacade.AppsFlyerSaveResult result = profileServiceFacade.saveAppsFlyerInstall(
-                profileId,
+                userId,
                 partnerUserId,
                 mobileNo,
                 new ProfileServiceFacade.AppsFlyerSaveCommand(
@@ -267,7 +285,7 @@ public class ProfileApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         ProfileServiceFacade.TongdunSaveResult result = profileServiceFacade.saveTongdunDevice(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new ProfileServiceFacade.TongdunSaveCommand(

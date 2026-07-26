@@ -33,7 +33,7 @@ class JwtTokenIssuerTest {
         assertThat(tokenPair.accessTokenExpiresInSeconds()).isEqualTo(900L);
 
         AuthenticatedPrincipal principal = issuer.parseAccessToken(tokenPair.accessToken());
-        assertThat(principal.profileId()).isEqualTo(42L);
+        assertThat(principal.userId()).isEqualTo(42L);
         assertThat(principal.partnerUserId()).isEqualTo("U10001");
         assertThat(principal.sessionVersion()).isEqualTo(3L);
     }

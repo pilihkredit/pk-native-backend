@@ -25,8 +25,8 @@ public class RedisOcrSessionStore implements OcrSessionStore {
     }
 
     @Override
-    public Optional<OcrSessionState> find(long profileId) {
-        String value = redisTemplate.opsForValue().get(key(profileId));
+    public Optional<OcrSessionState> find(long userId) {
+        String value = redisTemplate.opsForValue().get(key(userId));
         if (value == null || value.isBlank()) {
             return Optional.empty();
         }
@@ -38,10 +38,10 @@ public class RedisOcrSessionStore implements OcrSessionStore {
     }
 
     @Override
-    public void save(long profileId, OcrSessionState state) {
+    public void save(long userId, OcrSessionState state) {
         try {
             redisTemplate.opsForValue().set(
-                    key(profileId),
+                    key(userId),
                     objectMapper.writeValueAsString(state),
                     sessionTtl
             );
@@ -50,7 +50,7 @@ public class RedisOcrSessionStore implements OcrSessionStore {
         }
     }
 
-    private static String key(long profileId) {
-        return KEY_PREFIX + profileId;
+    private static String key(long userId) {
+        return KEY_PREFIX + userId;
     }
 }

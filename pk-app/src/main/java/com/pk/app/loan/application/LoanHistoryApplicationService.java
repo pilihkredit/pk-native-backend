@@ -21,7 +21,7 @@ public class LoanHistoryApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         LoanHistoryFacade.HistoryResult result = loanHistoryFacade.listHistory(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo()
         );

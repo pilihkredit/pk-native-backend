@@ -37,9 +37,9 @@ public class RepayTrialFacade {
         this.objectMapper = objectMapper;
     }
 
-    public TrialResult trial(long profileId, TrialCommand command) {
+    public TrialResult trial(long userId, TrialCommand command) {
         validateTrialCommand(command);
-        requireLoan(profileId, command.loanApplyId());
+        requireLoan(userId, command.loanApplyId());
         boolean settle = isEarlySettle(command.repayType(), command.termNos());
         if (!settle && (command.termNos() == null || command.termNos().isEmpty())) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -54,11 +54,11 @@ public class RepayTrialFacade {
         Instant createdAt = Instant.now();
         String trialNo = RepayNoGenerator.trialNo();
         long expiresAt = createdAt.plus(repayTrialProperties.ttl()).toEpochMilli();
-        persistSingleTrial(profileId, trialNo, settle, command.termNos(), lenderResult, createdAt);
+        persistSingleTrial(userId, trialNo, settle, command.termNos(), lenderResult, createdAt);
         return toTrialResult(trialNo, expiresAt, lenderResult);
     }
 
-    public BatchTrialResult trialBatch(long profileId, BatchTrialCommand command) {
+    public BatchTrialResult trialBatch(long userId, BatchTrialCommand command) {
         validateBatchCommand(command);
         Set<String> loanApplyIds = new HashSet<>();
         List<LenderRepayTrialPort.LenderRepayTrialCommand> lenderCommands = new ArrayList<>();
@@ -66,7 +66,7 @@ public class RepayTrialFacade {
             if (!loanApplyIds.add(order.loanApplyId())) {
                 throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
             }
-            requireLoan(profileId, order.loanApplyId());
+            requireLoan(userId, order.loanApplyId());
             boolean settle = order.settle();
             if (!settle && (order.termNos() == null || order.termNos().isEmpty())) {
                 throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -82,7 +82,7 @@ public class RepayTrialFacade {
         );
         Instant createdAt = Instant.now();
         String batchTrialNo = RepayNoGenerator.batchTrialNo();
-        persistBatchTrial(profileId, batchTrialNo, command.repayOrders(), lenderResult, createdAt);
+        persistBatchTrial(userId, batchTrialNo, command.repayOrders(), lenderResult, createdAt);
         return new BatchTrialResult(
                 batchTrialNo,
                 lenderResult.totalShouldAmount(),
@@ -94,13 +94,13 @@ public class RepayTrialFacade {
         );
     }
 
-    private void requireLoan(long profileId, String loanApplyId) {
-        loanBillReadRepository.findByProfileIdAndLoanApplyId(profileId, loanApplyId)
+    private void requireLoan(long userId, String loanApplyId) {
+        loanBillReadRepository.findByUserIdAndLoanApplyId(userId, loanApplyId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
     }
 
     private void persistSingleTrial(
-            long profileId,
+            long userId,
             String trialNo,
             boolean settle,
             List<Integer> termNos,
@@ -108,12 +108,12 @@ public class RepayTrialFacade {
             Instant createdAt
     ) {
         LoanBillReadRepository.LoanBillRecord loan = loanBillReadRepository
-                .findByProfileIdAndLoanApplyId(profileId, lenderResult.loanApplyId())
+                .findByUserIdAndLoanApplyId(userId, lenderResult.loanApplyId())
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         repaymentTrialSnapshotRepository.insert(
                 new RepaymentTrialSnapshotRepository.TrialSnapshotInsert(
                         trialNo,
-                        profileId,
+                        userId,
                         "SINGLE",
                         1,
                         lenderResult.shouldAmount(),
@@ -134,7 +134,7 @@ public class RepayTrialFacade {
     }
 
     private void persistBatchTrial(
-            long profileId,
+            long userId,
             String batchTrialNo,
             List<BatchOrderCommand> orders,
             LenderRepayTrialPort.LenderRepayTrialBatchResult lenderResult,
@@ -143,7 +143,7 @@ public class RepayTrialFacade {
         List<RepaymentTrialSnapshotRepository.TrialOrderInsert> orderInserts = new ArrayList<>();
         for (LenderRepayTrialResult billTrial : lenderResult.billTrials()) {
             LoanBillReadRepository.LoanBillRecord loan = loanBillReadRepository
-                    .findByProfileIdAndLoanApplyId(profileId, billTrial.loanApplyId())
+                    .findByUserIdAndLoanApplyId(userId, billTrial.loanApplyId())
                     .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
             BatchOrderCommand sourceOrder = orders.stream()
                     .filter(order -> order.loanApplyId().equals(billTrial.loanApplyId()))
@@ -159,7 +159,7 @@ public class RepayTrialFacade {
         repaymentTrialSnapshotRepository.insert(
                 new RepaymentTrialSnapshotRepository.TrialSnapshotInsert(
                         batchTrialNo,
-                        profileId,
+                        userId,
                         "BATCH",
                         lenderResult.totalBillCount(),
                         lenderResult.totalShouldAmount(),

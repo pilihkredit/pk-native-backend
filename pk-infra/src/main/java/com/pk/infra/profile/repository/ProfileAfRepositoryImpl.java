@@ -40,15 +40,14 @@ public class ProfileAfRepositoryImpl implements ProfileAfRepository {
     }
 
     @Override
-    public void bindProfileIfNull(long id, long profileId, String mobileNo) {
-        profileAfMapper.bindProfileIfNull(id, profileId, mobileNo);
+    public void bindProfileIfNull(long id, long userId) {
+        profileAfMapper.bindProfileIfNull(id, userId);
     }
 
     private ProfileAfData toData(ProfileAfRow row) {
         return new ProfileAfData(
                 row.id,
-                row.profileId,
-                row.mobileNo,
+                row.userId,
                 row.deviceNo,
                 row.appsflyerId,
                 row.advertisingId,
@@ -98,8 +97,7 @@ public class ProfileAfRepositoryImpl implements ProfileAfRepository {
 
     private static ProfileAfRow toRow(ProfileAfData data) {
         ProfileAfRow row = new ProfileAfRow();
-        row.profileId = data.profileId();
-        row.mobileNo = data.mobileNo();
+        row.userId = data.userId();
         row.deviceNo = data.deviceNo();
         row.appsflyerId = data.appsflyerId();
         row.advertisingId = data.advertisingId();

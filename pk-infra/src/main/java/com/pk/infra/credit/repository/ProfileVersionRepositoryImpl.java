@@ -24,13 +24,13 @@ public class ProfileVersionRepositoryImpl implements ProfileVersionRepository {
     }
 
     @Override
-    public long createSnapshot(long profileId, String mobileNo, List<String> completedModules, String source) {
-        int versionNo = profileVersionMapper.nextVersionNo(profileId);
+    public long createSnapshot(long userId, String mobileNo, List<String> completedModules, String source) {
+        int versionNo = profileVersionMapper.nextVersionNo(userId);
         String completedModulesJson = serializeModules(completedModules);
-        String snapshotJson = "{\"profileId\":" + profileId + "}";
+        String snapshotJson = "{\"userId\":" + userId + "}";
         String snapshotHash = sha256Hex(snapshotJson);
         profileVersionMapper.insert(
-                profileId,
+                userId,
                 mobileNo,
                 versionNo,
                 snapshotHash,
@@ -40,7 +40,7 @@ public class ProfileVersionRepositoryImpl implements ProfileVersionRepository {
                 PROCESSING_PURPOSE,
                 source
         );
-        Long id = profileVersionMapper.findIdByProfileIdAndVersionNo(profileId, versionNo);
+        Long id = profileVersionMapper.findIdByUserIdAndVersionNo(userId, versionNo);
         if (id == null) {
             throw new IllegalStateException("Failed to load inserted profile version");
         }

@@ -112,9 +112,9 @@ public class AuthServiceFacade {
                 authProperties.otpTtl()
         );
 
-        Optional<Long> profileId = userAuthRepository.findByMobileNo(mobileNo).map(UserProfileSummary::profileId);
+        Optional<Long> userId = userAuthRepository.findByMobileNo(mobileNo).map(UserProfileSummary::userId);
         long logId = smsSendLogRepository.insert(new SmsSendLogRepository.SmsSendLogEntry(
-                profileId,
+                userId,
                 mobileNo,
                 deviceNo,
                 otpToken,
@@ -161,9 +161,9 @@ public class AuthServiceFacade {
                 challengeTtl
         );
 
-        Optional<Long> profileId = userAuthRepository.findByMobileNo(mobileNo).map(UserProfileSummary::profileId);
+        Optional<Long> userId = userAuthRepository.findByMobileNo(mobileNo).map(UserProfileSummary::userId);
         long logId = whatsAppSendLogRepository.insert(new WhatsAppSendLogRepository.WhatsAppSendLogEntry(
-                profileId,
+                userId,
                 mobileNo,
                 deviceNo,
                 otpToken,
@@ -194,12 +194,12 @@ public class AuthServiceFacade {
 
         boolean registered = userAuthRepository.findByMobileNo(mobileNo).isPresent();
         boolean passwordSet = userAuthRepository.findByMobileNo(mobileNo)
-                .map(profile -> userAuthRepository.isPasswordSet(profile.profileId()))
+                .map(profile -> userAuthRepository.isPasswordSet(profile.userId()))
                 .orElse(false);
         return new MobileCheckResult(registered, registered ? "EXISTING" : "NEW", passwordSet);
     }
 
-    public void setPassword(long profileId, String password, String confirmPassword) {
+    public void setPassword(long userId, String password, String confirmPassword) {
         if (password == null || password.isBlank() || confirmPassword == null || confirmPassword.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
@@ -209,11 +209,11 @@ public class AuthServiceFacade {
         if (!PasswordFormatValidator.isValid(password)) {
             throw new ApiException(ApiCode.INVALID_PASSWORD_FORMAT);
         }
-        if (userAuthRepository.isPasswordSet(profileId)) {
+        if (userAuthRepository.isPasswordSet(userId)) {
             throw new ApiException(ApiCode.PASSWORD_ALREADY_SET);
         }
         EncryptedField encryptedPassword = sensitiveFieldEncryptor.encrypt(password);
-        userAuthRepository.savePassword(profileId, encryptedPassword);
+        userAuthRepository.savePassword(userId, encryptedPassword);
     }
 
     public PasswordLoginResult loginByPassword(String mobileNo, String password, String deviceNo) {
@@ -228,7 +228,7 @@ public class AuthServiceFacade {
         UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
                 .orElseThrow(() -> new ApiException(ApiCode.INVALID_MOBILE_OR_PASSWORD));
         UserAuthRepository.PasswordCredential credential = userAuthRepository
-                .findPasswordCredential(profile.profileId())
+                .findPasswordCredential(profile.userId())
                 .orElseThrow(() -> new ApiException(ApiCode.PASSWORD_NOT_SET));
 
         if (!passwordMatches(password, credential.password())) {
@@ -239,8 +239,8 @@ public class AuthServiceFacade {
         return new PasswordLoginResult(profile, tokenPair, true);
     }
 
-    public boolean isPasswordSet(long profileId) {
-        return userAuthRepository.isPasswordSet(profileId);
+    public boolean isPasswordSet(long userId) {
+        return userAuthRepository.isPasswordSet(userId);
     }
 
     public OtpVerifyResult verifyOtp(String mobileNo, String otpToken, String otpCode, String deviceNo) {
@@ -267,7 +267,7 @@ public class AuthServiceFacade {
                     .ifPresent(whatsappOtpChallengeStore::delete);
             UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
             TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_WHATSAPP);
-            boolean passwordSet = userAuthRepository.isPasswordSet(profile.profileId());
+            boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
             return new OtpVerifyResult(profile, tokenPair, passwordSet);
         }
         String otpToken = whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
@@ -320,7 +320,7 @@ public class AuthServiceFacade {
 
         UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
         TokenPair tokenPair = openSession(profile, deviceNo, loginChannel);
-        boolean passwordSet = userAuthRepository.isPasswordSet(profile.profileId());
+        boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
         return new OtpVerifyResult(profile, tokenPair, passwordSet);
     }
 
@@ -330,22 +330,22 @@ public class AuthServiceFacade {
         }
         RefreshTokenStore.RefreshTokenRecord record = refreshTokenStore.find(refreshToken)
                 .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
-        AuthSession session = sessionStore.findByProfileId(record.profileId())
+        AuthSession session = sessionStore.findByUserId(record.userId())
                 .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
         if (session.sessionVersion() != record.sessionVersion()) {
             refreshTokenStore.delete(refreshToken);
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        UserProfileSummary profile = userAuthRepository.findByProfileId(record.profileId())
+        UserProfileSummary profile = userAuthRepository.findByUserId(record.userId())
                 .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
         return issueAccessToken(profile, session.sessionVersion(), session.deviceId());
     }
 
     public void logout(AuthenticatedPrincipal principal) {
-        sessionStore.delete(principal.profileId());
-        refreshTokenStore.deleteAllForProfile(principal.profileId());
-        userAuthRepository.clearSessionTokens(principal.profileId());
-        userAuthRepository.updateLastLogoutAt(principal.profileId(), Instant.now());
+        sessionStore.delete(principal.userId());
+        refreshTokenStore.deleteAllForProfile(principal.userId());
+        userAuthRepository.clearSessionTokens(principal.userId());
+        userAuthRepository.updateLastLogoutAt(principal.userId(), Instant.now());
     }
 
     /**
@@ -357,12 +357,12 @@ public class AuthServiceFacade {
         }
         AccountCloseResult result;
         try {
-            result = userProfileBindingRepository.closeAccount(principal.profileId());
+            result = userProfileBindingRepository.closeAccount(principal.userId());
         } catch (ApiException exception) {
             if (exception.apiCode() == ApiCode.UNAUTHORIZED_REQUEST) {
                 log.warn(
-                        "Close account rejected: profile row missing profileId={} mobileNo={}",
-                        principal.profileId(),
+                        "Close account rejected: profile row missing userId={} mobileNo={}",
+                        principal.userId(),
                         principal.mobileNo()
                 );
             }
@@ -374,12 +374,12 @@ public class AuthServiceFacade {
 
     public AuthenticatedPrincipal validateAccessToken(String accessToken) {
         AuthenticatedPrincipal principal = tokenIssuer.parseAccessToken(accessToken);
-        AuthSession session = sessionStore.findByProfileId(principal.profileId()).orElse(null);
+        AuthSession session = sessionStore.findByUserId(principal.userId()).orElse(null);
         if (session == null) {
             AuthRejectReasons.set(AuthRejectReasons.SESSION_NOT_FOUND);
             log.warn(
-                    "Access token session not found profileId={} mobileNo={} tokenSessionVersion={}",
-                    principal.profileId(),
+                    "Access token session not found userId={} mobileNo={} tokenSessionVersion={}",
+                    principal.userId(),
                     principal.mobileNo(),
                     principal.sessionVersion()
             );
@@ -388,8 +388,8 @@ public class AuthServiceFacade {
         if (session.sessionVersion() != principal.sessionVersion()) {
             AuthRejectReasons.set(AuthRejectReasons.SESSION_VERSION_MISMATCH);
             log.warn(
-                    "Access token session version mismatch profileId={} mobileNo={} tokenSessionVersion={} activeSessionVersion={}",
-                    principal.profileId(),
+                    "Access token session version mismatch userId={} mobileNo={} tokenSessionVersion={} activeSessionVersion={}",
+                    principal.userId(),
                     principal.mobileNo(),
                     principal.sessionVersion(),
                     session.sessionVersion()
@@ -408,15 +408,15 @@ public class AuthServiceFacade {
     }
 
     private TokenPair openSession(UserProfileSummary profile, String deviceId, String loginChannel) {
-        long nextVersion = sessionStore.findByProfileId(profile.profileId())
+        long nextVersion = sessionStore.findByUserId(profile.userId())
                 .map(AuthSession::sessionVersion)
                 .orElse(0L) + 1L;
         Instant issuedAt = Instant.now();
-        AuthSession session = new AuthSession(profile.profileId(), nextVersion, deviceId, loginChannel, issuedAt);
-        sessionStore.save(profile.profileId(), session, authProperties.refreshTokenTtl());
-        refreshTokenStore.deleteAllForProfile(profile.profileId());
+        AuthSession session = new AuthSession(profile.userId(), nextVersion, deviceId, loginChannel, issuedAt);
+        sessionStore.save(profile.userId(), session, authProperties.refreshTokenTtl());
+        refreshTokenStore.deleteAllForProfile(profile.userId());
         TokenPair tokenPair = tokenIssuer.issue(
-                profile.profileId(),
+                profile.userId(),
                 profile.partnerUserId(),
                 profile.mobileNo(),
                 nextVersion,
@@ -424,29 +424,29 @@ public class AuthServiceFacade {
         );
         refreshTokenStore.save(
                 tokenPair.refreshToken(),
-                new RefreshTokenStore.RefreshTokenRecord(profile.profileId(), nextVersion, deviceId),
+                new RefreshTokenStore.RefreshTokenRecord(profile.userId(), nextVersion, deviceId),
                 authProperties.refreshTokenTtl()
         );
         userAuthRepository.saveSessionTokens(
-                profile.profileId(),
+                profile.userId(),
                 tokenPair.accessToken(),
                 tokenPair.refreshToken(),
                 Instant.now().plusSeconds(tokenPair.accessTokenExpiresInSeconds())
         );
-        userAuthRepository.updateLastLoginAt(profile.profileId(), Instant.now());
+        userAuthRepository.updateLastLoginAt(profile.userId(), Instant.now());
         return tokenPair;
     }
 
     private TokenPair issueAccessToken(UserProfileSummary profile, long sessionVersion, String deviceId) {
         TokenPair tokenPair = tokenIssuer.issue(
-                profile.profileId(),
+                profile.userId(),
                 profile.partnerUserId(),
                 profile.mobileNo(),
                 sessionVersion,
                 deviceId
         );
         userAuthRepository.saveAccessToken(
-                profile.profileId(),
+                profile.userId(),
                 tokenPair.accessToken(),
                 Instant.now().plusSeconds(tokenPair.accessTokenExpiresInSeconds())
         );

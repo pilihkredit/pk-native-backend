@@ -16,9 +16,8 @@ public interface LoanQuoteRepository {
 
     record LoanQuoteInsert(
             String quoteNo,
-            Long profileId,
+            Long userId,
             long creditApplicationId,
-            String mobileNo,
             Long couponId,
             Long externalInteractionId,
             LoanTrialQuoteDetail quote,
@@ -27,7 +26,7 @@ public interface LoanQuoteRepository {
     }
 
     record LoanQuoteTermInsert(
-            String mobileNo,
+            long userId,
             LenderTrialTerm term
     ) {
     }
@@ -35,9 +34,8 @@ public interface LoanQuoteRepository {
     record LoanQuoteRecord(
             long id,
             String quoteNo,
-            Long profileId,
+            Long userId,
             long creditApplicationId,
-            String mobileNo,
             Long couponId,
             Long externalInteractionId,
             LoanTrialQuoteDetail quote,

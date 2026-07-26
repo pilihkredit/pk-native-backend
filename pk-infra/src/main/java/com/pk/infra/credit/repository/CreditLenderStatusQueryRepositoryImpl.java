@@ -24,7 +24,7 @@ public class CreditLenderStatusQueryRepositoryImpl implements CreditLenderStatus
     }
 
     @Override
-    public Optional<CreditLenderStatusQueryData> findLatestByApplyIdAndProfileId(String applyId, long profileId) {
-        return Optional.ofNullable(mapper.findLatestByApplyIdAndProfileId(applyId, profileId));
+    public Optional<CreditLenderStatusQueryData> findLatestByApplyIdAndUserId(String applyId, long userId) {
+        return Optional.ofNullable(mapper.findLatestByApplyIdAndUserId(applyId, userId));
     }
 }

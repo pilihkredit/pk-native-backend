@@ -13,7 +13,7 @@ public interface SmsSendLogRepository {
     void updateProviderResult(long logId, SmsSendResult result);
 
     record SmsSendLogEntry(
-            Optional<Long> profileId,
+            Optional<Long> userId,
             String mobileNo,
             String deviceNo,
             String otpToken,

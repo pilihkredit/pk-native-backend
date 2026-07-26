@@ -41,10 +41,9 @@ class ProfileSyncHandlerTest {
                 mock(SensitiveFieldEncryptor.class)
         );
 
-        when(profilePersonalRepository.findByProfileId(7L)).thenReturn(java.util.Optional.of(
+        when(profilePersonalRepository.findByUserId(7L)).thenReturn(java.util.Optional.of(
                 new ProfilePersonalData(
                         7L,
-                        MOBILE_NO,
                         5,
                         16,
                         "5000000",

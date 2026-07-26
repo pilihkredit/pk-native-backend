@@ -25,28 +25,28 @@ public class LoanProductFacade {
         this.productListResolver = productListResolver;
     }
 
-    public ProductsResult listProducts(long profileId, String applyId) {
-        return listProducts(profileId, applyId, false);
+    public ProductsResult listProducts(long userId, String applyId) {
+        return listProducts(userId, applyId, false);
     }
 
-    public ProductsResult listProductsForceRefresh(long profileId, String applyId) {
-        return listProducts(profileId, applyId, true);
+    public ProductsResult listProductsForceRefresh(long userId, String applyId) {
+        return listProducts(userId, applyId, true);
     }
 
-    public ProductsResult listProducts(long profileId, String applyId, boolean forceRefresh) {
-        CreditApplicationRepository.CreditApplicationRecord record = requireApprovedCredit(profileId, applyId);
+    public ProductsResult listProducts(long userId, String applyId, boolean forceRefresh) {
+        CreditApplicationRepository.CreditApplicationRecord record = requireApprovedCredit(userId, applyId);
         ProductListResolver.ResolvedProductList resolved =
-                productListResolver.resolve(profileId, record, forceRefresh);
+                productListResolver.resolve(userId, record, forceRefresh);
         return toProductsResult(record.applyId(), resolved);
     }
 
-    public LenderRepayMethod findRepayMethod(long profileId, String applyId, String repayMethodCode) {
+    public LenderRepayMethod findRepayMethod(long userId, String applyId, String repayMethodCode) {
         if (repayMethodCode == null || repayMethodCode.isBlank()) {
             return null;
         }
-        CreditApplicationRepository.CreditApplicationRecord record = requireApprovedCredit(profileId, applyId);
+        CreditApplicationRepository.CreditApplicationRecord record = requireApprovedCredit(userId, applyId);
         ProductListResolver.ResolvedProductList resolved =
-                productListResolver.resolve(profileId, record, false);
+                productListResolver.resolve(userId, record, false);
         for (LenderLoanProduct product : resolved.products()) {
             for (LenderRepayMethod repayMethod : product.repayMethods()) {
                 if (repayMethodCode.equals(repayMethod.repayMethod())) {
@@ -57,18 +57,18 @@ public class LoanProductFacade {
         return null;
     }
 
-    public long latestProductListId(long profileId, String applyId, boolean forceRefresh) {
-        CreditApplicationRepository.CreditApplicationRecord record = requireApprovedCredit(profileId, applyId);
-        return productListResolver.resolve(profileId, record, forceRefresh).productListId();
+    public long latestProductListId(long userId, String applyId, boolean forceRefresh) {
+        CreditApplicationRepository.CreditApplicationRecord record = requireApprovedCredit(userId, applyId);
+        return productListResolver.resolve(userId, record, forceRefresh).productListId();
     }
 
     public ProductListResolver.ResolvedProductList resolveProductList(
-            long profileId,
+            long userId,
             String applyId,
             boolean forceRefresh
     ) {
-        CreditApplicationRepository.CreditApplicationRecord record = requireApprovedCredit(profileId, applyId);
-        return productListResolver.resolve(profileId, record, forceRefresh);
+        CreditApplicationRepository.CreditApplicationRecord record = requireApprovedCredit(userId, applyId);
+        return productListResolver.resolve(userId, record, forceRefresh);
     }
 
     public void requireProductRepayMethod(
@@ -92,19 +92,19 @@ public class LoanProductFacade {
         throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
     }
 
-    private CreditApplicationRepository.CreditApplicationRecord requireApprovedCredit(long profileId, String applyId) {
-        String resolvedApplyId = resolveApplyId(profileId, applyId);
+    private CreditApplicationRepository.CreditApplicationRecord requireApprovedCredit(long userId, String applyId) {
+        String resolvedApplyId = resolveApplyId(userId, applyId);
         CreditApplicationRepository.CreditApplicationRecord record = creditApplicationRepository
-                .findByApplyIdAndProfileId(resolvedApplyId, profileId)
+                .findByApplyIdAndUserId(resolvedApplyId, userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         return record;
     }
 
-    private String resolveApplyId(long profileId, String applyId) {
+    private String resolveApplyId(long userId, String applyId) {
         if (applyId != null && !applyId.isBlank()) {
             return applyId;
         }
-        return creditApplicationRepository.findLatestByProfileId(profileId)
+        return creditApplicationRepository.findLatestByUserId(userId)
                 .map(CreditApplicationRepository.CreditApplicationRecord::applyId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
     }

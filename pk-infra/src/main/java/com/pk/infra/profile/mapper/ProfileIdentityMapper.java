@@ -6,17 +6,17 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface ProfileIdentityMapper {
-    ProfileIdentityRow findByProfileId(@Param("profileId") long profileId);
+    ProfileIdentityRow findByUserId(@Param("userId") long userId);
 
     int upsert(ProfileIdentityRow row);
 
     int updateLastLenderInteraction(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("externalInteractionId") Long externalInteractionId
     );
 
     int scheduleRetentionAfterAccountClosure(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("retentionUntil") java.time.Instant retentionUntil
     );
 }

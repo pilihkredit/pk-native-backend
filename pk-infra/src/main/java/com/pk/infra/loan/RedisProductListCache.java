@@ -17,8 +17,8 @@ public class RedisProductListCache implements ProductListCache {
     }
 
     @Override
-    public Optional<Long> getProductListId(long profileId, String applyId) {
-        String value = redisTemplate.opsForValue().get(cacheKey(profileId, applyId));
+    public Optional<Long> getProductListId(long userId, String applyId) {
+        String value = redisTemplate.opsForValue().get(cacheKey(userId, applyId));
         if (value == null || value.isBlank()) {
             return Optional.empty();
         }
@@ -30,15 +30,15 @@ public class RedisProductListCache implements ProductListCache {
     }
 
     @Override
-    public void putProductListId(long profileId, String applyId, long productListId) {
+    public void putProductListId(long userId, String applyId, long productListId) {
         redisTemplate.opsForValue().set(
-                cacheKey(profileId, applyId),
+                cacheKey(userId, applyId),
                 Long.toString(productListId),
                 cacheTtl
         );
     }
 
-    private static String cacheKey(long profileId, String applyId) {
-        return KEY_PREFIX + profileId + ":" + applyId;
+    private static String cacheKey(long userId, String applyId) {
+        return KEY_PREFIX + userId + ":" + applyId;
     }
 }

@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public class RepaymentTrialInsertParam {
     private long id;
     private String trialNo;
-    private long profileId;
+    private long userId;
     private String trialType;
     private Integer totalBillCount;
     private BigDecimal totalShouldAmount;
@@ -53,12 +53,12 @@ public class RepaymentTrialInsertParam {
         this.trialNo = trialNo;
     }
 
-    public long getProfileId() {
-        return profileId;
+    public long getUserId() {
+        return userId;
     }
 
-    public void setProfileId(long profileId) {
-        this.profileId = profileId;
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
 
     public String getTrialType() {

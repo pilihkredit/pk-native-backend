@@ -9,5 +9,5 @@ import org.apache.ibatis.annotations.Param;
 public interface LoanLenderHistoryOrderMapper {
     int upsert(LoanLenderHistoryOrderData data);
 
-    List<LoanLenderHistoryOrderData> findByProfileId(@Param("profileId") long profileId);
+    List<LoanLenderHistoryOrderData> findByUserId(@Param("userId") long userId);
 }

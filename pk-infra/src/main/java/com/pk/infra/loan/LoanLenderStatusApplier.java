@@ -116,7 +116,7 @@ public class LoanLenderStatusApplier {
         LoanLenderStatusQueryRepository.LoanLenderStatusQueryData next =
                 new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
                         record.loanApplyId(),
-                        record.profileId(),
+                        record.userId(),
                         record.mobileNo(),
                         record.lenderUserId(),
                         firstNonBlank(status.loanApplyNo(), record.externalLoanApplyNo()),

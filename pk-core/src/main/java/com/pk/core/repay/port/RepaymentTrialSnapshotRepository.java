@@ -14,7 +14,7 @@ public interface RepaymentTrialSnapshotRepository {
 
     record TrialSnapshotInsert(
             String trialNo,
-            long profileId,
+            long userId,
             String trialType,
             Integer totalBillCount,
             BigDecimal totalShouldAmount,
@@ -38,7 +38,7 @@ public interface RepaymentTrialSnapshotRepository {
     record TrialSnapshotRecord(
             long id,
             String trialNo,
-            long profileId,
+            long userId,
             String trialType,
             Integer totalBillCount,
             BigDecimal totalShouldAmount,

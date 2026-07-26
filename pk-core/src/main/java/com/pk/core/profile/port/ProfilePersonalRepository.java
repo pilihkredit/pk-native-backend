@@ -4,11 +4,11 @@ import com.pk.core.profile.ProfilePersonalData;
 import java.util.Optional;
 
 public interface ProfilePersonalRepository {
-    Optional<ProfilePersonalData> findByProfileId(long profileId);
+    Optional<ProfilePersonalData> findByUserId(long userId);
 
     void upsert(ProfilePersonalData data);
 
-    void updateEmail(long profileId, String userEmail);
+    void updateEmail(long userId, String userEmail);
 
-    void updateLastLenderInteraction(long profileId, Long externalInteractionId);
+    void updateLastLenderInteraction(long userId, Long externalInteractionId);
 }

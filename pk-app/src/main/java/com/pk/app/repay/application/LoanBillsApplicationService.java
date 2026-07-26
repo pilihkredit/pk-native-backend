@@ -21,7 +21,7 @@ public class LoanBillsApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         LoanBillsFacade.BillsResult result = loanBillsFacade.listBills(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 status

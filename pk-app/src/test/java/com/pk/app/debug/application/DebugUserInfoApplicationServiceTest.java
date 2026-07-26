@@ -70,7 +70,7 @@ class DebugUserInfoApplicationServiceTest {
         when(userAuthRepository.findByMobileNo("801234567")).thenReturn(Optional.of(
                 new UserProfileSummary(10L, "U10001", "801234567", false)
         ));
-        when(readMapper.findAccountByProfileId(10L)).thenReturn(new DebugUserInfoReadMapper.UserAccountRecord(
+        when(readMapper.findAccountByUserId(10L)).thenReturn(new DebugUserInfoReadMapper.UserAccountRecord(
                 10L,
                 "U10001",
                 "EXT10001",
@@ -90,7 +90,7 @@ class DebugUserInfoApplicationServiceTest {
                         List.of("IDENTITY")
                 )
         );
-        when(readMapper.findLatestIdentityAssetByProfileId(10L)).thenReturn(
+        when(readMapper.findLatestIdentityAssetByUserId(10L)).thenReturn(
                 new DebugUserInfoReadMapper.IdentityAssetRecord(
                         1L,
                         "DAVID HARTANTO",
@@ -102,7 +102,7 @@ class DebugUserInfoApplicationServiceTest {
                         Instant.parse("2026-07-01T01:00:00Z")
                 )
         );
-        when(readMapper.findDevicesByProfileId(10L)).thenReturn(List.of(
+        when(readMapper.findDevicesByUserId(10L)).thenReturn(List.of(
                 new DebugUserInfoReadMapper.DeviceRecord(
                         "device-1",
                         "ANDROID",
@@ -127,19 +127,17 @@ class DebugUserInfoApplicationServiceTest {
                         Instant.parse("2026-07-01T02:00:00Z")
                 )
         ));
-        when(profileIdentityRepository.findByProfileId(10L)).thenReturn(Optional.of(
+        when(profileIdentityRepository.findByUserId(10L)).thenReturn(Optional.of(
                 new ProfileIdentityData(
                         10L,
-                        "801234567",
                         "DAVID HARTANTO",
                         idNo,
                         "hash-id",
                         "COMPLETED", null, null)
         ));
-        when(profilePersonalRepository.findByProfileId(10L)).thenReturn(Optional.of(
+        when(profilePersonalRepository.findByUserId(10L)).thenReturn(Optional.of(
                 new ProfilePersonalData(
                         10L,
-                        "801234567",
                         5,
                         16,
                         "5000000",
@@ -149,17 +147,16 @@ class DebugUserInfoApplicationServiceTest {
                         "req-personal-1",
                         null)
         ));
-        when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.of(
-                new ProfileContactsModuleData(10L, "801234567", "COMPLETED", "req-contact-1", null)
+        when(profileContactRepository.findModuleByUserId(10L)).thenReturn(Optional.of(
+                new ProfileContactsModuleData(10L, "COMPLETED", "req-contact-1", null)
         ));
-        when(profileContactRepository.findContactsByProfileId(10L)).thenReturn(List.of(
-                new ProfileContactData("801234567", 0, 1, "SITI", "81234567801")
+        when(profileContactRepository.findContactsByUserId(10L)).thenReturn(List.of(
+                new ProfileContactData(0, 1, "SITI", "81234567801")
         ));
-        when(profileBankCardRepository.findDefaultByProfileId(10L)).thenReturn(Optional.of(
+        when(profileBankCardRepository.findDefaultByUserId(10L)).thenReturn(Optional.of(
                 new ProfileBankCardData(
                         1L,
                         10L,
-                        "801234567",
                         "OCBC",
                         cardNo,
                         "hash-card",

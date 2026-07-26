@@ -49,7 +49,7 @@ public class CreditApplyFacade {
         this.configuredProviderCode = configuredProviderCode;
     }
 
-    public ApplyResult apply(long profileId, String partnerUserId, String mobileNo, ApplyCommand command) {
+    public ApplyResult apply(long userId, String partnerUserId, String mobileNo, ApplyCommand command) {
         validate(command);
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
@@ -59,7 +59,7 @@ public class CreditApplyFacade {
         }
 
         OnboardingProgressFacade.OnboardingProgressResult onboarding = onboardingProgressFacade.getProgress(
-                profileId,
+                userId,
                 partnerUserId
         );
         if (!OnboardingProgressFacade.KYC_SYNCED.equals(onboarding.kycStatus())) {
@@ -76,7 +76,7 @@ public class CreditApplyFacade {
                     applyId,
                     command.requestId(),
                     providerCode,
-                    profileId,
+                    userId,
                     mobileNo
             ));
             CreditApplyJob job = new CreditApplyJob(
@@ -103,16 +103,16 @@ public class CreditApplyFacade {
         }
     }
 
-    public StatusResult getStatus(long profileId) {
+    public StatusResult getStatus(long userId) {
         CreditApplicationRepository.CreditApplicationRecord record = creditApplicationRepository
-                .findLatestByProfileId(profileId)
+                .findLatestByUserId(userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         creditStatusPollHandler.syncFromLenderForApi(record);
         record = creditApplicationRepository
-                .findByApplyIdAndProfileId(record.applyId(), profileId)
+                .findByApplyIdAndUserId(record.applyId(), userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         var query = creditLenderStatusQueryRepository
-                .findLatestByApplyIdAndProfileId(record.applyId(), profileId)
+                .findLatestByApplyIdAndUserId(record.applyId(), userId)
                 .orElse(null);
         return toStatusResult(record, query);
     }

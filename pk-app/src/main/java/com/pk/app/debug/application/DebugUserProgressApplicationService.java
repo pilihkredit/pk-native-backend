@@ -53,9 +53,9 @@ public class DebugUserProgressApplicationService {
 
     private DebugUserProgressResponse buildResponse(UserProfileSummary user) {
         OnboardingProgressFacade.OnboardingProgressResult progress =
-                onboardingProgressFacade.getProgress(user.profileId(), user.partnerUserId());
-        List<String> creditApplyIds = readMapper.findCreditApplyIds(user.profileId());
-        List<String> loanApplyIds = readMapper.findLoanApplyIds(user.profileId());
+                onboardingProgressFacade.getProgress(user.userId(), user.partnerUserId());
+        List<String> creditApplyIds = readMapper.findCreditApplyIds(user.userId());
+        List<String> loanApplyIds = readMapper.findLoanApplyIds(user.userId());
         List<String> businessIds = businessIds(user, creditApplyIds, loanApplyIds);
         List<DebugUserProgressResponse.InteractionInfo> interactions = readMapper
                 .findInteractionsByMobileNo(user.mobileNo(), businessIds)
@@ -64,7 +64,7 @@ public class DebugUserProgressApplicationService {
                 .toList();
         return new DebugUserProgressResponse(
                 true,
-                new DebugUserProgressResponse.UserInfo(user.profileId(), user.partnerUserId(), user.mobileNo()),
+                new DebugUserProgressResponse.UserInfo(user.userId(), user.partnerUserId(), user.mobileNo()),
                 new DebugUserProgressResponse.ProgressInfo(
                         progress.kycStatus(),
                         progress.completedModules(),

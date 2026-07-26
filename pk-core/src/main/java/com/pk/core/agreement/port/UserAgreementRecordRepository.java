@@ -10,10 +10,9 @@ public interface UserAgreementRecordRepository {
     List<UserAgreementRecordData> findLatestByMobileNo(String mobileNo, List<String> agreementTypes);
 
     record UserAgreementRecordInsert(
-            String mobileNo,
             String partnerUserId,
             String deviceNo,
-            Long profileId,
+            Long userId,
             String agreementType,
             Boolean agreed,
             Instant agreedAt,

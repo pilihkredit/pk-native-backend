@@ -70,7 +70,7 @@ class LenderProductListRepositoryImplTest {
         ArgumentCaptor<LenderProductInsertParam> productCaptor =
                 ArgumentCaptor.forClass(LenderProductInsertParam.class);
         verify(mapper).insertProduct(productCaptor.capture());
-        assertThat(productCaptor.getValue().getMobileNo()).isEqualTo("81234567890");
+        assertThat(productCaptor.getValue().getUserId()).isEqualTo(1L);
         assertThat(productCaptor.getValue().getProductCode()).isEqualTo("PD001");
         assertThat(productCaptor.getValue().getComprehensiveRateUnit()).isEqualTo("M");
 
@@ -83,7 +83,6 @@ class LenderProductListRepositoryImplTest {
         return new LenderProductListRepository.ProductListInsert(
                 1L,
                 100L,
-                "81234567890",
                 "APPLY-1",
                 "CA-1",
                 "USR-1",
@@ -119,9 +118,8 @@ class LenderProductListRepositoryImplTest {
     private static LenderProductListHeaderRow headerRow(long id) {
         LenderProductListHeaderRow row = new LenderProductListHeaderRow();
         row.setId(id);
-        row.setProfileId(1L);
+        row.setUserId(1L);
         row.setCreditApplicationId(100L);
-        row.setMobileNo("81234567890");
         row.setApplyId("APPLY-1");
         row.setCreditApplyNo("CA-1");
         row.setLenderUserId("USR-1");
@@ -137,7 +135,6 @@ class LenderProductListRepositoryImplTest {
         LenderProductRow row = new LenderProductRow();
         row.setId(id);
         row.setProductListId(listId);
-        row.setMobileNo("81234567890");
         row.setProductCode("PD001");
         row.setMinAmount(new BigDecimal("500000"));
         row.setMaxAmount(new BigDecimal("3000000"));
@@ -150,7 +147,6 @@ class LenderProductListRepositoryImplTest {
         LenderProductRepayMethodRow row = new LenderProductRepayMethodRow();
         row.setId(id);
         row.setProductId(productId);
-        row.setMobileNo("81234567890");
         row.setRepayMethod("RP001");
         row.setCycleType("D");
         row.setCycleInterval(15);
@@ -164,7 +160,6 @@ class LenderProductListRepositoryImplTest {
         LenderProductUnevenRateRow row = new LenderProductUnevenRateRow();
         row.setId(id);
         row.setRepayMethodId(methodId);
-        row.setMobileNo("81234567890");
         row.setTermNum(termNum);
         row.setRepaymentRate(new BigDecimal(rate));
         return row;

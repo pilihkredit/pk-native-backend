@@ -7,11 +7,11 @@ import java.util.List;
 public interface LoanLenderHistoryOrderRepository {
     void upsert(LoanLenderHistoryOrderData data);
 
-    List<LoanLenderHistoryOrderData> findByProfileId(long profileId);
+    List<LoanLenderHistoryOrderData> findByUserId(long userId);
 
     record LoanLenderHistoryOrderData(
             String loanApplyId,
-            long profileId,
+            long userId,
             String mobileNo,
             String externalLoanApplyNo,
             String lenderUserId,

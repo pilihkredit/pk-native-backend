@@ -7,21 +7,21 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface UserProfileBindingMapper {
     int recordLenderProfileSyncWithExternalUser(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("externalUserId") String externalUserId
     );
 
-    int recordLenderProfileSyncWithoutExternalUser(@Param("profileId") long profileId);
+    int recordLenderProfileSyncWithoutExternalUser(@Param("userId") long userId);
 
-    int updateKycStatus(@Param("profileId") long profileId, @Param("kycStatus") String kycStatus);
+    int updateKycStatus(@Param("userId") long userId, @Param("kycStatus") String kycStatus);
 
     int closeAccount(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("closedAt") Instant closedAt,
             @Param("retentionUntil") Instant retentionUntil
     );
 
-    AccountClosureRow findClosure(@Param("profileId") long profileId);
+    AccountClosureRow findClosure(@Param("userId") long userId);
 
     /**
      * Include non-null {@code id} so MyBatis does not discard the row when

@@ -13,6 +13,7 @@ import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileInfoQueryRequest;
 import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
+import com.pk.app.profile.dto.request.ProfileMobileChangeRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
 import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
@@ -22,6 +23,7 @@ import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileEnumsResponse;
 import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
+import com.pk.app.profile.dto.response.ProfileMobileChangeResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
 import com.pk.app.profile.dto.response.ProfileTongdunDeviceSaveResponse;
 import com.pk.app.security.SecurityContextSupport;
@@ -212,6 +214,22 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileApplicationService.saveTongdunDevice(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Change the authenticated user's mobile number (login rebinding). */
+    @PostMapping("/mobile/change")
+    public ApiResponse<ProfileMobileChangeResponse> changeMobile(
+            @Valid @RequestBody ProfileMobileChangeRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.changeMobile(principal, request),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

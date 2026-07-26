@@ -6,13 +6,13 @@
 <arg column="external_loan_apply_no" javaType="string"/><arg column="bill_no" javaType="string"/>
 <arg column="apply_amt" javaType="java.math.BigDecimal"/><arg column="status" javaType="string"/></constructor></resultMap>
 <sql id="billCols">la.id, la.loan_apply_id, la.external_loan_apply_no, la.bill_no, la.apply_amt, la.status</sql>
-<select id="findByProfileIdAndBillFilter" resultMap="billMap">
-SELECT <include refid="billCols"/> FROM loan_application la WHERE la.profile_id=#{profileId}
+<select id="findByUserIdAndBillFilter" resultMap="billMap">
+SELECT <include refid="billCols"/> FROM loan_application la WHERE la.user_id=#{userId}
 <choose><when test="filter.name() == 'ACTIVE'">
  AND la.status='DISBURSED' AND EXISTS (SELECT 1 FROM repayment_plan_term rpt WHERE rpt.loan_application_id=la.id AND rpt.term_status IN ('UNPAID','OVERDUE'))
 </when><otherwise>
  AND (la.status='SETTLED' OR NOT EXISTS (SELECT 1 FROM repayment_plan_term rpt WHERE rpt.loan_application_id=la.id AND rpt.term_status IN ('UNPAID','OVERDUE')))
 </otherwise></choose> ORDER BY la.id DESC</select>
-<select id="findByProfileIdAndLoanApplyId" resultMap="billMap">SELECT <include refid="billCols"/> FROM loan_application la WHERE la.profile_id=#{profileId} AND la.loan_apply_id=#{loanApplyId}</select>
-<select id="findPendingByProfileId" resultMap="billMap">SELECT DISTINCT <include refid="billCols"/> FROM loan_application la INNER JOIN repayment_plan_term rpt ON rpt.loan_application_id=la.id WHERE la.profile_id=#{profileId} AND rpt.term_status IN ('UNPAID','OVERDUE') ORDER BY la.id DESC</select>
+<select id="findByUserIdAndLoanApplyId" resultMap="billMap">SELECT <include refid="billCols"/> FROM loan_application la WHERE la.user_id=#{userId} AND la.loan_apply_id=#{loanApplyId}</select>
+<select id="findPendingByUserId" resultMap="billMap">SELECT DISTINCT <include refid="billCols"/> FROM loan_application la INNER JOIN repayment_plan_term rpt ON rpt.loan_application_id=la.id WHERE la.user_id=#{userId} AND rpt.term_status IN ('UNPAID','OVERDUE') ORDER BY la.id DESC</select>
 </mapper>

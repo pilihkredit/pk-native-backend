@@ -74,9 +74,9 @@ class LoanApplyFacadeTest {
     @Test
     void syncsFromLenderWhenStatusIsNotTerminal() {
         LoanApplicationRepository.LoanApplicationRecord record = existingLoan();
-        when(loanApplicationRepository.findByLoanApplyIdAndProfileId("QUOTE-1", 1L))
+        when(loanApplicationRepository.findByLoanApplyIdAndUserId("QUOTE-1", 1L))
                 .thenReturn(Optional.of(record));
-        when(loanLenderStatusQueryRepository.findLatestByLoanApplyIdAndProfileId("QUOTE-1", 1L))
+        when(loanLenderStatusQueryRepository.findLatestByLoanApplyIdAndUserId("QUOTE-1", 1L))
                 .thenReturn(Optional.empty());
 
         LoanApplyFacade.StatusResult result = facade.getStatus(1L, "QUOTE-1");
@@ -108,9 +108,9 @@ class LoanApplyFacadeTest {
                 new BigDecimal("1455000"),
                 Instant.parse("2026-07-01T00:00:00Z")
         );
-        when(loanApplicationRepository.findByLoanApplyIdAndProfileId("QUOTE-1", 1L))
+        when(loanApplicationRepository.findByLoanApplyIdAndUserId("QUOTE-1", 1L))
                 .thenReturn(Optional.of(record));
-        when(loanLenderStatusQueryRepository.findLatestByLoanApplyIdAndProfileId("QUOTE-1", 1L))
+        when(loanLenderStatusQueryRepository.findLatestByLoanApplyIdAndUserId("QUOTE-1", 1L))
                 .thenReturn(Optional.of(new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
                         "QUOTE-1",
                         1L,
@@ -149,7 +149,7 @@ class LoanApplyFacadeTest {
     @Test
     void usesQuoteNoAsLoanApplyIdAndPersistsScalars() {
         when(loanApplicationRepository.findByRequestId("REQ-1")).thenReturn(Optional.empty());
-        when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditApplicationRepository.findByApplyIdAndUserId("APPLY-1", 1L))
                 .thenReturn(Optional.of(approvedCredit("APPLY-1")));
         when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.of(quoteRecord()));
         when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
@@ -189,7 +189,7 @@ class LoanApplyFacadeTest {
     @Test
     void storesNullQuoteIdWhenQuoteMissingButStillUsesQuoteNo() {
         when(loanApplicationRepository.findByRequestId("REQ-1")).thenReturn(Optional.empty());
-        when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditApplicationRepository.findByApplyIdAndUserId("APPLY-1", 1L))
                 .thenReturn(Optional.of(approvedCredit("APPLY-1")));
         when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.empty());
         when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
@@ -220,7 +220,7 @@ class LoanApplyFacadeTest {
     @Test
     void derivesApplyScalarsFromQuoteWhenClientOmitsThem() {
         when(loanApplicationRepository.findByRequestId("REQ-1")).thenReturn(Optional.empty());
-        when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditApplicationRepository.findByApplyIdAndUserId("APPLY-1", 1L))
                 .thenReturn(Optional.of(approvedCredit("APPLY-1")));
         when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.of(quoteRecord()));
         when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
@@ -295,7 +295,6 @@ class LoanApplyFacadeTest {
                 "QUOTE-1",
                 1L,
                 100L,
-                "81234567890",
                 null,
                 77L,
                 new LoanTrialQuoteDetail(

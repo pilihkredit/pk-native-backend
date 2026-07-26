@@ -5,8 +5,7 @@
 
     <resultMap id="identityRowMap" type="com.pk.infra.profile.repository.ProfileIdentityRow">
         <constructor>
-            <arg column="profile_id" javaType="_long"/>
-            <arg column="mobile_no" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
             <arg column="full_name" javaType="string"/>
             <arg column="id_no_ciphertext" javaType="string"/>
             <arg column="id_no_nonce" javaType="_byte[]"/>
@@ -28,8 +27,8 @@
         </constructor>
     </resultMap>
 
-    <select id="findByProfileId" resultMap="identityRowMap">
-        SELECT profile_id, mobile_no, full_name,
+    <select id="findByUserId" resultMap="identityRowMap">
+        SELECT user_id, full_name,
                id_no_ciphertext, id_no_nonce, id_no_tag,
                id_no_hash, module_status, last_request_id,
                external_interaction_id,
@@ -39,12 +38,12 @@
                identity_data_retention_until, biometric_image_retention_until,
                ocr_channel, ocr_vendor_call_log_id
         FROM user_profile_identity
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
     </select>
 
     <insert id="upsert">
         INSERT INTO user_profile_identity (
-            profile_id, mobile_no, full_name,
+            user_id, full_name,
             id_no_ciphertext, id_no_nonce, id_no_tag,
             id_no_hash, module_status, last_request_id,
             external_interaction_id,
@@ -54,7 +53,7 @@
             identity_data_retention_until, biometric_image_retention_until,
             ocr_channel, ocr_vendor_call_log_id
         ) VALUES (
-            #{profileId}, #{mobileNo}, #{fullName},
+            #{userId}, #{fullName},
             #{idNoCiphertext}, #{idNoNonce}, #{idNoTag},
             #{idNoHash}, #{moduleStatus}, #{lastRequestId},
             #{externalInteractionId},
@@ -66,7 +65,6 @@
             #{ocrChannel}, #{ocrVendorCallLogId}
         )
         ON DUPLICATE KEY UPDATE
-            mobile_no = VALUES(mobile_no),
             full_name = VALUES(full_name),
             id_no_ciphertext = VALUES(id_no_ciphertext),
             id_no_nonce = VALUES(id_no_nonce),
@@ -88,12 +86,12 @@
     <update id="updateLastLenderInteraction">
         UPDATE user_profile_identity
         SET external_interaction_id = #{externalInteractionId}
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
     </update>
     <update id="scheduleRetentionAfterAccountClosure">
         UPDATE user_profile_identity
         SET identity_data_retention_until = #{retentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
             biometric_image_retention_until = #{retentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
     </update>
 </mapper>

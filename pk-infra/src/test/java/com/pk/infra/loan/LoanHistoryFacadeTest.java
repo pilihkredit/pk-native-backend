@@ -51,8 +51,7 @@ class LoanHistoryFacadeTest {
         assertThat(saved).extracting(LoanLenderHistoryOrderRepository.LoanLenderHistoryOrderData::loanApplyId)
                 .containsExactly("LOAN-1", "LOAN-2");
         LoanLenderHistoryOrderRepository.LoanLenderHistoryOrderData first = saved.getFirst();
-        assertThat(first.profileId()).isEqualTo(1L);
-        assertThat(first.mobileNo()).isEqualTo("81234567890");
+        assertThat(first.userId()).isEqualTo(1L);
         assertThat(first.externalLoanApplyNo()).isEqualTo("LN-LOAN-1");
         assertThat(first.lenderUserId()).isEqualTo("USR-1");
         assertThat(first.externalStatus()).isEqualTo("SUCCESS");

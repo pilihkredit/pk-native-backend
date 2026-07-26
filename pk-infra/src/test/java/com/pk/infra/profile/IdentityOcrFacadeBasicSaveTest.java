@@ -55,7 +55,7 @@ class IdentityOcrFacadeBasicSaveTest {
     void saveBasicPersistsDraftNameAndEncryptedIdNo() {
         EncryptedField encrypted = new EncryptedField("cipher", new byte[12], new byte[16]);
         when(sensitiveFieldEncryptor.encrypt("3201010101010001")).thenReturn(encrypted);
-        when(profileIdentityRepository.findByProfileId(1L)).thenReturn(Optional.empty());
+        when(profileIdentityRepository.findByUserId(1L)).thenReturn(Optional.empty());
 
         var result = facade.saveBasic(
                 1L,
@@ -77,10 +77,9 @@ class IdentityOcrFacadeBasicSaveTest {
 
     @Test
     void saveBasicRejectsWhenIdentityAlreadyCompleted() {
-        when(profileIdentityRepository.findByProfileId(1L)).thenReturn(Optional.of(
+        when(profileIdentityRepository.findByUserId(1L)).thenReturn(Optional.of(
                 new ProfileIdentityData(
                         1L,
-                        "81234567890",
                         "OLD",
                         new EncryptedField("c", new byte[12], new byte[16]),
                         "hash",

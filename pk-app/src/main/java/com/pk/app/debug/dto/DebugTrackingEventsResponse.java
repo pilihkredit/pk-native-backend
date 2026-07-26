@@ -7,8 +7,8 @@ public record DebugTrackingEventsResponse(
         boolean found,
         String clientNo,
         String mobileNo,
-        String userId,
-        Long profileId,
+        String requestedUserId,
+        Long userId,
         String partnerUserId,
         long total,
         int returned,
@@ -19,16 +19,16 @@ public record DebugTrackingEventsResponse(
     public static DebugTrackingEventsResponse empty(
             String clientNo,
             String mobileNo,
-            String userId,
-            Long profileId,
+            String requestedUserId,
+            Long userId,
             String partnerUserId
     ) {
         return new DebugTrackingEventsResponse(
                 false,
                 clientNo,
                 mobileNo,
+                requestedUserId,
                 userId,
-                profileId,
                 partnerUserId,
                 0L,
                 0,
@@ -71,7 +71,7 @@ public record DebugTrackingEventsResponse(
             String extendJson,
             String payloadJson,
             String partnerUserId,
-            Long profileId,
+            Long userId,
             String source,
             Instant createdAt
     ) {

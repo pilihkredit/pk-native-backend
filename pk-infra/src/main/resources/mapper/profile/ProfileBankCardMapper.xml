@@ -4,8 +4,7 @@
     <resultMap id="bankCardRowMap" type="com.pk.infra.profile.repository.ProfileBankCardRow">
         <constructor>
             <arg column="id" javaType="java.lang.Long"/>
-            <arg column="profile_id" javaType="_long"/>
-            <arg column="mobile_no" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
             <arg column="bank_code" javaType="string"/>
             <arg column="card_no_ciphertext" javaType="string"/>
             <arg column="card_no_nonce" javaType="_byte[]"/>
@@ -21,14 +20,14 @@
         </constructor>
     </resultMap>
     <sql id="bankCardColumns">
-        id, profile_id, mobile_no, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
+        id, user_id, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
         verify_status, verify_error_code, default_flag, deleted_flag, module_status, last_request_id,
         external_interaction_id
     </sql>
-    <select id="findDefaultByProfileId" resultMap="bankCardRowMap">
+    <select id="findDefaultByUserId" resultMap="bankCardRowMap">
         SELECT <include refid="bankCardColumns"/>
         FROM user_profile_bank_card
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
           AND deleted_flag = 0
         ORDER BY default_flag DESC, id DESC
         LIMIT 1
@@ -46,26 +45,26 @@
         WHERE card_no_hash = #{cardNoHash}
         LIMIT 1
     </select>
-    <select id="findActiveByProfileIdAndCardNoHash" resultMap="bankCardRowMap">
+    <select id="findActiveByUserIdAndCardNoHash" resultMap="bankCardRowMap">
         SELECT <include refid="bankCardColumns"/>
         FROM user_profile_bank_card
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
           AND card_no_hash = #{cardNoHash}
           AND deleted_flag = 0
         LIMIT 1
     </select>
-    <select id="countActiveByProfileId" resultType="int">
+    <select id="countActiveByUserId" resultType="int">
         SELECT COUNT(1)
         FROM user_profile_bank_card
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
           AND deleted_flag = 0
     </select>
     <insert id="insert">
         INSERT INTO user_profile_bank_card (
-            profile_id, mobile_no, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
+            user_id, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
             verify_status, verify_error_code, default_flag, deleted_flag, module_status, last_request_id
         ) VALUES (
-            #{profileId}, #{mobileNo}, #{bankCode}, #{cardNoHash}, #{cardNoCiphertext}, #{cardNoNonce}, #{cardNoTag},
+            #{userId}, #{bankCode}, #{cardNoHash}, #{cardNoCiphertext}, #{cardNoNonce}, #{cardNoTag},
             #{verifyStatus}, #{verifyErrorCode},
             #{defaultFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
             #{deletedFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
@@ -74,7 +73,6 @@
     </insert>
     <update id="updateById">
         UPDATE user_profile_bank_card
-        SET mobile_no = #{mobileNo},
             bank_code = #{bankCode},
             card_no_hash = #{cardNoHash},
             card_no_ciphertext = #{cardNoCiphertext},
@@ -88,10 +86,10 @@
             last_request_id = #{lastRequestId}
         WHERE id = #{id}
     </update>
-    <update id="clearDefaultByProfileId">
+    <update id="clearDefaultByUserId">
         UPDATE user_profile_bank_card
         SET default_flag = 0
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
           AND deleted_flag = 0
           AND default_flag = 1
     </update>

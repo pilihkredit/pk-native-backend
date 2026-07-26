@@ -7,7 +7,7 @@ import com.pk.core.profile.sync.ProfileSyncPayload;
 import java.util.List;
 
 public record ProfileSyncJob(
-        long profileId,
+        long userId,
         String partnerUserId,
         String mobileNo,
         String requestId,
@@ -21,7 +21,7 @@ public record ProfileSyncJob(
     }
 
     public ProfileSyncJob(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             String requestId,
@@ -29,17 +29,17 @@ public record ProfileSyncJob(
             LenderDeviceContext device,
             ProfileSyncPayload payloadSnapshot
     ) {
-        this(profileId, partnerUserId, mobileNo, requestId, module, device, payloadSnapshot, List.of());
+        this(userId, partnerUserId, mobileNo, requestId, module, device, payloadSnapshot, List.of());
     }
 
     public static ProfileSyncJob fromStoredModule(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             String requestId,
             ProfileSyncModule module,
             LenderDeviceContext device
     ) {
-        return new ProfileSyncJob(profileId, partnerUserId, mobileNo, requestId, module, device, null, List.of());
+        return new ProfileSyncJob(userId, partnerUserId, mobileNo, requestId, module, device, null, List.of());
     }
 }

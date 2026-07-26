@@ -58,11 +58,10 @@ class DebugTrackingEventsApplicationServiceTest {
         var response = service.query("debug-token", null, "801234567", null, null);
 
         assertThat(response.found()).isTrue();
-        assertThat(response.mobileNo()).isEqualTo("801234567");
-        assertThat(response.profileId()).isEqualTo(10L);
+        assertThat(response.userId()).isEqualTo(10L);
         assertThat(response.partnerUserId()).isEqualTo("U10001");
         TrackingQueryCriteria criteria = criteriaCaptor.getValue();
-        assertThat(criteria.profileId()).isEqualTo(10L);
+        assertThat(criteria.userId()).isEqualTo(10L);
         assertThat(criteria.userIds()).containsExactly("U10001");
     }
 
@@ -81,9 +80,9 @@ class DebugTrackingEventsApplicationServiceTest {
         var response = service.query("debug-token", null, null, "U10001", 50);
 
         assertThat(response.found()).isTrue();
-        assertThat(response.userId()).isEqualTo("U10001");
+        assertThat(response.requestedUserId()).isEqualTo("U10001");
         assertThat(criteriaCaptor.getValue().userIds()).containsExactly("U10001");
-        assertThat(criteriaCaptor.getValue().profileId()).isNull();
+        assertThat(criteriaCaptor.getValue().userId()).isNull();
     }
 
     @Test

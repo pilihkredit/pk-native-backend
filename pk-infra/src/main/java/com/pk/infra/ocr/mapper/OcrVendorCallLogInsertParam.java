@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public class OcrVendorCallLogInsertParam {
     private Long id;
-    private Long profileId;
+    private Long userId;
     private String partnerUserId;
     private String mobileNo;
     private String operationType;
@@ -33,12 +33,12 @@ public class OcrVendorCallLogInsertParam {
         this.id = id;
     }
 
-    public Long getProfileId() {
-        return profileId;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setProfileId(Long profileId) {
-        this.profileId = profileId;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getPartnerUserId() {

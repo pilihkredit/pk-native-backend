@@ -9,8 +9,8 @@ import org.apache.ibatis.annotations.Param;
 public interface LoanLenderBillMapper {
     int upsert(LoanLenderBillData data);
 
-    List<LoanLenderBillData> findByProfileIdAndBillStatuses(
-            @Param("profileId") long profileId,
+    List<LoanLenderBillData> findByUserIdAndBillStatuses(
+            @Param("userId") long userId,
             @Param("billStatuses") List<String> billStatuses
     );
 }

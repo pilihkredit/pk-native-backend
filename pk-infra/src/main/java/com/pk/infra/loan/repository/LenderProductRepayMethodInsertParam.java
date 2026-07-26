@@ -3,7 +3,7 @@ package com.pk.infra.loan.repository;
 public class LenderProductRepayMethodInsertParam {
     private Long id;
     private long productId;
-    private String mobileNo;
+    private long userId;
     private String repayMethod;
     private String cycleType;
     private Integer cycleInterval;
@@ -25,14 +25,6 @@ public class LenderProductRepayMethodInsertParam {
 
     public void setProductId(long productId) {
         this.productId = productId;
-    }
-
-    public String getMobileNo() {
-        return mobileNo;
-    }
-
-    public void setMobileNo(String mobileNo) {
-        this.mobileNo = mobileNo;
     }
 
     public String getRepayMethod() {
@@ -82,4 +74,7 @@ public class LenderProductRepayMethodInsertParam {
     public void setRepayMethodType(Integer repayMethodType) {
         this.repayMethodType = repayMethodType;
     }
+
+    public long getUserId() { return userId; }
+    public void setUserId(long userId) { this.userId = userId; }
 }

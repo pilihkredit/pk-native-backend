@@ -2,9 +2,8 @@ package com.pk.core.profile;
 
 public record ProfileAfData(
         Long id,
-        Long profileId,
-        String mobileNo,
-        String deviceNo,
+        Long userId,
+String deviceNo,
         String appsflyerId,
         String advertisingId,
         String androidId,

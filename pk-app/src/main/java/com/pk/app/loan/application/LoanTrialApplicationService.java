@@ -21,7 +21,7 @@ public class LoanTrialApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return LoanTrialResponse.from(loanTrialFacade.trial(
-                principal.profileId(),
+                principal.userId(),
                 new LoanTrialFacade.TrialCommand(
                         request.requestId(),
                         request.applyId(),

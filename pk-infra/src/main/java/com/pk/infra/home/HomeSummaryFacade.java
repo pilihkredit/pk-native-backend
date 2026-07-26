@@ -24,7 +24,7 @@ public class HomeSummaryFacade {
     }
 
     public HomeSummaryResult getSummary(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo,
             LenderDeviceContext device
@@ -37,7 +37,7 @@ public class HomeSummaryFacade {
                 ? partnerUserId
                 : lenderStatus.partnerUserId();
         userLenderStatusQueryRepository.upsert(new UserLenderStatusQueryRepository.UserLenderStatusQueryData(
-                profileId,
+                userId,
                 mobileNo,
                 resolvedPartnerUserId,
                 lenderStatus.userId(),
@@ -68,9 +68,9 @@ public class HomeSummaryFacade {
         );
     }
 
-    public String resolveLocalUserStage(long profileId, String partnerUserId) {
+    public String resolveLocalUserStage(long userId, String partnerUserId) {
         OnboardingProgressFacade.OnboardingProgressResult onboarding = onboardingProgressFacade.getProgress(
-                profileId,
+                userId,
                 partnerUserId
         );
         return resolveLocalStage(onboarding.kycStatus()).userStage();

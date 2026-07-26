@@ -5,10 +5,10 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface ProfileVersionMapper {
-    int nextVersionNo(@Param("profileId") long profileId);
+    int nextVersionNo(@Param("userId") long userId);
 
     int insert(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("mobileNo") String mobileNo,
             @Param("versionNo") int versionNo,
             @Param("snapshotHash") String snapshotHash,
@@ -19,5 +19,5 @@ public interface ProfileVersionMapper {
             @Param("source") String source
     );
 
-    Long findIdByProfileIdAndVersionNo(@Param("profileId") long profileId, @Param("versionNo") int versionNo);
+    Long findIdByUserIdAndVersionNo(@Param("userId") long userId, @Param("versionNo") int versionNo);
 }

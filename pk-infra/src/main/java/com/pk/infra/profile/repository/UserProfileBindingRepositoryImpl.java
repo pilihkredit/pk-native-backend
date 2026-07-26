@@ -24,22 +24,22 @@ public class UserProfileBindingRepositoryImpl implements UserProfileBindingRepos
     }
 
     @Override
-    public void recordLenderProfileSync(long profileId, String externalUserId) {
+    public void recordLenderProfileSync(long userId, String externalUserId) {
         if (externalUserId != null && !externalUserId.isBlank()) {
-            mapper.recordLenderProfileSyncWithExternalUser(profileId, externalUserId.trim());
+            mapper.recordLenderProfileSyncWithExternalUser(userId, externalUserId.trim());
         } else {
-            mapper.recordLenderProfileSyncWithoutExternalUser(profileId);
+            mapper.recordLenderProfileSyncWithoutExternalUser(userId);
         }
     }
 
     @Override
-    public void updateKycStatus(long profileId, String kycStatus) {
-        mapper.updateKycStatus(profileId, kycStatus);
+    public void updateKycStatus(long userId, String kycStatus) {
+        mapper.updateKycStatus(userId, kycStatus);
     }
 
     @Override
-    public AccountCloseResult closeAccount(long profileId) {
-        UserProfileBindingMapper.AccountClosureRow existing = mapper.findClosure(profileId);
+    public AccountCloseResult closeAccount(long userId) {
+        UserProfileBindingMapper.AccountClosureRow existing = mapper.findClosure(userId);
         if (existing == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
@@ -52,9 +52,9 @@ public class UserProfileBindingRepositoryImpl implements UserProfileBindingRepos
 
         Instant closedAt = Instant.now();
         Instant retentionUntil = IdentityDataRetention.retentionUntil(closedAt);
-        int updated = mapper.closeAccount(profileId, closedAt, retentionUntil);
+        int updated = mapper.closeAccount(userId, closedAt, retentionUntil);
         if (updated == 0) {
-            UserProfileBindingMapper.AccountClosureRow raced = mapper.findClosure(profileId);
+            UserProfileBindingMapper.AccountClosureRow raced = mapper.findClosure(userId);
             if (raced != null && raced.deletedAt() != null) {
                 Instant dataDeleteAt = raced.retentionUntil() != null
                         ? raced.retentionUntil()
@@ -63,7 +63,7 @@ public class UserProfileBindingRepositoryImpl implements UserProfileBindingRepos
             }
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
-        profileIdentityRepository.scheduleRetentionAfterAccountClosure(profileId, retentionUntil);
+        profileIdentityRepository.scheduleRetentionAfterAccountClosure(userId, retentionUntil);
         return new AccountCloseResult(closedAt, retentionUntil, false);
     }
 }

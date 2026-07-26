@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public record LoanTrialQuoteDetail(
         String applyId,
         String creditApplyNo,
-        String userId,
+        String lenderUserId,
         BigDecimal applyAmt,
         String productCode,
         String repayMethod,

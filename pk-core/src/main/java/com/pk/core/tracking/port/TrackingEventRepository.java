@@ -29,7 +29,7 @@ public interface TrackingEventRepository {
             String eventDatetime,
             String payloadJson,
             String partnerUserId,
-            Long profileId,
+            Long userId,
             String source
     ) {
     }

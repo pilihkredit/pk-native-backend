@@ -10,12 +10,12 @@ public interface CreditApplicationMapper {
 
     CreditApplicationRecord findByRequestId(@Param("requestId") String requestId);
 
-    CreditApplicationRecord findByApplyIdAndProfileId(
+    CreditApplicationRecord findByApplyIdAndUserId(
             @Param("applyId") String applyId,
-            @Param("profileId") long profileId
+            @Param("userId") long userId
     );
 
-    CreditApplicationRecord findLatestByProfileId(@Param("profileId") long profileId);
+    CreditApplicationRecord findLatestByUserId(@Param("userId") long userId);
 
     CreditApplicationRecord findByApplyId(@Param("applyId") String applyId);
 

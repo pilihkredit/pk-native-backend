@@ -19,6 +19,6 @@ public class LoanProductApplicationService {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        return LoanProductsResponse.from(loanProductFacade.listProducts(principal.profileId(), applyId));
+        return LoanProductsResponse.from(loanProductFacade.listProducts(principal.userId(), applyId));
     }
 }

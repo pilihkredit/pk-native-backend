@@ -40,7 +40,7 @@ public class IdentityOcrDevApplicationService {
         RequestTrace.resolveClientRequestId(httpRequest, request.requestId());
         boolean captureOcrFromIdCard = hasText(request.idCardBase64()) && !hasText(request.rawOcrDetail());
         IdentityOcrFacade.DevLenderSyncResult result = identityOcrFacade.devSyncIdentityToLender(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new IdentityOcrFacade.DevLenderSyncCommand(

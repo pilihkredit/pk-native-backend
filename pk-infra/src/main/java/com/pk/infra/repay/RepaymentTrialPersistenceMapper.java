@@ -22,7 +22,7 @@ public final class RepaymentTrialPersistenceMapper {
 
     public static void fillSnapshotInsertParam(RepaymentTrialInsertParam param, TrialSnapshotInsert insert) {
         param.setTrialNo(insert.trialNo());
-        param.setProfileId(insert.profileId());
+        param.setUserId(insert.userId());
         param.setTrialType(insert.trialType());
         param.setTotalBillCount(insert.totalBillCount());
         param.setTotalShouldAmount(insert.totalShouldAmount());
@@ -192,7 +192,7 @@ public final class RepaymentTrialPersistenceMapper {
         return new TrialSnapshotRecord(
                 param.getId(),
                 param.getTrialNo(),
-                param.getProfileId(),
+                param.getUserId(),
                 param.getTrialType(),
                 param.getTotalBillCount(),
                 param.getTotalShouldAmount(),

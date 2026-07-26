@@ -7,8 +7,7 @@
                type="com.pk.core.loan.port.LoanLenderStatusQueryRepository$LoanLenderStatusQueryData">
         <constructor>
             <arg column="loan_apply_id" javaType="string"/>
-            <arg column="profile_id" javaType="_long"/>
-            <arg column="mobile_no" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
             <arg column="lender_user_id" javaType="string"/>
             <arg column="external_loan_apply_no" javaType="string"/>
             <arg column="external_status" javaType="string"/>
@@ -26,7 +25,7 @@
     </resultMap>
 
     <sql id="loanLenderStatusQueryColumns">
-        loan_apply_id, profile_id, mobile_no, lender_user_id, external_loan_apply_no, external_status,
+        loan_apply_id, user_id, lender_user_id, external_loan_apply_no, external_status,
         bill_no, apply_amt, pay_amount, pay_time, freeze_end_time, external_interaction_id,
         external_interaction_callback_id, queried_at
     </sql>
@@ -34,8 +33,7 @@
     <insert id="insert">
         INSERT INTO loan_lender_status_query (
             loan_apply_id,
-            profile_id,
-            mobile_no,
+            user_id,
             lender_user_id,
             external_loan_apply_no,
             external_status,
@@ -49,8 +47,7 @@
             queried_at
         ) VALUES (
             #{loanApplyId},
-            #{profileId},
-            #{mobileNo},
+            #{userId},
             #{lenderUserId},
             #{externalLoanApplyNo},
             #{externalStatus},
@@ -73,11 +70,11 @@
         LIMIT 1
     </select>
 
-    <select id="findLatestByLoanApplyIdAndProfileId" resultMap="loanLenderStatusQueryMap">
+    <select id="findLatestByLoanApplyIdAndUserId" resultMap="loanLenderStatusQueryMap">
         SELECT <include refid="loanLenderStatusQueryColumns"/>
         FROM loan_lender_status_query
         WHERE loan_apply_id = #{loanApplyId}
-          AND profile_id = #{profileId}
+          AND user_id = #{userId}
         ORDER BY id DESC
         LIMIT 1
     </select>

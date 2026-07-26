@@ -43,7 +43,7 @@ class LoanContractFacadeTest {
 
     @Test
     void listsContractsFromLenderAndPersists() {
-        when(loanApplicationRepository.findByLoanApplyIdAndProfileId("LOAN-1", 1L))
+        when(loanApplicationRepository.findByLoanApplyIdAndUserId("LOAN-1", 1L))
                 .thenReturn(Optional.of(loanApplication(10L)));
         when(lenderLoanContractPort.listContracts("LOAN-1")).thenReturn(
                 new LenderLoanContractPort.LenderLoanContractListResult(
@@ -91,7 +91,7 @@ class LoanContractFacadeTest {
 
     @Test
     void throwsWhenLoanApplicationNotFound() {
-        when(loanApplicationRepository.findByLoanApplyIdAndProfileId("LOAN-404", 1L))
+        when(loanApplicationRepository.findByLoanApplyIdAndUserId("LOAN-404", 1L))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> facade.listContracts(1L, "LOAN-404"))

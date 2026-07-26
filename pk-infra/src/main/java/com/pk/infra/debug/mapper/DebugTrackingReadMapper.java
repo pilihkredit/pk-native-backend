@@ -18,11 +18,11 @@ public interface DebugTrackingReadMapper {
 
     record TrackingQueryCriteria(
             String clientNo,
-            Long profileId,
+            Long userId,
             List<String> userIds
     ) {
         public boolean hasUserScope() {
-            return profileId != null || (userIds != null && !userIds.isEmpty());
+            return userId != null || (userIds != null && !userIds.isEmpty());
         }
     }
 
@@ -59,7 +59,7 @@ public interface DebugTrackingReadMapper {
             String eventDatetime,
             String payloadJson,
             String partnerUserId,
-            Long profileId,
+            Long userId,
             String source,
             Instant createdAt
     ) {

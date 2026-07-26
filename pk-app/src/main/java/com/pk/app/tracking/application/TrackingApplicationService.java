@@ -25,7 +25,7 @@ public class TrackingApplicationService {
     ) {
         ResolvedIdentity identity = resolveIdentity(principal, bearerTokenPresent, request);
         trackingFacade.ingest(
-                identity.profileId(),
+                identity.userId(),
                 identity.partnerUserId(),
                 clientIp,
                 new TrackingFacade.TrackingEventCommand(
@@ -55,7 +55,7 @@ public class TrackingApplicationService {
     }
 
     /**
-     * Anonymous tracking is allowed. When the caller is logged in, profileId / partnerUserId
+     * Anonymous tracking is allowed. When the caller is logged in, userId / partnerUserId
      * should always come from the JWT principal; log explicitly if either is missing.
      */
     static ResolvedIdentity resolveIdentity(
@@ -76,24 +76,24 @@ public class TrackingApplicationService {
             return new ResolvedIdentity(null, null);
         }
 
-        Long profileId = null;
-        if (principal.profileId() <= 0) {
+        Long userId = null;
+        if (principal.userId() <= 0) {
             log.warn(
-                    "tracking event logged-in but profileId invalid: profileId={} partnerUserId={} eventType={} traceId={}",
-                    principal.profileId(),
+                    "tracking event logged-in but userId invalid: userId={} partnerUserId={} eventType={} traceId={}",
+                    principal.userId(),
                     principal.partnerUserId(),
                     request == null ? null : request.eventType(),
                     request == null ? null : request.traceId()
             );
         } else {
-            profileId = principal.profileId();
+            userId = principal.userId();
         }
 
         String partnerUserId = null;
         if (principal.partnerUserId() == null || principal.partnerUserId().isBlank()) {
             log.warn(
-                    "tracking event logged-in but partnerUserId blank: profileId={} eventType={} traceId={}",
-                    principal.profileId(),
+                    "tracking event logged-in but partnerUserId blank: userId={} eventType={} traceId={}",
+                    principal.userId(),
                     request == null ? null : request.eventType(),
                     request == null ? null : request.traceId()
             );
@@ -101,9 +101,9 @@ public class TrackingApplicationService {
             partnerUserId = principal.partnerUserId().trim();
         }
 
-        return new ResolvedIdentity(profileId, partnerUserId);
+        return new ResolvedIdentity(userId, partnerUserId);
     }
 
-    record ResolvedIdentity(Long profileId, String partnerUserId) {
+    record ResolvedIdentity(Long userId, String partnerUserId) {
     }
 }

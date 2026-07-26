@@ -34,17 +34,17 @@ public class RepayCurrentOrderFacade {
         this.objectMapper = objectMapper;
     }
 
-    public CurrentOrderResult setCurrentOrder(long profileId, String partnerUserId, CurrentOrderCommand command) {
+    public CurrentOrderResult setCurrentOrder(long userId, String partnerUserId, CurrentOrderCommand command) {
         validateCommand(command);
         Set<String> loanApplyIds = new HashSet<>();
         for (RepayOrderCommand order : command.repayOrders()) {
             if (!loanApplyIds.add(order.loanApplyId())) {
                 throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
             }
-            loanBillReadRepository.findByProfileIdAndLoanApplyId(profileId, order.loanApplyId())
+            loanBillReadRepository.findByUserIdAndLoanApplyId(userId, order.loanApplyId())
                     .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         }
-        long trialId = resolveTrialId(profileId, command.batchTrialNo());
+        long trialId = resolveTrialId(userId, command.batchTrialNo());
         List<LenderRepayCurrentOrderPort.RepayOrderItem> lenderOrders = command.repayOrders().stream()
                 .map(order -> new LenderRepayCurrentOrderPort.RepayOrderItem(
                         order.loanApplyId(),
@@ -60,7 +60,7 @@ public class RepayCurrentOrderFacade {
         String currentOrderNo = RepayNoGenerator.currentOrderNo();
         Instant submittedAt = Instant.now();
         repayCurrentOrderRepository.upsertActive(new RepayCurrentOrderRepository.CurrentOrderUpsert(
-                profileId,
+                userId,
                 currentOrderNo,
                 trialId,
                 repayOrdersJson,
@@ -70,13 +70,13 @@ public class RepayCurrentOrderFacade {
         return new CurrentOrderResult(command.requestId(), "ACTIVE");
     }
 
-    private long resolveTrialId(long profileId, String batchTrialNo) {
+    private long resolveTrialId(long userId, String batchTrialNo) {
         if (batchTrialNo == null || batchTrialNo.isBlank()) {
             return 0L;
         }
         RepaymentTrialSnapshotRepository.TrialSnapshotRecord snapshot = repaymentTrialSnapshotRepository
                 .findByTrialNo(batchTrialNo)
-                .filter(record -> record.profileId() == profileId)
+                .filter(record -> record.userId() == userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         return snapshot.id();
     }

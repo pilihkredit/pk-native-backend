@@ -33,11 +33,9 @@ public class AgreementFacade {
         List<UserAgreementRecordData> created = new ArrayList<>(command.items().size());
         for (AgreementItemCommand item : command.items()) {
             created.add(userAgreementRecordRepository.insert(
-                    new UserAgreementRecordRepository.UserAgreementRecordInsert(
-                            mobileNo,
-                            partnerUserId,
+                    new UserAgreementRecordRepository.UserAgreementRecordInsert(partnerUserId,
                             deviceNo,
-                            command.profileId(),
+                            command.userId(),
                             item.agreementType().trim(),
                             item.agreed(),
                             agreedAt,
@@ -117,7 +115,7 @@ public class AgreementFacade {
             String mobileNo,
             String partnerUserId,
             String deviceNo,
-            Long profileId,
+            Long userId,
             Long clickedAtMs,
             List<AgreementItemCommand> items
     ) {

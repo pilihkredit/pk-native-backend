@@ -24,13 +24,13 @@ public class RepayVaFacade {
         this.objectMapper = objectMapper;
     }
 
-    public VaListResult listVas(long profileId, String partnerUserId) {
+    public VaListResult listVas(long userId, String partnerUserId) {
         LenderRepayVaPort.LenderRepayVaListResult lenderResult = lenderRepayVaPort.listVas(partnerUserId);
-        persistSnapshots(profileId, lenderResult);
+        persistSnapshots(userId, lenderResult);
         return toListResult(lenderResult);
     }
 
-    public VaDefaultResult setDefaultVa(long profileId, String partnerUserId, VaDefaultCommand command) {
+    public VaDefaultResult setDefaultVa(long userId, String partnerUserId, VaDefaultCommand command) {
         validateDefaultCommand(command);
         lenderRepayVaPort.setDefaultVa(new LenderRepayVaPort.LenderRepayVaDefaultCommand(
                 partnerUserId,
@@ -38,11 +38,11 @@ public class RepayVaFacade {
                 command.bankChannel()
         ));
         LenderRepayVaPort.LenderRepayVaListResult refreshed = lenderRepayVaPort.listVas(partnerUserId);
-        persistSnapshots(profileId, refreshed);
+        persistSnapshots(userId, refreshed);
         return new VaDefaultResult(command.vaNo(), true);
     }
 
-    private void persistSnapshots(long profileId, LenderRepayVaPort.LenderRepayVaListResult lenderResult) {
+    private void persistSnapshots(long userId, LenderRepayVaPort.LenderRepayVaListResult lenderResult) {
         String snapshotNo = RepayNoGenerator.vaSnapshotNo();
         Instant fetchedAt = Instant.now();
         List<RepayVaSnapshotRepository.VaSnapshotInsert> inserts = lenderResult.vas().stream()
@@ -56,7 +56,7 @@ public class RepayVaFacade {
                 ))
                 .toList();
         repayVaSnapshotRepository.replaceSnapshots(
-                profileId,
+                userId,
                 snapshotNo,
                 inserts,
                 lenderResult.externalInteractionId(),

@@ -14,7 +14,7 @@ public record DebugUserProgressResponse(
     }
 
     public record UserInfo(
-            long profileId,
+            long userId,
             String partnerUserId,
             String mobileNo
     ) {

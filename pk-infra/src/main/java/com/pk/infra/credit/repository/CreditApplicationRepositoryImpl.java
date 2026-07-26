@@ -24,13 +24,13 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
     }
 
     @Override
-    public Optional<CreditApplicationRecord> findByApplyIdAndProfileId(String applyId, long profileId) {
-        return Optional.ofNullable(creditApplicationMapper.findByApplyIdAndProfileId(applyId, profileId));
+    public Optional<CreditApplicationRecord> findByApplyIdAndUserId(String applyId, long userId) {
+        return Optional.ofNullable(creditApplicationMapper.findByApplyIdAndUserId(applyId, userId));
     }
 
     @Override
-    public Optional<CreditApplicationRecord> findLatestByProfileId(long profileId) {
-        return Optional.ofNullable(creditApplicationMapper.findLatestByProfileId(profileId));
+    public Optional<CreditApplicationRecord> findLatestByUserId(long userId) {
+        return Optional.ofNullable(creditApplicationMapper.findLatestByUserId(userId));
     }
 
     @Override
@@ -63,7 +63,7 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
         private String applyId;
         private String requestId;
         private String providerCode;
-        private long profileId;
+        private long userId;
         private String mobileNo;
 
         public static CreditApplicationInsertParam from(CreditApplicationInsert insert) {
@@ -71,7 +71,7 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
             param.applyId = insert.applyId();
             param.requestId = insert.requestId();
             param.providerCode = insert.providerCode();
-            param.profileId = insert.profileId();
+            param.userId = insert.userId();
             param.mobileNo = insert.mobileNo();
             return param;
         }
@@ -88,8 +88,8 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
             return providerCode;
         }
 
-        public long getProfileId() {
-            return profileId;
+        public long getUserId() {
+            return userId;
         }
 
         public String getMobileNo() {

@@ -13,7 +13,7 @@
 
     <insert id="insertParam" useGeneratedKeys="true" keyProperty="logId" keyColumn="id">
         INSERT INTO whatsapp_send_log (
-            profile_id,
+            user_id,
             mobile_no,
             device_no,
             otp_token,
@@ -21,7 +21,7 @@
             purpose,
             provider_success
         ) VALUES (
-            #{profileId},
+            #{userId},
             #{mobileNo},
             #{deviceNo},
             #{otpToken},

@@ -11,7 +11,7 @@ class TrackingApplicationServiceResolveIdentityTest {
     @Test
     void anonymousWithoutBearerKeepsIdsNull() {
         var identity = TrackingApplicationService.resolveIdentity(null, false, sampleRequest());
-        assertThat(identity.profileId()).isNull();
+        assertThat(identity.userId()).isNull();
         assertThat(identity.partnerUserId()).isNull();
     }
 
@@ -19,7 +19,7 @@ class TrackingApplicationServiceResolveIdentityTest {
     void loggedInPrincipalFillsBothIds() {
         var principal = new AuthenticatedPrincipal(10L, "U10001", "81234567890", 1L);
         var identity = TrackingApplicationService.resolveIdentity(principal, true, sampleRequest());
-        assertThat(identity.profileId()).isEqualTo(10L);
+        assertThat(identity.userId()).isEqualTo(10L);
         assertThat(identity.partnerUserId()).isEqualTo("U10001");
     }
 
@@ -27,7 +27,7 @@ class TrackingApplicationServiceResolveIdentityTest {
     void loggedInButBlankPartnerUserIdLeavesPartnerNull() {
         var principal = new AuthenticatedPrincipal(10L, "  ", "81234567890", 1L);
         var identity = TrackingApplicationService.resolveIdentity(principal, true, sampleRequest());
-        assertThat(identity.profileId()).isEqualTo(10L);
+        assertThat(identity.userId()).isEqualTo(10L);
         assertThat(identity.partnerUserId()).isNull();
     }
 

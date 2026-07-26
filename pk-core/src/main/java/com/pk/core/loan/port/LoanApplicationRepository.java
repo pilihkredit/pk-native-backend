@@ -12,7 +12,7 @@ public interface LoanApplicationRepository {
 
     Optional<LoanApplicationRecord> findByLoanApplyId(String loanApplyId);
 
-    Optional<LoanApplicationRecord> findByLoanApplyIdAndProfileId(String loanApplyId, long profileId);
+    Optional<LoanApplicationRecord> findByLoanApplyIdAndUserId(String loanApplyId, long userId);
 
     long insert(LoanApplicationInsert insert);
 
@@ -42,7 +42,7 @@ public interface LoanApplicationRepository {
             long creditApplicationId,
             Long quoteId,
             String quoteNo,
-            long profileId,
+            long userId,
             long profileVersionId,
             BigDecimal applyAmt,
             String productCode,
@@ -76,7 +76,7 @@ public interface LoanApplicationRepository {
             long creditApplicationId,
             Long quoteId,
             String quoteNo,
-            long profileId,
+            long userId,
             long profileVersionId,
             String externalLoanApplyNo,
             String lenderUserId,

@@ -3,7 +3,7 @@
 <mapper namespace="com.pk.infra.profile.mapper.ProfileDeviceMapper">
     <resultMap id="deviceMap" type="com.pk.core.profile.ProfileDeviceData">
         <constructor>
-            <arg column="profile_id" javaType="_long"/>
+            <arg column="user_id" javaType="_long"/>
             <arg column="partner_user_id" javaType="string"/>
             <arg column="device_no" javaType="string"/>
             <arg column="system_platform" javaType="string"/>
@@ -27,11 +27,11 @@
             <arg column="last_request_id" javaType="string"/>
         </constructor>
     </resultMap>
-    <select id="existsByProfileId" resultType="boolean">
-        SELECT EXISTS(SELECT 1 FROM user_device WHERE profile_id = #{profileId} LIMIT 1)
+    <select id="existsByUserId" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM user_device WHERE user_id = #{userId} LIMIT 1)
     </select>
     <select id="findByDeviceNo" resultMap="deviceMap">
-        SELECT profile_id, partner_user_id, device_no, system_platform, app_name, app_version,
+        SELECT user_id, partner_user_id, device_no, system_platform, app_name, app_version,
                package_name, phone_brand, phone_brand_model, mac, system_version, delivery_platform,
                cpu_cores, memory_total, sd_card_total, ad_id, idfv, idfa, ext_param, ip,
                device_json, last_request_id
@@ -39,18 +39,18 @@
     </select>
     <insert id="upsertByDeviceNo">
         INSERT INTO user_device (
-            profile_id, partner_user_id, device_no, system_platform, app_name, app_version, package_name,
+            user_id, partner_user_id, device_no, system_platform, app_name, app_version, package_name,
             phone_brand, phone_brand_model, mac, system_version, delivery_platform,
             cpu_cores, memory_total, sd_card_total, ad_id, idfv, idfa, ext_param, ip,
             device_json, last_request_id
         ) VALUES (
-            #{profileId}, #{partnerUserId}, #{deviceNo}, #{systemPlatform}, #{appName}, #{appVersion}, #{packageName},
+            #{userId}, #{partnerUserId}, #{deviceNo}, #{systemPlatform}, #{appName}, #{appVersion}, #{packageName},
             #{phoneBrand}, #{phoneBrandModel}, #{mac}, #{systemVersion}, #{deliveryPlatform},
             #{cpuCores}, #{memoryTotal}, #{sdCardTotal}, #{adId}, #{idfv}, #{idfa}, #{extParam}, #{ip},
             #{deviceJson}, #{lastRequestId}
         )
         ON DUPLICATE KEY UPDATE
-            profile_id=VALUES(profile_id),
+            user_id=VALUES(user_id),
             partner_user_id=VALUES(partner_user_id),
             system_platform=VALUES(system_platform),
             app_name=VALUES(app_name),

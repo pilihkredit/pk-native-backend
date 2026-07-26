@@ -34,7 +34,7 @@ public class TrackingFacade {
         this.objectMapper = objectMapper;
     }
 
-    public void ingest(Long profileId, String partnerUserId, String clientIp, TrackingEventCommand event) {
+    public void ingest(Long userId, String partnerUserId, String clientIp, TrackingEventCommand event) {
         if (!isValid(event)) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
@@ -98,7 +98,7 @@ public class TrackingFacade {
                 datetime,
                 payloadJson,
                 normalizedPartnerUserId,
-                profileId,
+                userId,
                 SOURCE_CLIENT
         );
 

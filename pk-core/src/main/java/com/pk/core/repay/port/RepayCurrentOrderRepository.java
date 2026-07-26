@@ -7,10 +7,10 @@ import java.util.Optional;
 public interface RepayCurrentOrderRepository {
     CurrentOrderRecord upsertActive(CurrentOrderUpsert command);
 
-    Optional<CurrentOrderRecord> findActiveByProfileId(long profileId);
+    Optional<CurrentOrderRecord> findActiveByUserId(long userId);
 
     record CurrentOrderUpsert(
-            long profileId,
+            long userId,
             String currentOrderNo,
             long trialId,
             String repayOrdersJson,
@@ -21,7 +21,7 @@ public interface RepayCurrentOrderRepository {
 
     record CurrentOrderRecord(
             long id,
-            long profileId,
+            long userId,
             String currentOrderNo,
             long trialId,
             String repayOrdersJson,

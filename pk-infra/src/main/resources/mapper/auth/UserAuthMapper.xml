@@ -30,10 +30,19 @@
         LIMIT 1
     </select>
 
-    <select id="findByProfileId" resultMap="userProfileSummaryMap">
+    <select id="findActiveByMobileNoExcludingUserId" resultMap="userProfileSummaryMap">
         SELECT id, partner_user_id, mobile_no, 0 AS newly_created
         FROM user_profile
-        WHERE id = #{profileId}
+        WHERE mobile_no = #{mobileNo}
+          AND deleted_at IS NULL
+          AND id &lt;&gt; #{userId}
+        LIMIT 1
+    </select>
+
+    <select id="findByUserId" resultMap="userProfileSummaryMap">
+        SELECT id, partner_user_id, mobile_no, 0 AS newly_created
+        FROM user_profile
+        WHERE id = #{userId}
           AND deleted_at IS NULL
         LIMIT 1
     </select>
@@ -60,7 +69,7 @@
         UPDATE user_profile
         SET partner_user_id = #{relinquishedPartnerUserId},
             updated_at = CURRENT_TIMESTAMP(3)
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
           AND deleted_at IS NOT NULL
     </update>
 
@@ -81,7 +90,7 @@
         SET access_token = #{accessToken},
             refresh_token = #{refreshToken},
             access_token_expires_at = #{accessTokenExpiresAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
           AND deleted_at IS NULL
     </update>
 
@@ -89,7 +98,7 @@
         UPDATE user_profile
         SET access_token = #{accessToken},
             access_token_expires_at = #{accessTokenExpiresAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
           AND deleted_at IS NULL
     </update>
 
@@ -98,28 +107,35 @@
         SET access_token = NULL,
             refresh_token = NULL,
             access_token_expires_at = NULL
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updateMobileNo">
+        UPDATE user_profile
+        SET mobile_no = #{mobileNo}
+        WHERE id = #{userId}
           AND deleted_at IS NULL
     </update>
 
     <update id="updateLastLoginAt">
         UPDATE user_profile
         SET last_login_at = #{lastLoginAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
           AND deleted_at IS NULL
     </update>
 
     <update id="updateLastLogoutAt">
         UPDATE user_profile
         SET last_logout_at = #{lastLogoutAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
           AND deleted_at IS NULL
     </update>
 
     <select id="countPasswordSet" resultType="int">
         SELECT COUNT(1)
         FROM user_profile
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
           AND deleted_at IS NULL
           AND password_ciphertext IS NOT NULL
     </select>
@@ -130,7 +146,7 @@
                password_nonce,
                password_tag
         FROM user_profile
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
           AND deleted_at IS NULL
           AND password_ciphertext IS NOT NULL
         LIMIT 1
@@ -142,7 +158,7 @@
             password_nonce = #{passwordNonce},
             password_tag = #{passwordTag},
             password_set_at = NOW(3)
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
           AND deleted_at IS NULL
     </update>
 </mapper>

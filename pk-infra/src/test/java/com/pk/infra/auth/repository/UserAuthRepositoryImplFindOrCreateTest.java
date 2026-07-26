@@ -34,7 +34,7 @@ class UserAuthRepositoryImplFindOrCreateTest {
 
         UserProfileSummary result = repository.findOrCreateActiveByMobileNo("81234567815");
 
-        assertThat(result.profileId()).isEqualTo(10L);
+        assertThat(result.userId()).isEqualTo(10L);
         assertThat(result.partnerUserId()).isEqualTo("UACTIVE");
         verify(mapper, never()).findLatestClosedByMobileNoForUpdate(anyString());
         verify(mapper, never()).insertProfile(anyString(), anyString());
@@ -52,7 +52,7 @@ class UserAuthRepositoryImplFindOrCreateTest {
         UserProfileSummary result = repository.findOrCreateActiveByMobileNo("81234567815");
 
         assertThat(result.newlyCreated()).isTrue();
-        assertThat(result.profileId()).isEqualTo(200L);
+        assertThat(result.userId()).isEqualTo(200L);
         assertThat(result.partnerUserId()).isEqualTo("UABC");
         verify(mapper).relinquishPartnerUserId(174L, "UABC_closed_174");
         verify(mapper).insertProfile("UABC", "81234567815");
@@ -68,7 +68,7 @@ class UserAuthRepositoryImplFindOrCreateTest {
         UserProfileSummary result = repository.findOrCreateActiveByMobileNo("81234567815");
 
         assertThat(result.newlyCreated()).isTrue();
-        assertThat(result.profileId()).isEqualTo(300L);
+        assertThat(result.userId()).isEqualTo(300L);
         assertThat(result.partnerUserId()).startsWith("U");
         verify(mapper, never()).relinquishPartnerUserId(org.mockito.ArgumentMatchers.anyLong(), anyString());
         verify(mapper).insertProfile(anyString(), org.mockito.ArgumentMatchers.eq("81234567815"));

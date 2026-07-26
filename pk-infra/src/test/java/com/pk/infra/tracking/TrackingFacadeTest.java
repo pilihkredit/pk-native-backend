@@ -51,7 +51,7 @@ class TrackingFacadeTest {
         assertThat(saved.ip()).isEqualTo("192.168.1.10");
         assertThat(saved.eventDatetime()).isEqualTo("2025-06-21 17:00:00");
         assertThat(saved.partnerUserId()).isEqualTo("partner-1");
-        assertThat(saved.profileId()).isEqualTo(10L);
+        assertThat(saved.userId()).isEqualTo(10L);
         assertThat(saved.source()).isEqualTo("CLIENT");
 
         JsonNode payload = objectMapper.readTree(saved.payloadJson());
@@ -77,7 +77,7 @@ class TrackingFacadeTest {
         facade.ingest(null, null, "192.168.1.10", validEvent(""));
 
         assertThat(lenderTrackingPort.submitted.getFirst().uid()).isEmpty();
-        assertThat(repository.inserted.getFirst().profileId()).isNull();
+        assertThat(repository.inserted.getFirst().userId()).isNull();
         assertThat(repository.inserted.getFirst().partnerUserId()).isNull();
     }
 
@@ -87,7 +87,7 @@ class TrackingFacadeTest {
 
         assertThat(lenderTrackingPort.submitted.getFirst().uid()).isEqualTo("partner-1");
         assertThat(repository.inserted.getFirst().uid()).isEqualTo("partner-1");
-        assertThat(repository.inserted.getFirst().profileId()).isEqualTo(10L);
+        assertThat(repository.inserted.getFirst().userId()).isEqualTo(10L);
         assertThat(repository.inserted.getFirst().partnerUserId()).isEqualTo("partner-1");
     }
 

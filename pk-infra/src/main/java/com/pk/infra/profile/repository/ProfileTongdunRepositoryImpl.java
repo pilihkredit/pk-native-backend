@@ -34,8 +34,7 @@ public class ProfileTongdunRepositoryImpl implements ProfileTongdunRepository {
     private ProfileTongdunData toData(ProfileTongdunRow row) {
         return new ProfileTongdunData(
                 row.id,
-                row.profileId,
-                row.mobileNo,
+                row.userId,
                 row.sceneType,
                 row.tongdunKey,
                 row.moduleStatus,
@@ -46,8 +45,7 @@ public class ProfileTongdunRepositoryImpl implements ProfileTongdunRepository {
 
     private static ProfileTongdunRow toRow(ProfileTongdunData data) {
         ProfileTongdunRow row = new ProfileTongdunRow();
-        row.profileId = data.profileId();
-        row.mobileNo = data.mobileNo();
+        row.userId = data.userId();
         row.sceneType = data.sceneType();
         row.tongdunKey = data.tongdunKey();
         row.moduleStatus = data.moduleStatus();

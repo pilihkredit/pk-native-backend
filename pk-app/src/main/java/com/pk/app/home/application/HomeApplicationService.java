@@ -45,13 +45,13 @@ public class HomeApplicationService {
                 pendanaanProperties
         );
         userDeviceWriter.upsertFromRequest(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 UUID.randomUUID().toString(),
                 device
         );
         HomeSummaryFacade.HomeSummaryResult result = homeSummaryFacade.getSummary(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 device
@@ -63,11 +63,11 @@ public class HomeApplicationService {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        return homeSummaryFacade.resolveLocalUserStage(principal.profileId(), principal.partnerUserId());
+        return homeSummaryFacade.resolveLocalUserStage(principal.userId(), principal.partnerUserId());
     }
 
-    public String resolveUserStage(long profileId, String partnerUserId) {
-        return homeSummaryFacade.resolveLocalUserStage(profileId, partnerUserId);
+    public String resolveUserStage(long userId, String partnerUserId) {
+        return homeSummaryFacade.resolveLocalUserStage(userId, partnerUserId);
     }
 
     private static HomeSummaryResponse toResponse(HomeSummaryFacade.HomeSummaryResult result) {

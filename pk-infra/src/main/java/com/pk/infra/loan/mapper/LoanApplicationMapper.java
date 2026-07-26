@@ -12,7 +12,7 @@ public interface LoanApplicationMapper {
     LoanApplicationRecord findById(@Param("id") long id);
     LoanApplicationRecord findByRequestId(@Param("requestId") String requestId);
     LoanApplicationRecord findByLoanApplyId(@Param("loanApplyId") String loanApplyId);
-    LoanApplicationRecord findByLoanApplyIdAndProfileId(@Param("loanApplyId") String loanApplyId, @Param("profileId") long profileId);
+    LoanApplicationRecord findByLoanApplyIdAndUserId(@Param("loanApplyId") String loanApplyId, @Param("userId") long userId);
     int insert(LoanApplicationInsertParam param);
     Long findIdByLoanApplyId(@Param("loanApplyId") String loanApplyId);
     int updateStatus(@Param("id") long id, @Param("status") String status, @Param("externalStatus") String externalStatus);

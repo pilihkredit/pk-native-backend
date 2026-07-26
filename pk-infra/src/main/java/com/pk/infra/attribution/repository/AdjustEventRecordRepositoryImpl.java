@@ -17,7 +17,7 @@ public class AdjustEventRecordRepositoryImpl implements AdjustEventRecordReposit
         AdjustEventRecordInsertParam param = new AdjustEventRecordInsertParam(
                 record.callbackEventId(),
                 record.partnerUserId(),
-                record.profileId(),
+                record.userId(),
                 record.deviceUuid(),
                 record.eventName(),
                 record.appToken(),

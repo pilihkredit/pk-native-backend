@@ -2,9 +2,8 @@ package com.pk.infra.profile.repository;
 
 public record ProfileBankCardRow(
         Long id,
-        long profileId,
-        String mobileNo,
-        String bankCode,
+        long userId,
+String bankCode,
         String cardNoCiphertext,
         byte[] cardNoNonce,
         byte[] cardNoTag,

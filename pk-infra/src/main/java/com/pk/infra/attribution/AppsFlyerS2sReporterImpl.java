@@ -78,7 +78,7 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
         long recordId = adjustEventRecordRepository.insert(new AdjustEventRecordRepository.AdjustEventRecordInsert(
                 callbackEventId,
                 event.partnerUserId(),
-                resolveProfileId(event.deviceNo()),
+                resolveUserId(event.deviceNo()),
                 event.deviceNo(),
                 event.eventType(),
                 config.appToken(),
@@ -200,11 +200,11 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
         }
     }
 
-    private Long resolveProfileId(String deviceNo) {
+    private Long resolveUserId(String deviceNo) {
         if (isBlank(deviceNo)) {
             return null;
         }
-        return profileDeviceRepository.findByDeviceNo(deviceNo).map(ProfileDeviceData::profileId).orElse(null);
+        return profileDeviceRepository.findByDeviceNo(deviceNo).map(ProfileDeviceData::userId).orElse(null);
     }
 
     private String buildExtraParams(ServerEventCallbackParser.ParsedServerEventCallback event) {

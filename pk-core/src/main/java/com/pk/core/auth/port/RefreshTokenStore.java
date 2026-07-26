@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.Optional;
 
 public interface RefreshTokenStore {
-    record RefreshTokenRecord(long profileId, long sessionVersion, String deviceId) {
+    record RefreshTokenRecord(long userId, long sessionVersion, String deviceId) {
     }
 
     void save(String refreshTokenId, RefreshTokenRecord record, Duration ttl);
@@ -13,5 +13,5 @@ public interface RefreshTokenStore {
 
     void delete(String refreshTokenId);
 
-    void deleteAllForProfile(long profileId);
+    void deleteAllForProfile(long userId);
 }

@@ -13,7 +13,7 @@ public interface WhatsAppSendLogRepository {
     void updateProviderResult(long logId, SmsSendResult result);
 
     record WhatsAppSendLogEntry(
-            Optional<Long> profileId,
+            Optional<Long> userId,
             String mobileNo,
             String deviceNo,
             String otpToken,

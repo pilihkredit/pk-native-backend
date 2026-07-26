@@ -10,14 +10,19 @@ import org.apache.ibatis.annotations.Param;
 public interface UserAuthMapper {
     UserProfileSummary findByMobileNo(@Param("mobileNo") String mobileNo);
 
-    UserProfileSummary findByProfileId(@Param("profileId") long profileId);
+    UserProfileSummary findActiveByMobileNoExcludingUserId(
+            @Param("mobileNo") String mobileNo,
+            @Param("userId") long userId
+    );
+
+    UserProfileSummary findByUserId(@Param("userId") long userId);
 
     UserProfileSummary findByPartnerUserId(@Param("partnerUserId") String partnerUserId);
 
     UserProfileSummary findLatestClosedByMobileNoForUpdate(@Param("mobileNo") String mobileNo);
 
     int relinquishPartnerUserId(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("relinquishedPartnerUserId") String relinquishedPartnerUserId
     );
 
@@ -27,36 +32,38 @@ public interface UserAuthMapper {
     );
 
     int saveSessionTokens(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("accessToken") String accessToken,
             @Param("refreshToken") String refreshToken,
             @Param("accessTokenExpiresAt") Instant accessTokenExpiresAt
     );
 
     int saveAccessToken(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("accessToken") String accessToken,
             @Param("accessTokenExpiresAt") Instant accessTokenExpiresAt
     );
 
-    int clearSessionTokens(@Param("profileId") long profileId);
+    int clearSessionTokens(@Param("userId") long userId);
+
+    int updateMobileNo(@Param("userId") long userId, @Param("mobileNo") String mobileNo);
 
     int updateLastLoginAt(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("lastLoginAt") Instant lastLoginAt
     );
 
     int updateLastLogoutAt(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("lastLogoutAt") Instant lastLogoutAt
     );
 
-    int countPasswordSet(@Param("profileId") long profileId);
+    int countPasswordSet(@Param("userId") long userId);
 
-    PasswordCredentialRow findPasswordCredential(@Param("profileId") long profileId);
+    PasswordCredentialRow findPasswordCredential(@Param("userId") long userId);
 
     int savePassword(
-            @Param("profileId") long profileId,
+            @Param("userId") long userId,
             @Param("passwordCiphertext") String passwordCiphertext,
             @Param("passwordNonce") byte[] passwordNonce,
             @Param("passwordTag") byte[] passwordTag

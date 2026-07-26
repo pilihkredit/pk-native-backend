@@ -10,16 +10,15 @@
             <arg column="apply_id" javaType="string"/>
             <arg column="request_id" javaType="string"/>
             <arg column="provider_code" javaType="string"/>
-            <arg column="profile_id" javaType="_long"/>
+            <arg column="user_id" javaType="_long"/>
             <arg column="partner_user_id" javaType="string"/>
-            <arg column="mobile_no" javaType="string"/>
             <arg column="apply_no" javaType="string"/>
         </constructor>
     </resultMap>
 
     <sql id="creditApplicationColumns">
-        id, apply_id, request_id, provider_code, profile_id, mobile_no,
-        (SELECT up.partner_user_id FROM user_profile up WHERE up.id = profile_id) AS partner_user_id,
+        id, apply_id, request_id, provider_code, user_id,
+        (SELECT up.partner_user_id FROM user_profile up WHERE up.id = user_id) AS partner_user_id,
         apply_no
     </sql>
 
@@ -35,17 +34,17 @@
         WHERE request_id = #{requestId}
     </select>
 
-    <select id="findByApplyIdAndProfileId" resultMap="creditApplicationRecordMap">
+    <select id="findByApplyIdAndUserId" resultMap="creditApplicationRecordMap">
         SELECT <include refid="creditApplicationColumns"/>
         FROM credit_application
         WHERE apply_id = #{applyId}
-          AND profile_id = #{profileId}
+          AND user_id = #{userId}
     </select>
 
-    <select id="findLatestByProfileId" resultMap="creditApplicationRecordMap">
+    <select id="findLatestByUserId" resultMap="creditApplicationRecordMap">
         SELECT <include refid="creditApplicationColumns"/>
         FROM credit_application
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
         ORDER BY id DESC
         LIMIT 1
     </select>
@@ -61,14 +60,12 @@
             apply_id,
             request_id,
             provider_code,
-            profile_id,
-            mobile_no
+            user_id,
         ) VALUES (
             #{applyId},
             #{requestId},
             #{providerCode},
-            #{profileId},
-            #{mobileNo}
+            #{userId},
         )
     </insert>
 

@@ -74,9 +74,8 @@ class ProductListResolverTest {
             return new LenderProductListRepository.ProductListTree(
                     new LenderProductListRepository.ProductListHeader(
                             501L,
-                            command.profileId(),
+                            command.userId(),
                             command.creditApplicationId(),
-                            command.mobileNo(),
                             command.applyId(),
                             command.creditApplyNo(),
                             command.lenderUserId(),
@@ -99,7 +98,6 @@ class ProductListResolverTest {
         ArgumentCaptor<LenderProductListRepository.ProductListInsert> insertCaptor =
                 ArgumentCaptor.forClass(LenderProductListRepository.ProductListInsert.class);
         verify(lenderProductListRepository).insertTree(insertCaptor.capture());
-        assertThat(insertCaptor.getValue().mobileNo()).isEqualTo(record.mobileNo());
         assertThat(insertCaptor.getValue().externalInteractionId()).isEqualTo(88L);
         assertThat(insertCaptor.getValue().contentHash()).isEqualTo(ProductListContentHash.sha256(
                 insertCaptor.getValue().creditStatus(),
@@ -174,9 +172,8 @@ class ProductListResolverTest {
         return new LenderProductListRepository.ProductListTree(
                 new LenderProductListRepository.ProductListHeader(
                         500L,
-                        record.profileId(),
+                        record.userId(),
                         record.id(),
-                        record.mobileNo(),
                         record.applyId(),
                         "CA-1",
                         "USR-1",

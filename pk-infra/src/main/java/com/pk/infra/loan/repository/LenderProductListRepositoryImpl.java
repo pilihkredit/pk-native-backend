@@ -39,7 +39,7 @@ public class LenderProductListRepositoryImpl implements LenderProductListReposit
             throw new IllegalStateException("Failed to insert lender product list header");
         }
         long listId = listParam.getId();
-        insertProducts(listId, command.mobileNo(), command.products());
+        insertProducts(listId, command.userId(), command.products());
         return findById(listId).orElseThrow(() -> new IllegalStateException("Failed to reload product list tree"));
     }
 
@@ -92,14 +92,14 @@ public class LenderProductListRepositoryImpl implements LenderProductListReposit
         return new ProductListTree(header, List.copyOf(products));
     }
 
-    private void insertProducts(long listId, String mobileNo, List<LenderLoanProduct> products) {
+    private void insertProducts(long listId, long userId, List<LenderLoanProduct> products) {
         if (products == null || products.isEmpty()) {
             return;
         }
         for (LenderLoanProduct product : products) {
             LenderProductInsertParam productParam = new LenderProductInsertParam();
             productParam.setProductListId(listId);
-            productParam.setMobileNo(mobileNo);
+            productParam.setUserId(userId);
             productParam.setProductCode(product.productCode() == null ? "" : product.productCode());
             productParam.setMinAmount(product.minAmount());
             productParam.setMaxAmount(product.maxAmount());
@@ -109,18 +109,18 @@ public class LenderProductListRepositoryImpl implements LenderProductListReposit
             if (productParam.getId() == null) {
                 throw new IllegalStateException("Failed to insert lender product");
             }
-            insertRepayMethods(productParam.getId(), mobileNo, product.repayMethods());
+            insertRepayMethods(productParam.getId(), userId, product.repayMethods());
         }
     }
 
-    private void insertRepayMethods(long productId, String mobileNo, List<LenderRepayMethod> repayMethods) {
+    private void insertRepayMethods(long productId, long userId, List<LenderRepayMethod> repayMethods) {
         if (repayMethods == null || repayMethods.isEmpty()) {
             return;
         }
         for (LenderRepayMethod repayMethod : repayMethods) {
             LenderProductRepayMethodInsertParam methodParam = new LenderProductRepayMethodInsertParam();
             methodParam.setProductId(productId);
-            methodParam.setMobileNo(mobileNo);
+            methodParam.setUserId(userId);
             methodParam.setRepayMethod(repayMethod.repayMethod() == null ? "" : repayMethod.repayMethod());
             methodParam.setCycleType(repayMethod.cycleType());
             methodParam.setCycleInterval(repayMethod.cycleInterval());
@@ -131,13 +131,13 @@ public class LenderProductListRepositoryImpl implements LenderProductListReposit
             if (methodParam.getId() == null) {
                 throw new IllegalStateException("Failed to insert lender repay method");
             }
-            insertUnevenRates(methodParam.getId(), mobileNo, repayMethod.unevenBillsRepaymentRates());
+            insertUnevenRates(methodParam.getId(), userId, repayMethod.unevenBillsRepaymentRates());
         }
     }
 
     private void insertUnevenRates(
             long repayMethodId,
-            String mobileNo,
+            long userId,
             List<LenderRepayMethod.UnevenBillRate> unevenRates
     ) {
         if (unevenRates == null || unevenRates.isEmpty()) {
@@ -146,7 +146,7 @@ public class LenderProductListRepositoryImpl implements LenderProductListReposit
         for (LenderRepayMethod.UnevenBillRate unevenRate : unevenRates) {
             LenderProductUnevenRateInsertParam rateParam = new LenderProductUnevenRateInsertParam();
             rateParam.setRepayMethodId(repayMethodId);
-            rateParam.setMobileNo(mobileNo);
+            rateParam.setUserId(userId);
             rateParam.setTermNum(unevenRate.termNum());
             rateParam.setRepaymentRate(unevenRate.repaymentRate());
             mapper.insertUnevenRate(rateParam);
@@ -155,9 +155,9 @@ public class LenderProductListRepositoryImpl implements LenderProductListReposit
 
     private static LenderProductListInsertParam toListParam(ProductListInsert command) {
         LenderProductListInsertParam param = new LenderProductListInsertParam();
-        param.setProfileId(command.profileId());
+        param.setUserId(command.userId());
         param.setCreditApplicationId(command.creditApplicationId());
-        param.setMobileNo(command.mobileNo());
+        
         param.setApplyId(command.applyId());
         param.setCreditApplyNo(command.creditApplyNo());
         param.setLenderUserId(command.lenderUserId());
@@ -172,9 +172,8 @@ public class LenderProductListRepositoryImpl implements LenderProductListReposit
     private static ProductListHeader toHeader(LenderProductListHeaderRow row) {
         return new ProductListHeader(
                 row.getId(),
-                row.getProfileId(),
+                row.getUserId(),
                 row.getCreditApplicationId(),
-                row.getMobileNo(),
                 row.getApplyId(),
                 row.getCreditApplyNo(),
                 row.getLenderUserId(),

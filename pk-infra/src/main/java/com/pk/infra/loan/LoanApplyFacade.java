@@ -60,7 +60,7 @@ public class LoanApplyFacade {
         this.loanStatusPollHandler = loanStatusPollHandler;
     }
 
-    public ApplyResult apply(long profileId, String partnerUserId, String mobileNo, ApplyCommand command) {
+    public ApplyResult apply(long userId, String partnerUserId, String mobileNo, ApplyCommand command) {
         validate(command);
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
@@ -70,7 +70,7 @@ public class LoanApplyFacade {
         }
 
         CreditApplicationRepository.CreditApplicationRecord creditRecord = creditApplicationRepository
-                .findByApplyIdAndProfileId(command.applyId(), profileId)
+                .findByApplyIdAndUserId(command.applyId(), userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
 
         String quoteNo = command.quoteNo().trim();
@@ -79,11 +79,11 @@ public class LoanApplyFacade {
         Long quoteId = quote == null ? null : quote.id();
 
         OnboardingProgressFacade.OnboardingProgressResult onboarding = onboardingProgressFacade.getProgress(
-                profileId,
+                userId,
                 partnerUserId
         );
         long profileVersionId = profileVersionRepository.createSnapshot(
-                profileId,
+                userId,
                 mobileNo,
                 onboarding.completedModules(),
                 SOURCE
@@ -99,7 +99,7 @@ public class LoanApplyFacade {
                     creditRecord.id(),
                     quoteId,
                     quoteNo,
-                    profileId,
+                    userId,
                     profileVersionId,
                     scalars.applyAmt(),
                     scalars.productCode(),
@@ -150,18 +150,18 @@ public class LoanApplyFacade {
         }
     }
 
-    public StatusResult getStatus(long profileId, String loanApplyId) {
+    public StatusResult getStatus(long userId, String loanApplyId) {
         LoanApplicationRepository.LoanApplicationRecord record = loanApplicationRepository
-                .findByLoanApplyIdAndProfileId(loanApplyId, profileId)
+                .findByLoanApplyIdAndUserId(loanApplyId, userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         if (!LoanApplicationStatus.isTerminal(record.status())) {
             loanStatusPollHandler.syncFromLenderForApi(record);
             record = loanApplicationRepository
-                    .findByLoanApplyIdAndProfileId(loanApplyId, profileId)
+                    .findByLoanApplyIdAndUserId(loanApplyId, userId)
                     .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         }
         var query = loanLenderStatusQueryRepository
-                .findLatestByLoanApplyIdAndProfileId(loanApplyId, profileId)
+                .findLatestByLoanApplyIdAndUserId(loanApplyId, userId)
                 .orElse(null);
         return toStatusResult(record, query);
     }

@@ -7,13 +7,12 @@ public class LoanQuoteRow {
     private long id;
     private String quoteNo;
     private long creditApplicationId;
-    private String mobileNo;
-    private Long profileId;
+    private Long userId;
     private Long couponId;
     private Long externalInteractionId;
     private String applyId;
     private String creditApplyNo;
-    private String userId;
+    private String lenderUserId;
     private String productCode;
     private String repayMethod;
     private BigDecimal applyAmt;
@@ -73,10 +72,8 @@ public class LoanQuoteRow {
     public void setQuoteNo(String quoteNo) { this.quoteNo = quoteNo; }
     public long getCreditApplicationId() { return creditApplicationId; }
     public void setCreditApplicationId(long creditApplicationId) { this.creditApplicationId = creditApplicationId; }
-    public String getMobileNo() { return mobileNo; }
-    public void setMobileNo(String mobileNo) { this.mobileNo = mobileNo; }
-    public Long getProfileId() { return profileId; }
-    public void setProfileId(Long profileId) { this.profileId = profileId; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
     public Long getCouponId() { return couponId; }
     public void setCouponId(Long couponId) { this.couponId = couponId; }
     public Long getExternalInteractionId() { return externalInteractionId; }
@@ -85,8 +82,8 @@ public class LoanQuoteRow {
     public void setApplyId(String applyId) { this.applyId = applyId; }
     public String getCreditApplyNo() { return creditApplyNo; }
     public void setCreditApplyNo(String creditApplyNo) { this.creditApplyNo = creditApplyNo; }
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
+    public String getLenderUserId() { return lenderUserId; }
+    public void setLenderUserId(String lenderUserId) { this.lenderUserId = lenderUserId; }
     public String getProductCode() { return productCode; }
     public void setProductCode(String productCode) { this.productCode = productCode; }
     public String getRepayMethod() { return repayMethod; }

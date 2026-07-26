@@ -8,27 +8,25 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface ProfileContactMapper {
-    ProfileContactsModuleData findModuleByProfileId(@Param("profileId") long profileId);
+    ProfileContactsModuleData findModuleByUserId(@Param("userId") long userId);
 
-    List<ProfileContactData> findContactsByProfileId(@Param("profileId") long profileId);
+    List<ProfileContactData> findContactsByUserId(@Param("userId") long userId);
 
     int upsertModule(
-            @Param("profileId") long profileId,
-            @Param("mobileNo") String mobileNo,
+            @Param("userId") long userId,
             @Param("moduleStatus") String moduleStatus,
             @Param("lastRequestId") String lastRequestId
     );
 
-    int deleteContactsByProfileId(@Param("profileId") long profileId);
+    int deleteContactsByUserId(@Param("userId") long userId);
 
     int insertContact(
-            @Param("profileId") long profileId,
-            @Param("mobileNo") String mobileNo,
+            @Param("userId") long userId,
             @Param("sortNo") int sortNo,
             @Param("relationship") int relationship,
             @Param("contactName") String contactName,
             @Param("contactMobile") String contactMobile
     );
 
-    int updateLastLenderInteraction(@Param("profileId") long profileId, @Param("externalInteractionId") Long externalInteractionId);
+    int updateLastLenderInteraction(@Param("userId") long userId, @Param("externalInteractionId") Long externalInteractionId);
 }

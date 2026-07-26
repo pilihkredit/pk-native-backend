@@ -27,12 +27,12 @@ LEFT JOIN (
         GROUP BY apply_id
     ) latest ON latest.apply_id = q1.apply_id AND latest.max_id = q1.id
 ) q ON q.apply_id = ca.apply_id
-WHERE ca.profile_id = #{profileId}
+WHERE ca.user_id = #{userId}
 ORDER BY ca.id DESC
 LIMIT 1
 </select>
-<select id="findLatestLoanApply" resultMap="loanApplyMap">SELECT loan_apply_id,status FROM loan_application WHERE profile_id=#{profileId} ORDER BY id DESC LIMIT 1</select>
-<select id="countPendingRepayLoans" resultType="int">SELECT COUNT(DISTINCT rpt.loan_application_id) FROM repayment_plan_term rpt INNER JOIN loan_application la ON la.id=rpt.loan_application_id WHERE la.profile_id=#{profileId} AND rpt.term_status IN ('UNPAID','OVERDUE')</select>
-<select id="hasOverdueRepay" resultType="boolean">SELECT EXISTS(SELECT 1 FROM repayment_plan_term rpt INNER JOIN loan_application la ON la.id=rpt.loan_application_id WHERE la.profile_id=#{profileId} AND rpt.term_status IN ('UNPAID','OVERDUE') AND (rpt.term_status='OVERDUE' OR COALESCE(rpt.overdue_days,0)>0))</select>
-<select id="hasDisbursedLoan" resultType="boolean">SELECT EXISTS(SELECT 1 FROM loan_application WHERE profile_id=#{profileId} AND status='DISBURSED')</select>
+<select id="findLatestLoanApply" resultMap="loanApplyMap">SELECT loan_apply_id,status FROM loan_application WHERE user_id=#{userId} ORDER BY id DESC LIMIT 1</select>
+<select id="countPendingRepayLoans" resultType="int">SELECT COUNT(DISTINCT rpt.loan_application_id) FROM repayment_plan_term rpt INNER JOIN loan_application la ON la.id=rpt.loan_application_id WHERE la.user_id=#{userId} AND rpt.term_status IN ('UNPAID','OVERDUE')</select>
+<select id="hasOverdueRepay" resultType="boolean">SELECT EXISTS(SELECT 1 FROM repayment_plan_term rpt INNER JOIN loan_application la ON la.id=rpt.loan_application_id WHERE la.user_id=#{userId} AND rpt.term_status IN ('UNPAID','OVERDUE') AND (rpt.term_status='OVERDUE' OR COALESCE(rpt.overdue_days,0)>0))</select>
+<select id="hasDisbursedLoan" resultType="boolean">SELECT EXISTS(SELECT 1 FROM loan_application WHERE user_id=#{userId} AND status='DISBURSED')</select>
 </mapper>

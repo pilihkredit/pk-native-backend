@@ -17,10 +17,9 @@ public class UserAgreementRecordRepositoryImpl implements UserAgreementRecordRep
     @Override
     public UserAgreementRecordData insert(UserAgreementRecordInsert data) {
         UserAgreementRecordInsertParam param = new UserAgreementRecordInsertParam();
-        param.setMobileNo(data.mobileNo());
         param.setPartnerUserId(data.partnerUserId());
         param.setDeviceNo(data.deviceNo());
-        param.setProfileId(data.profileId());
+        param.setUserId(data.userId());
         param.setAgreementType(data.agreementType());
         param.setAgreed(data.agreed());
         param.setAgreedAt(data.agreedAt());
@@ -28,14 +27,14 @@ public class UserAgreementRecordRepositoryImpl implements UserAgreementRecordRep
         userAgreementRecordMapper.insert(param);
         return new UserAgreementRecordData(
                 param.getId(),
-                data.mobileNo(),
                 data.partnerUserId(),
                 data.deviceNo(),
-                data.profileId(),
+                data.userId(),
                 data.agreementType(),
                 data.agreed(),
                 data.agreedAt(),
-                data.clickedAtMs()
+                data.clickedAtMs(),
+                null
         );
     }
 

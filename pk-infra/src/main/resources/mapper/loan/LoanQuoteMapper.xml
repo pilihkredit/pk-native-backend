@@ -4,14 +4,13 @@
 <resultMap id="quoteMap" type="com.pk.infra.loan.repository.LoanQuoteRow">
 <id column="id" property="id"/>
 <result column="quote_no" property="quoteNo"/>
-<result column="profile_id" property="profileId"/>
+<result column="user_id" property="userId"/>
 <result column="credit_application_id" property="creditApplicationId"/>
-<result column="mobile_no" property="mobileNo"/>
 <result column="coupon_id" property="couponId"/>
 <result column="external_interaction_id" property="externalInteractionId"/>
 <result column="apply_id" property="applyId"/>
 <result column="credit_apply_no" property="creditApplyNo"/>
-<result column="user_id" property="userId"/>
+<result column="lender_user_id" property="lenderUserId"/>
 <result column="product_code" property="productCode"/>
 <result column="repay_method" property="repayMethod"/>
 <result column="apply_amt" property="applyAmt"/>
@@ -69,14 +68,13 @@
 <insert id="upsertQuote" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
 INSERT INTO loan_quote (
 quote_no,
-profile_id,
+user_id,
 credit_application_id,
-mobile_no,
 coupon_id,
 external_interaction_id,
 apply_id,
 credit_apply_no,
-user_id,
+lender_user_id,
 product_code,
 repay_method,
 apply_amt,
@@ -131,14 +129,13 @@ uneven_bills_flag,
 quoted_at
 ) VALUES (
 #{quoteNo},
-#{profileId},
+#{userId},
 #{creditApplicationId},
-#{mobileNo},
 #{couponId},
 #{externalInteractionId},
 #{applyId},
 #{creditApplyNo},
-#{userId},
+#{lenderUserId},
 #{productCode},
 #{repayMethod},
 #{applyAmt},
@@ -195,14 +192,13 @@ quoted_at
 ON DUPLICATE KEY UPDATE
 id = LAST_INSERT_ID(id),
 quote_no = VALUES(quote_no),
-profile_id = VALUES(profile_id),
+user_id = VALUES(user_id),
 credit_application_id = VALUES(credit_application_id),
-mobile_no = VALUES(mobile_no),
 coupon_id = VALUES(coupon_id),
 external_interaction_id = VALUES(external_interaction_id),
 apply_id = VALUES(apply_id),
 credit_apply_no = VALUES(credit_apply_no),
-user_id = VALUES(user_id),
+lender_user_id = VALUES(lender_user_id),
 product_code = VALUES(product_code),
 repay_method = VALUES(repay_method),
 apply_amt = VALUES(apply_amt),
@@ -264,7 +260,7 @@ DELETE FROM loan_quote_term WHERE quote_id = #{quoteId}
 <insert id="insertTerm">
 INSERT INTO loan_quote_term (
 quote_id,
-mobile_no,
+user_id,
 term_no,
 value_date,
 due_date,
@@ -297,7 +293,7 @@ reduction_fee3_tax,
 reduction_stamp_duty
 ) VALUES (
 #{quoteId},
-#{mobileNo},
+#{userId},
 #{termNo},
 #{valueDate},
 #{dueDate},
@@ -338,14 +334,13 @@ SELECT COUNT(*) FROM loan_quote_term WHERE quote_id=#{quoteId}
 <select id="findByQuoteNo" resultMap="quoteMap">
 SELECT id,
 quote_no,
-profile_id,
+user_id,
 credit_application_id,
-mobile_no,
 coupon_id,
 external_interaction_id,
 apply_id,
 credit_apply_no,
-user_id,
+lender_user_id,
 product_code,
 repay_method,
 apply_amt,

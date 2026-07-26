@@ -41,7 +41,6 @@ class LoanQuoteRepositoryImplTest {
                 "QUOTE-1",
                 1L,
                 100L,
-                "81234567890",
                 88L,
                 77L,
                 sampleQuote(),
@@ -82,7 +81,7 @@ class LoanQuoteRepositoryImplTest {
 
         LoanQuoteRepository.LoanQuoteRecord record = repository.upsert(
                 insert,
-                List.of(new LoanQuoteRepository.LoanQuoteTermInsert("81234567890", term))
+                List.of(new LoanQuoteRepository.LoanQuoteTermInsert(1L, term))
         );
 
         assertThat(record.id()).isEqualTo(42L);

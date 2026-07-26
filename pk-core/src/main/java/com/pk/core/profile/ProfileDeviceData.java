@@ -1,7 +1,7 @@
 package com.pk.core.profile;
 
 public record ProfileDeviceData(
-        long profileId,
+        long userId,
         String partnerUserId,
         String deviceNo,
         String systemPlatform,

@@ -36,7 +36,7 @@ public class ProfileDeviceResolver {
                         ApiCode.INVALID_REQUEST_PARAMETERS,
                         "device record not found for current device"
                 ));
-        if (stored.profileId() != principal.profileId()) {
+        if (stored.userId() != principal.userId()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "device does not belong to current user");
         }
         validateAgainstHeaders(stored, headers);

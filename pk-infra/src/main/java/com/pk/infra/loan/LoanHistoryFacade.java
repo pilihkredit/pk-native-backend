@@ -18,13 +18,13 @@ public class LoanHistoryFacade {
         this.loanLenderHistoryOrderRepository = loanLenderHistoryOrderRepository;
     }
 
-    public HistoryResult listHistory(long profileId, String partnerUserId, String mobileNo) {
+    public HistoryResult listHistory(long userId, String partnerUserId, String mobileNo) {
         LenderLoanHistoryPort.LenderLoanHistoryResult result =
                 lenderLoanHistoryPort.queryHistory(partnerUserId);
         Instant queriedAt = Instant.now();
         List<HistoryOrder> orders = result.orders().stream()
                 .map(order -> {
-                    persist(profileId, mobileNo, result.externalInteractionId(), order, queriedAt);
+                    persist(userId, mobileNo, result.externalInteractionId(), order, queriedAt);
                     return toHistoryOrder(order);
                 })
                 .toList();
@@ -32,7 +32,7 @@ public class LoanHistoryFacade {
     }
 
     private void persist(
-            long profileId,
+            long userId,
             String mobileNo,
             Long externalInteractionId,
             LenderLoanHistoryPort.LenderLoanHistoryOrder order,
@@ -40,7 +40,7 @@ public class LoanHistoryFacade {
     ) {
         loanLenderHistoryOrderRepository.upsert(new LoanLenderHistoryOrderRepository.LoanLenderHistoryOrderData(
                 order.loanApplyId(),
-                profileId,
+                userId,
                 mobileNo,
                 order.loanApplyNo(),
                 order.lenderUserId(),

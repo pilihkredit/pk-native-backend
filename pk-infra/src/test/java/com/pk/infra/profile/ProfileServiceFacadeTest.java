@@ -114,14 +114,14 @@ class ProfileServiceFacadeTest {
                         List.of(),
                         List.of("personal")
                 ));
-        when(profilePersonalRepository.findByProfileId(10L)).thenReturn(Optional.empty());
-        when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.empty());
+        when(profilePersonalRepository.findByUserId(10L)).thenReturn(Optional.empty());
+        when(profileContactRepository.findModuleByUserId(10L)).thenReturn(Optional.empty());
         when(profileBankCardRepository.findByLastRequestId(any())).thenReturn(Optional.empty());
-        when(profileLoginLogRepository.findByProfileId(10L)).thenReturn(Optional.empty());
+        when(profileLoginLogRepository.findByUserId(10L)).thenReturn(Optional.empty());
         when(profileAfRepository.findByRequestId(any())).thenReturn(Optional.empty());
         when(profileTongdunRepository.findByRequestId(any())).thenReturn(Optional.empty());
         when(profileBankCardRepository.findByCardNoHash(any())).thenReturn(Optional.empty());
-        when(profileBankCardRepository.countActiveByProfileId(anyLong())).thenReturn(0);
+        when(profileBankCardRepository.countActiveByUserId(anyLong())).thenReturn(0);
         when(bankReferenceFacade.isValidBankCode("BCA")).thenReturn(true);
         when(profileSyncOrchestrator.scheduleAfterSave(any())).thenReturn(
                 new LenderProfileSyncPort.LenderProfileSyncResult(
@@ -145,10 +145,9 @@ class ProfileServiceFacadeTest {
 
     @Test
     void returnsCompletedWithoutRewriteForSameRequestId() {
-        when(profilePersonalRepository.findByProfileId(10L)).thenReturn(Optional.of(
+        when(profilePersonalRepository.findByUserId(10L)).thenReturn(Optional.of(
                 new ProfilePersonalData(
                         10L,
-                        "81234567890",
                         5,
                         16,
                         "5000000",
@@ -199,8 +198,8 @@ class ProfileServiceFacadeTest {
 
     @Test
     void returnsCompletedWithoutRewriteForSameContactsRequestId() {
-        when(profileContactRepository.findModuleByProfileId(10L)).thenReturn(Optional.of(
-                new ProfileContactsModuleData(10L, "81234567890", "COMPLETED", "req-contact-1", null)
+        when(profileContactRepository.findModuleByUserId(10L)).thenReturn(Optional.of(
+                new ProfileContactsModuleData(10L, "COMPLETED", "req-contact-1", null)
         ));
 
         var result = facade.saveContacts(10L, "U10001", "81234567890", sampleContactsCommand("req-contact-1"));
@@ -301,13 +300,13 @@ class ProfileServiceFacadeTest {
         assertThat(result.cardNoMasked()).isEqualTo("****7890");
         verify(profileSyncOrchestrator).syncNow(any());
         verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
-        verify(profileBankCardRepository).clearDefaultByProfileId(10L);
+        verify(profileBankCardRepository).clearDefaultByUserId(10L);
         verify(profileBankCardRepository).insert(any());
     }
 
     @Test
     void rejectsBankCardWhenActiveCountReachesMaxWithoutInsert() {
-        when(profileBankCardRepository.countActiveByProfileId(10L)).thenReturn(5);
+        when(profileBankCardRepository.countActiveByUserId(10L)).thenReturn(5);
 
         assertThatThrownBy(() -> facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-max")))
                 .isInstanceOf(ApiException.class)
@@ -324,7 +323,6 @@ class ProfileServiceFacadeTest {
                 new com.pk.core.profile.ProfileBankCardData(
                         7L,
                         10L,
-                        "81234567890",
                         "BCA",
                         new EncryptedField("cipher", new byte[12], new byte[16]),
                         "hash",
@@ -340,7 +338,7 @@ class ProfileServiceFacadeTest {
         var result = facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-update"));
 
         assertThat(result.verifyStatus()).isEqualTo("PASSED");
-        verify(profileBankCardRepository).clearDefaultByProfileId(10L);
+        verify(profileBankCardRepository).clearDefaultByUserId(10L);
         verify(profileBankCardRepository).updateById(any());
         verify(profileBankCardRepository, never()).insert(any());
         verify(profileSyncOrchestrator).syncNow(any());
@@ -372,7 +370,6 @@ class ProfileServiceFacadeTest {
                 new com.pk.core.profile.ProfileBankCardData(
                         1L,
                         99L,
-                        "81234567890",
                         "BCA",
                         new EncryptedField("cipher", new byte[12], new byte[16]),
                         "hash",
@@ -394,11 +391,10 @@ class ProfileServiceFacadeTest {
 
     @Test
     void softDeletesNonDefaultBankCardAfterLenderDelete() throws Exception {
-        when(profileBankCardRepository.findActiveByProfileIdAndCardNoHash(anyLong(), any())).thenReturn(Optional.of(
+        when(profileBankCardRepository.findActiveByUserIdAndCardNoHash(anyLong(), any())).thenReturn(Optional.of(
                 new com.pk.core.profile.ProfileBankCardData(
                         8L,
                         10L,
-                        "81234567890",
                         "BCA",
                         new EncryptedField("cipher", new byte[12], new byte[16]),
                         "hash",
@@ -431,11 +427,10 @@ class ProfileServiceFacadeTest {
 
     @Test
     void rejectsDeletingDefaultBankCard() {
-        when(profileBankCardRepository.findActiveByProfileIdAndCardNoHash(anyLong(), any())).thenReturn(Optional.of(
+        when(profileBankCardRepository.findActiveByUserIdAndCardNoHash(anyLong(), any())).thenReturn(Optional.of(
                 new com.pk.core.profile.ProfileBankCardData(
                         8L,
                         10L,
-                        "81234567890",
                         "BCA",
                         new EncryptedField("cipher", new byte[12], new byte[16]),
                         "hash",
@@ -467,7 +462,6 @@ class ProfileServiceFacadeTest {
                 new com.pk.core.profile.ProfileBankCardData(
                         8L,
                         10L,
-                        "81234567890",
                         "BCA",
                         new EncryptedField("cipher", new byte[12], new byte[16]),
                         "hash",
@@ -508,10 +502,9 @@ class ProfileServiceFacadeTest {
 
     @Test
     void returnsCompletedWithoutRewriteForSameLoginLogRequestId() {
-        when(profileLoginLogRepository.findByProfileId(10L)).thenReturn(Optional.of(
+        when(profileLoginLogRepository.findByUserId(10L)).thenReturn(Optional.of(
                 new com.pk.core.profile.ProfileLoginLogData(
                         10L,
-                        "81234567890",
                         2,
                         "203.0.113.1",
                         null,

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.auth.mapper.UserMobileChangeLogMapper">
+
+    <insert id="insert">
+        INSERT INTO user_mobile_change_log (
+            user_id, partner_user_id, old_mobile_no, new_mobile_no,
+            status, operator_type, face_ticket_id, otp_ticket_id
+        ) VALUES (
+            #{userId}, #{partnerUserId}, #{oldMobileNo}, #{newMobileNo},
+            #{status}, #{operatorType}, #{faceTicketId}, #{otpTicketId}
+        )
+    </insert>
+</mapper>

@@ -4,7 +4,7 @@ public class AdjustEventRecordInsertParam {
     private Long id;
     private Long callbackEventId;
     private String partnerUserId;
-    private Long profileId;
+    private Long userId;
     private String deviceUuid;
     private String eventName;
     private String appToken;
@@ -20,7 +20,7 @@ public class AdjustEventRecordInsertParam {
     public AdjustEventRecordInsertParam(
             Long callbackEventId,
             String partnerUserId,
-            Long profileId,
+            Long userId,
             String deviceUuid,
             String eventName,
             String appToken,
@@ -35,7 +35,7 @@ public class AdjustEventRecordInsertParam {
     ) {
         this.callbackEventId = callbackEventId;
         this.partnerUserId = partnerUserId;
-        this.profileId = profileId;
+        this.userId = userId;
         this.deviceUuid = deviceUuid;
         this.eventName = eventName;
         this.appToken = appToken;
@@ -65,8 +65,8 @@ public class AdjustEventRecordInsertParam {
         return partnerUserId;
     }
 
-    public Long getProfileId() {
-        return profileId;
+    public Long getUserId() {
+        return userId;
     }
 
     public String getDeviceUuid() {

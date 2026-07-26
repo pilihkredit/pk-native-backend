@@ -19,7 +19,7 @@ public class LoanLenderHistoryOrderRepositoryImpl implements LoanLenderHistoryOr
     }
 
     @Override
-    public List<LoanLenderHistoryOrderData> findByProfileId(long profileId) {
-        return mapper.findByProfileId(profileId);
+    public List<LoanLenderHistoryOrderData> findByUserId(long userId) {
+        return mapper.findByUserId(userId);
     }
 }

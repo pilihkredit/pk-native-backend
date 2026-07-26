@@ -26,7 +26,7 @@ public class OcrVendorCallLogWriterImpl implements OcrVendorCallLogWriter {
         }
         try {
             OcrVendorCallLogInsertParam param = new OcrVendorCallLogInsertParam();
-            param.setProfileId(entry.profileId());
+            param.setUserId(entry.userId());
             param.setPartnerUserId(entry.partnerUserId());
             param.setMobileNo(entry.mobileNo());
             param.setOperationType(entry.operationType() == null ? null : entry.operationType().name());
@@ -54,10 +54,10 @@ public class OcrVendorCallLogWriterImpl implements OcrVendorCallLogWriter {
             return id;
         } catch (Exception exception) {
             log.warn(
-                    "Failed to persist ocr_vendor_call_log operation={} status={} profileId={}",
+                    "Failed to persist ocr_vendor_call_log operation={} status={} userId={}",
                     entry.operationType(),
                     entry.status(),
-                    entry.profileId(),
+                    entry.userId(),
                     exception
             );
             return 0L;

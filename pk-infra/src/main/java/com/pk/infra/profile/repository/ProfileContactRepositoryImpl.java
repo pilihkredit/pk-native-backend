@@ -17,32 +17,30 @@ public class ProfileContactRepositoryImpl implements ProfileContactRepository {
     }
 
     @Override
-    public Optional<ProfileContactsModuleData> findModuleByProfileId(long profileId) {
-        return Optional.ofNullable(profileContactMapper.findModuleByProfileId(profileId));
+    public Optional<ProfileContactsModuleData> findModuleByUserId(long userId) {
+        return Optional.ofNullable(profileContactMapper.findModuleByUserId(userId));
     }
 
     @Override
-    public List<ProfileContactData> findContactsByProfileId(long profileId) {
-        return profileContactMapper.findContactsByProfileId(profileId);
+    public List<ProfileContactData> findContactsByUserId(long userId) {
+        return profileContactMapper.findContactsByUserId(userId);
     }
 
     @Override
     public void replaceContacts(
-            long profileId,
+            long userId,
             ProfileContactsModuleData module,
             List<ProfileContactData> contacts
     ) {
         profileContactMapper.upsertModule(
-                profileId,
-                module.mobileNo(),
+                userId,
                 module.moduleStatus(),
                 module.lastRequestId()
         );
-        profileContactMapper.deleteContactsByProfileId(profileId);
+        profileContactMapper.deleteContactsByUserId(userId);
         for (ProfileContactData contact : contacts) {
             profileContactMapper.insertContact(
-                    profileId,
-                    contact.mobileNo(),
+                    userId,
                     contact.sortNo(),
                     contact.relationship(),
                     contact.contactName(),
@@ -52,7 +50,7 @@ public class ProfileContactRepositoryImpl implements ProfileContactRepository {
     }
 
     @Override
-    public void updateLastLenderInteraction(long profileId, Long externalInteractionId) {
-        profileContactMapper.updateLastLenderInteraction(profileId, externalInteractionId);
+    public void updateLastLenderInteraction(long userId, Long externalInteractionId) {
+        profileContactMapper.updateLastLenderInteraction(userId, externalInteractionId);
     }
 }

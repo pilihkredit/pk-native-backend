@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RepayVaSnapshotRepositoryImpl implements RepayVaSnapshotRepository {
     private final RepayVaSnapshotMapper mapper;
     public RepayVaSnapshotRepositoryImpl(RepayVaSnapshotMapper mapper){this.mapper=mapper;}
-    @Override @Transactional public void replaceSnapshots(long profileId,String snapshotNo,List<VaSnapshotInsert> snapshots,Long externalInteractionId,Instant fetchedAt){
-        for(VaSnapshotInsert s:snapshots) mapper.insertSnapshot(new RepayVaSnapshotInsertParam(profileId,snapshotNo,s.vaNo(),s.bankCode(),s.bankName(),s.defaultFlag(),s.disabled(),s.bankChannelsJson(),externalInteractionId,fetchedAt));}
-    @Override public List<VaSnapshotRecord> findLatestByProfileId(long profileId){return mapper.findLatestByProfileId(profileId);}
+    @Override @Transactional public void replaceSnapshots(long userId,String snapshotNo,List<VaSnapshotInsert> snapshots,Long externalInteractionId,Instant fetchedAt){
+        for(VaSnapshotInsert s:snapshots) mapper.insertSnapshot(new RepayVaSnapshotInsertParam(userId,snapshotNo,s.vaNo(),s.bankCode(),s.bankName(),s.defaultFlag(),s.disabled(),s.bankChannelsJson(),externalInteractionId,fetchedAt));}
+    @Override public List<VaSnapshotRecord> findLatestByUserId(long userId){return mapper.findLatestByUserId(userId);}
 }

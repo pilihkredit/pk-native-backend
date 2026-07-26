@@ -422,14 +422,14 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
             String livenessImageEncryptedRef
     ) {
         OcrCallContext context = OcrCallContextHolder.get();
-        Long profileId = context == null ? null : context.profileId();
+        Long userId = context == null ? null : context.userId();
         String partnerUserId = context == null ? null : context.partnerUserId();
         String mobileNo = context == null ? null : context.mobileNo();
-        if (profileId == null || mobileNo == null || mobileNo.isBlank()) {
+        if (userId == null || mobileNo == null || mobileNo.isBlank()) {
             log.warn(
-                    "OCR vendor call log missing login identity operation={} profileId={} mobileNo={}",
+                    "OCR vendor call log missing login identity operation={} userId={} mobileNo={}",
                     operationType,
-                    profileId,
+                    userId,
                     mobileNo
             );
         }
@@ -442,7 +442,7 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
             clientRequestId = traceId;
         }
         callLogWriter.write(new OcrVendorCallLogWriter.OcrVendorCallLogEntry(
-                profileId,
+                userId,
                 partnerUserId,
                 mobileNo,
                 operationType,

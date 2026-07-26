@@ -19,7 +19,7 @@ public record DebugUserInfoResponse(
     }
 
     public record AccountInfo(
-            long profileId,
+            long userId,
             String partnerUserId,
             String externalUserId,
             String mobileNo,

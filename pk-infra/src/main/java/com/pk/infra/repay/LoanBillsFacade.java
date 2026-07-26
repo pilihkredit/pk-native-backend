@@ -20,14 +20,14 @@ public class LoanBillsFacade {
         this.loanLenderBillRepository = loanLenderBillRepository;
     }
 
-    public BillsResult listBills(long profileId, String partnerUserId, String mobileNo, String status) {
+    public BillsResult listBills(long userId, String partnerUserId, String mobileNo, String status) {
         List<String> billStatuses = resolveBillStatuses(status);
         LenderLoanBillListPort.LenderLoanBillListResult result =
                 lenderLoanBillListPort.listBills(partnerUserId, billStatuses);
         Instant queriedAt = Instant.now();
         List<BillResult> bills = result.bills().stream()
                 .map(bill -> {
-                    persist(profileId, mobileNo, result.externalInteractionId(), bill, queriedAt);
+                    persist(userId, mobileNo, result.externalInteractionId(), bill, queriedAt);
                     return toBillResult(bill);
                 })
                 .toList();
@@ -35,7 +35,7 @@ public class LoanBillsFacade {
     }
 
     private void persist(
-            long profileId,
+            long userId,
             String mobileNo,
             Long externalInteractionId,
             LenderLoanBillListPort.LenderLoanBill bill,
@@ -43,7 +43,7 @@ public class LoanBillsFacade {
     ) {
         loanLenderBillRepository.upsert(new LoanLenderBillRepository.LoanLenderBillData(
                 bill.loanApplyId(),
-                profileId,
+                userId,
                 mobileNo,
                 bill.loanApplyNo(),
                 bill.lenderUserId(),

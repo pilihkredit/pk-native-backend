@@ -33,6 +33,7 @@ public enum ApiCode {
     PASSWORD_CONFIRM_MISMATCH("K000212", "Password confirmation does not match", ApiCodeLayer.PLATFORM_VALIDATION),
     PASSWORD_NOT_SET("K000213", "Password not set", ApiCodeLayer.PLATFORM_VALIDATION),
     INVALID_MOBILE_OR_PASSWORD("K000214", "Invalid mobile number or password", ApiCodeLayer.PLATFORM_VALIDATION),
+    MOBILE_ALREADY_REGISTERED("K000215", "Mobile number already registered", ApiCodeLayer.PLATFORM_VALIDATION),
     MOTHER_SURNAME_REQUIRED("K000408", "Mother surname is required", ApiCodeLayer.PLATFORM_VALIDATION),
     INVALID_MOTHER_SURNAME_FORMAT("K000409", "Invalid mother surname format", ApiCodeLayer.PLATFORM_VALIDATION),
     OCR_SERVICE_ERROR("K000120", "OCR service error", ApiCodeLayer.PLATFORM_VALIDATION),

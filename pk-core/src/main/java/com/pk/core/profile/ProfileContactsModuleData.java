@@ -1,9 +1,8 @@
 package com.pk.core.profile;
 
 public record ProfileContactsModuleData(
-        long profileId,
-        String mobileNo,
-        String moduleStatus,
+        long userId,
+String moduleStatus,
         String lastRequestId,
         Long externalInteractionId
 ) {

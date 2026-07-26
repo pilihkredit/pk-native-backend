@@ -13,8 +13,8 @@ public class LoanApplicationRepositoryImpl implements LoanApplicationRepository 
     @Override public Optional<LoanApplicationRecord> findById(long id) { return Optional.ofNullable(mapper.findById(id)); }
     @Override public Optional<LoanApplicationRecord> findByRequestId(String requestId) { return Optional.ofNullable(mapper.findByRequestId(requestId)); }
     @Override public Optional<LoanApplicationRecord> findByLoanApplyId(String loanApplyId) { return Optional.ofNullable(mapper.findByLoanApplyId(loanApplyId)); }
-    @Override public Optional<LoanApplicationRecord> findByLoanApplyIdAndProfileId(String loanApplyId, long profileId) {
-        return Optional.ofNullable(mapper.findByLoanApplyIdAndProfileId(loanApplyId, profileId));
+    @Override public Optional<LoanApplicationRecord> findByLoanApplyIdAndUserId(String loanApplyId, long userId) {
+        return Optional.ofNullable(mapper.findByLoanApplyIdAndUserId(loanApplyId, userId));
     }
     @Override public long insert(LoanApplicationInsert insert) {
         mapper.insert(LoanApplicationInsertParam.from(insert));

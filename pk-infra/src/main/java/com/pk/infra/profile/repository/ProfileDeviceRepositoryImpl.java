@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 public class ProfileDeviceRepositoryImpl implements ProfileDeviceRepository {
     private final ProfileDeviceMapper mapper;
     public ProfileDeviceRepositoryImpl(ProfileDeviceMapper mapper) { this.mapper = mapper; }
-    @Override public boolean existsByProfileId(long profileId) { return mapper.existsByProfileId(profileId); }
+    @Override public boolean existsByUserId(long userId) { return mapper.existsByUserId(userId); }
     @Override public Optional<ProfileDeviceData> findByDeviceNo(String deviceNo) {
         return Optional.ofNullable(mapper.findByDeviceNo(deviceNo.trim()));
     }

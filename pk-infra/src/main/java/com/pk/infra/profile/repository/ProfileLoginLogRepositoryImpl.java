@@ -15,15 +15,14 @@ public class ProfileLoginLogRepositoryImpl implements ProfileLoginLogRepository 
     }
 
     @Override
-    public Optional<ProfileLoginLogData> findByProfileId(long profileId) {
-        return Optional.ofNullable(profileLoginLogMapper.findByProfileId(profileId)).map(this::toData);
+    public Optional<ProfileLoginLogData> findByUserId(long userId) {
+        return Optional.ofNullable(profileLoginLogMapper.findByUserId(userId)).map(this::toData);
     }
 
     @Override
     public void upsert(ProfileLoginLogData data) {
         profileLoginLogMapper.upsert(new ProfileLoginLogRow(
-                data.profileId(),
-                data.mobileNo(),
+                data.userId(),
                 data.loginType(),
                 data.loginIp(),
                 data.loginLat(),
@@ -35,14 +34,13 @@ public class ProfileLoginLogRepositoryImpl implements ProfileLoginLogRepository 
     }
 
     @Override
-    public void updateLastLenderInteraction(long profileId, Long externalInteractionId) {
-        profileLoginLogMapper.updateLastLenderInteraction(profileId, externalInteractionId);
+    public void updateLastLenderInteraction(long userId, Long externalInteractionId) {
+        profileLoginLogMapper.updateLastLenderInteraction(userId, externalInteractionId);
     }
 
     private ProfileLoginLogData toData(ProfileLoginLogRow row) {
         return new ProfileLoginLogData(
-                row.profileId(),
-                row.mobileNo(),
+                row.userId(),
                 row.loginType(),
                 row.loginIp(),
                 row.loginLat(),

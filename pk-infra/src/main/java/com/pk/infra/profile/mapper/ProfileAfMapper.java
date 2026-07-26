@@ -16,7 +16,6 @@ public interface ProfileAfMapper {
 
     int bindProfileIfNull(
             @Param("id") long id,
-            @Param("profileId") long profileId,
-            @Param("mobileNo") String mobileNo
+            @Param("userId") long userId
     );
 }

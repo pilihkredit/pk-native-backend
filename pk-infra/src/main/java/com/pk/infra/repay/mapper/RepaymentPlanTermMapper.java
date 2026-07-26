@@ -6,5 +6,5 @@ import org.apache.ibatis.annotations.Mapper; import org.apache.ibatis.annotation
 @Mapper public interface RepaymentPlanTermMapper {
     int upsertTerm(RepaymentPlanTermUpsertParam param);
     List<TermRecord> findByLoanApplicationId(@Param("loanApplicationId") long loanApplicationId);
-    List<TermRecord> findPendingByProfileId(@Param("profileId") long profileId);
+    List<TermRecord> findPendingByUserId(@Param("userId") long userId);
 }

@@ -10,8 +10,8 @@ public interface CreditLenderStatusQueryMapper {
 
     CreditLenderStatusQueryData findLatestByApplyId(@Param("applyId") String applyId);
 
-    CreditLenderStatusQueryData findLatestByApplyIdAndProfileId(
+    CreditLenderStatusQueryData findLatestByApplyIdAndUserId(
             @Param("applyId") String applyId,
-            @Param("profileId") long profileId
+            @Param("userId") long userId
     );
 }

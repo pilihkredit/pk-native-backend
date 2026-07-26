@@ -22,7 +22,7 @@ public class SmsSendLogRepositoryImpl implements SmsSendLogRepository {
     @Override
     public long insert(SmsSendLogEntry entry) {
         SmsSendLogInsertParam param = new SmsSendLogInsertParam(
-                entry.profileId().orElse(null),
+                entry.userId().orElse(null),
                 entry.mobileNo(),
                 entry.deviceNo(),
                 entry.otpToken(),
@@ -49,7 +49,7 @@ public class SmsSendLogRepositoryImpl implements SmsSendLogRepository {
     }
 
     public static class SmsSendLogInsertParam {
-        private Long profileId;
+        private Long userId;
         private String mobileNo;
         private String deviceNo;
         private String otpToken;
@@ -58,14 +58,14 @@ public class SmsSendLogRepositoryImpl implements SmsSendLogRepository {
         private Long logId;
 
         public SmsSendLogInsertParam(
-                Long profileId,
+                Long userId,
                 String mobileNo,
                 String deviceNo,
                 String otpToken,
                 String otpCode,
                 String purpose
         ) {
-            this.profileId = profileId;
+            this.userId = userId;
             this.mobileNo = mobileNo;
             this.deviceNo = deviceNo;
             this.otpToken = otpToken;
@@ -73,8 +73,8 @@ public class SmsSendLogRepositoryImpl implements SmsSendLogRepository {
             this.purpose = purpose;
         }
 
-        public Long getProfileId() {
-            return profileId;
+        public Long getUserId() {
+            return userId;
         }
 
         public String getMobileNo() {

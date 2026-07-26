@@ -4,21 +4,21 @@ import com.pk.core.profile.ProfileBankCardData;
 import java.util.Optional;
 
 public interface ProfileBankCardRepository {
-    Optional<ProfileBankCardData> findDefaultByProfileId(long profileId);
+    Optional<ProfileBankCardData> findDefaultByUserId(long userId);
 
     Optional<ProfileBankCardData> findByLastRequestId(String lastRequestId);
 
     Optional<ProfileBankCardData> findByCardNoHash(String cardNoHash);
 
-    Optional<ProfileBankCardData> findActiveByProfileIdAndCardNoHash(long profileId, String cardNoHash);
+    Optional<ProfileBankCardData> findActiveByUserIdAndCardNoHash(long userId, String cardNoHash);
 
-    int countActiveByProfileId(long profileId);
+    int countActiveByUserId(long userId);
 
     void insert(ProfileBankCardData data);
 
     void updateById(ProfileBankCardData data);
 
-    void clearDefaultByProfileId(long profileId);
+    void clearDefaultByUserId(long userId);
 
     void softDeleteById(long id, String lastRequestId);
 

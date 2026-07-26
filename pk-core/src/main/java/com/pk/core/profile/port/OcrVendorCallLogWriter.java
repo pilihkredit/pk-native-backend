@@ -11,7 +11,7 @@ public interface OcrVendorCallLogWriter {
     long write(OcrVendorCallLogEntry entry);
 
     record OcrVendorCallLogEntry(
-            Long profileId,
+            Long userId,
             String partnerUserId,
             String mobileNo,
             OcrVendorOperationType operationType,

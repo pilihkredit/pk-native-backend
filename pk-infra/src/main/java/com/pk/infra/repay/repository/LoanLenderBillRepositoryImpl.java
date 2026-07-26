@@ -19,7 +19,7 @@ public class LoanLenderBillRepositoryImpl implements LoanLenderBillRepository {
     }
 
     @Override
-    public List<LoanLenderBillData> findByProfileIdAndBillStatuses(long profileId, List<String> billStatuses) {
-        return mapper.findByProfileIdAndBillStatuses(profileId, billStatuses);
+    public List<LoanLenderBillData> findByUserIdAndBillStatuses(long userId, List<String> billStatuses) {
+        return mapper.findByUserIdAndBillStatuses(userId, billStatuses);
     }
 }

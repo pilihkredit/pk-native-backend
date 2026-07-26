@@ -32,29 +32,29 @@ public class ProductListResolver {
     }
 
     public ResolvedProductList resolve(
-            long profileId,
+            long userId,
             CreditApplicationRepository.CreditApplicationRecord creditRecord,
             boolean forceRefresh
     ) {
         if (!forceRefresh) {
-            Optional<ResolvedProductList> cached = resolveFromCache(profileId, creditRecord);
+            Optional<ResolvedProductList> cached = resolveFromCache(userId, creditRecord);
             if (cached.isPresent()) {
                 return cached.get();
             }
             Optional<ResolvedProductList> latest = resolveFromLatest(creditRecord);
             if (latest.isPresent()) {
-                productListCache.putProductListId(profileId, creditRecord.applyId(), latest.get().productListId());
+                productListCache.putProductListId(userId, creditRecord.applyId(), latest.get().productListId());
                 return latest.get();
             }
         }
-        return fetchAndPersist(profileId, creditRecord);
+        return fetchAndPersist(userId, creditRecord);
     }
 
     private Optional<ResolvedProductList> resolveFromCache(
-            long profileId,
+            long userId,
             CreditApplicationRepository.CreditApplicationRecord creditRecord
     ) {
-        Optional<Long> listId = productListCache.getProductListId(profileId, creditRecord.applyId());
+        Optional<Long> listId = productListCache.getProductListId(userId, creditRecord.applyId());
         if (listId.isEmpty()) {
             return Optional.empty();
         }
@@ -73,7 +73,7 @@ public class ProductListResolver {
     }
 
     private ResolvedProductList fetchAndPersist(
-            long profileId,
+            long userId,
             CreditApplicationRepository.CreditApplicationRecord creditRecord
     ) {
         LenderLoanProductPort.LenderLoanProductListResult lenderResult =
@@ -101,9 +101,8 @@ public class ProductListResolver {
             tree = latest.get();
         } else {
             tree = lenderProductListRepository.insertTree(new LenderProductListRepository.ProductListInsert(
-                    profileId,
+                    userId,
                     creditRecord.id(),
-                    creditRecord.mobileNo(),
                     applyId,
                     lenderResult.creditApplyNo(),
                     lenderResult.userId(),
@@ -115,7 +114,7 @@ public class ProductListResolver {
                     lenderResult.products()
             ));
         }
-        productListCache.putProductListId(profileId, creditRecord.applyId(), tree.header().id());
+        productListCache.putProductListId(userId, creditRecord.applyId(), tree.header().id());
         return toResolved(tree);
     }
 

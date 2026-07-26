@@ -147,8 +147,8 @@ class CreditApplyFacadeTest {
     @Test
     void syncsFromLenderWhenGettingStatus() {
         CreditApplicationRepository.CreditApplicationRecord record = optionalRecord().get();
-        when(creditApplicationRepository.findLatestByProfileId(1L)).thenReturn(Optional.of(record));
-        when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditApplicationRepository.findLatestByUserId(1L)).thenReturn(Optional.of(record));
+        when(creditApplicationRepository.findByApplyIdAndUserId("APPLY-1", 1L))
                 .thenReturn(Optional.of(record));
 
         CreditApplyFacade.StatusResult result = facade.getStatus(1L);
@@ -161,10 +161,10 @@ class CreditApplyFacadeTest {
     @Test
     void returnsMappedStatusFromLenderQuery() {
         CreditApplicationRepository.CreditApplicationRecord record = optionalRecord().get();
-        when(creditApplicationRepository.findLatestByProfileId(1L)).thenReturn(Optional.of(record));
-        when(creditApplicationRepository.findByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditApplicationRepository.findLatestByUserId(1L)).thenReturn(Optional.of(record));
+        when(creditApplicationRepository.findByApplyIdAndUserId("APPLY-1", 1L))
                 .thenReturn(Optional.of(record));
-        when(creditLenderStatusQueryRepository.findLatestByApplyIdAndProfileId("APPLY-1", 1L))
+        when(creditLenderStatusQueryRepository.findLatestByApplyIdAndUserId("APPLY-1", 1L))
                 .thenReturn(Optional.of(new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
                         "APPLY-1",
                         1L,
@@ -193,7 +193,7 @@ class CreditApplyFacadeTest {
 
     @Test
     void throwsWhenUserHasNoCreditApplication() {
-        when(creditApplicationRepository.findLatestByProfileId(1L)).thenReturn(Optional.empty());
+        when(creditApplicationRepository.findLatestByUserId(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> facade.getStatus(1L))
                 .isInstanceOf(ApiException.class)

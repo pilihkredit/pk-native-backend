@@ -29,8 +29,8 @@ public class RepayPlanFacade {
         this.lenderRepayPlanPort = lenderRepayPlanPort;
     }
 
-    public List<PlanResult> getPlan(long profileId, String loanApplyId) {
-        List<LoanBillReadRepository.LoanBillRecord> loans = resolveLoans(profileId, loanApplyId);
+    public List<PlanResult> getPlan(long userId, String loanApplyId) {
+        List<LoanBillReadRepository.LoanBillRecord> loans = resolveLoans(userId, loanApplyId);
         if (loans.isEmpty()) {
             if (loanApplyId != null && !loanApplyId.isBlank()) {
                 throw new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND);
@@ -40,20 +40,20 @@ public class RepayPlanFacade {
         return loans.stream().map(this::syncAndBuildPlan).toList();
     }
 
-    public void syncPlan(long profileId, String loanApplyId) {
+    public void syncPlan(long userId, String loanApplyId) {
         LoanBillReadRepository.LoanBillRecord loan = loanBillReadRepository
-                .findByProfileIdAndLoanApplyId(profileId, loanApplyId)
+                .findByUserIdAndLoanApplyId(userId, loanApplyId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
         syncFromLender(loan);
     }
 
-    private List<LoanBillReadRepository.LoanBillRecord> resolveLoans(long profileId, String loanApplyId) {
+    private List<LoanBillReadRepository.LoanBillRecord> resolveLoans(long userId, String loanApplyId) {
         if (loanApplyId != null && !loanApplyId.isBlank()) {
-            return loanBillReadRepository.findByProfileIdAndLoanApplyId(profileId, loanApplyId)
+            return loanBillReadRepository.findByUserIdAndLoanApplyId(userId, loanApplyId)
                     .map(List::of)
                     .orElse(List.of());
         }
-        return loanBillReadRepository.findPendingByProfileId(profileId);
+        return loanBillReadRepository.findPendingByUserId(userId);
     }
 
     private PlanResult syncAndBuildPlan(LoanBillReadRepository.LoanBillRecord loan) {

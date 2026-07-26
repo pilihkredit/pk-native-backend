@@ -51,13 +51,13 @@ public class LoanApplyApplicationService {
                 pendanaanProperties
         );
         userDeviceWriter.upsertFromRequest(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 request.requestId(),
                 device
         );
         LoanApplyFacade.ApplyResult result = loanApplyFacade.apply(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId(),
                 principal.mobileNo(),
                 new LoanApplyFacade.ApplyCommand(
@@ -85,7 +85,7 @@ public class LoanApplyApplicationService {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        LoanApplyFacade.StatusResult result = loanApplyFacade.getStatus(principal.profileId(), loanApplyId);
+        LoanApplyFacade.StatusResult result = loanApplyFacade.getStatus(principal.userId(), loanApplyId);
         return new LoanStatusResponse(
                 result.loanApplyId(),
                 result.status(),

@@ -18,10 +18,10 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
 
     @Override
     public void save(String refreshTokenId, RefreshTokenRecord record, Duration ttl) {
-        String value = record.profileId() + "|" + record.sessionVersion() + "|" + record.deviceId();
+        String value = record.userId() + "|" + record.sessionVersion() + "|" + record.deviceId();
         redisTemplate.opsForValue().set(TOKEN_PREFIX + refreshTokenId, value, ttl);
-        redisTemplate.opsForSet().add(profileIndex(record.profileId()), refreshTokenId);
-        redisTemplate.expire(profileIndex(record.profileId()), ttl);
+        redisTemplate.opsForSet().add(profileIndex(record.userId()), refreshTokenId);
+        redisTemplate.expire(profileIndex(record.userId()), ttl);
     }
 
     @Override
@@ -45,21 +45,21 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
     public void delete(String refreshTokenId) {
         Optional<RefreshTokenRecord> record = find(refreshTokenId);
         redisTemplate.delete(TOKEN_PREFIX + refreshTokenId);
-        record.ifPresent(value -> redisTemplate.opsForSet().remove(profileIndex(value.profileId()), refreshTokenId));
+        record.ifPresent(value -> redisTemplate.opsForSet().remove(profileIndex(value.userId()), refreshTokenId));
     }
 
     @Override
-    public void deleteAllForProfile(long profileId) {
-        Set<String> tokenIds = redisTemplate.opsForSet().members(profileIndex(profileId));
+    public void deleteAllForProfile(long userId) {
+        Set<String> tokenIds = redisTemplate.opsForSet().members(profileIndex(userId));
         if (tokenIds != null) {
             for (String tokenId : tokenIds) {
                 redisTemplate.delete(TOKEN_PREFIX + tokenId);
             }
         }
-        redisTemplate.delete(profileIndex(profileId));
+        redisTemplate.delete(profileIndex(userId));
     }
 
-    private static String profileIndex(long profileId) {
-        return PROFILE_INDEX_PREFIX + profileId;
+    private static String profileIndex(long userId) {
+        return PROFILE_INDEX_PREFIX + userId;
     }
 }

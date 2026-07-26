@@ -4,9 +4,8 @@ import java.time.Instant;
 
 public class LenderProductListInsertParam {
     private Long id;
-    private long profileId;
+    private long userId;
     private long creditApplicationId;
-    private String mobileNo;
     private String applyId;
     private String creditApplyNo;
     private String lenderUserId;
@@ -24,12 +23,12 @@ public class LenderProductListInsertParam {
         this.id = id;
     }
 
-    public long getProfileId() {
-        return profileId;
+    public long getUserId() {
+        return userId;
     }
 
-    public void setProfileId(long profileId) {
-        this.profileId = profileId;
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
 
     public long getCreditApplicationId() {
@@ -38,14 +37,6 @@ public class LenderProductListInsertParam {
 
     public void setCreditApplicationId(long creditApplicationId) {
         this.creditApplicationId = creditApplicationId;
-    }
-
-    public String getMobileNo() {
-        return mobileNo;
-    }
-
-    public void setMobileNo(String mobileNo) {
-        this.mobileNo = mobileNo;
     }
 
     public String getApplyId() {

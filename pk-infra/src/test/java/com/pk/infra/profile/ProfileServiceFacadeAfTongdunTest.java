@@ -127,7 +127,6 @@ class ProfileServiceFacadeAfTongdunTest {
                 new ProfileAfData(
                         9L,
                         1L,
-                        "81234567890",
                         "device-1",
                         "AF1",
                         null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,

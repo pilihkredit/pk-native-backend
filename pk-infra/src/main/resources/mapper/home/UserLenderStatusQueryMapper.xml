@@ -6,8 +6,7 @@
     <resultMap id="userLenderStatusQueryMap"
                type="com.pk.core.home.port.UserLenderStatusQueryRepository$UserLenderStatusQueryData">
         <constructor>
-            <arg column="profile_id" javaType="_long"/>
-            <arg column="mobile_no" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
             <arg column="partner_user_id" javaType="string"/>
             <arg column="lender_user_id" javaType="string"/>
             <arg column="user_loan_life_time_status" javaType="java.lang.Integer"/>
@@ -31,8 +30,7 @@
 
     <insert id="upsert">
         INSERT INTO user_lender_status_query (
-            profile_id,
-            mobile_no,
+            user_id,
             partner_user_id,
             lender_user_id,
             user_loan_life_time_status,
@@ -47,8 +45,7 @@
             external_interaction_id,
             queried_at
         ) VALUES (
-            #{profileId},
-            #{mobileNo},
+            #{userId},
             #{partnerUserId},
             #{lenderUserId},
             #{userLoanLifeTimeStatus},
@@ -64,7 +61,6 @@
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
         ON DUPLICATE KEY UPDATE
-            mobile_no = VALUES(mobile_no),
             partner_user_id = VALUES(partner_user_id),
             lender_user_id = VALUES(lender_user_id),
             user_loan_life_time_status = VALUES(user_loan_life_time_status),
@@ -80,13 +76,13 @@
             queried_at = VALUES(queried_at)
     </insert>
 
-    <select id="findByProfileId" resultMap="userLenderStatusQueryMap">
-        SELECT profile_id, mobile_no, partner_user_id, lender_user_id,
+    <select id="findByUserId" resultMap="userLenderStatusQueryMap">
+        SELECT user_id, partner_user_id, lender_user_id,
                user_loan_life_time_status, user_loan_life_time_last_action,
                freeze_end_time, first_loan, first_credit_apply, first_loan_apply,
                on_loan_count, credit_contract_expire_time,
                auto_credit, external_interaction_id, queried_at
         FROM user_lender_status_query
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
     </select>
 </mapper>

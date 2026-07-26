@@ -17,7 +17,7 @@
         </constructor>
     </resultMap>
 
-    <select id="findAccountByProfileId" resultMap="userAccountRecordMap">
+    <select id="findAccountByUserId" resultMap="userAccountRecordMap">
         SELECT id,
                partner_user_id,
                external_user_id,
@@ -29,7 +29,7 @@
                created_at,
                updated_at
         FROM user_profile
-        WHERE id = #{profileId}
+        WHERE id = #{userId}
           AND deleted_at IS NULL
         LIMIT 1
     </select>
@@ -47,8 +47,8 @@
         </constructor>
     </resultMap>
 
-    <select id="findLatestIdentityAssetByProfileId" resultMap="identityAssetRecordMap">
-        SELECT profile_id AS id,
+    <select id="findLatestIdentityAssetByUserId" resultMap="identityAssetRecordMap">
+        SELECT user_id AS id,
                full_name,
                id_card_image_encrypted_ref,
                face_photo_image_encrypted_ref,
@@ -57,7 +57,7 @@
                external_interaction_id,
                created_at
         FROM user_profile_identity
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
         LIMIT 1
     </select>
 
@@ -87,7 +87,7 @@
         </constructor>
     </resultMap>
 
-    <select id="findDevicesByProfileId" resultMap="deviceRecordMap">
+    <select id="findDevicesByUserId" resultMap="deviceRecordMap">
         SELECT device_no,
                system_platform,
                app_name,
@@ -110,7 +110,7 @@
                last_request_id,
                updated_at
         FROM user_device
-        WHERE profile_id = #{profileId}
+        WHERE user_id = #{userId}
         ORDER BY updated_at DESC, id DESC
     </select>
 </mapper>

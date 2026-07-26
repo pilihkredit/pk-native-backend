@@ -63,7 +63,7 @@ class DebugUserProgressApplicationServiceTest {
         var response = service.query("debug-token", "801234567");
 
         assertThat(response.found()).isTrue();
-        assertThat(response.user().profileId()).isEqualTo(10L);
+        assertThat(response.user().userId()).isEqualTo(10L);
         assertThat(response.progress().completedModules()).containsExactly("personal", "identity");
         assertThat(response.progress().missingModules()).containsExactly("bankCard", "device", "contact");
         assertThat(response.interactions()).hasSize(1);

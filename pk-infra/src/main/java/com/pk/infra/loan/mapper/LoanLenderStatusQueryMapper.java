@@ -10,8 +10,8 @@ public interface LoanLenderStatusQueryMapper {
 
     LoanLenderStatusQueryData findLatestByLoanApplyId(@Param("loanApplyId") String loanApplyId);
 
-    LoanLenderStatusQueryData findLatestByLoanApplyIdAndProfileId(
+    LoanLenderStatusQueryData findLatestByLoanApplyIdAndUserId(
             @Param("loanApplyId") String loanApplyId,
-            @Param("profileId") long profileId
+            @Param("userId") long userId
     );
 }
