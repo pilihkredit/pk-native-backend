@@ -11,6 +11,7 @@ public interface ExternalInteractionCallbackLogRepository {
     void updateResponse(
             long id,
             String mobileNo,
+            Long userId,
             String responseCode,
             String responseMsg,
             String responseRef,

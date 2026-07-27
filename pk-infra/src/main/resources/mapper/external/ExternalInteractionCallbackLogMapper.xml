@@ -9,6 +9,7 @@
             business_type,
             business_id,
             mobile_no,
+            user_id,
             http_method,
             endpoint,
             request_id,
@@ -26,6 +27,7 @@
             #{businessType},
             #{businessId},
             #{mobileNo},
+            #{userId},
             #{httpMethod},
             #{endpoint},
             #{requestId},
@@ -48,6 +50,7 @@
     <update id="updateResponse">
         UPDATE external_interaction_callback
         SET mobile_no = COALESCE(#{mobileNo}, mobile_no),
+            user_id = COALESCE(#{userId}, user_id),
             response_code = #{responseCode},
             response_msg = #{responseMsg},
             response_ref = #{responseRef},

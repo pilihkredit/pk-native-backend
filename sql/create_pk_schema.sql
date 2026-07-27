@@ -977,7 +977,8 @@ CREATE TABLE external_interaction_callback (
     UNIQUE KEY uk_external_interaction_callback_idempotency (idempotency_key),
     KEY idx_external_interaction_callback_business (business_type, business_id),
     KEY idx_external_interaction_callback_endpoint_created (endpoint, created_at),
-    KEY idx_external_interaction_callback_mobile_created (mobile_no, created_at)
+    KEY idx_external_interaction_callback_mobile_created (mobile_no, created_at),
+    KEY idx_external_interaction_callback_user_created (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Inbound callback request/response audit records';
 
 CREATE TABLE loan_lender_history_order (

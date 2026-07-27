@@ -13,6 +13,7 @@ public interface ExternalInteractionCallbackLogMapper {
     int updateResponse(
             @Param("id") long id,
             @Param("mobileNo") String mobileNo,
+            @Param("userId") Long userId,
             @Param("responseCode") String responseCode,
             @Param("responseMsg") String responseMsg,
             @Param("responseRef") String responseRef,

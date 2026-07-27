@@ -63,6 +63,7 @@ public class LoanCallbackIntakeFacade {
                     CallbackTypes.LOAN_RESULT,
                     callback.loanApplyId(),
                     null,
+                    null,
                     HTTP_METHOD,
                     ENDPOINT,
                     interactionNo,
@@ -86,7 +87,7 @@ public class LoanCallbackIntakeFacade {
                 loanApplicationRepository.findByLoanApplyId(callback.loanApplyId());
         if (application.isEmpty()) {
             log.warn("Loan callback ignored because loanApplyId={} was not found", callback.loanApplyId());
-            finalizeCallbackLog(interactionCallbackId, null, startedAt, true);
+            finalizeCallbackLog(interactionCallbackId, null, null, startedAt, true);
             return new IntakeResult(interactionCallbackId, false, true);
         }
 
@@ -105,14 +106,21 @@ public class LoanCallbackIntakeFacade {
         String mobileNo = userAuthRepository.findByUserId(record.userId())
                 .map(profile -> profile.mobileNo())
                 .orElse(null);
-        finalizeCallbackLog(interactionCallbackId, mobileNo, startedAt, true);
+        finalizeCallbackLog(interactionCallbackId, mobileNo, record.userId(), startedAt, true);
         return new IntakeResult(interactionCallbackId, false, false);
     }
 
-    private void finalizeCallbackLog(long interactionCallbackId, String mobileNo, long startedAt, boolean success) {
+    private void finalizeCallbackLog(
+            long interactionCallbackId,
+            String mobileNo,
+            Long userId,
+            long startedAt,
+            boolean success
+    ) {
         externalInteractionCallbackLogRepository.updateResponse(
                 interactionCallbackId,
                 mobileNo,
+                userId,
                 ApiCode.SUCCESS.code(),
                 ApiCode.SUCCESS.message(),
                 SUCCESS_RESPONSE,

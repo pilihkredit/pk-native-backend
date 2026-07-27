@@ -36,12 +36,13 @@ public class ExternalInteractionCallbackLogRepositoryImpl implements ExternalInt
     public void updateResponse(
             long id,
             String mobileNo,
+            Long userId,
             String responseCode,
             String responseMsg,
             String responseRef,
             boolean success,
             int durationMs
     ) {
-        mapper.updateResponse(id, mobileNo, responseCode, responseMsg, responseRef, success, durationMs);
+        mapper.updateResponse(id, mobileNo, userId, responseCode, responseMsg, responseRef, success, durationMs);
     }
 }

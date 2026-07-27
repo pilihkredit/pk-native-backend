@@ -8,6 +8,7 @@ public class ExternalInteractionCallbackLog {
     private final String businessType;
     private final String businessId;
     private final String mobileNo;
+    private final Long userId;
     private final String httpMethod;
     private final String endpoint;
     private final String requestId;
@@ -26,6 +27,7 @@ public class ExternalInteractionCallbackLog {
             String businessType,
             String businessId,
             String mobileNo,
+            Long userId,
             String httpMethod,
             String endpoint,
             String requestId,
@@ -43,6 +45,7 @@ public class ExternalInteractionCallbackLog {
         this.businessType = businessType;
         this.businessId = businessId;
         this.mobileNo = mobileNo;
+        this.userId = userId;
         this.httpMethod = httpMethod;
         this.endpoint = endpoint;
         this.requestId = requestId;
@@ -85,6 +88,10 @@ public class ExternalInteractionCallbackLog {
 
     public String getMobileNo() {
         return mobileNo;
+    }
+
+    public Long getUserId() {
+        return userId;
     }
 
     public String getHttpMethod() {

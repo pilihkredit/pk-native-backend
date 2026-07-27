@@ -3,6 +3,7 @@ package com.pk.infra.credit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,6 +82,7 @@ class CreditCallbackIntakeFacadeTest {
         verify(externalInteractionCallbackLogRepository).updateResponse(
                 eq(99L),
                 eq("81234567890"),
+                eq(1L),
                 eq("000000"),
                 eq("success"),
                 eq("{\"code\":\"000000\",\"msg\":\"success\"}"),
@@ -119,7 +121,8 @@ class CreditCallbackIntakeFacadeTest {
         verify(creditLenderStatusApplier, never()).apply(any(), any(), any(), any(), any());
         verify(externalInteractionCallbackLogRepository).updateResponse(
                 eq(55L),
-                eq(null),
+                isNull(),
+                isNull(),
                 eq("000000"),
                 eq("success"),
                 eq("{\"code\":\"000000\",\"msg\":\"success\"}"),
