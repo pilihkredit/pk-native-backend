@@ -48,6 +48,7 @@ public class IdentityOcrFacade {
     private final ProfileVersionRepository profileVersionRepository;
     private final UserProfileBindingRepository userProfileBindingRepository;
     private final OnboardingProgressFacade onboardingProgressFacade;
+    private final IdentityVerificationCompletionService completionService;
     private final OcrProperties ocrProperties;
     private final ObjectMapper objectMapper;
 
@@ -63,6 +64,7 @@ public class IdentityOcrFacade {
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
             OnboardingProgressFacade onboardingProgressFacade,
+            IdentityVerificationCompletionService completionService,
             OcrProperties ocrProperties,
             ObjectMapper objectMapper
     ) {
@@ -77,6 +79,7 @@ public class IdentityOcrFacade {
         this.profileVersionRepository = profileVersionRepository;
         this.userProfileBindingRepository = userProfileBindingRepository;
         this.onboardingProgressFacade = onboardingProgressFacade;
+        this.completionService = completionService;
         this.ocrProperties = ocrProperties;
         this.objectMapper = objectMapper;
     }
@@ -340,66 +343,31 @@ public class IdentityOcrFacade {
             OcrCallContextHolder.clear();
         }
 
-        String faceImageEncryptedRef = biometricImageStore.store(
-                normalizedMobileNo,
-                BiometricImageKind.FACE,
-                faceImage
-        );
-        String faceBase64 = OcrImageSupport.encodeBase64(faceImage);
-        String idCardBase64 = OcrImageSupport.encodeBase64(idCardImage);
-        ProfileSyncPayload.IdentityProfilePayload payload = buildIdentityPayload(
-                manualName,
-                manualIdNo,
-                parsed,
-                session,
-                faceBase64,
-                idCardBase64
-        );
-
-        long profileVersionId = profileVersionRepository.createSnapshot(
-                userId,
-                normalizedMobileNo,
-                List.of("identity"),
-                "IDENTITY_OCR"
-        );
-        profileIdentityRepository.upsert(new ProfileIdentityData(
-                userId,
-                manualName,
-                storedIdentity.idNo(),
-                storedIdentity.idNoHash(),
-                MODULE_COMPLETED,
-                command.requestId().trim(),
-                null,
-                profileVersionId,
-                idCardImageEncryptedRef,
-                faceImageEncryptedRef,
-                biometricImageStore.encryptionKeyRef(),
-                null,
-                null,
-                OCR_CHANNEL,
-                session.ocrCheckVendorCallLogId()
-        ));
-        userDeviceWriter.upsertFromRequest(userId, partnerUserId, command.requestId(), command.device());
-
-        var syncResult = profileSyncOrchestrator.scheduleAfterSave(new ProfileSyncJob(
+        var completion = completionService.complete(new IdentityVerificationCompletionCommand(
                 userId,
                 partnerUserId,
                 normalizedMobileNo,
-                command.requestId(),
-                ProfileSyncModule.IDENTITY,
-                command.device(),
-                payload,
-                appsFlyerCompanions(command.device())
+                command.requestId().trim(),
+                manualName,
+                manualIdNo,
+                storedIdentity.idNo(),
+                storedIdentity.idNoHash(),
+                OCR_CHANNEL,
+                session.ocrCheckVendorCallLogId(),
+                parsed,
+                lenderRawOcrDetail(session.ocrRawJson()),
+                idCardImage,
+                faceImage,
+                command.device()
         ));
-        refreshKycStatus(userId, partnerUserId);
 
         return new FaceRecognitionResult(
                 command.requestId(),
                 compareResult.similarity(),
                 true,
                 ocrProperties.faceThreshold(),
-                MODULE_COMPLETED,
-                parseLenderResponse(syncResult.responseDataJson())
+                completion.moduleStatus(),
+                completion.lenderResponse()
         );
     }
 

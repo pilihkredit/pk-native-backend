@@ -125,6 +125,31 @@ public class ProfileInfraConfiguration {
     }
 
     @Bean
+    IdentityVerificationCompletionService identityVerificationCompletionService(
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
+            com.pk.core.profile.port.BiometricImageStore biometricImageStore,
+            ProfileSyncOrchestrator profileSyncOrchestrator,
+            com.pk.core.profile.port.ProfileAfRepository profileAfRepository,
+            UserDeviceWriter userDeviceWriter,
+            com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
+            com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
+            OnboardingProgressFacade onboardingProgressFacade,
+            ObjectMapper objectMapper
+    ) {
+        return new IdentityVerificationCompletionService(
+                profileIdentityRepository,
+                biometricImageStore,
+                profileSyncOrchestrator,
+                profileAfRepository,
+                userDeviceWriter,
+                profileVersionRepository,
+                userProfileBindingRepository,
+                onboardingProgressFacade,
+                objectMapper
+        );
+    }
+
+    @Bean
     @ConditionalOnProperty(prefix = "pk.ocr", name = "enabled", havingValue = "true")
     IdentityOcrFacade identityOcrFacade(
             com.pk.core.profile.port.AdvanceAiOcrPort advanceAiOcrPort,
@@ -138,6 +163,7 @@ public class ProfileInfraConfiguration {
             com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
             com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
             OnboardingProgressFacade onboardingProgressFacade,
+            IdentityVerificationCompletionService completionService,
             com.pk.infra.ocr.OcrProperties ocrProperties,
             ObjectMapper objectMapper
     ) {
@@ -153,6 +179,7 @@ public class ProfileInfraConfiguration {
                 profileVersionRepository,
                 userProfileBindingRepository,
                 onboardingProgressFacade,
+                completionService,
                 ocrProperties,
                 objectMapper
         );

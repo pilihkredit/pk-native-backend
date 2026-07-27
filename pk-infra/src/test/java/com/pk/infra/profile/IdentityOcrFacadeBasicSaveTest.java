@@ -46,6 +46,7 @@ class IdentityOcrFacadeBasicSaveTest {
                 mock(ProfileVersionRepository.class),
                 mock(UserProfileBindingRepository.class),
                 mock(OnboardingProgressFacade.class),
+                mock(IdentityVerificationCompletionService.class),
                 ocrProperties,
                 new ObjectMapper()
         );
