@@ -406,7 +406,7 @@ total_bill_count,
 total_should_amount,
 total_reduction_amount,
 total_paid_amount,
-raw_response_json,
+external_interaction_id,
 created_at
 FROM repayment_trial_snapshot
 WHERE trial_no=#{trialNo}</select>
