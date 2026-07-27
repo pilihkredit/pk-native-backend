@@ -1,14 +1,18 @@
 package com.pk.infra.profile;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileIdentityData;
+import com.pk.core.api.ApiCode;
+import com.pk.core.api.ApiException;
 import com.pk.core.profile.ocr.OcrSessionState;
 import com.pk.core.profile.ocr.TrustDecisionSessionState;
 import com.pk.core.profile.port.BiometricImageStore;
@@ -23,6 +27,34 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class TrustDecisionIdentityFacadeTest {
+    @Test
+    void stopsOcrBusinessFailureEvenWhenVendorReturnsCardFields() {
+        TrustDecisionKycPort port = mock(TrustDecisionKycPort.class);
+        var parsed = new OcrSessionState.OcrParsedFields(
+                "TEST USER", "3201010101010001", null, null, null, null, null,
+                null, null, null, null, null, null, null, null);
+        when(port.checkIdentityCard(any())).thenReturn(
+                new TrustDecisionKycPort.OcrResult("fail", "ocr-seq", "{}", parsed));
+        TrustDecisionSessionStore sessionStore = mock(TrustDecisionSessionStore.class);
+        BiometricImageStore imageStore = mock(BiometricImageStore.class);
+        TrustDecisionIdentityFacade facade = new TrustDecisionIdentityFacade(
+                port,
+                sessionStore,
+                mock(ProfileIdentityRepository.class),
+                mock(SensitiveFieldEncryptor.class),
+                imageStore,
+                mock(IdentityVerificationCompletionService.class),
+                new TrustDecisionProperties());
+
+        assertThatThrownBy(() -> facade.ocrCheck(
+                42L, "partner-user", "81234567890", "AQID", "request-1", "trace-1"))
+                .isInstanceOfSatisfying(ApiException.class,
+                        exception -> assertThat(exception.apiCode()).isEqualTo(ApiCode.OCR_NO_RESULT));
+
+        verify(sessionStore, never()).save(any(Long.class), any());
+        verify(imageStore, never()).store(any(), any(), any());
+    }
+
     @Test
     void completesIdentityWhenFaceBusinessResultFails() throws Exception {
         TrustDecisionKycPort port = mock(TrustDecisionKycPort.class);

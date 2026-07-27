@@ -92,6 +92,9 @@ public class TrustDecisionIdentityFacade {
         } finally {
             OcrCallContextHolder.clear();
         }
+        if ("fail".equalsIgnoreCase(result.result())) {
+            throw new ApiException(ApiCode.OCR_NO_RESULT);
+        }
         OcrSessionState.OcrParsedFields parsed = result.parsed();
         if (parsed == null || isBlank(parsed.ocrName()) || isBlank(parsed.ocrIdNo())) {
             throw new ApiException(ApiCode.OCR_NO_RESULT);
