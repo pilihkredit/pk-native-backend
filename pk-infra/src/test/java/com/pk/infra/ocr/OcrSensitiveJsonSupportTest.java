@@ -35,12 +35,14 @@ class OcrSensitiveJsonSupportTest {
 
         String input = """
                 {
+                  "license": "secret-license",
                   "id_card": "3171234567890001",
                   "idNumber": "3603281301870006",
                   "ktpIdNumber": "3603281301870006",
                   "mother_name": "Siti",
                   "ocrName": "Budi",
-                  "face_photo_image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+                  "face_photo_image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+                  "image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
                 }
                 """;
         String sanitized = support.sanitizeForStorage(input, "81234567890");
@@ -52,6 +54,8 @@ class OcrSensitiveJsonSupportTest {
         assertThat(root.path("idNumber").path("enc").asText()).isEqualTo("AES-256-GCM");
         assertThat(root.path("ktpIdNumber").path("enc").asText()).isEqualTo("AES-256-GCM");
         assertThat(root.path("mother_name").path("enc").asText()).isEqualTo("AES-256-GCM");
+        assertThat(root.path("license").asText()).isEqualTo("[protected]");
         assertThat(root.path("face_photo_image").path("encryptedRef").asText()).isEqualTo("enc://face/81234567890");
+        assertThat(root.path("image").path("encryptedRef").asText()).isEqualTo("enc://face/81234567890");
     }
 }

@@ -28,13 +28,13 @@ public class AppConfigTrustDecisionKycClient implements TrustDecisionKycPort {
     }
 
     @Override
-    public LivenessResult checkLiveness(byte[] imageBytes) {
-        return delegate().checkLiveness(imageBytes);
+    public LivenessLicense obtainLivenessLicense(int sessionDurationSeconds) {
+        return delegate().obtainLivenessLicense(sessionDurationSeconds);
     }
 
     @Override
-    public FaceCompareResult compareFaces(byte[] idCardImage, byte[] faceImage) {
-        return delegate().compareFaces(idCardImage, faceImage);
+    public SdkLivenessResult retrieveLivenessResult(String livenessId) {
+        return delegate().retrieveLivenessResult(livenessId);
     }
 
     private TrustDecisionKycClient delegate() {

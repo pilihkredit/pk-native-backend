@@ -2,10 +2,9 @@ package com.pk.app.profile.dto.response;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-public record TrustDecisionFaceRecognitionResponse(
+public record TrustDecisionLivenessResultResponse(
         String requestId,
         String result,
-        double similarity,
         String sequenceId,
         String moduleStatus,
         JsonNode lenderResponse

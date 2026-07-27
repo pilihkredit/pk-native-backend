@@ -141,82 +141,69 @@ public class TrustDecisionIdentityFacade {
         return new OcrCheckResult(result.result(), result.sequenceId(), parsed);
     }
 
-    public LivenessCheckResult livenessCheck(
+    public LivenessLicenseResult obtainLivenessLicense(
             long userId,
             String partnerUserId,
             String mobileNo,
-            String imageBase64,
+            int sessionDurationSeconds,
             String clientRequestId,
             String traceId
     ) {
-        TrustDecisionSessionState current = requireOcrSession(userId);
-        byte[] image = OcrImageSupport.decodeBase64Image(
-                imageBase64, propertiesSupplier.get().maxImageBytes());
-        TrustDecisionKycPort.LivenessResult result;
+        if (sessionDurationSeconds <= 0 || sessionDurationSeconds > 86_400) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "sessionDurationSeconds is invalid");
+        }
         setContext(userId, partnerUserId, mobileNo, clientRequestId, traceId);
         try {
-            result = trustDecisionKycPort.checkLiveness(image);
+            TrustDecisionKycPort.LivenessLicense result =
+                    trustDecisionKycPort.obtainLivenessLicense(sessionDurationSeconds);
+            return new LivenessLicenseResult(
+                    result.license(), result.expiryTimestamp(), result.sequenceId());
         } finally {
             OcrCallContextHolder.clear();
         }
-        sessionStore.save(userId, new TrustDecisionSessionState(
-                true,
-                true,
-                result.result(),
-                result.score(),
-                result.sequenceId(),
-                current.ocrRawJson(),
-                current.parsed(),
-                current.idCardImageEncryptedRef(),
-                current.ocrVendorCallLogId(),
-                Instant.now()
-        ));
-        return new LivenessCheckResult(result.result(), result.score(), result.sequenceId());
     }
 
-    public FaceRecognitionResult faceRecognition(
+    public FaceRecognitionResult completeInteractiveLiveness(
             long userId,
             String partnerUserId,
             String mobileNo,
-            FaceRecognitionCommand command,
+            String requestId,
+            String livenessId,
+            LenderDeviceContext device,
             String traceId
     ) {
-        if (isBlank(command.requestId())) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "requestId is required");
+        if (isBlank(requestId) || isBlank(livenessId)) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        ProfileSyncPayloadLoader.validateDevice(command.device());
+        ProfileSyncPayloadLoader.validateDevice(device);
         ProfileIdentityData identity = profileIdentityRepository.findByUserId(userId)
                 .orElseThrow(() -> new ApiException(
                         ApiCode.INVALID_REQUEST_PARAMETERS, "identity basic info required"));
-        if (command.requestId().equals(identity.lastRequestId())
-                && MODULE_COMPLETED.equals(identity.moduleStatus())) {
-            return new FaceRecognitionResult(
-                    command.requestId(), null, 0D, null, MODULE_COMPLETED, null);
+        if (requestId.equals(identity.lastRequestId()) && MODULE_COMPLETED.equals(identity.moduleStatus())) {
+            return new FaceRecognitionResult(requestId, null, 0D, null, MODULE_COMPLETED, null);
         }
         if (MODULE_COMPLETED.equals(identity.moduleStatus())) {
             throw new ApiException(ApiCode.DUPLICATE_SUBMISSION_IN_PROGRESS);
         }
         TrustDecisionSessionState session = requireOcrSession(userId);
-        if (!session.livenessCompleted()) {
-            throw new ApiException(ApiCode.OCR_SESSION_INVALID);
-        }
-        byte[] faceImage = OcrImageSupport.decodeBase64Image(
-                command.faceImageBase64(), propertiesSupplier.get().maxImageBytes());
-        byte[] idCardImage = OcrImageSupport.decodeBase64Image(
-                command.idCardImageBase64(), propertiesSupplier.get().maxImageBytes());
-        setContext(userId, partnerUserId, mobileNo, command.requestId(), traceId);
-        TrustDecisionKycPort.FaceCompareResult compareResult;
+        String normalizedMobileNo = requireMobile(mobileNo);
+        TrustDecisionKycPort.SdkLivenessResult livenessResult;
+        setContext(userId, partnerUserId, normalizedMobileNo, requestId, traceId);
         try {
-            compareResult = trustDecisionKycPort.compareFaces(idCardImage, faceImage);
+            livenessResult = trustDecisionKycPort.retrieveLivenessResult(livenessId.trim());
         } finally {
             OcrCallContextHolder.clear();
+        }
+        byte[] idCardImage = biometricImageStore.load(session.idCardImageEncryptedRef());
+        if (idCardImage == null || idCardImage.length == 0) {
+            throw new ApiException(ApiCode.OCR_SESSION_INVALID);
         }
         String plainIdNo = sensitiveFieldEncryptor.decrypt(identity.idNo()).trim();
         var completion = completionService.complete(new IdentityVerificationCompletionCommand(
                 userId,
                 partnerUserId,
-                requireMobile(mobileNo),
-                command.requestId().trim(),
+                normalizedMobileNo,
+                requestId.trim(),
                 identity.fullName().trim(),
                 plainIdNo,
                 identity.idNo(),
@@ -226,14 +213,15 @@ public class TrustDecisionIdentityFacade {
                 session.parsed(),
                 TrustDecisionLenderRawOcrDetailBuilder.build(objectMapper, session.ocrRawJson()),
                 idCardImage,
-                faceImage,
-                command.device()
+                livenessResult.faceImage(),
+                livenessId.trim(),
+                device
         ));
         return new FaceRecognitionResult(
-                command.requestId(),
-                compareResult.result(),
-                compareResult.similarity(),
-                compareResult.sequenceId(),
+                requestId,
+                livenessResult.result(),
+                0D,
+                livenessResult.sequenceId(),
                 completion.moduleStatus(),
                 completion.lenderResponse()
         );
@@ -277,15 +265,7 @@ public class TrustDecisionIdentityFacade {
     ) {
     }
 
-    public record LivenessCheckResult(String result, double score, String sequenceId) {
-    }
-
-    public record FaceRecognitionCommand(
-            String requestId,
-            String faceImageBase64,
-            String idCardImageBase64,
-            LenderDeviceContext device
-    ) {
+    public record LivenessLicenseResult(String license, long expiryTimestamp, String sequenceId) {
     }
 
     public record FaceRecognitionResult(

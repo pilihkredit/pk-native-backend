@@ -101,6 +101,7 @@ public class IdentityVerificationCompletionService {
                 command.fullName(),
                 command.plainIdNo(),
                 OcrImageSupport.encodeBase64(command.faceImage()),
+                command.livenessId(),
                 OcrImageSupport.encodeBase64(command.idCardImage()),
                 command.lenderRawOcrDetail(),
                 command.channel(),

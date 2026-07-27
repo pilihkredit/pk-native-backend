@@ -3,14 +3,13 @@ package com.pk.app.profile.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.adapter.pendanaan.PendanaanProperties;
 import com.pk.app.profile.dto.request.ProfileDeviceRequest;
-import com.pk.app.profile.dto.request.TrustDecisionFaceRecognitionRequest;
-import com.pk.app.profile.dto.request.TrustDecisionLivenessCheckRequest;
+import com.pk.app.profile.dto.request.TrustDecisionLivenessLicenseRequest;
+import com.pk.app.profile.dto.request.TrustDecisionLivenessResultRequest;
 import com.pk.app.profile.dto.request.TrustDecisionOcrCheckRequest;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.profile.ocr.OcrSessionState;
@@ -18,7 +17,6 @@ import com.pk.infra.profile.TrustDecisionIdentityFacade;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 class TrustDecisionIdentityApplicationServiceTest {
@@ -58,47 +56,38 @@ class TrustDecisionIdentityApplicationServiceTest {
     }
 
     @Test
-    void mapsLivenessRequestAndReturnsFailAsBusinessResult() {
-        when(facade.livenessCheck(
-                10L, "partner-user", "81234567890", "face-image",
-                "client-request-1", "trace-1"
-        )).thenReturn(new TrustDecisionIdentityFacade.LivenessCheckResult("fail", 0.41D, "live-seq"));
+    void mapsInteractiveLivenessLicenseRequest() {
+        when(facade.obtainLivenessLicense(
+                10L, "partner-user", "81234567890", 600, "client-request-1", "trace-1"))
+                .thenReturn(new TrustDecisionIdentityFacade.LivenessLicenseResult(
+                        "license-value", 1785147934L, "license-seq"));
 
-        var response = service.livenessCheck(
-                principal, new TrustDecisionLivenessCheckRequest("face-image"), request);
+        var response = service.livenessLicense(
+                principal, new TrustDecisionLivenessLicenseRequest(null), request);
 
-        assertThat(response.result()).isEqualTo("fail");
-        assertThat(response.score()).isEqualTo(0.41D);
-        assertThat(response.sequenceId()).isEqualTo("live-seq");
+        assertThat(response.license()).isEqualTo("license-value");
+        assertThat(response.expiryTimestamp()).isEqualTo(1785147934L);
+        assertThat(response.sequenceId()).isEqualTo("license-seq");
     }
 
     @Test
-    void mapsFaceRequestDeviceHeadersAndVendorResponse() throws Exception {
+    void mapsInteractiveLivenessResultAndDevice() throws Exception {
         addDeviceHeaders();
         var lenderResponse = new ObjectMapper().readTree("{\"accepted\":true}");
-        when(facade.faceRecognition(
-                eq(10L), eq("partner-user"), eq("81234567890"),
-                org.mockito.ArgumentMatchers.any(), eq("trace-1")
-        )).thenReturn(new TrustDecisionIdentityFacade.FaceRecognitionResult(
-                "final-request", "fail", 0.52D, "face-seq", "COMPLETED", lenderResponse));
+        when(facade.completeInteractiveLiveness(
+                eq(10L), eq("partner-user"), eq("81234567890"), eq("final-request"),
+                eq("sdk-live-id"), org.mockito.ArgumentMatchers.any(), eq("trace-1")))
+                .thenReturn(new TrustDecisionIdentityFacade.FaceRecognitionResult(
+                        "final-request", "pass", 0D, "result-seq", "COMPLETED", lenderResponse));
 
-        var response = service.faceRecognition(
+        var response = service.livenessResult(
                 principal,
-                new TrustDecisionFaceRecognitionRequest(
-                        "final-request", "face-image", "id-image", device()),
-                request
-        );
+                new TrustDecisionLivenessResultRequest("final-request", "sdk-live-id", device()),
+                request);
 
-        ArgumentCaptor<TrustDecisionIdentityFacade.FaceRecognitionCommand> commandCaptor =
-                ArgumentCaptor.forClass(TrustDecisionIdentityFacade.FaceRecognitionCommand.class);
-        verify(facade).faceRecognition(
-                eq(10L), eq("partner-user"), eq("81234567890"), commandCaptor.capture(), eq("trace-1"));
-        assertThat(commandCaptor.getValue().requestId()).isEqualTo("final-request");
-        assertThat(commandCaptor.getValue().device().appName()).isEqualTo("lender-app");
-        assertThat(commandCaptor.getValue().device().deviceNo()).isEqualTo("device-1");
-        assertThat(response.result()).isEqualTo("fail");
-        assertThat(response.similarity()).isEqualTo(0.52D);
-        assertThat(response.sequenceId()).isEqualTo("face-seq");
+        assertThat(response.result()).isEqualTo("pass");
+        assertThat(response.sequenceId()).isEqualTo("result-seq");
+        assertThat(response.moduleStatus()).isEqualTo("COMPLETED");
         assertThat(response.lenderResponse()).isEqualTo(lenderResponse);
     }
 

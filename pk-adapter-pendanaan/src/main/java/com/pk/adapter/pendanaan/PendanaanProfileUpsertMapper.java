@@ -59,7 +59,11 @@ final class PendanaanProfileUpsertMapper {
         ObjectNode identity = userInfo.putObject("identity");
         identity.put("name", payload.name());
         identity.put("idNo", payload.idNo());
-        identity.put("faceBase64", payload.faceBase64());
+        if (payload.livenessId() != null && !payload.livenessId().isBlank()) {
+            identity.put("livenessId", payload.livenessId());
+        } else {
+            identity.put("faceBase64", payload.faceBase64());
+        }
         identity.put("idCardBase64", payload.idCardBase64());
         ObjectNode ocrResult = identity.putObject("ocrResult");
         putIfPresent(ocrResult, "ocrName", payload.ocrName());

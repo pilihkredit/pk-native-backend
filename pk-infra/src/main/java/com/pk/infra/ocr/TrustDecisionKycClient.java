@@ -18,8 +18,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.List;
 
 public class TrustDecisionKycClient implements TrustDecisionKycPort {
     private static final String CHANNEL = "trustDecision";
@@ -62,36 +63,39 @@ public class TrustDecisionKycClient implements TrustDecisionKycPort {
     }
 
     @Override
-    public LivenessResult checkLiveness(byte[] imageBytes) {
+    public LivenessLicense obtainLivenessLicense(int sessionDurationSeconds) {
         JsonNode response = call(
-                OcrVendorOperationType.LIVENESS_CHECK,
-                properties.livenessUrl(),
-                Map.of("image", encode(imageBytes), "country", "ID"),
-                "{\"image\":\"[protected]\",\"country\":\"ID\"}"
+                OcrVendorOperationType.LIVENESS_LICENSE,
+                properties.livenessLicenseUrl(),
+                Map.of("session_duration", sessionDurationSeconds),
+                "{\"session_duration\":" + sessionDurationSeconds + "}"
         );
-        return new LivenessResult(
-                text(response, "result"),
-                response.path("score").asDouble(),
+        return new LivenessLicense(
+                text(response, "license"),
+                response.path("expiry_timestamp").asLong(),
                 text(response, "sequence_id")
         );
     }
 
     @Override
-    public FaceCompareResult compareFaces(byte[] idCardImage, byte[] faceImage) {
-        Map<String, Object> request = new LinkedHashMap<>();
-        request.put("face_image", encode(faceImage));
-        request.put("id_image", encode(idCardImage));
-        request.put("country", "ID");
+    public SdkLivenessResult retrieveLivenessResult(String livenessId) {
         JsonNode response = call(
-                OcrVendorOperationType.FACE_COMPARE,
-                properties.faceComparisonUrl(),
-                request,
-                "{\"face_image\":\"[protected]\",\"id_image\":\"[protected]\",\"country\":\"ID\"}"
+                OcrVendorOperationType.LIVENESS_RESULT,
+                properties.livenessResultUrl(),
+                Map.of("liveness_id", livenessId),
+                "{\"liveness_id\":\"[protected]\"}",
+                Set.of(200, 12201, 12221, 12230, 12231, 12250)
         );
-        return new FaceCompareResult(
-                text(response, "result"),
-                response.path("similarity").asDouble(),
-                text(response, "sequence_id")
+        int code = response.path("code").asInt();
+        byte[] image = decode(text(response, "image"));
+        List<String> riskTags = new java.util.ArrayList<>();
+        response.path("device_risk_tag").forEach(node -> riskTags.add(node.asText()));
+        return new SdkLivenessResult(
+                code == 200 ? "pass" : "fail",
+                text(response, "sequence_id"),
+                image,
+                List.copyOf(riskTags),
+                response.path("device_risk_level").asInt()
         );
     }
 
@@ -100,6 +104,16 @@ public class TrustDecisionKycClient implements TrustDecisionKycPort {
             String endpoint,
             Map<String, Object> requestData,
             String auditRequestJson
+    ) {
+        return call(operationType, endpoint, requestData, auditRequestJson, Set.of(200));
+    }
+
+    private JsonNode call(
+            OcrVendorOperationType operationType,
+            String endpoint,
+            Map<String, Object> requestData,
+            String auditRequestJson,
+            Set<Integer> acceptedCodes
     ) {
         URI uri = TrustDecisionHttpSupport.authenticatedUri(
                 endpoint,
@@ -132,7 +146,7 @@ public class TrustDecisionKycClient implements TrustDecisionKycPort {
             vendorCode = Integer.toString(root.path("code").asInt());
             vendorMessage = text(root, "message");
             score = extractScore(root);
-            if (root.path("code").asInt() != 200) {
+            if (!acceptedCodes.contains(root.path("code").asInt())) {
                 status = OcrVendorCallStatus.VENDOR_ERROR;
                 throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
             }
@@ -222,6 +236,17 @@ public class TrustDecisionKycClient implements TrustDecisionKycPort {
 
     private static String encode(byte[] bytes) {
         return Base64.getEncoder().encodeToString(bytes);
+    }
+
+    private static byte[] decode(String value) {
+        if (value == null || value.isBlank()) {
+            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+        }
+        try {
+            return Base64.getDecoder().decode(value);
+        } catch (IllegalArgumentException exception) {
+            throw new ApiException(ApiCode.OCR_SERVICE_ERROR);
+        }
     }
 
     private static String currentMobileNo() {

@@ -33,6 +33,7 @@ public sealed interface ProfileSyncPayload {
             String name,
             String idNo,
             String faceBase64,
+            String livenessId,
             String idCardBase64,
             String rawOcrDetail,
             String ocrChannel,

@@ -19,6 +19,7 @@ public record IdentityVerificationCompletionCommand(
         String lenderRawOcrDetail,
         byte[] idCardImage,
         byte[] faceImage,
+        String livenessId,
         LenderDeviceContext device
 ) {
 }

@@ -155,6 +155,7 @@ class PendanaanProfileSyncAdapterTest {
                         "Name",
                         "3174",
                         "face",
+                        null,
                         "idcard",
                         "{}",
                         "advanceAi",

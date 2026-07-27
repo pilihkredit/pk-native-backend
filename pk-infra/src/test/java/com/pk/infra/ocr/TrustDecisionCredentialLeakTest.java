@@ -42,7 +42,7 @@ class TrustDecisionCredentialLeakTest {
     @Test
     void excludesCredentialsFromTechnicalFailureAndAudit() throws Exception {
         server = HttpServer.create(new InetSocketAddress(0), 0);
-        server.createContext("/liveness", exchange -> {
+        server.createContext("/license", exchange -> {
             byte[] response = "service unavailable".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(503, response.length);
             exchange.getResponseBody().write(response);
@@ -52,7 +52,7 @@ class TrustDecisionCredentialLeakTest {
         TrustDecisionProperties properties = new TrustDecisionProperties();
         properties.setPartnerCode("test-partner-code");
         properties.setPartnerKey(TEST_KEY);
-        properties.setLivenessUrl("http://localhost:" + server.getAddress().getPort() + "/liveness");
+        properties.setLivenessLicenseUrl("http://localhost:" + server.getAddress().getPort() + "/license");
         OcrVendorCallLogWriter logWriter = mock(OcrVendorCallLogWriter.class);
         when(logWriter.write(any())).thenReturn(1L);
         OcrSensitiveJsonSupport sensitiveJsonSupport = mock(OcrSensitiveJsonSupport.class);
@@ -61,7 +61,7 @@ class TrustDecisionCredentialLeakTest {
         TrustDecisionKycClient client = new TrustDecisionKycClient(
                 properties, new ObjectMapper(), logWriter, sensitiveJsonSupport);
 
-        assertThatThrownBy(() -> client.checkLiveness(new byte[] {1}))
+        assertThatThrownBy(() -> client.obtainLivenessLicense(600))
                 .isInstanceOf(ApiException.class)
                 .hasMessageNotContaining(TEST_KEY);
 

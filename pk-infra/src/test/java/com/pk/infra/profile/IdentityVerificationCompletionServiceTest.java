@@ -69,6 +69,7 @@ class IdentityVerificationCompletionServiceTest {
                 "{\"card_info\":{}}",
                 new byte[] {1},
                 new byte[] {2},
+                "liveness-sequence",
                 mock(LenderDeviceContext.class)
         ));
 

@@ -151,6 +151,44 @@ class PendanaanProfileUpsertMapperTest {
     }
 
     @Test
+    void mapsTrustDecisionLivenessIdWithoutFaceImage() {
+        ObjectNode userInfo = objectMapper.createObjectNode();
+        PendanaanProfileUpsertMapper.applyModule(
+                userInfo,
+                ProfileSyncModule.IDENTITY,
+                identityPayload("trustDecision", "face-image", "liveness-sequence")
+        );
+
+        assertThat(userInfo.path("identity").path("livenessId").asText())
+                .isEqualTo("liveness-sequence");
+        assertThat(userInfo.path("identity").has("faceBase64")).isFalse();
+    }
+
+    @Test
+    void preservesAdvanceAiFaceImageWithoutLivenessId() {
+        ObjectNode userInfo = objectMapper.createObjectNode();
+        PendanaanProfileUpsertMapper.applyModule(
+                userInfo,
+                ProfileSyncModule.IDENTITY,
+                identityPayload("advanceAi", "face-image", null)
+        );
+
+        assertThat(userInfo.path("identity").path("faceBase64").asText()).isEqualTo("face-image");
+        assertThat(userInfo.path("identity").has("livenessId")).isFalse();
+    }
+
+    private static ProfileSyncPayload.IdentityProfilePayload identityPayload(
+            String channel,
+            String faceBase64,
+            String livenessId
+    ) {
+        return new ProfileSyncPayload.IdentityProfilePayload(
+                "Name", "3174", faceBase64, livenessId, "id-card", "{}", channel,
+                "Name", "3174", null, null, null, null, null, null, null, null, null, null
+        );
+    }
+
+    @Test
     void applyAppsFlyerInstallPutsNonBlankFieldsOnly() {
         ObjectNode userInfo = objectMapper.createObjectNode();
         PendanaanProfileUpsertMapper.applyModule(

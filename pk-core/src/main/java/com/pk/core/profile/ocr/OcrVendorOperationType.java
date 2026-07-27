@@ -7,5 +7,7 @@ public enum OcrVendorOperationType {
     LICENSE_TOKEN,
     OCR_CHECK,
     LIVENESS_CHECK,
+    LIVENESS_LICENSE,
+    LIVENESS_RESULT,
     FACE_COMPARE
 }

@@ -409,6 +409,7 @@ public class IdentityOcrFacade {
                 lenderRawOcrDetail(session.ocrRawJson()),
                 idCardImage,
                 faceImage,
+                null,
                 command.device()
         ));
 
@@ -603,6 +604,7 @@ public class IdentityOcrFacade {
                 ocrName,
                 ocrIdNo,
                 faceBase64,
+                null,
                 idCardBase64,
                 rawOcrDetail,
                 OCR_CHANNEL,
@@ -691,6 +693,7 @@ public class IdentityOcrFacade {
                 name,
                 idNo,
                 faceBase64,
+                null,
                 idCardBase64,
                 lenderRawOcrDetail(session.ocrRawJson()),
                 OCR_CHANNEL,

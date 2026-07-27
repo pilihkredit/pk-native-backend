@@ -1,13 +1,14 @@
 package com.pk.core.profile.port;
 
 import com.pk.core.profile.ocr.OcrSessionState;
+import java.util.List;
 
 public interface TrustDecisionKycPort {
     OcrResult checkIdentityCard(byte[] imageBytes);
 
-    LivenessResult checkLiveness(byte[] imageBytes);
+    LivenessLicense obtainLivenessLicense(int sessionDurationSeconds);
 
-    FaceCompareResult compareFaces(byte[] idCardImage, byte[] faceImage);
+    SdkLivenessResult retrieveLivenessResult(String livenessId);
 
     record OcrResult(
             String result,
@@ -17,9 +18,15 @@ public interface TrustDecisionKycPort {
     ) {
     }
 
-    record LivenessResult(String result, double score, String sequenceId) {
+    record LivenessLicense(String license, long expiryTimestamp, String sequenceId) {
     }
 
-    record FaceCompareResult(String result, double similarity, String sequenceId) {
+    record SdkLivenessResult(
+            String result,
+            String sequenceId,
+            byte[] faceImage,
+            List<String> deviceRiskTags,
+            int deviceRiskLevel
+    ) {
     }
 }

@@ -9,8 +9,8 @@ public class TrustDecisionProperties {
     private String partnerCode = "";
     private String partnerKey = "";
     private String ocrUrl = "https://id.apitd.net/verification/kyc/ocr/v1";
-    private String livenessUrl = "https://id.apitd.net/verification/kyc/liveness/v1";
-    private String faceComparisonUrl = "https://id.apitd.net/verification/kyc/identity/v1";
+    private String livenessLicenseUrl = "https://id-credit.apitd.net/verification/kyc/sdk/liveness/license/v1";
+    private String livenessResultUrl = "https://id-credit.apitd.net/verification/kyc/sdk/liveness/result/v1";
     private int connectTimeoutMs = 10_000;
     private int readTimeoutMs = 30_000;
     private int maxImageBytes = 3 * 1024 * 1024;
@@ -24,10 +24,10 @@ public class TrustDecisionProperties {
     public void setPartnerKey(String partnerKey) { this.partnerKey = partnerKey; }
     public String ocrUrl() { return ocrUrl; }
     public void setOcrUrl(String ocrUrl) { this.ocrUrl = ocrUrl; }
-    public String livenessUrl() { return livenessUrl; }
-    public void setLivenessUrl(String livenessUrl) { this.livenessUrl = livenessUrl; }
-    public String faceComparisonUrl() { return faceComparisonUrl; }
-    public void setFaceComparisonUrl(String faceComparisonUrl) { this.faceComparisonUrl = faceComparisonUrl; }
+    public String livenessLicenseUrl() { return livenessLicenseUrl; }
+    public void setLivenessLicenseUrl(String value) { this.livenessLicenseUrl = value; }
+    public String livenessResultUrl() { return livenessResultUrl; }
+    public void setLivenessResultUrl(String value) { this.livenessResultUrl = value; }
     public int connectTimeoutMs() { return connectTimeoutMs; }
     public void setConnectTimeoutMs(int connectTimeoutMs) { this.connectTimeoutMs = connectTimeoutMs; }
     public int readTimeoutMs() { return readTimeoutMs; }

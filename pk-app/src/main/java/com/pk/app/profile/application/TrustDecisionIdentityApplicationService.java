@@ -3,11 +3,11 @@ package com.pk.app.profile.application;
 import com.pk.adapter.pendanaan.PendanaanProperties;
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.common.web.RequestTrace;
-import com.pk.app.profile.dto.request.TrustDecisionFaceRecognitionRequest;
-import com.pk.app.profile.dto.request.TrustDecisionLivenessCheckRequest;
+import com.pk.app.profile.dto.request.TrustDecisionLivenessLicenseRequest;
+import com.pk.app.profile.dto.request.TrustDecisionLivenessResultRequest;
 import com.pk.app.profile.dto.request.TrustDecisionOcrCheckRequest;
-import com.pk.app.profile.dto.response.TrustDecisionFaceRecognitionResponse;
-import com.pk.app.profile.dto.response.TrustDecisionLivenessCheckResponse;
+import com.pk.app.profile.dto.response.TrustDecisionLivenessLicenseResponse;
+import com.pk.app.profile.dto.response.TrustDecisionLivenessResultResponse;
 import com.pk.app.profile.dto.response.TrustDecisionOcrCheckResponse;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -46,35 +46,35 @@ public class TrustDecisionIdentityApplicationService {
                 parsed.city(), parsed.district());
     }
 
-    public TrustDecisionLivenessCheckResponse livenessCheck(
+    public TrustDecisionLivenessLicenseResponse livenessLicense(
             AuthenticatedPrincipal principal,
-            TrustDecisionLivenessCheckRequest request,
+            TrustDecisionLivenessLicenseRequest request,
             HttpServletRequest httpRequest
     ) {
         requirePrincipal(principal);
-        var result = facade.livenessCheck(
-                principal.userId(), principal.partnerUserId(), principal.mobileNo(), request.imageBase64(),
+        int duration = request.sessionDurationSeconds() == null ? 600 : request.sessionDurationSeconds();
+        var result = facade.obtainLivenessLicense(
+                principal.userId(), principal.partnerUserId(), principal.mobileNo(), duration,
                 RequestTrace.resolveClientRequestId(httpRequest, null), RequestTrace.resolveTraceId(httpRequest));
-        return new TrustDecisionLivenessCheckResponse(result.result(), result.score(), result.sequenceId());
+        return new TrustDecisionLivenessLicenseResponse(
+                result.license(), result.expiryTimestamp(), result.sequenceId());
     }
 
-    public TrustDecisionFaceRecognitionResponse faceRecognition(
+    public TrustDecisionLivenessResultResponse livenessResult(
             AuthenticatedPrincipal principal,
-            TrustDecisionFaceRecognitionRequest request,
+            TrustDecisionLivenessResultRequest request,
             HttpServletRequest httpRequest
     ) {
         requirePrincipal(principal);
         var headers = ClientRequestHeaders.require(httpRequest);
         String traceId = RequestTrace.resolveTraceId(httpRequest);
         RequestTrace.resolveClientRequestId(httpRequest, request.requestId());
-        var result = facade.faceRecognition(
+        var result = facade.completeInteractiveLiveness(
                 principal.userId(), principal.partnerUserId(), principal.mobileNo(),
-                new TrustDecisionIdentityFacade.FaceRecognitionCommand(
-                        request.requestId(), request.faceImageBase64(), request.idCardImageBase64(),
-                        ProfileDeviceSupport.resolveLenderDevice(request.device(), headers, pendanaanProperties)),
-                traceId);
-        return new TrustDecisionFaceRecognitionResponse(
-                result.requestId(), result.result(), result.similarity(), result.sequenceId(),
+                request.requestId(), request.livenessId(),
+                ProfileDeviceSupport.resolveLenderDevice(request.device(), headers, pendanaanProperties), traceId);
+        return new TrustDecisionLivenessResultResponse(
+                result.requestId(), result.result(), result.sequenceId(),
                 result.moduleStatus(), result.lenderResponse());
     }
 

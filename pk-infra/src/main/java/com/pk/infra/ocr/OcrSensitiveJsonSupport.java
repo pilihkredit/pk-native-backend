@@ -47,8 +47,11 @@ public class OcrSensitiveJsonSupport {
             "facebase64",
             "idcardbase64",
             "detectionresult",
-            "imagebase64"
+            "imagebase64",
+            "image"
     );
+
+    private static final Set<String> SECRET_FIELDS = Set.of("license", "token", "partnerkey");
 
     private final ObjectMapper objectMapper;
     private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
@@ -126,7 +129,9 @@ public class OcrSensitiveJsonSupport {
                     if (value == null || value.isBlank()) {
                         continue;
                     }
-                    if (isTextEncryptField(field)) {
+                    if (SECRET_FIELDS.contains(normalize(field))) {
+                        objectNode.put(field, "[protected]");
+                    } else if (isTextEncryptField(field)) {
                         objectNode.set(field, encryptTextNode(value));
                     } else if (isImageField(field) && looksLikeBase64Image(value)) {
                         objectNode.set(field, encryptOrStoreImage(value, field, mobileNo));
@@ -188,7 +193,8 @@ public class OcrSensitiveJsonSupport {
 
     private static BiometricImageKind resolveImageKind(String field) {
         String normalized = normalize(field);
-        if (normalized.contains("face") || normalized.contains("second") || normalized.contains("detection")) {
+        if (normalized.equals("image") || normalized.contains("face")
+                || normalized.contains("second") || normalized.contains("detection")) {
             return BiometricImageKind.FACE;
         }
         return BiometricImageKind.ID_CARD;

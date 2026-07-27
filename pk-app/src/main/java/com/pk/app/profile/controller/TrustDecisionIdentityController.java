@@ -3,11 +3,11 @@ package com.pk.app.profile.controller;
 import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
 import com.pk.app.profile.application.TrustDecisionIdentityApplicationService;
-import com.pk.app.profile.dto.request.TrustDecisionFaceRecognitionRequest;
-import com.pk.app.profile.dto.request.TrustDecisionLivenessCheckRequest;
+import com.pk.app.profile.dto.request.TrustDecisionLivenessLicenseRequest;
+import com.pk.app.profile.dto.request.TrustDecisionLivenessResultRequest;
 import com.pk.app.profile.dto.request.TrustDecisionOcrCheckRequest;
-import com.pk.app.profile.dto.response.TrustDecisionFaceRecognitionResponse;
-import com.pk.app.profile.dto.response.TrustDecisionLivenessCheckResponse;
+import com.pk.app.profile.dto.response.TrustDecisionLivenessLicenseResponse;
+import com.pk.app.profile.dto.response.TrustDecisionLivenessResultResponse;
 import com.pk.app.profile.dto.response.TrustDecisionOcrCheckResponse;
 import com.pk.app.security.SecurityContextSupport;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,23 +36,26 @@ public class TrustDecisionIdentityController {
                 RequestTrace.resolveTraceId(httpRequest));
     }
 
-    @PostMapping("/liveness-check")
-    public ApiResponse<TrustDecisionLivenessCheckResponse> livenessCheck(
-            @Valid @RequestBody TrustDecisionLivenessCheckRequest request,
+    @PostMapping("/liveness-license")
+    public ApiResponse<TrustDecisionLivenessLicenseResponse> livenessLicense(
+            @Valid @RequestBody TrustDecisionLivenessLicenseRequest request,
             HttpServletRequest httpRequest
     ) {
         return ApiResponse.success(
-                applicationService.livenessCheck(SecurityContextSupport.requirePrincipal(), request, httpRequest),
+                applicationService.livenessLicense(
+                        SecurityContextSupport.requirePrincipal(), request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest));
     }
 
-    @PostMapping("/face-recognition")
-    public ApiResponse<TrustDecisionFaceRecognitionResponse> faceRecognition(
-            @Valid @RequestBody TrustDecisionFaceRecognitionRequest request,
+    @PostMapping("/liveness-result")
+    public ApiResponse<TrustDecisionLivenessResultResponse> livenessResult(
+            @Valid @RequestBody TrustDecisionLivenessResultRequest request,
             HttpServletRequest httpRequest
     ) {
         return ApiResponse.success(
-                applicationService.faceRecognition(SecurityContextSupport.requirePrincipal(), request, httpRequest),
+                applicationService.livenessResult(
+                        SecurityContextSupport.requirePrincipal(), request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest));
     }
+
 }

@@ -57,9 +57,10 @@ public class OcrProviderConfigLoader {
         properties.setPartnerCode(requiredText(root, "partnerCode", TRUST_DECISION_KEY));
         properties.setPartnerKey(requiredText(root, "partnerKey", TRUST_DECISION_KEY));
         properties.setOcrUrl(text(root, "ocrUrl", properties.ocrUrl()));
-        properties.setLivenessUrl(text(root, "livenessUrl", properties.livenessUrl()));
-        properties.setFaceComparisonUrl(text(
-                root, "faceComparisonUrl", properties.faceComparisonUrl()));
+        properties.setLivenessLicenseUrl(text(
+                root, "livenessLicenseUrl", properties.livenessLicenseUrl()));
+        properties.setLivenessResultUrl(text(
+                root, "livenessResultUrl", properties.livenessResultUrl()));
         properties.setConnectTimeoutMs(intValue(root, "connectTimeoutMs", properties.connectTimeoutMs()));
         properties.setReadTimeoutMs(intValue(root, "readTimeoutMs", properties.readTimeoutMs()));
         properties.setMaxImageBytes(intValue(root, "maxImageBytes", properties.maxImageBytes()));
