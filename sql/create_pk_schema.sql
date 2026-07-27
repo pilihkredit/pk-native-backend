@@ -839,10 +839,10 @@ CREATE TABLE loan_quote (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     UNIQUE KEY uk_loan_quote_no (quote_no),
-    UNIQUE KEY uk_loan_quote_apply_product_repay (apply_id, product_code, repay_method),
+    KEY idx_loan_quote_apply_product_repay_id (apply_id, product_code, repay_method, id),
     KEY idx_loan_quote_credit_quoted (credit_application_id, quoted_at),
     KEY idx_loan_quote_user_quoted (user_id, quoted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Latest loan trial quote per apply/product/repay';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loan trial quotes; draft overwritable until referenced by loan_application';
 
 CREATE TABLE loan_quote_term (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
