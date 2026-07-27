@@ -12,11 +12,9 @@ public class PendanaanLoanBillListAdapter implements LenderLoanBillListPort {
     static final String BUSINESS_TYPE = "LOAN_BILL_LIST";
 
     private final PendanaanHttpClient httpClient;
-    private final ObjectMapper objectMapper;
 
     public PendanaanLoanBillListAdapter(PendanaanHttpClient httpClient, ObjectMapper objectMapper) {
         this.httpClient = httpClient;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -40,46 +38,74 @@ public class PendanaanLoanBillListAdapter implements LenderLoanBillListPort {
                 textOrNull(item.get("loanApplyNo")),
                 textOrNull(item.get("userId")),
                 textOrNull(item.get("billNo")),
+                textOrNull(item.get("contrNo")),
+                intOrNull(item.get("terms")),
                 decimalOrNull(item.get("applyAmt")),
+                textOrNull(item.get("currency")),
+                textOrNull(item.get("userName")),
+                longOrNull(item.get("statusDate")),
                 textOrNull(item.get("billStatus")),
+                decimalOrNull(item.get("feePrepayAmt")),
+                decimalOrNull(item.get("lendAmt")),
+                longOrNull(item.get("lendTime")),
+                textOrNull(item.get("paySerialNo")),
+                longOrNull(item.get("dueDate")),
+                decimalOrNull(item.get("stampDuty")),
+                decimalOrNull(item.get("principal")),
+                decimalOrNull(item.get("interest")),
+                decimalOrNull(item.get("fee1")),
+                decimalOrNull(item.get("fee2")),
+                decimalOrNull(item.get("fee3")),
+                decimalOrNull(item.get("fee1Tax")),
+                decimalOrNull(item.get("fee2Tax")),
+                decimalOrNull(item.get("fee3Tax")),
+                decimalOrNull(item.get("prePenInterest")),
+                decimalOrNull(item.get("penInterest")),
+                decimalOrNull(item.get("initLateFee")),
+                intOrNull(item.get("termNo")),
                 longOrNull(item.get("termDueDate")),
-                sumShouldAmounts(item)
+                decimalOrNull(item.get("shouldStampDuty")),
+                decimalOrNull(item.get("shouldPrincipal")),
+                decimalOrNull(item.get("shouldInterest")),
+                decimalOrNull(item.get("shouldFee1")),
+                decimalOrNull(item.get("shouldFee2")),
+                decimalOrNull(item.get("shouldFee3")),
+                decimalOrNull(item.get("shouldFee1Tax")),
+                decimalOrNull(item.get("shouldFee2Tax")),
+                decimalOrNull(item.get("shouldFee3Tax")),
+                decimalOrNull(item.get("shouldPenInterest")),
+                decimalOrNull(item.get("shouldInitLateFee")),
+                decimalOrNull(item.get("paidStampDuty")),
+                decimalOrNull(item.get("paidPrincipal")),
+                decimalOrNull(item.get("paidInterest")),
+                decimalOrNull(item.get("paidFee1")),
+                decimalOrNull(item.get("paidFee2")),
+                decimalOrNull(item.get("paidFee3")),
+                decimalOrNull(item.get("paidFee1Tax")),
+                decimalOrNull(item.get("paidFee2Tax")),
+                decimalOrNull(item.get("paidFee3Tax")),
+                decimalOrNull(item.get("paidPenInterest")),
+                decimalOrNull(item.get("paidInitLateFee")),
+                decimalOrNull(item.get("paidAdvSettleFee")),
+                decimalOrNull(item.get("reductionStampDuty")),
+                decimalOrNull(item.get("reductionPrincipal")),
+                decimalOrNull(item.get("reductionInterest")),
+                decimalOrNull(item.get("reductionFee1")),
+                decimalOrNull(item.get("reductionFee2")),
+                decimalOrNull(item.get("reductionFee3")),
+                decimalOrNull(item.get("reductionFee1Tax")),
+                decimalOrNull(item.get("reductionFee2Tax")),
+                decimalOrNull(item.get("reductionFee3Tax")),
+                decimalOrNull(item.get("reductionPenInterest")),
+                decimalOrNull(item.get("reductionInitLateFee")),
+                decimalOrNull(item.get("reductionAdvSettleFee")),
+                intOrNull(item.get("overdueDays")),
+                longOrNull(item.get("firstOverdueDay")),
+                longOrNull(item.get("lastRepayTime")),
+                intOrNull(item.get("maxOverdueDays")),
+                longOrNull(item.get("paidOutDate")),
+                textOrNull(item.get("advSetteFlag"))
         );
-    }
-
-    private BigDecimal sumShouldAmounts(JsonNode item) {
-        BigDecimal total = BigDecimal.ZERO;
-        String[] fields = {
-                "shouldStampDuty",
-                "shouldPrincipal",
-                "shouldInterest",
-                "shouldFee1",
-                "shouldFee2",
-                "shouldFee3",
-                "shouldFee1Tax",
-                "shouldFee2Tax",
-                "shouldFee3Tax",
-                "shouldPenInterest",
-                "shouldInitLateFee"
-        };
-        for (String field : fields) {
-            BigDecimal value = decimalOrNull(item.get(field));
-            if (value != null) {
-                total = total.add(value);
-            }
-        }
-        return total;
-    }
-
-    private String serialize(JsonNode item) {
-        if (item == null || item.isNull()) {
-            return null;
-        }
-        try {
-            return objectMapper.writeValueAsString(item);
-        } catch (Exception exception) {
-            return null;
-        }
     }
 
     private static String textOrNull(JsonNode node) {
@@ -95,6 +121,13 @@ public class PendanaanLoanBillListAdapter implements LenderLoanBillListPort {
             return null;
         }
         return node.asLong();
+    }
+
+    private static Integer intOrNull(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        return node.asInt();
     }
 
     private static BigDecimal decimalOrNull(JsonNode node) {

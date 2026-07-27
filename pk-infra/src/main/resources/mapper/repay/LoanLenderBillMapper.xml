@@ -11,10 +11,73 @@
             <arg column="external_loan_apply_no" javaType="string"/>
             <arg column="lender_user_id" javaType="string"/>
             <arg column="bill_no" javaType="string"/>
+            <arg column="contr_no" javaType="string"/>
+            <arg column="terms" javaType="java.lang.Integer"/>
             <arg column="apply_amt" javaType="java.math.BigDecimal"/>
+            <arg column="currency" javaType="string"/>
+            <arg column="user_name" javaType="string"/>
+            <arg column="status_date" javaType="java.lang.Long"/>
             <arg column="bill_status" javaType="string"/>
+            <arg column="fee_prepay_amt" javaType="java.math.BigDecimal"/>
+            <arg column="lend_amt" javaType="java.math.BigDecimal"/>
+            <arg column="lend_time" javaType="java.lang.Long"/>
+            <arg column="pay_serial_no" javaType="string"/>
+            <arg column="due_date" javaType="java.lang.Long"/>
+            <arg column="stamp_duty" javaType="java.math.BigDecimal"/>
+            <arg column="principal" javaType="java.math.BigDecimal"/>
+            <arg column="interest" javaType="java.math.BigDecimal"/>
+            <arg column="fee1" javaType="java.math.BigDecimal"/>
+            <arg column="fee2" javaType="java.math.BigDecimal"/>
+            <arg column="fee3" javaType="java.math.BigDecimal"/>
+            <arg column="fee1_tax" javaType="java.math.BigDecimal"/>
+            <arg column="fee2_tax" javaType="java.math.BigDecimal"/>
+            <arg column="fee3_tax" javaType="java.math.BigDecimal"/>
+            <arg column="pre_pen_interest" javaType="java.math.BigDecimal"/>
+            <arg column="pen_interest" javaType="java.math.BigDecimal"/>
+            <arg column="init_late_fee" javaType="java.math.BigDecimal"/>
+            <arg column="term_no" javaType="java.lang.Integer"/>
             <arg column="term_due_date" javaType="java.lang.Long"/>
-            <arg column="next_due_amount" javaType="java.math.BigDecimal"/>
+            <arg column="should_stamp_duty" javaType="java.math.BigDecimal"/>
+            <arg column="should_principal" javaType="java.math.BigDecimal"/>
+            <arg column="should_interest" javaType="java.math.BigDecimal"/>
+            <arg column="should_fee1" javaType="java.math.BigDecimal"/>
+            <arg column="should_fee2" javaType="java.math.BigDecimal"/>
+            <arg column="should_fee3" javaType="java.math.BigDecimal"/>
+            <arg column="should_fee1_tax" javaType="java.math.BigDecimal"/>
+            <arg column="should_fee2_tax" javaType="java.math.BigDecimal"/>
+            <arg column="should_fee3_tax" javaType="java.math.BigDecimal"/>
+            <arg column="should_pen_interest" javaType="java.math.BigDecimal"/>
+            <arg column="should_init_late_fee" javaType="java.math.BigDecimal"/>
+            <arg column="paid_stamp_duty" javaType="java.math.BigDecimal"/>
+            <arg column="paid_principal" javaType="java.math.BigDecimal"/>
+            <arg column="paid_interest" javaType="java.math.BigDecimal"/>
+            <arg column="paid_fee1" javaType="java.math.BigDecimal"/>
+            <arg column="paid_fee2" javaType="java.math.BigDecimal"/>
+            <arg column="paid_fee3" javaType="java.math.BigDecimal"/>
+            <arg column="paid_fee1_tax" javaType="java.math.BigDecimal"/>
+            <arg column="paid_fee2_tax" javaType="java.math.BigDecimal"/>
+            <arg column="paid_fee3_tax" javaType="java.math.BigDecimal"/>
+            <arg column="paid_pen_interest" javaType="java.math.BigDecimal"/>
+            <arg column="paid_init_late_fee" javaType="java.math.BigDecimal"/>
+            <arg column="paid_adv_settle_fee" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_stamp_duty" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_principal" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_interest" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_fee1" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_fee2" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_fee3" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_fee1_tax" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_fee2_tax" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_fee3_tax" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_pen_interest" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_init_late_fee" javaType="java.math.BigDecimal"/>
+            <arg column="reduction_adv_settle_fee" javaType="java.math.BigDecimal"/>
+            <arg column="overdue_days" javaType="java.lang.Integer"/>
+            <arg column="first_overdue_day" javaType="java.lang.Long"/>
+            <arg column="last_repay_time" javaType="java.lang.Long"/>
+            <arg column="max_overdue_days" javaType="java.lang.Integer"/>
+            <arg column="paid_out_date" javaType="java.lang.Long"/>
+            <arg column="adv_sette_flag" javaType="string"/>
             <arg column="external_interaction_id" javaType="java.lang.Long"/>
             <arg column="queried_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
@@ -23,8 +86,22 @@
 
     <sql id="loanLenderBillColumns">
         loan_apply_id, user_id, external_loan_apply_no, lender_user_id, bill_no,
-        apply_amt, bill_status, term_due_date, next_due_amount,
-        external_interaction_id, queried_at
+        contr_no, terms, apply_amt, currency, user_name, status_date, bill_status,
+        fee_prepay_amt, lend_amt, lend_time, pay_serial_no, due_date,
+        stamp_duty, principal, interest, fee1, fee2, fee3, fee1_tax, fee2_tax, fee3_tax,
+        pre_pen_interest, pen_interest, init_late_fee, term_no, term_due_date,
+        should_stamp_duty, should_principal, should_interest,
+        should_fee1, should_fee2, should_fee3, should_fee1_tax, should_fee2_tax, should_fee3_tax,
+        should_pen_interest, should_init_late_fee,
+        paid_stamp_duty, paid_principal, paid_interest,
+        paid_fee1, paid_fee2, paid_fee3, paid_fee1_tax, paid_fee2_tax, paid_fee3_tax,
+        paid_pen_interest, paid_init_late_fee, paid_adv_settle_fee,
+        reduction_stamp_duty, reduction_principal, reduction_interest,
+        reduction_fee1, reduction_fee2, reduction_fee3,
+        reduction_fee1_tax, reduction_fee2_tax, reduction_fee3_tax,
+        reduction_pen_interest, reduction_init_late_fee, reduction_adv_settle_fee,
+        overdue_days, first_overdue_day, last_repay_time, max_overdue_days, paid_out_date,
+        adv_sette_flag, external_interaction_id, queried_at
     </sql>
 
     <insert id="upsert">
@@ -34,10 +111,73 @@
             external_loan_apply_no,
             lender_user_id,
             bill_no,
+            contr_no,
+            terms,
             apply_amt,
+            currency,
+            user_name,
+            status_date,
             bill_status,
+            fee_prepay_amt,
+            lend_amt,
+            lend_time,
+            pay_serial_no,
+            due_date,
+            stamp_duty,
+            principal,
+            interest,
+            fee1,
+            fee2,
+            fee3,
+            fee1_tax,
+            fee2_tax,
+            fee3_tax,
+            pre_pen_interest,
+            pen_interest,
+            init_late_fee,
+            term_no,
             term_due_date,
-            next_due_amount,
+            should_stamp_duty,
+            should_principal,
+            should_interest,
+            should_fee1,
+            should_fee2,
+            should_fee3,
+            should_fee1_tax,
+            should_fee2_tax,
+            should_fee3_tax,
+            should_pen_interest,
+            should_init_late_fee,
+            paid_stamp_duty,
+            paid_principal,
+            paid_interest,
+            paid_fee1,
+            paid_fee2,
+            paid_fee3,
+            paid_fee1_tax,
+            paid_fee2_tax,
+            paid_fee3_tax,
+            paid_pen_interest,
+            paid_init_late_fee,
+            paid_adv_settle_fee,
+            reduction_stamp_duty,
+            reduction_principal,
+            reduction_interest,
+            reduction_fee1,
+            reduction_fee2,
+            reduction_fee3,
+            reduction_fee1_tax,
+            reduction_fee2_tax,
+            reduction_fee3_tax,
+            reduction_pen_interest,
+            reduction_init_late_fee,
+            reduction_adv_settle_fee,
+            overdue_days,
+            first_overdue_day,
+            last_repay_time,
+            max_overdue_days,
+            paid_out_date,
+            adv_sette_flag,
             external_interaction_id,
             queried_at
         ) VALUES (
@@ -46,10 +186,73 @@
             #{externalLoanApplyNo},
             #{lenderUserId},
             #{billNo},
+            #{contrNo},
+            #{terms},
             #{applyAmt},
+            #{currency},
+            #{userName},
+            #{statusDate},
             #{billStatus},
+            #{feePrepayAmt},
+            #{lendAmt},
+            #{lendTime},
+            #{paySerialNo},
+            #{dueDate},
+            #{stampDuty},
+            #{principal},
+            #{interest},
+            #{fee1},
+            #{fee2},
+            #{fee3},
+            #{fee1Tax},
+            #{fee2Tax},
+            #{fee3Tax},
+            #{prePenInterest},
+            #{penInterest},
+            #{initLateFee},
+            #{termNo},
             #{termDueDate},
-            #{nextDueAmount},
+            #{shouldStampDuty},
+            #{shouldPrincipal},
+            #{shouldInterest},
+            #{shouldFee1},
+            #{shouldFee2},
+            #{shouldFee3},
+            #{shouldFee1Tax},
+            #{shouldFee2Tax},
+            #{shouldFee3Tax},
+            #{shouldPenInterest},
+            #{shouldInitLateFee},
+            #{paidStampDuty},
+            #{paidPrincipal},
+            #{paidInterest},
+            #{paidFee1},
+            #{paidFee2},
+            #{paidFee3},
+            #{paidFee1Tax},
+            #{paidFee2Tax},
+            #{paidFee3Tax},
+            #{paidPenInterest},
+            #{paidInitLateFee},
+            #{paidAdvSettleFee},
+            #{reductionStampDuty},
+            #{reductionPrincipal},
+            #{reductionInterest},
+            #{reductionFee1},
+            #{reductionFee2},
+            #{reductionFee3},
+            #{reductionFee1Tax},
+            #{reductionFee2Tax},
+            #{reductionFee3Tax},
+            #{reductionPenInterest},
+            #{reductionInitLateFee},
+            #{reductionAdvSettleFee},
+            #{overdueDays},
+            #{firstOverdueDay},
+            #{lastRepayTime},
+            #{maxOverdueDays},
+            #{paidOutDate},
+            #{advSetteFlag},
             #{externalInteractionId},
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
@@ -58,10 +261,73 @@
             external_loan_apply_no = VALUES(external_loan_apply_no),
             lender_user_id = VALUES(lender_user_id),
             bill_no = VALUES(bill_no),
+            contr_no = VALUES(contr_no),
+            terms = VALUES(terms),
             apply_amt = VALUES(apply_amt),
+            currency = VALUES(currency),
+            user_name = VALUES(user_name),
+            status_date = VALUES(status_date),
             bill_status = VALUES(bill_status),
+            fee_prepay_amt = VALUES(fee_prepay_amt),
+            lend_amt = VALUES(lend_amt),
+            lend_time = VALUES(lend_time),
+            pay_serial_no = VALUES(pay_serial_no),
+            due_date = VALUES(due_date),
+            stamp_duty = VALUES(stamp_duty),
+            principal = VALUES(principal),
+            interest = VALUES(interest),
+            fee1 = VALUES(fee1),
+            fee2 = VALUES(fee2),
+            fee3 = VALUES(fee3),
+            fee1_tax = VALUES(fee1_tax),
+            fee2_tax = VALUES(fee2_tax),
+            fee3_tax = VALUES(fee3_tax),
+            pre_pen_interest = VALUES(pre_pen_interest),
+            pen_interest = VALUES(pen_interest),
+            init_late_fee = VALUES(init_late_fee),
+            term_no = VALUES(term_no),
             term_due_date = VALUES(term_due_date),
-            next_due_amount = VALUES(next_due_amount),
+            should_stamp_duty = VALUES(should_stamp_duty),
+            should_principal = VALUES(should_principal),
+            should_interest = VALUES(should_interest),
+            should_fee1 = VALUES(should_fee1),
+            should_fee2 = VALUES(should_fee2),
+            should_fee3 = VALUES(should_fee3),
+            should_fee1_tax = VALUES(should_fee1_tax),
+            should_fee2_tax = VALUES(should_fee2_tax),
+            should_fee3_tax = VALUES(should_fee3_tax),
+            should_pen_interest = VALUES(should_pen_interest),
+            should_init_late_fee = VALUES(should_init_late_fee),
+            paid_stamp_duty = VALUES(paid_stamp_duty),
+            paid_principal = VALUES(paid_principal),
+            paid_interest = VALUES(paid_interest),
+            paid_fee1 = VALUES(paid_fee1),
+            paid_fee2 = VALUES(paid_fee2),
+            paid_fee3 = VALUES(paid_fee3),
+            paid_fee1_tax = VALUES(paid_fee1_tax),
+            paid_fee2_tax = VALUES(paid_fee2_tax),
+            paid_fee3_tax = VALUES(paid_fee3_tax),
+            paid_pen_interest = VALUES(paid_pen_interest),
+            paid_init_late_fee = VALUES(paid_init_late_fee),
+            paid_adv_settle_fee = VALUES(paid_adv_settle_fee),
+            reduction_stamp_duty = VALUES(reduction_stamp_duty),
+            reduction_principal = VALUES(reduction_principal),
+            reduction_interest = VALUES(reduction_interest),
+            reduction_fee1 = VALUES(reduction_fee1),
+            reduction_fee2 = VALUES(reduction_fee2),
+            reduction_fee3 = VALUES(reduction_fee3),
+            reduction_fee1_tax = VALUES(reduction_fee1_tax),
+            reduction_fee2_tax = VALUES(reduction_fee2_tax),
+            reduction_fee3_tax = VALUES(reduction_fee3_tax),
+            reduction_pen_interest = VALUES(reduction_pen_interest),
+            reduction_init_late_fee = VALUES(reduction_init_late_fee),
+            reduction_adv_settle_fee = VALUES(reduction_adv_settle_fee),
+            overdue_days = VALUES(overdue_days),
+            first_overdue_day = VALUES(first_overdue_day),
+            last_repay_time = VALUES(last_repay_time),
+            max_overdue_days = VALUES(max_overdue_days),
+            paid_out_date = VALUES(paid_out_date),
+            adv_sette_flag = VALUES(adv_sette_flag),
             external_interaction_id = VALUES(external_interaction_id),
             queried_at = VALUES(queried_at)
     </insert>
