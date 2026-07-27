@@ -103,6 +103,17 @@ pk:
     liveness-threshold: ${PK_OCR_LIVENESS_THRESHOLD:60}
     face-threshold: ${PK_OCR_FACE_THRESHOLD:60}
     license-effective-seconds: ${PK_OCR_LICENSE_EFFECTIVE_SECONDS:2592000}
+  trustdecision:
+    enabled: ${PK_TRUSTDECISION_ENABLED:false}
+    partner-code: ${PK_TRUSTDECISION_PARTNER_CODE:}
+    partner-key: ${PK_TRUSTDECISION_PARTNER_KEY:}
+    ocr-url: ${PK_TRUSTDECISION_OCR_URL:https://id.apitd.net/verification/kyc/ocr/v1}
+    liveness-url: ${PK_TRUSTDECISION_LIVENESS_URL:https://id.apitd.net/verification/kyc/liveness/v1}
+    face-comparison-url: ${PK_TRUSTDECISION_FACE_COMPARISON_URL:https://id.apitd.net/verification/kyc/identity/v1}
+    connect-timeout-ms: ${PK_TRUSTDECISION_CONNECT_TIMEOUT_MS:10000}
+    read-timeout-ms: ${PK_TRUSTDECISION_READ_TIMEOUT_MS:30000}
+    max-image-bytes: ${PK_TRUSTDECISION_MAX_IMAGE_BYTES:3145728}
+    session-ttl: ${PK_TRUSTDECISION_SESSION_TTL:30m}
   credit:
     apply:
       mode: ${PK_CREDIT_APPLY_MODE:inline}

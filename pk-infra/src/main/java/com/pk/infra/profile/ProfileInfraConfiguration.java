@@ -186,6 +186,30 @@ public class ProfileInfraConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "pk.trustdecision", name = "enabled", havingValue = "true")
+    TrustDecisionIdentityFacade trustDecisionIdentityFacade(
+            com.pk.core.profile.port.TrustDecisionKycPort trustDecisionKycPort,
+            com.pk.core.profile.port.TrustDecisionSessionStore trustDecisionSessionStore,
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
+            com.pk.core.profile.port.BiometricImageStore biometricImageStore,
+            IdentityVerificationCompletionService completionService,
+            com.pk.infra.ocr.TrustDecisionProperties properties,
+            ObjectMapper objectMapper
+    ) {
+        return new TrustDecisionIdentityFacade(
+                trustDecisionKycPort,
+                trustDecisionSessionStore,
+                profileIdentityRepository,
+                sensitiveFieldEncryptor,
+                biometricImageStore,
+                completionService,
+                properties,
+                objectMapper
+        );
+    }
+
+    @Bean
     BankCardListAccessFacade bankCardListAccessFacade(
             ProfileQueryFacade profileQueryFacade,
             com.pk.core.home.port.LenderUserStatusPort lenderUserStatusPort

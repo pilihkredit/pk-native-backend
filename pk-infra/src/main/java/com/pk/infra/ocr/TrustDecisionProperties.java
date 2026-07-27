@@ -36,4 +36,14 @@ public class TrustDecisionProperties {
     public void setMaxImageBytes(int maxImageBytes) { this.maxImageBytes = maxImageBytes; }
     public Duration sessionTtl() { return sessionTtl; }
     public void setSessionTtl(Duration sessionTtl) { this.sessionTtl = sessionTtl; }
+
+    public void validateEnabledSettings() {
+        if (!enabled) {
+            return;
+        }
+        if (partnerCode == null || partnerCode.isBlank() || partnerKey == null || partnerKey.isBlank()) {
+            throw new IllegalStateException(
+                    "pk.trustdecision.partner-code and partner-key are required when TrustDecision is enabled");
+        }
+    }
 }

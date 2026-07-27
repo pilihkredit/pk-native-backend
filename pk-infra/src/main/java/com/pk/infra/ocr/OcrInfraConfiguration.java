@@ -6,6 +6,8 @@ import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.OcrSessionStore;
 import com.pk.core.profile.port.OcrVendorCallLogWriter;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import com.pk.core.profile.port.TrustDecisionKycPort;
+import com.pk.core.profile.port.TrustDecisionSessionStore;
 import com.pk.infra.auth.AuthInfraConfiguration;
 import com.pk.infra.ocr.mapper.OcrVendorCallLogMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -17,7 +19,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 @Configuration
 @Import(AuthInfraConfiguration.class)
-@EnableConfigurationProperties(OcrProperties.class)
+@EnableConfigurationProperties({OcrProperties.class, TrustDecisionProperties.class})
 public class OcrInfraConfiguration {
     @Bean
     OcrVendorCallLogWriter ocrVendorCallLogWriter(OcrVendorCallLogMapper mapper) {
@@ -59,5 +61,28 @@ public class OcrInfraConfiguration {
             OcrProperties ocrProperties
     ) {
         return new RedisOcrSessionStore(redisTemplate, objectMapper, ocrProperties);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "pk.trustdecision", name = "enabled", havingValue = "true")
+    TrustDecisionKycPort trustDecisionKycPort(
+            TrustDecisionProperties properties,
+            ObjectMapper objectMapper,
+            OcrVendorCallLogWriter ocrVendorCallLogWriter,
+            OcrSensitiveJsonSupport ocrSensitiveJsonSupport
+    ) {
+        properties.validateEnabledSettings();
+        return new TrustDecisionKycClient(
+                properties, objectMapper, ocrVendorCallLogWriter, ocrSensitiveJsonSupport);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "pk.trustdecision", name = "enabled", havingValue = "true")
+    TrustDecisionSessionStore trustDecisionSessionStore(
+            StringRedisTemplate redisTemplate,
+            ObjectMapper objectMapper,
+            TrustDecisionProperties properties
+    ) {
+        return new RedisTrustDecisionSessionStore(redisTemplate, objectMapper, properties);
     }
 }
