@@ -93,7 +93,6 @@ class LoanApplyFacadeTest {
                 "QUOTE-1",
                 "REQ-1",
                 "APPLY-1",
-                "81234567890",
                 100L,
                 10L,
                 "QUOTE-1",
@@ -114,7 +113,6 @@ class LoanApplyFacadeTest {
                 .thenReturn(Optional.of(new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
                         "QUOTE-1",
                         1L,
-                        "81234567890",
                         "USR-1",
                         "LN-1",
                         "SUCCESS",
@@ -272,7 +270,6 @@ class LoanApplyFacadeTest {
                 "QUOTE-1",
                 "REQ-1",
                 "APPLY-1",
-                "81234567890",
                 100L,
                 10L,
                 "QUOTE-1",
@@ -365,7 +362,6 @@ class LoanApplyFacadeTest {
                 "pendanaan",
                 1L,
                 "partner-1",
-                "81234567890",
                 "CA-1"
         );
     }

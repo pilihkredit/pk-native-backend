@@ -168,7 +168,6 @@ class CreditApplyFacadeTest {
                 .thenReturn(Optional.of(new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
                         "APPLY-1",
                         1L,
-                        "81234567890",
                         "partner-1",
                         "USR-1",
                         "CA-1",
@@ -233,7 +232,6 @@ class CreditApplyFacadeTest {
                 "pendanaan",
                 1L,
                 "partner-1",
-                "81234567890",
                 "CA-1"
         ));
     }

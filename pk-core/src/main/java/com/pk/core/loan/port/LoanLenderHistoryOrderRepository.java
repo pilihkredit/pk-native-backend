@@ -12,7 +12,6 @@ public interface LoanLenderHistoryOrderRepository {
     record LoanLenderHistoryOrderData(
             String loanApplyId,
             long userId,
-            String mobileNo,
             String externalLoanApplyNo,
             String lenderUserId,
             String externalStatus,

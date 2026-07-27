@@ -118,7 +118,6 @@ class LoanLenderStatusApplierTest {
                 "LOAN-1",
                 "REQ-1",
                 "APPLY-1",
-                "81234567890",
                 100L,
                 200L,
                 "QUOTE-1",
@@ -139,7 +138,6 @@ class LoanLenderStatusApplierTest {
         return new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
                 "LOAN-1",
                 1L,
-                "81234567890",
                 "USR-1",
                 "LN-1",
                 externalStatus,

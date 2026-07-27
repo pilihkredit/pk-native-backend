@@ -7,6 +7,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.pk.core.auth.UserProfileSummary;
+import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.callback.CallbackTypes;
 import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.credit.CreditProviderCode;
@@ -33,6 +35,8 @@ class CreditCallbackIntakeFacadeTest {
     private CreditApplicationRepository creditApplicationRepository;
     @Mock
     private CreditLenderStatusApplier creditLenderStatusApplier;
+    @Mock
+    private UserAuthRepository userAuthRepository;
 
     private CreditCallbackIntakeFacade facade;
 
@@ -42,7 +46,8 @@ class CreditCallbackIntakeFacadeTest {
                 externalInteractionCallbackLogRepository,
                 callbackParser,
                 creditApplicationRepository,
-                creditLenderStatusApplier
+                creditLenderStatusApplier,
+                userAuthRepository
         );
     }
 
@@ -57,6 +62,9 @@ class CreditCallbackIntakeFacadeTest {
             return 99L;
         });
         when(creditApplicationRepository.findByApplyId("AP-001")).thenReturn(Optional.of(record));
+        when(userAuthRepository.findByUserId(1L)).thenReturn(Optional.of(
+                new UserProfileSummary(1L, "partner-1", "81234567890", false)
+        ));
 
         CreditCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
 
@@ -150,7 +158,6 @@ class CreditCallbackIntakeFacadeTest {
                 CreditProviderCode.PENDANAAN,
                 1L,
                 "partner-1",
-                "81234567890",
                 null
         );
     }

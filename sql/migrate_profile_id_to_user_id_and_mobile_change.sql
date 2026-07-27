@@ -1,6 +1,7 @@
 -- migrate_profile_id_to_user_id_and_mobile_change.sql
 -- Idempotent. Run before deploying app that expects user_id columns.
--- Requires MySQL 8.0+ for functional unique index on user_profile.
+-- Active-mobile uniqueness uses a STORED generated column (MySQL 5.7.6+ / 8.0),
+-- not a functional index expression (unavailable on many managed MySQL versions).
 
 SET @schema_name = DATABASE();
 
@@ -483,10 +484,20 @@ CREATE TABLE IF NOT EXISTS user_mobile_change_log (
   KEY idx_user_mobile_change_log_new_mobile (new_mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mobile number change audit log';
 
--- ========== 5) Active mobile unique index ==========
+-- ========== 5) Active mobile uniqueness (generated column + unique index) ==========
+-- Optional duplicate check before create:
+-- SELECT mobile_no, COUNT(*) c FROM user_profile WHERE deleted_at IS NULL GROUP BY mobile_no HAVING c > 1;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA=@schema_name AND TABLE_NAME='user_profile' AND COLUMN_NAME='active_mobile_no');
+SET @ddl = IF(@col_exists=0,
+  'ALTER TABLE user_profile ADD COLUMN active_mobile_no VARCHAR(32) GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN mobile_no ELSE NULL END) STORED COMMENT ''Active mobile for uniqueness; NULL when soft-deleted'' AFTER mobile_no',
+  'SELECT ''skip: user_profile.active_mobile_no add'' AS migration_info');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
 SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
   WHERE TABLE_SCHEMA=@schema_name AND TABLE_NAME='user_profile' AND INDEX_NAME='uk_user_profile_active_mobile');
 SET @ddl = IF(@idx_exists=0,
-  'CREATE UNIQUE INDEX uk_user_profile_active_mobile ON user_profile ((CASE WHEN deleted_at IS NULL THEN mobile_no ELSE NULL END))',
+  'CREATE UNIQUE INDEX uk_user_profile_active_mobile ON user_profile (active_mobile_no)',
   'SELECT ''skip: uk_user_profile_active_mobile'' AS migration_info');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;

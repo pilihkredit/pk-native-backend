@@ -17,12 +17,12 @@ public class CreditApplyHandler {
     }
 
     public String submit(CreditApplyJob job) {
-        String mobileNo = creditApplicationRepository.findById(job.creditApplicationId())
-                .orElseThrow(() -> new IllegalStateException("Credit application not found: " + job.creditApplicationId()))
-                .mobileNo();
+        if (creditApplicationRepository.findById(job.creditApplicationId()).isEmpty()) {
+            throw new IllegalStateException("Credit application not found: " + job.creditApplicationId());
+        }
 
         LenderCreditPort.LenderCreditApplyResult result = LenderInteractionContext.runWithMobileNo(
-                mobileNo,
+                job.mobileNo(),
                 () -> lenderCreditPort.apply(
                         new LenderCreditPort.LenderCreditApplyCommand(
                                 job.applyId(),

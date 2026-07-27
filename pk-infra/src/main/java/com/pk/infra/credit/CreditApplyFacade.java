@@ -76,13 +76,13 @@ public class CreditApplyFacade {
                     applyId,
                     command.requestId(),
                     providerCode,
-                    userId,
-                    mobileNo
+                    userId
             ));
             CreditApplyJob job = new CreditApplyJob(
                     creditApplicationId,
                     applyId,
                     partnerUserId,
+                    mobileNo,
                     command.lat(),
                     command.lng(),
                     command.ip(),

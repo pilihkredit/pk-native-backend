@@ -9,6 +9,7 @@ public record LoanApplyJob(
         long loanApplicationId,
         String loanApplyId,
         String creditApplyId,
+        String mobileNo,
         BigDecimal applyAmt,
         String productCode,
         String repayMethod,

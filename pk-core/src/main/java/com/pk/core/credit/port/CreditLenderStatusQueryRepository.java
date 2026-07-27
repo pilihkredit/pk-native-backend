@@ -14,7 +14,6 @@ public interface CreditLenderStatusQueryRepository {
     record CreditLenderStatusQueryData(
             String applyId,
             long userId,
-            String mobileNo,
             String partnerUserId,
             String lenderUserId,
             String creditApplyNo,

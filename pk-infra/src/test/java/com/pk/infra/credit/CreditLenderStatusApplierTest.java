@@ -122,7 +122,6 @@ class CreditLenderStatusApplierTest {
                 "pendanaan",
                 1L,
                 "partner-1",
-                "81234567890",
                 "CA-1"
         );
     }
@@ -131,7 +130,6 @@ class CreditLenderStatusApplierTest {
         return new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
                 "APPLY-1",
                 1L,
-                "81234567890",
                 "partner-1",
                 "lender-user-1",
                 "CA-1",

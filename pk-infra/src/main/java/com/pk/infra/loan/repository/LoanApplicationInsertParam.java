@@ -7,7 +7,6 @@ public class LoanApplicationInsertParam {
     private String loanApplyId;
     private String requestId;
     private String applyId;
-    private String mobileNo;
     private long creditApplicationId;
     private Long quoteId;
     private String quoteNo;
@@ -30,7 +29,6 @@ public class LoanApplicationInsertParam {
         p.loanApplyId = insert.loanApplyId();
         p.requestId = insert.requestId();
         p.applyId = insert.applyId();
-        p.mobileNo = insert.mobileNo();
         p.creditApplicationId = insert.creditApplicationId();
         p.quoteId = insert.quoteId();
         p.quoteNo = insert.quoteNo();
@@ -60,10 +58,6 @@ public class LoanApplicationInsertParam {
 
     public String getApplyId() {
         return applyId;
-    }
-
-    public String getMobileNo() {
-        return mobileNo;
     }
 
     public long getCreditApplicationId() {

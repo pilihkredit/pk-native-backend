@@ -106,7 +106,6 @@ class LoanContractFacadeTest {
                 "LOAN-1",
                 "REQ-1",
                 "APPLY-1",
-                "81234567890",
                 100L,
                 200L,
                 "QUOTE-1",

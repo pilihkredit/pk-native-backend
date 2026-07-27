@@ -92,9 +92,10 @@ public class LoanInfraConfiguration {
     @Bean
     LoanStatusPollHandler loanStatusPollHandler(
             LenderLoanStatusPort lenderLoanStatusPort,
-            LoanLenderStatusApplier loanLenderStatusApplier
+            LoanLenderStatusApplier loanLenderStatusApplier,
+            com.pk.core.auth.port.UserAuthRepository userAuthRepository
     ) {
-        return new LoanStatusPollHandler(lenderLoanStatusPort, loanLenderStatusApplier);
+        return new LoanStatusPollHandler(lenderLoanStatusPort, loanLenderStatusApplier, userAuthRepository);
     }
 
     @Bean

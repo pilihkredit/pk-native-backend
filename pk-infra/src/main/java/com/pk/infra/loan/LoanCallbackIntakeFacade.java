@@ -1,6 +1,7 @@
 package com.pk.infra.loan;
 
 import com.pk.core.api.ApiCode;
+import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.callback.CallbackTypes;
 import com.pk.core.callback.port.LoanCallbackParser;
 import com.pk.core.credit.CreditProviderCode;
@@ -26,17 +27,20 @@ public class LoanCallbackIntakeFacade {
     private final LoanCallbackParser loanCallbackParser;
     private final LoanApplicationRepository loanApplicationRepository;
     private final LoanLenderStatusApplier loanLenderStatusApplier;
+    private final UserAuthRepository userAuthRepository;
 
     public LoanCallbackIntakeFacade(
             ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository,
             LoanCallbackParser loanCallbackParser,
             LoanApplicationRepository loanApplicationRepository,
-            LoanLenderStatusApplier loanLenderStatusApplier
+            LoanLenderStatusApplier loanLenderStatusApplier,
+            UserAuthRepository userAuthRepository
     ) {
         this.externalInteractionCallbackLogRepository = externalInteractionCallbackLogRepository;
         this.loanCallbackParser = loanCallbackParser;
         this.loanApplicationRepository = loanApplicationRepository;
         this.loanLenderStatusApplier = loanLenderStatusApplier;
+        this.userAuthRepository = userAuthRepository;
     }
 
     public IntakeResult intake(String rawPayloadJson) {
@@ -98,7 +102,10 @@ public class LoanCallbackIntakeFacade {
                 null
         );
         loanLenderStatusApplier.apply(record, status, SOURCE, interactionCallbackId);
-        finalizeCallbackLog(interactionCallbackId, record.mobileNo(), startedAt, true);
+        String mobileNo = userAuthRepository.findByUserId(record.userId())
+                .map(profile -> profile.mobileNo())
+                .orElse(null);
+        finalizeCallbackLog(interactionCallbackId, mobileNo, startedAt, true);
         return new IntakeResult(interactionCallbackId, false, false);
     }
 

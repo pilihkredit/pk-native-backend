@@ -29,13 +29,13 @@ public class LoanApplyHandler {
     }
 
     public String submit(LoanApplyJob job) {
-        String mobileNo = loanApplicationRepository.findById(job.loanApplicationId())
-                .orElseThrow(() -> new IllegalStateException("Loan application not found: " + job.loanApplicationId()))
-                .mobileNo();
+        if (loanApplicationRepository.findById(job.loanApplicationId()).isEmpty()) {
+            throw new IllegalStateException("Loan application not found: " + job.loanApplicationId());
+        }
         transition(job.loanApplicationId(), LoanApplicationStatus.INIT, LoanApplicationStatus.SUBMITTING, null);
 
         LenderLoanApplyPort.LenderLoanApplyResult result = LenderInteractionContext.runWithMobileNo(
-                mobileNo,
+                job.mobileNo(),
                 () -> lenderLoanApplyPort.apply(
                         new LenderLoanApplyPort.LenderLoanApplyCommand(
                                 job.creditApplyId(),

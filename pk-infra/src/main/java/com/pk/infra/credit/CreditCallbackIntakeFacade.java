@@ -1,6 +1,7 @@
 package com.pk.infra.credit;
 
 import com.pk.core.api.ApiCode;
+import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.callback.CallbackTypes;
 import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.credit.CreditProviderCode;
@@ -27,17 +28,20 @@ public class CreditCallbackIntakeFacade {
     private final CreditCallbackParser callbackParser;
     private final CreditApplicationRepository creditApplicationRepository;
     private final CreditLenderStatusApplier creditLenderStatusApplier;
+    private final UserAuthRepository userAuthRepository;
 
     public CreditCallbackIntakeFacade(
             ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository,
             CreditCallbackParser callbackParser,
             CreditApplicationRepository creditApplicationRepository,
-            CreditLenderStatusApplier creditLenderStatusApplier
+            CreditLenderStatusApplier creditLenderStatusApplier,
+            UserAuthRepository userAuthRepository
     ) {
         this.externalInteractionCallbackLogRepository = externalInteractionCallbackLogRepository;
         this.callbackParser = callbackParser;
         this.creditApplicationRepository = creditApplicationRepository;
         this.creditLenderStatusApplier = creditLenderStatusApplier;
+        this.userAuthRepository = userAuthRepository;
     }
 
     public IntakeResult intake(String rawPayloadJson) {
@@ -102,7 +106,10 @@ public class CreditCallbackIntakeFacade {
                 null
         );
         creditLenderStatusApplier.apply(record, status, SOURCE, LIMIT_SOURCE, interactionCallbackId);
-        finalizeCallbackLog(interactionCallbackId, record.mobileNo(), startedAt, true);
+        String mobileNo = userAuthRepository.findByUserId(record.userId())
+                .map(profile -> profile.mobileNo())
+                .orElse(null);
+        finalizeCallbackLog(interactionCallbackId, mobileNo, startedAt, true);
         return new IntakeResult(interactionCallbackId, false, false);
     }
 

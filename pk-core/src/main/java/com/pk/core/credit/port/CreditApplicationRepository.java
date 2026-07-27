@@ -23,8 +23,7 @@ public interface CreditApplicationRepository {
             String applyId,
             String requestId,
             String providerCode,
-            long userId,
-            String mobileNo
+            long userId
     ) {
     }
 
@@ -35,7 +34,6 @@ public interface CreditApplicationRepository {
             String providerCode,
             long userId,
             String partnerUserId,
-            String mobileNo,
             String applyNo
     ) {
     }

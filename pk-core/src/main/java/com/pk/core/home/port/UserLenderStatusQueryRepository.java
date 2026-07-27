@@ -10,7 +10,6 @@ public interface UserLenderStatusQueryRepository {
 
     record UserLenderStatusQueryData(
             long userId,
-            String mobileNo,
             String partnerUserId,
             String lenderUserId,
             Integer userLoanLifeTimeStatus,

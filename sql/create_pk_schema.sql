@@ -119,6 +119,7 @@ CREATE TABLE user_profile (
     partner_user_id VARCHAR(64) NOT NULL COMMENT 'Partner user identifier',
     external_user_id VARCHAR(64) NULL COMMENT 'External PK user identifier',
     mobile_no VARCHAR(32) NOT NULL COMMENT 'Current mobile number',
+    active_mobile_no VARCHAR(32) GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN mobile_no ELSE NULL END) STORED COMMENT 'Active mobile for uniqueness; NULL when soft-deleted',
     email VARCHAR(128) NULL COMMENT 'Email address',
     whats_app VARCHAR(32) NULL COMMENT 'WhatsApp number',
     kyc_status VARCHAR(32) NOT NULL COMMENT 'KYC completion status',
@@ -142,7 +143,7 @@ CREATE TABLE user_profile (
     KEY idx_user_profile_external_user_id (external_user_id),
     KEY idx_user_profile_mobile_no (mobile_no),
     KEY idx_user_profile_retention_until (retention_until),
-    UNIQUE KEY uk_user_profile_active_mobile ((CASE WHEN deleted_at IS NULL THEN mobile_no ELSE NULL END))
+    UNIQUE KEY uk_user_profile_active_mobile (active_mobile_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Current user profile master data';
 
 

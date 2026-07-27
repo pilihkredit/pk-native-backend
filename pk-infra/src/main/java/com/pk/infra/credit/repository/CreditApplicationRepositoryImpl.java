@@ -64,7 +64,6 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
         private String requestId;
         private String providerCode;
         private long userId;
-        private String mobileNo;
 
         public static CreditApplicationInsertParam from(CreditApplicationInsert insert) {
             CreditApplicationInsertParam param = new CreditApplicationInsertParam();
@@ -72,7 +71,6 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
             param.requestId = insert.requestId();
             param.providerCode = insert.providerCode();
             param.userId = insert.userId();
-            param.mobileNo = insert.mobileNo();
             return param;
         }
 
@@ -90,10 +88,6 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
 
         public long getUserId() {
             return userId;
-        }
-
-        public String getMobileNo() {
-            return mobileNo;
         }
     }
 }

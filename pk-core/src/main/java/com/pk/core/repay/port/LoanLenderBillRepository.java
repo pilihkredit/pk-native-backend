@@ -12,7 +12,6 @@ public interface LoanLenderBillRepository {
     record LoanLenderBillData(
             String loanApplyId,
             long userId,
-            String mobileNo,
             String externalLoanApplyNo,
             String lenderUserId,
             String billNo,

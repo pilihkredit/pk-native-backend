@@ -14,7 +14,6 @@ public interface LoanLenderStatusQueryRepository {
     record LoanLenderStatusQueryData(
             String loanApplyId,
             long userId,
-            String mobileNo,
             String lenderUserId,
             String externalLoanApplyNo,
             String externalStatus,

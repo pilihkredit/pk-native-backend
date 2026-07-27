@@ -2,6 +2,7 @@ package com.pk.infra.callback;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.attribution.port.AppsFlyerS2sReporter;
+import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.callback.port.CallbackEventRepository;
 import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.callback.port.LoanCallbackParser;
@@ -46,13 +47,15 @@ public class CallbackInfraConfiguration {
             ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository,
             CreditCallbackParser creditCallbackParser,
             CreditApplicationRepository creditApplicationRepository,
-            CreditLenderStatusApplier creditLenderStatusApplier
+            CreditLenderStatusApplier creditLenderStatusApplier,
+            UserAuthRepository userAuthRepository
     ) {
         return new CreditCallbackIntakeFacade(
                 externalInteractionCallbackLogRepository,
                 creditCallbackParser,
                 creditApplicationRepository,
-                creditLenderStatusApplier
+                creditLenderStatusApplier,
+                userAuthRepository
         );
     }
 
@@ -84,13 +87,15 @@ public class CallbackInfraConfiguration {
             ExternalInteractionCallbackLogRepository externalInteractionCallbackLogRepository,
             LoanCallbackParser loanCallbackParser,
             LoanApplicationRepository loanApplicationRepository,
-            LoanLenderStatusApplier loanLenderStatusApplier
+            LoanLenderStatusApplier loanLenderStatusApplier,
+            UserAuthRepository userAuthRepository
     ) {
         return new LoanCallbackIntakeFacade(
                 externalInteractionCallbackLogRepository,
                 loanCallbackParser,
                 loanApplicationRepository,
-                loanLenderStatusApplier
+                loanLenderStatusApplier,
+                userAuthRepository
         );
     }
 

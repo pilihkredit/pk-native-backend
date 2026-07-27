@@ -117,7 +117,6 @@ public class LoanLenderStatusApplier {
                 new LoanLenderStatusQueryRepository.LoanLenderStatusQueryData(
                         record.loanApplyId(),
                         record.userId(),
-                        record.mobileNo(),
                         record.lenderUserId(),
                         firstNonBlank(status.loanApplyNo(), record.externalLoanApplyNo()),
                         status.externalStatus(),

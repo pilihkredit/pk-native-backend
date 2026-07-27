@@ -141,7 +141,6 @@ class ProductListResolverTest {
                 "pendanaan",
                 1L,
                 "partner-1",
-                "81234567890",
                 "CA-1"
         );
     }

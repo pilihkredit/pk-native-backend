@@ -1,6 +1,7 @@
 package com.pk.infra.credit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.LenderCreditPort;
@@ -62,11 +63,13 @@ public class CreditInfraConfiguration {
     @Bean
     CreditStatusPollHandler creditStatusPollHandler(
             LenderCreditPort lenderCreditPort,
-            CreditLenderStatusApplier creditLenderStatusApplier
+            CreditLenderStatusApplier creditLenderStatusApplier,
+            UserAuthRepository userAuthRepository
     ) {
         return new CreditStatusPollHandler(
                 lenderCreditPort,
-                creditLenderStatusApplier
+                creditLenderStatusApplier,
+                userAuthRepository
         );
     }
 }

@@ -27,7 +27,7 @@ public class LoanBillsFacade {
         Instant queriedAt = Instant.now();
         List<BillResult> bills = result.bills().stream()
                 .map(bill -> {
-                    persist(userId, mobileNo, result.externalInteractionId(), bill, queriedAt);
+                    persist(userId, result.externalInteractionId(), bill, queriedAt);
                     return toBillResult(bill);
                 })
                 .toList();
@@ -36,7 +36,6 @@ public class LoanBillsFacade {
 
     private void persist(
             long userId,
-            String mobileNo,
             Long externalInteractionId,
             LenderLoanBillListPort.LenderLoanBill bill,
             Instant queriedAt
@@ -44,7 +43,6 @@ public class LoanBillsFacade {
         loanLenderBillRepository.upsert(new LoanLenderBillRepository.LoanLenderBillData(
                 bill.loanApplyId(),
                 userId,
-                mobileNo,
                 bill.loanApplyNo(),
                 bill.lenderUserId(),
                 bill.billNo(),

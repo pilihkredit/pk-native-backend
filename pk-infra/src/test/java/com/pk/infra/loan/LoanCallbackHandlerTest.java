@@ -94,7 +94,6 @@ class LoanCallbackHandlerTest {
                 "LOAN-001",
                 "REQ-001",
                 "APPLY-001",
-                "81234567890",
                 100L,
                 200L,
                 "QUOTE-001",

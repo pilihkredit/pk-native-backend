@@ -38,7 +38,6 @@ public class HomeSummaryFacade {
                 : lenderStatus.partnerUserId();
         userLenderStatusQueryRepository.upsert(new UserLenderStatusQueryRepository.UserLenderStatusQueryData(
                 userId,
-                mobileNo,
                 resolvedPartnerUserId,
                 lenderStatus.userId(),
                 lenderStatus.userLoanLifeTimeStatus(),

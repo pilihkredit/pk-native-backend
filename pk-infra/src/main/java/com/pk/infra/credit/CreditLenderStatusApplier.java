@@ -38,7 +38,6 @@ public class CreditLenderStatusApplier {
                 new CreditLenderStatusQueryRepository.CreditLenderStatusQueryData(
                         record.applyId(),
                         record.userId(),
-                        record.mobileNo(),
                         record.partnerUserId(),
                         status.lenderUserId(),
                         status.creditApplyNo(),
