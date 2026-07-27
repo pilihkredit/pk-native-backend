@@ -60,12 +60,12 @@
             apply_id,
             request_id,
             provider_code,
-            user_id,
+            user_id
         ) VALUES (
             #{applyId},
             #{requestId},
             #{providerCode},
-            #{userId},
+            #{userId}
         )
     </insert>
 
