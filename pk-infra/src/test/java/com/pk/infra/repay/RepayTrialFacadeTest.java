@@ -50,7 +50,7 @@ class RepayTrialFacadeTest {
         when(loanBillReadRepository.findByUserIdAndLoanApplyId(1L, "LOAN-1"))
                 .thenReturn(Optional.of(loanRecord()));
         when(lenderRepayTrialPort.trial(any())).thenReturn(lenderTrialResult());
-        when(repaymentTrialSnapshotRepository.insert(any(), any())).thenAnswer(invocation -> {
+        when(repaymentTrialSnapshotRepository.replace(any(), any())).thenAnswer(invocation -> {
             RepaymentTrialSnapshotRepository.TrialSnapshotInsert insert = invocation.getArgument(0);
             return new RepaymentTrialSnapshotRepository.TrialSnapshotRecord(
                     10L,
@@ -87,7 +87,7 @@ class RepayTrialFacadeTest {
             assertThat(command.termNos()).isNullOrEmpty();
             return lenderTrialResult();
         });
-        when(repaymentTrialSnapshotRepository.insert(any(), any())).thenAnswer(invocation ->
+        when(repaymentTrialSnapshotRepository.replace(any(), any())).thenAnswer(invocation ->
                 new RepaymentTrialSnapshotRepository.TrialSnapshotRecord(
                         10L,
                         ((RepaymentTrialSnapshotRepository.TrialSnapshotInsert) invocation.getArgument(0)).trialNo(),
@@ -114,7 +114,7 @@ class RepayTrialFacadeTest {
         when(loanBillReadRepository.findByUserIdAndLoanApplyId(1L, "LOAN-1"))
                 .thenReturn(Optional.of(loanRecord()));
         when(lenderRepayTrialPort.trialBatch(any())).thenReturn(lenderBatchResult());
-        when(repaymentTrialSnapshotRepository.insert(any(), any())).thenAnswer(invocation -> {
+        when(repaymentTrialSnapshotRepository.replace(any(), any())).thenAnswer(invocation -> {
             RepaymentTrialSnapshotRepository.TrialSnapshotInsert insert = invocation.getArgument(0);
             assertThat(insert.trialType()).isEqualTo("BATCH");
             return new RepaymentTrialSnapshotRepository.TrialSnapshotRecord(

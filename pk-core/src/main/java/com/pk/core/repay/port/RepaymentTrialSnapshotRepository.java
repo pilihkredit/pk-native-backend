@@ -8,9 +8,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RepaymentTrialSnapshotRepository {
-    TrialSnapshotRecord insert(TrialSnapshotInsert insert, List<TrialOrderInsert> orders);
+    /**
+     * Replace trial data for the given loan_apply_id(s): delete previous order trees
+     * (and orphan snapshots), then insert a new snapshot + orders.
+     * Each loan_apply_id keeps at most one latest trial order.
+     */
+    TrialSnapshotRecord replace(TrialSnapshotInsert insert, List<TrialOrderInsert> orders);
 
     Optional<TrialSnapshotRecord> findByTrialNo(String trialNo);
+
 
     record TrialSnapshotInsert(
             String trialNo,

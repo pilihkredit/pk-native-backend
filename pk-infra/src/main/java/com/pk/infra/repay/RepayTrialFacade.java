@@ -110,7 +110,7 @@ public class RepayTrialFacade {
         LoanBillReadRepository.LoanBillRecord loan = loanBillReadRepository
                 .findByUserIdAndLoanApplyId(userId, lenderResult.loanApplyId())
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
-        repaymentTrialSnapshotRepository.insert(
+        repaymentTrialSnapshotRepository.replace(
                 new RepaymentTrialSnapshotRepository.TrialSnapshotInsert(
                         trialNo,
                         userId,
@@ -156,7 +156,7 @@ public class RepayTrialFacade {
                     billTrial
             ));
         }
-        repaymentTrialSnapshotRepository.insert(
+        repaymentTrialSnapshotRepository.replace(
                 new RepaymentTrialSnapshotRepository.TrialSnapshotInsert(
                         batchTrialNo,
                         userId,

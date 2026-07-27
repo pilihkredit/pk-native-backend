@@ -151,17 +151,18 @@ class PendanaanProfileUpsertMapperTest {
     }
 
     @Test
-    void mapsTrustDecisionLivenessIdWithoutFaceImage() {
+    void mapsTongdunLivenessFields() {
         ObjectNode userInfo = objectMapper.createObjectNode();
         PendanaanProfileUpsertMapper.applyModule(
                 userInfo,
                 ProfileSyncModule.IDENTITY,
-                identityPayload("trustDecision", "face-image", "liveness-sequence")
+                identityPayload("tongdun", "face-image", "liveness-sequence")
         );
 
         assertThat(userInfo.path("identity").path("livenessId").asText())
                 .isEqualTo("liveness-sequence");
-        assertThat(userInfo.path("identity").has("faceBase64")).isFalse();
+        assertThat(userInfo.path("identity").path("faceBase64").asText()).isEqualTo("face-image");
+        assertThat(userInfo.path("identity").path("livenessChannel").asText()).isEqualTo("tongdun");
     }
 
     @Test
@@ -174,6 +175,7 @@ class PendanaanProfileUpsertMapperTest {
         );
 
         assertThat(userInfo.path("identity").path("faceBase64").asText()).isEqualTo("face-image");
+        assertThat(userInfo.path("identity").path("livenessChannel").asText()).isEqualTo("advanceAi");
         assertThat(userInfo.path("identity").has("livenessId")).isFalse();
     }
 

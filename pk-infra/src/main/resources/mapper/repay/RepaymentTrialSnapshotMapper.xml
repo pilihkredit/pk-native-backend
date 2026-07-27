@@ -410,4 +410,53 @@ external_interaction_id,
 created_at
 FROM repayment_trial_snapshot
 WHERE trial_no=#{trialNo}</select>
+
+    <resultMap id="trialOrderRefMap" type="com.pk.infra.repay.mapper.RepaymentTrialSnapshotMapper$TrialOrderRef">
+        <constructor>
+            <arg column="order_id" javaType="_long"/>
+            <arg column="trial_id" javaType="_long"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findOrdersByLoanApplyIds" resultMap="trialOrderRefMap">
+        SELECT id AS order_id, trial_id
+        FROM repayment_trial_order
+        WHERE loan_apply_id IN
+        <foreach collection="loanApplyIds" item="loanApplyId" open="(" separator="," close=")">
+            #{loanApplyId}
+        </foreach>
+    </select>
+
+    <delete id="deleteTermDiscountsByOrderId">
+        DELETE d FROM repayment_trial_term_discount d
+        INNER JOIN repayment_trial_term t ON t.id = d.trial_term_id
+        WHERE t.trial_order_id = #{orderId}
+    </delete>
+
+    <delete id="deleteTermsByOrderId">
+        DELETE FROM repayment_trial_term
+        WHERE trial_order_id = #{orderId}
+    </delete>
+
+    <delete id="deleteVaChannelsByOwner">
+        DELETE FROM repayment_trial_va_channel
+        WHERE owner_type = #{ownerType}
+          AND owner_id = #{ownerId}
+    </delete>
+
+    <delete id="deleteOrderById">
+        DELETE FROM repayment_trial_order
+        WHERE id = #{orderId}
+    </delete>
+
+    <select id="countOrdersByTrialId" resultType="int">
+        SELECT COUNT(1)
+        FROM repayment_trial_order
+        WHERE trial_id = #{trialId}
+    </select>
+
+    <delete id="deleteSnapshotById">
+        DELETE FROM repayment_trial_snapshot
+        WHERE id = #{snapshotId}
+    </delete>
 </mapper>

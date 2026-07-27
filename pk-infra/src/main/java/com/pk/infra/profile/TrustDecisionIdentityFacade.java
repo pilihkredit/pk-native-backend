@@ -22,7 +22,7 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 public class TrustDecisionIdentityFacade {
-    private static final String CHANNEL = "trustDecision";
+    private static final String CHANNEL = "tongdun";
     private static final String MODULE_COMPLETED = "COMPLETED";
 
     private final TrustDecisionKycPort trustDecisionKycPort;

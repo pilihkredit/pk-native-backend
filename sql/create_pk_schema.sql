@@ -1305,7 +1305,7 @@ CREATE TABLE repayment_trial_order (
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
     KEY idx_repayment_trial_order_trial (trial_id),
-    KEY idx_repayment_trial_order_loan_apply (loan_apply_id)
+    UNIQUE KEY uk_repayment_trial_order_loan_apply_id (loan_apply_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Repayment trial order details';
 
 CREATE TABLE repayment_trial_term (

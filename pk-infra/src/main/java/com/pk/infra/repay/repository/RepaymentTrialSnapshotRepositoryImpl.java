@@ -10,8 +10,11 @@ import com.pk.core.repay.port.RepaymentTrialSnapshotRepository.TrialSnapshotReco
 import com.pk.infra.repay.RepaymentTrialPersistenceMapper;
 import com.pk.infra.repay.mapper.RepaymentTrialSnapshotMapper;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +28,50 @@ public class RepaymentTrialSnapshotRepositoryImpl implements RepaymentTrialSnaps
 
     @Override
     @Transactional
-    public TrialSnapshotRecord insert(TrialSnapshotInsert insert, List<TrialOrderInsert> orders) {
+    public TrialSnapshotRecord replace(TrialSnapshotInsert insert, List<TrialOrderInsert> orders) {
+        deleteExistingByLoanApplyIds(orders);
+        return insertNew(insert, orders);
+    }
+
+    @Override
+    public Optional<TrialSnapshotRecord> findByTrialNo(String trialNo) {
+        return Optional.ofNullable(mapper.findByTrialNo(trialNo));
+    }
+
+    private void deleteExistingByLoanApplyIds(List<TrialOrderInsert> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return;
+        }
+        List<String> loanApplyIds = new ArrayList<>();
+        for (TrialOrderInsert order : orders) {
+            if (order.bill() != null && order.bill().loanApplyId() != null && !order.bill().loanApplyId().isBlank()) {
+                loanApplyIds.add(order.bill().loanApplyId());
+            }
+        }
+        if (loanApplyIds.isEmpty()) {
+            return;
+        }
+        List<RepaymentTrialSnapshotMapper.TrialOrderRef> existing = mapper.findOrdersByLoanApplyIds(loanApplyIds);
+        if (existing == null || existing.isEmpty()) {
+            return;
+        }
+        Set<Long> trialIds = new LinkedHashSet<>();
+        for (RepaymentTrialSnapshotMapper.TrialOrderRef ref : existing) {
+            trialIds.add(ref.trialId());
+            mapper.deleteTermDiscountsByOrderId(ref.orderId());
+            mapper.deleteTermsByOrderId(ref.orderId());
+            mapper.deleteVaChannelsByOwner("ORDER", ref.orderId());
+            mapper.deleteOrderById(ref.orderId());
+        }
+        for (Long trialId : trialIds) {
+            if (mapper.countOrdersByTrialId(trialId) == 0) {
+                mapper.deleteVaChannelsByOwner("SNAPSHOT", trialId);
+                mapper.deleteSnapshotById(trialId);
+            }
+        }
+    }
+
+    private TrialSnapshotRecord insertNew(TrialSnapshotInsert insert, List<TrialOrderInsert> orders) {
         RepaymentTrialInsertParam snapshotParam = new RepaymentTrialInsertParam();
         RepaymentTrialPersistenceMapper.fillSnapshotInsertParam(snapshotParam, insert);
         mapper.insertSnapshot(snapshotParam);
@@ -46,11 +92,6 @@ public class RepaymentTrialSnapshotRepositoryImpl implements RepaymentTrialSnaps
         }
 
         return RepaymentTrialPersistenceMapper.toRecord(snapshotParam, Instant.now());
-    }
-
-    @Override
-    public Optional<TrialSnapshotRecord> findByTrialNo(String trialNo) {
-        return Optional.ofNullable(mapper.findByTrialNo(trialNo));
     }
 
     private void insertVaChannels(String ownerType, long ownerId, LenderRepayVa defaultVa, LenderRepayVa spareVa, LenderRepayVa disabledDefaultVa) {
