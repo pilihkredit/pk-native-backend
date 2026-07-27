@@ -73,7 +73,7 @@
     </insert>
     <update id="updateById">
         UPDATE user_profile_bank_card
-            bank_code = #{bankCode},
+        SET bank_code = #{bankCode},
             card_no_hash = #{cardNoHash},
             card_no_ciphertext = #{cardNoCiphertext},
             card_no_nonce = #{cardNoNonce},
