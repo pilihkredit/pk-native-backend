@@ -3,6 +3,7 @@ package com.pk.infra.appconfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
@@ -52,5 +53,15 @@ class AppConfigFacadeTest {
                 .isInstanceOf(ApiException.class)
                 .extracting(ex -> ((ApiException) ex).apiCode())
                 .isEqualTo(ApiCode.INVALID_REQUEST_PARAMETERS);
+    }
+
+    @Test
+    void getValueByKeyRejectsPrivateProviderConfiguration() {
+        assertThatThrownBy(() -> facade.getValueByKey("advanceAiConf"))
+                .isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> facade.getValueByKey("trustDecisionConf"))
+                .isInstanceOf(ApiException.class);
+
+        verifyNoInteractions(appConfigRepository);
     }
 }

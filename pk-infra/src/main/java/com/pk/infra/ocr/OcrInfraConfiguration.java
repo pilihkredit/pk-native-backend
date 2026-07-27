@@ -8,9 +8,9 @@ import com.pk.core.profile.port.OcrVendorCallLogWriter;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.TrustDecisionKycPort;
 import com.pk.core.profile.port.TrustDecisionSessionStore;
+import com.pk.core.appconfig.port.AppConfigRepository;
 import com.pk.infra.auth.AuthInfraConfiguration;
 import com.pk.infra.ocr.mapper.OcrVendorCallLogMapper;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +21,14 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @Import(AuthInfraConfiguration.class)
 @EnableConfigurationProperties({OcrProperties.class, TrustDecisionProperties.class})
 public class OcrInfraConfiguration {
+    @Bean
+    OcrProviderConfigLoader ocrProviderConfigLoader(
+            AppConfigRepository appConfigRepository,
+            ObjectMapper objectMapper
+    ) {
+        return new OcrProviderConfigLoader(appConfigRepository, objectMapper);
+    }
+
     @Bean
     OcrVendorCallLogWriter ocrVendorCallLogWriter(OcrVendorCallLogMapper mapper) {
         return new OcrVendorCallLogWriterImpl(mapper);
@@ -36,16 +44,15 @@ public class OcrInfraConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "pk.ocr", name = "enabled", havingValue = "true")
     AdvanceAiOcrPort advanceAiOcrPort(
-            OcrProperties ocrProperties,
+            OcrProviderConfigLoader configLoader,
             StringRedisTemplate redisTemplate,
             ObjectMapper objectMapper,
             OcrVendorCallLogWriter ocrVendorCallLogWriter,
             OcrSensitiveJsonSupport ocrSensitiveJsonSupport
     ) {
-        return new AdvanceAiOcrClient(
-                ocrProperties,
+        return new AppConfigAdvanceAiOcrClient(
+                configLoader,
                 redisTemplate,
                 objectMapper,
                 ocrVendorCallLogWriter,
@@ -54,35 +61,31 @@ public class OcrInfraConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "pk.ocr", name = "enabled", havingValue = "true")
     OcrSessionStore ocrSessionStore(
             StringRedisTemplate redisTemplate,
             ObjectMapper objectMapper,
-            OcrProperties ocrProperties
+            OcrProviderConfigLoader configLoader
     ) {
-        return new RedisOcrSessionStore(redisTemplate, objectMapper, ocrProperties);
+        return new RedisOcrSessionStore(redisTemplate, objectMapper, configLoader);
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "pk.trustdecision", name = "enabled", havingValue = "true")
     TrustDecisionKycPort trustDecisionKycPort(
-            TrustDecisionProperties properties,
+            OcrProviderConfigLoader configLoader,
             ObjectMapper objectMapper,
             OcrVendorCallLogWriter ocrVendorCallLogWriter,
             OcrSensitiveJsonSupport ocrSensitiveJsonSupport
     ) {
-        properties.validateEnabledSettings();
-        return new TrustDecisionKycClient(
-                properties, objectMapper, ocrVendorCallLogWriter, ocrSensitiveJsonSupport);
+        return new AppConfigTrustDecisionKycClient(
+                configLoader, objectMapper, ocrVendorCallLogWriter, ocrSensitiveJsonSupport);
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "pk.trustdecision", name = "enabled", havingValue = "true")
     TrustDecisionSessionStore trustDecisionSessionStore(
             StringRedisTemplate redisTemplate,
             ObjectMapper objectMapper,
-            TrustDecisionProperties properties
+            OcrProviderConfigLoader configLoader
     ) {
-        return new RedisTrustDecisionSessionStore(redisTemplate, objectMapper, properties);
+        return new RedisTrustDecisionSessionStore(redisTemplate, objectMapper, configLoader);
     }
 }

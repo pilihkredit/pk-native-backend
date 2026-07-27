@@ -12,7 +12,7 @@ public class RedisTrustDecisionSessionStore implements TrustDecisionSessionStore
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
-    private final Duration sessionTtl;
+    private final java.util.function.Supplier<Duration> sessionTtlSupplier;
 
     public RedisTrustDecisionSessionStore(
             StringRedisTemplate redisTemplate,
@@ -21,7 +21,17 @@ public class RedisTrustDecisionSessionStore implements TrustDecisionSessionStore
     ) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
-        this.sessionTtl = properties.sessionTtl();
+        this.sessionTtlSupplier = properties::sessionTtl;
+    }
+
+    public RedisTrustDecisionSessionStore(
+            StringRedisTemplate redisTemplate,
+            ObjectMapper objectMapper,
+            OcrProviderConfigLoader configLoader
+    ) {
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+        this.sessionTtlSupplier = () -> configLoader.loadTrustDecision().sessionTtl();
     }
 
     @Override
@@ -41,7 +51,8 @@ public class RedisTrustDecisionSessionStore implements TrustDecisionSessionStore
     @Override
     public void save(long userId, TrustDecisionSessionState state) {
         try {
-            redisTemplate.opsForValue().set(key(userId), objectMapper.writeValueAsString(state), sessionTtl);
+        redisTemplate.opsForValue().set(
+                key(userId), objectMapper.writeValueAsString(state), sessionTtlSupplier.get());
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to persist TrustDecision session", exception);
         }

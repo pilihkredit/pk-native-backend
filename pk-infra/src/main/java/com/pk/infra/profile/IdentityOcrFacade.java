@@ -31,6 +31,7 @@ import com.pk.infra.ocr.OcrImageSupport;
 import com.pk.infra.ocr.OcrProperties;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class IdentityOcrFacade {
     public static final String MODULE_COMPLETED = "COMPLETED";
@@ -49,7 +50,7 @@ public class IdentityOcrFacade {
     private final UserProfileBindingRepository userProfileBindingRepository;
     private final OnboardingProgressFacade onboardingProgressFacade;
     private final IdentityVerificationCompletionService completionService;
-    private final OcrProperties ocrProperties;
+    private final Supplier<OcrProperties> ocrPropertiesSupplier;
     private final ObjectMapper objectMapper;
 
     public IdentityOcrFacade(
@@ -68,6 +69,52 @@ public class IdentityOcrFacade {
             OcrProperties ocrProperties,
             ObjectMapper objectMapper
     ) {
+        this(
+                advanceAiOcrPort, ocrSessionStore, profileIdentityRepository, sensitiveFieldEncryptor,
+                biometricImageStore, profileSyncOrchestrator, profileAfRepository, userDeviceWriter,
+                profileVersionRepository, userProfileBindingRepository, onboardingProgressFacade,
+                completionService, () -> ocrProperties, objectMapper);
+    }
+
+    public IdentityOcrFacade(
+            AdvanceAiOcrPort advanceAiOcrPort,
+            OcrSessionStore ocrSessionStore,
+            ProfileIdentityRepository profileIdentityRepository,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
+            BiometricImageStore biometricImageStore,
+            ProfileSyncOrchestrator profileSyncOrchestrator,
+            ProfileAfRepository profileAfRepository,
+            UserDeviceWriter userDeviceWriter,
+            ProfileVersionRepository profileVersionRepository,
+            UserProfileBindingRepository userProfileBindingRepository,
+            OnboardingProgressFacade onboardingProgressFacade,
+            IdentityVerificationCompletionService completionService,
+            com.pk.infra.ocr.OcrProviderConfigLoader configLoader,
+            ObjectMapper objectMapper
+    ) {
+        this(
+                advanceAiOcrPort, ocrSessionStore, profileIdentityRepository, sensitiveFieldEncryptor,
+                biometricImageStore, profileSyncOrchestrator, profileAfRepository, userDeviceWriter,
+                profileVersionRepository, userProfileBindingRepository, onboardingProgressFacade,
+                completionService, configLoader::loadAdvanceAi, objectMapper);
+    }
+
+    private IdentityOcrFacade(
+            AdvanceAiOcrPort advanceAiOcrPort,
+            OcrSessionStore ocrSessionStore,
+            ProfileIdentityRepository profileIdentityRepository,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
+            BiometricImageStore biometricImageStore,
+            ProfileSyncOrchestrator profileSyncOrchestrator,
+            ProfileAfRepository profileAfRepository,
+            UserDeviceWriter userDeviceWriter,
+            ProfileVersionRepository profileVersionRepository,
+            UserProfileBindingRepository userProfileBindingRepository,
+            OnboardingProgressFacade onboardingProgressFacade,
+            IdentityVerificationCompletionService completionService,
+            Supplier<OcrProperties> ocrPropertiesSupplier,
+            ObjectMapper objectMapper
+    ) {
         this.advanceAiOcrPort = advanceAiOcrPort;
         this.ocrSessionStore = ocrSessionStore;
         this.profileIdentityRepository = profileIdentityRepository;
@@ -80,7 +127,7 @@ public class IdentityOcrFacade {
         this.userProfileBindingRepository = userProfileBindingRepository;
         this.onboardingProgressFacade = onboardingProgressFacade;
         this.completionService = completionService;
-        this.ocrProperties = ocrProperties;
+        this.ocrPropertiesSupplier = ocrPropertiesSupplier;
         this.objectMapper = objectMapper;
     }
 
@@ -177,7 +224,8 @@ public class IdentityOcrFacade {
             String traceId
     ) {
         String normalizedMobileNo = requireMobile(mobileNo);
-        byte[] imageBytes = OcrImageSupport.decodeBase64Image(imageBase64, ocrProperties.maxImageBytes());
+        byte[] imageBytes = OcrImageSupport.decodeBase64Image(
+                imageBase64, ocrPropertiesSupplier.get().maxImageBytes());
         OcrCallContextHolder.set(OcrCallContext.of(
                 userId,
                 partnerUserId,
@@ -256,7 +304,8 @@ public class IdentityOcrFacade {
                     current.ocrCheckVendorCallLogId(),
                     Instant.now()
             ));
-            return new LivenessCheckResult(result.livenessScore(), true, ocrProperties.livenessThreshold());
+            return new LivenessCheckResult(
+                    result.livenessScore(), true, ocrPropertiesSupplier.get().livenessThreshold());
         } finally {
             OcrCallContextHolder.clear();
         }
@@ -311,11 +360,13 @@ public class IdentityOcrFacade {
             throw new ApiException(ApiCode.INVALID_EKTP_FORMAT);
         }
 
-        byte[] faceImage = OcrImageSupport.decodeBase64Image(command.faceImageBase64(), ocrProperties.maxImageBytes());
+        byte[] faceImage = OcrImageSupport.decodeBase64Image(
+                command.faceImageBase64(), ocrPropertiesSupplier.get().maxImageBytes());
         String idCardImageEncryptedRef;
         byte[] idCardImage;
         if (!isBlank(command.idCardImageBase64())) {
-            idCardImage = OcrImageSupport.decodeBase64Image(command.idCardImageBase64(), ocrProperties.maxImageBytes());
+            idCardImage = OcrImageSupport.decodeBase64Image(
+                    command.idCardImageBase64(), ocrPropertiesSupplier.get().maxImageBytes());
             idCardImageEncryptedRef = biometricImageStore.store(
                     normalizedMobileNo,
                     BiometricImageKind.ID_CARD,
@@ -365,7 +416,7 @@ public class IdentityOcrFacade {
                 command.requestId(),
                 compareResult.similarity(),
                 true,
-                ocrProperties.faceThreshold(),
+                ocrPropertiesSupplier.get().faceThreshold(),
                 completion.moduleStatus(),
                 completion.lenderResponse()
         );
@@ -382,7 +433,7 @@ public class IdentityOcrFacade {
             DevLenderSyncCommand command
     ) {
         String normalizedMobileNo = normalizeMobile(mobileNo);
-        if (!ocrProperties.devLenderSyncEnabled()) {
+        if (!ocrPropertiesSupplier.get().devLenderSyncEnabled()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "dev lender sync is disabled");
         }
         if (isBlank(command.requestId())) {
@@ -435,7 +486,8 @@ public class IdentityOcrFacade {
         if (isBlank(command.idCardBase64())) {
             return command;
         }
-        byte[] imageBytes = OcrImageSupport.decodeBase64Image(command.idCardBase64(), ocrProperties.maxImageBytes());
+        byte[] imageBytes = OcrImageSupport.decodeBase64Image(
+                command.idCardBase64(), ocrPropertiesSupplier.get().maxImageBytes());
         OcrCallContextHolder.set(OcrCallContext.of(
                 userId,
                 partnerUserId,
@@ -620,7 +672,8 @@ public class IdentityOcrFacade {
         if (isBlank(imageBase64)) {
             return "missing://mobile/" + normalizedMobileNo + "/" + kind.objectName();
         }
-        byte[] imageBytes = OcrImageSupport.decodeBase64Image(imageBase64, ocrProperties.maxImageBytes());
+        byte[] imageBytes = OcrImageSupport.decodeBase64Image(
+                imageBase64, ocrPropertiesSupplier.get().maxImageBytes());
         return biometricImageStore.store(normalizedMobileNo, kind, imageBytes);
     }
 
@@ -661,7 +714,7 @@ public class IdentityOcrFacade {
                 requestId,
                 0D,
                 true,
-                ocrProperties.faceThreshold(),
+                ocrPropertiesSupplier.get().faceThreshold(),
                 existing.moduleStatus(),
                 null
         );

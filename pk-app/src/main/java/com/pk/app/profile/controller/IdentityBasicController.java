@@ -11,7 +11,6 @@ import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/profile/identity")
-@ConditionalOnProperty(prefix = "pk.ocr", name = "enabled", havingValue = "true")
 public class IdentityBasicController {
     private final IdentityOcrApplicationService identityOcrApplicationService;
 

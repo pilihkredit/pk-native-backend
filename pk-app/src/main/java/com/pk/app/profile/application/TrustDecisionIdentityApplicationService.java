@@ -14,11 +14,9 @@ import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.infra.profile.TrustDecisionIdentityFacade;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConditionalOnProperty(prefix = "pk.trustdecision", name = "enabled", havingValue = "true")
 public class TrustDecisionIdentityApplicationService {
     private final TrustDecisionIdentityFacade facade;
     private final PendanaanProperties pendanaanProperties;

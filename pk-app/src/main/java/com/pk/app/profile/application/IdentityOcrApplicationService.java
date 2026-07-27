@@ -18,11 +18,9 @@ import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.infra.profile.IdentityOcrFacade;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConditionalOnProperty(prefix = "pk.ocr", name = "enabled", havingValue = "true")
 public class IdentityOcrApplicationService {
     private final IdentityOcrFacade identityOcrFacade;
     private final PendanaanProperties pendanaanProperties;

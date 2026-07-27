@@ -19,6 +19,7 @@ import com.pk.infra.ocr.OcrImageSupport;
 import com.pk.infra.ocr.TrustDecisionLenderRawOcrDetailBuilder;
 import com.pk.infra.ocr.TrustDecisionProperties;
 import java.time.Instant;
+import java.util.function.Supplier;
 
 public class TrustDecisionIdentityFacade {
     private static final String CHANNEL = "trustDecision";
@@ -30,7 +31,7 @@ public class TrustDecisionIdentityFacade {
     private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private final BiometricImageStore biometricImageStore;
     private final IdentityVerificationCompletionService completionService;
-    private final TrustDecisionProperties properties;
+    private final Supplier<TrustDecisionProperties> propertiesSupplier;
     private final ObjectMapper objectMapper;
 
     public TrustDecisionIdentityFacade(
@@ -70,7 +71,27 @@ public class TrustDecisionIdentityFacade {
         this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
         this.biometricImageStore = biometricImageStore;
         this.completionService = completionService;
-        this.properties = properties;
+        this.propertiesSupplier = () -> properties;
+        this.objectMapper = objectMapper;
+    }
+
+    public TrustDecisionIdentityFacade(
+            TrustDecisionKycPort trustDecisionKycPort,
+            TrustDecisionSessionStore sessionStore,
+            ProfileIdentityRepository profileIdentityRepository,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
+            BiometricImageStore biometricImageStore,
+            IdentityVerificationCompletionService completionService,
+            com.pk.infra.ocr.OcrProviderConfigLoader configLoader,
+            ObjectMapper objectMapper
+    ) {
+        this.trustDecisionKycPort = trustDecisionKycPort;
+        this.sessionStore = sessionStore;
+        this.profileIdentityRepository = profileIdentityRepository;
+        this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
+        this.biometricImageStore = biometricImageStore;
+        this.completionService = completionService;
+        this.propertiesSupplier = configLoader::loadTrustDecision;
         this.objectMapper = objectMapper;
     }
 
@@ -82,7 +103,8 @@ public class TrustDecisionIdentityFacade {
             String clientRequestId,
             String traceId
     ) {
-        byte[] image = OcrImageSupport.decodeBase64Image(imageBase64, properties.maxImageBytes());
+        byte[] image = OcrImageSupport.decodeBase64Image(
+                imageBase64, propertiesSupplier.get().maxImageBytes());
         TrustDecisionKycPort.OcrResult result;
         Long auditId;
         setContext(userId, partnerUserId, mobileNo, clientRequestId, traceId);
@@ -128,7 +150,8 @@ public class TrustDecisionIdentityFacade {
             String traceId
     ) {
         TrustDecisionSessionState current = requireOcrSession(userId);
-        byte[] image = OcrImageSupport.decodeBase64Image(imageBase64, properties.maxImageBytes());
+        byte[] image = OcrImageSupport.decodeBase64Image(
+                imageBase64, propertiesSupplier.get().maxImageBytes());
         TrustDecisionKycPort.LivenessResult result;
         setContext(userId, partnerUserId, mobileNo, clientRequestId, traceId);
         try {
@@ -178,9 +201,9 @@ public class TrustDecisionIdentityFacade {
             throw new ApiException(ApiCode.OCR_SESSION_INVALID);
         }
         byte[] faceImage = OcrImageSupport.decodeBase64Image(
-                command.faceImageBase64(), properties.maxImageBytes());
+                command.faceImageBase64(), propertiesSupplier.get().maxImageBytes());
         byte[] idCardImage = OcrImageSupport.decodeBase64Image(
-                command.idCardImageBase64(), properties.maxImageBytes());
+                command.idCardImageBase64(), propertiesSupplier.get().maxImageBytes());
         setContext(userId, partnerUserId, mobileNo, command.requestId(), traceId);
         TrustDecisionKycPort.FaceCompareResult compareResult;
         try {

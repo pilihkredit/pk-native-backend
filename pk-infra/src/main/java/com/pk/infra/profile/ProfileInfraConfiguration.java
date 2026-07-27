@@ -150,7 +150,6 @@ public class ProfileInfraConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "pk.ocr", name = "enabled", havingValue = "true")
     IdentityOcrFacade identityOcrFacade(
             com.pk.core.profile.port.AdvanceAiOcrPort advanceAiOcrPort,
             com.pk.core.profile.port.OcrSessionStore ocrSessionStore,
@@ -164,7 +163,7 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
             OnboardingProgressFacade onboardingProgressFacade,
             IdentityVerificationCompletionService completionService,
-            com.pk.infra.ocr.OcrProperties ocrProperties,
+            com.pk.infra.ocr.OcrProviderConfigLoader configLoader,
             ObjectMapper objectMapper
     ) {
         return new IdentityOcrFacade(
@@ -180,13 +179,12 @@ public class ProfileInfraConfiguration {
                 userProfileBindingRepository,
                 onboardingProgressFacade,
                 completionService,
-                ocrProperties,
+                configLoader,
                 objectMapper
         );
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "pk.trustdecision", name = "enabled", havingValue = "true")
     TrustDecisionIdentityFacade trustDecisionIdentityFacade(
             com.pk.core.profile.port.TrustDecisionKycPort trustDecisionKycPort,
             com.pk.core.profile.port.TrustDecisionSessionStore trustDecisionSessionStore,
@@ -194,7 +192,7 @@ public class ProfileInfraConfiguration {
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             com.pk.core.profile.port.BiometricImageStore biometricImageStore,
             IdentityVerificationCompletionService completionService,
-            com.pk.infra.ocr.TrustDecisionProperties properties,
+            com.pk.infra.ocr.OcrProviderConfigLoader configLoader,
             ObjectMapper objectMapper
     ) {
         return new TrustDecisionIdentityFacade(
@@ -204,7 +202,7 @@ public class ProfileInfraConfiguration {
                 sensitiveFieldEncryptor,
                 biometricImageStore,
                 completionService,
-                properties,
+                configLoader,
                 objectMapper
         );
     }

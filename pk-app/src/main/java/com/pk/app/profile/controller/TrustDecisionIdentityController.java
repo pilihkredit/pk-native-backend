@@ -12,7 +12,6 @@ import com.pk.app.profile.dto.response.TrustDecisionOcrCheckResponse;
 import com.pk.app.security.SecurityContextSupport;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/profile/identity/tongdun")
-@ConditionalOnProperty(prefix = "pk.trustdecision", name = "enabled", havingValue = "true")
 public class TrustDecisionIdentityController {
     private final TrustDecisionIdentityApplicationService applicationService;
 

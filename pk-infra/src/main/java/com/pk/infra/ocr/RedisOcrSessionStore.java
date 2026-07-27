@@ -12,7 +12,7 @@ public class RedisOcrSessionStore implements OcrSessionStore {
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
-    private final Duration sessionTtl;
+    private final java.util.function.Supplier<Duration> sessionTtlSupplier;
 
     public RedisOcrSessionStore(
             StringRedisTemplate redisTemplate,
@@ -21,7 +21,17 @@ public class RedisOcrSessionStore implements OcrSessionStore {
     ) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
-        this.sessionTtl = ocrProperties.sessionTtl();
+        this.sessionTtlSupplier = ocrProperties::sessionTtl;
+    }
+
+    public RedisOcrSessionStore(
+            StringRedisTemplate redisTemplate,
+            ObjectMapper objectMapper,
+            OcrProviderConfigLoader configLoader
+    ) {
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+        this.sessionTtlSupplier = () -> configLoader.loadAdvanceAi().sessionTtl();
     }
 
     @Override
@@ -43,7 +53,7 @@ public class RedisOcrSessionStore implements OcrSessionStore {
             redisTemplate.opsForValue().set(
                     key(userId),
                     objectMapper.writeValueAsString(state),
-                    sessionTtl
+                    sessionTtlSupplier.get()
             );
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to persist OCR session", exception);
