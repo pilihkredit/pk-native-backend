@@ -8,7 +8,9 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface LoanQuoteMapper {
-    int upsertQuote(LoanQuoteInsertParam param);
+    int insertQuote(LoanQuoteInsertParam param);
+
+    int updateQuoteById(LoanQuoteInsertParam param);
 
     int deleteTermsByQuoteId(@Param("quoteId") long quoteId);
 
@@ -17,4 +19,15 @@ public interface LoanQuoteMapper {
     int countTermsByQuoteId(@Param("quoteId") long quoteId);
 
     LoanQuoteRow findByQuoteNo(@Param("quoteNo") String quoteNo);
+
+    LoanQuoteRow findLatestByApplyProductRepay(
+            @Param("applyId") String applyId,
+            @Param("productCode") String productCode,
+            @Param("repayMethod") String repayMethod
+    );
+
+    int countLoanApplicationReferences(
+            @Param("quoteId") long quoteId,
+            @Param("quoteNo") String quoteNo
+    );
 }

@@ -3,7 +3,9 @@ package com.pk.infra.loan.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,15 +32,75 @@ class LoanQuoteRepositoryImplTest {
     private LoanQuoteRepositoryImpl repository;
 
     @Test
-    void upsertReplacesTermsAfterQuoteUpsert() {
-        when(mapper.upsertQuote(any())).thenAnswer(invocation -> {
+    void insertsWhenNoExistingQuote() {
+        when(mapper.findLatestByApplyProductRepay("APPLY-1", "PD001", "RP001")).thenReturn(null);
+        when(mapper.insertQuote(any())).thenAnswer(invocation -> {
             LoanQuoteInsertParam param = invocation.getArgument(0);
             param.setId(42L);
             return 1;
         });
 
-        LoanQuoteRepository.LoanQuoteInsert insert = new LoanQuoteRepository.LoanQuoteInsert(
-                "QUOTE-1",
+        LoanQuoteRepository.LoanQuoteRecord record = repository.upsert(sampleInsert("QUOTE-NEW"), List.of(sampleTerm()));
+
+        assertThat(record.id()).isEqualTo(42L);
+        assertThat(record.quoteNo()).isEqualTo("QUOTE-NEW");
+        verify(mapper).insertQuote(any(LoanQuoteInsertParam.class));
+        verify(mapper, never()).updateQuoteById(any());
+        verify(mapper).deleteTermsByQuoteId(42L);
+        verify(mapper).insertTerm(any(LoanQuoteTermInsertParam.class));
+    }
+
+    @Test
+    void overwritesDraftAndRefreshesQuoteNo() {
+        LoanQuoteRow draft = new LoanQuoteRow();
+        draft.setId(10L);
+        draft.setQuoteNo("QUOTE-OLD");
+        when(mapper.findLatestByApplyProductRepay("APPLY-1", "PD001", "RP001")).thenReturn(draft);
+        when(mapper.countLoanApplicationReferences(10L, "QUOTE-OLD")).thenReturn(0);
+        when(mapper.updateQuoteById(any())).thenReturn(1);
+
+        LoanQuoteRepository.LoanQuoteRecord record = repository.upsert(sampleInsert("QUOTE-NEW"), List.of(sampleTerm()));
+
+        assertThat(record.id()).isEqualTo(10L);
+        assertThat(record.quoteNo()).isEqualTo("QUOTE-NEW");
+        ArgumentCaptor<LoanQuoteInsertParam> captor = ArgumentCaptor.forClass(LoanQuoteInsertParam.class);
+        verify(mapper).updateQuoteById(captor.capture());
+        assertThat(captor.getValue().getId()).isEqualTo(10L);
+        assertThat(captor.getValue().getQuoteNo()).isEqualTo("QUOTE-NEW");
+        verify(mapper, never()).insertQuote(any());
+        InOrder order = inOrder(mapper);
+        order.verify(mapper).updateQuoteById(any());
+        order.verify(mapper).deleteTermsByQuoteId(10L);
+        order.verify(mapper).insertTerm(any());
+    }
+
+    @Test
+    void insertsNewWhenLatestQuoteAlreadyReferencedByLoanApplication() {
+        LoanQuoteRow locked = new LoanQuoteRow();
+        locked.setId(10L);
+        locked.setQuoteNo("QUOTE-LOCKED");
+        when(mapper.findLatestByApplyProductRepay("APPLY-1", "PD001", "RP001")).thenReturn(locked);
+        when(mapper.countLoanApplicationReferences(10L, "QUOTE-LOCKED")).thenReturn(1);
+        when(mapper.insertQuote(any())).thenAnswer(invocation -> {
+            LoanQuoteInsertParam param = invocation.getArgument(0);
+            param.setId(99L);
+            return 1;
+        });
+
+        LoanQuoteRepository.LoanQuoteRecord record = repository.upsert(sampleInsert("QUOTE-NEW"), List.of(sampleTerm()));
+
+        assertThat(record.id()).isEqualTo(99L);
+        assertThat(record.quoteNo()).isEqualTo("QUOTE-NEW");
+        verify(mapper).insertQuote(any(LoanQuoteInsertParam.class));
+        verify(mapper, never()).updateQuoteById(any());
+        verify(mapper).deleteTermsByQuoteId(99L);
+        verify(mapper, never()).deleteTermsByQuoteId(eq(10L));
+        verify(mapper).deleteTermsByQuoteId(anyLong());
+    }
+
+    private static LoanQuoteRepository.LoanQuoteInsert sampleInsert(String quoteNo) {
+        return new LoanQuoteRepository.LoanQuoteInsert(
+                quoteNo,
                 1L,
                 100L,
                 88L,
@@ -46,6 +108,9 @@ class LoanQuoteRepositoryImplTest {
                 sampleQuote(),
                 Instant.parse("2026-07-22T00:00:00Z")
         );
+    }
+
+    private static LoanQuoteRepository.LoanQuoteTermInsert sampleTerm() {
         LenderTrialTerm term = new LenderTrialTerm(
                 1,
                 1747180800000L,
@@ -78,25 +143,7 @@ class LoanQuoteRepositoryImplTest {
                 BigDecimal.ZERO,
                 BigDecimal.ZERO
         );
-
-        LoanQuoteRepository.LoanQuoteRecord record = repository.upsert(
-                insert,
-                List.of(new LoanQuoteRepository.LoanQuoteTermInsert(1L, term))
-        );
-
-        assertThat(record.id()).isEqualTo(42L);
-        assertThat(record.quoteNo()).isEqualTo("QUOTE-1");
-        assertThat(record.couponId()).isEqualTo(88L);
-        assertThat(record.externalInteractionId()).isEqualTo(77L);
-
-        InOrder order = inOrder(mapper);
-        order.verify(mapper).upsertQuote(any(LoanQuoteInsertParam.class));
-        order.verify(mapper).deleteTermsByQuoteId(42L);
-        ArgumentCaptor<LoanQuoteTermInsertParam> termCaptor = ArgumentCaptor.forClass(LoanQuoteTermInsertParam.class);
-        order.verify(mapper).insertTerm(termCaptor.capture());
-        assertThat(termCaptor.getValue().getQuoteId()).isEqualTo(42L);
-        assertThat(termCaptor.getValue().getValueDate()).isEqualTo(1747180800000L);
-        verify(mapper).deleteTermsByQuoteId(anyLong());
+        return new LoanQuoteRepository.LoanQuoteTermInsert(1L, term);
     }
 
     private static LoanTrialQuoteDetail sampleQuote() {

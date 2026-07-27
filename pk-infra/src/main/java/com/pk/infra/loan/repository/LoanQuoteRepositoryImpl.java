@@ -19,12 +19,31 @@ public class LoanQuoteRepositoryImpl implements LoanQuoteRepository {
     @Override
     @Transactional
     public LoanQuoteRecord upsert(LoanQuoteInsert command, List<LoanQuoteTermInsert> terms) {
+        if (command == null || command.quote() == null) {
+            throw new IllegalArgumentException("Loan quote insert requires quote detail");
+        }
         LoanQuoteInsertParam param = new LoanQuoteInsertParam();
         LoanQuotePersistenceMapper.fillInsertParam(param, command);
-        mapper.upsertQuote(param);
-        if (param.getId() <= 0) {
-            throw new IllegalStateException("Failed to upsert loan_quote");
+
+        String applyId = command.quote().applyId();
+        String productCode = command.quote().productCode();
+        String repayMethod = command.quote().repayMethod();
+        LoanQuoteRow latest = mapper.findLatestByApplyProductRepay(applyId, productCode, repayMethod);
+        boolean overwriteDraft = latest != null && !isReferenced(latest);
+
+        if (overwriteDraft) {
+            param.setId(latest.getId());
+            int updated = mapper.updateQuoteById(param);
+            if (updated != 1) {
+                throw new IllegalStateException("Failed to update draft loan_quote id=" + latest.getId());
+            }
+        } else {
+            mapper.insertQuote(param);
+            if (param.getId() <= 0) {
+                throw new IllegalStateException("Failed to insert loan_quote");
+            }
         }
+
         long quoteId = param.getId();
         mapper.deleteTermsByQuoteId(quoteId);
         if (terms != null) {
@@ -35,6 +54,10 @@ public class LoanQuoteRepositoryImpl implements LoanQuoteRepository {
             }
         }
         return LoanQuotePersistenceMapper.toRecord(param);
+    }
+
+    private boolean isReferenced(LoanQuoteRow quote) {
+        return mapper.countLoanApplicationReferences(quote.getId(), quote.getQuoteNo()) > 0;
     }
 
     @Override
