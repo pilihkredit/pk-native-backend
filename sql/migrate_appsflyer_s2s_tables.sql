@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS adjust_event_record (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     server_event_callback_id BIGINT UNSIGNED NULL COMMENT 'Related lender_server_event_callback.id',
     partner_user_id VARCHAR(64) NULL COMMENT 'Partner user identifier',
-    profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier',
+    user_id BIGINT UNSIGNED NULL COMMENT 'user_profile.id',
     device_uuid VARCHAR(128) NULL COMMENT 'Device identifier (deviceNo)',
     event_name VARCHAR(128) NOT NULL COMMENT 'AF event name',
     app_token VARCHAR(128) NULL COMMENT 'AF App ID',

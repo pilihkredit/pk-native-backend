@@ -8,7 +8,9 @@ import com.pk.core.attribution.port.AdjustEventConfigRepository;
 import com.pk.core.attribution.port.AdjustEventRecordRepository;
 import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.callback.port.ServerEventCallbackParser;
+import com.pk.core.profile.ProfileAfData;
 import com.pk.core.profile.ProfileDeviceData;
+import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileDeviceRepository;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -37,6 +39,7 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
     private final AdjustEventConfigRepository adjustEventConfigRepository;
     private final AdjustEventRecordRepository adjustEventRecordRepository;
     private final ProfileDeviceRepository profileDeviceRepository;
+    private final ProfileAfRepository profileAfRepository;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
@@ -45,12 +48,14 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
             AdjustEventConfigRepository adjustEventConfigRepository,
             AdjustEventRecordRepository adjustEventRecordRepository,
             ProfileDeviceRepository profileDeviceRepository,
+            ProfileAfRepository profileAfRepository,
             ObjectMapper objectMapper
     ) {
         this.adjustConfigRepository = adjustConfigRepository;
         this.adjustEventConfigRepository = adjustEventConfigRepository;
         this.adjustEventRecordRepository = adjustEventRecordRepository;
         this.profileDeviceRepository = profileDeviceRepository;
+        this.profileAfRepository = profileAfRepository;
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     }
@@ -176,9 +181,17 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
                     gpsAdid = fromJson.gpsAdid();
                 }
             }
-        }
-        if (isBlank(appsflyerId)) {
-            appsflyerId = firstNonBlank(event.adId(), gpsAdid);
+            // Client install API stores AF id in user_profile_af, not always in device_json.
+            if (isBlank(appsflyerId) || isBlank(idfa) || isBlank(idfv) || isBlank(gpsAdid)) {
+                Optional<ProfileAfData> af = profileAfRepository.findLatestByDeviceNo(event.deviceNo());
+                if (af.isPresent()) {
+                    ProfileAfData data = af.get();
+                    appsflyerId = firstNonBlank(appsflyerId, data.appsflyerId());
+                    idfa = firstNonBlank(idfa, data.idfa());
+                    idfv = firstNonBlank(idfv, data.idfv());
+                    gpsAdid = firstNonBlank(gpsAdid, data.advertisingId(), data.afAdId());
+                }
+            }
         }
         return new DeviceIds(appsflyerId, idfa, idfv, gpsAdid);
     }

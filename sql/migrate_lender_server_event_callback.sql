@@ -29,8 +29,33 @@ CREATE TABLE IF NOT EXISTS lender_server_event_callback (
   COMMENT='Lender server event push callbacks (structured fields)';
 
 -- Retarget AF report rows from callback_event to lender_server_event_callback.
-ALTER TABLE adjust_event_record
-    CHANGE COLUMN callback_event_id server_event_callback_id BIGINT UNSIGNED NULL
-        COMMENT 'Related lender_server_event_callback.id';
+-- Existing envs may still have callback_event_id / profile_id column names.
+SET @schema_name = DATABASE();
+
+SET @has_callback_col = (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'adjust_event_record'
+      AND COLUMN_NAME = 'callback_event_id'
+);
+SET @sql = IF(
+    @has_callback_col > 0,
+    'ALTER TABLE adjust_event_record CHANGE COLUMN callback_event_id server_event_callback_id BIGINT UNSIGNED NULL COMMENT ''Related lender_server_event_callback.id''',
+    'SELECT ''skip: callback_event_id rename'' AS migration_info'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @has_profile_col = (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'adjust_event_record'
+      AND COLUMN_NAME = 'profile_id'
+);
+SET @sql = IF(
+    @has_profile_col > 0,
+    'ALTER TABLE adjust_event_record CHANGE COLUMN profile_id user_id BIGINT UNSIGNED NULL COMMENT ''user_profile.id''',
+    'SELECT ''skip: profile_id rename'' AS migration_info'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 DROP TABLE IF EXISTS callback_event;
