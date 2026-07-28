@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS adjust_event_config (
 
 CREATE TABLE IF NOT EXISTS adjust_event_record (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    callback_event_id BIGINT UNSIGNED NULL COMMENT 'Related callback_event.id',
+    server_event_callback_id BIGINT UNSIGNED NULL COMMENT 'Related lender_server_event_callback.id',
     partner_user_id VARCHAR(64) NULL COMMENT 'Partner user identifier',
     profile_id BIGINT UNSIGNED NULL COMMENT 'User profile identifier',
     device_uuid VARCHAR(128) NULL COMMENT 'Device identifier (deviceNo)',
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS adjust_event_record (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    KEY idx_adjust_event_record_callback (callback_event_id),
+    KEY idx_adjust_event_record_server_event (server_event_callback_id),
     KEY idx_adjust_event_record_partner_event (partner_user_id, event_name),
     KEY idx_adjust_event_record_status (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AppsFlyer S2S report records';

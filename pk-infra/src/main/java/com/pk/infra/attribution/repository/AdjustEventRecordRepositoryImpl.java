@@ -15,7 +15,7 @@ public class AdjustEventRecordRepositoryImpl implements AdjustEventRecordReposit
     @Override
     public long insert(AdjustEventRecordInsert record) {
         AdjustEventRecordInsertParam param = new AdjustEventRecordInsertParam(
-                record.callbackEventId(),
+                record.serverEventCallbackId(),
                 record.partnerUserId(),
                 record.userId(),
                 record.deviceUuid(),

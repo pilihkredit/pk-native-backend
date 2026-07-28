@@ -2,7 +2,7 @@ package com.pk.infra.attribution.repository;
 
 public class AdjustEventRecordInsertParam {
     private Long id;
-    private Long callbackEventId;
+    private Long serverEventCallbackId;
     private String partnerUserId;
     private Long userId;
     private String deviceUuid;
@@ -18,7 +18,7 @@ public class AdjustEventRecordInsertParam {
     private String extraParams;
 
     public AdjustEventRecordInsertParam(
-            Long callbackEventId,
+            Long serverEventCallbackId,
             String partnerUserId,
             Long userId,
             String deviceUuid,
@@ -33,7 +33,7 @@ public class AdjustEventRecordInsertParam {
             int retryCount,
             String extraParams
     ) {
-        this.callbackEventId = callbackEventId;
+        this.serverEventCallbackId = serverEventCallbackId;
         this.partnerUserId = partnerUserId;
         this.userId = userId;
         this.deviceUuid = deviceUuid;
@@ -57,8 +57,8 @@ public class AdjustEventRecordInsertParam {
         this.id = id;
     }
 
-    public Long getCallbackEventId() {
-        return callbackEventId;
+    public Long getServerEventCallbackId() {
+        return serverEventCallbackId;
     }
 
     public String getPartnerUserId() {

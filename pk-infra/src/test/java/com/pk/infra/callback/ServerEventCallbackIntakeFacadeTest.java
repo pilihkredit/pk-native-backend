@@ -8,11 +8,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.pk.core.attribution.port.AppsFlyerS2sReporter;
-import com.pk.core.callback.CallbackProcessStatus;
-import com.pk.core.callback.CallbackTypes;
-import com.pk.core.callback.port.CallbackEventRepository;
+import com.pk.core.callback.port.LenderServerEventCallbackRepository;
 import com.pk.core.callback.port.ServerEventCallbackParser;
-import com.pk.core.credit.CreditProviderCode;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class ServerEventCallbackIntakeFacadeTest {
     @Mock
-    private CallbackEventRepository callbackEventRepository;
+    private LenderServerEventCallbackRepository lenderServerEventCallbackRepository;
     @Mock
     private ServerEventCallbackParser serverEventCallbackParser;
     @Mock
@@ -36,46 +33,49 @@ class ServerEventCallbackIntakeFacadeTest {
     @BeforeEach
     void setUp() {
         facade = new ServerEventCallbackIntakeFacade(
-                callbackEventRepository,
+                lenderServerEventCallbackRepository,
                 serverEventCallbackParser,
                 appsFlyerS2sReporter
         );
     }
 
     @Test
-    void storesNewEventPushAsProcessedCallbackEvent() {
+    void storesNewEventPushWithDocumentFields() {
         when(serverEventCallbackParser.parse("{}")).thenReturn(parsedEvent());
-        when(callbackEventRepository.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        when(callbackEventRepository.insert(any())).thenReturn(42L);
+        when(lenderServerEventCallbackRepository.findByEventId("USR202506020001")).thenReturn(Optional.empty());
+        when(lenderServerEventCallbackRepository.insert(any())).thenReturn(42L);
         when(appsFlyerS2sReporter.report(any(Long.class), any()))
                 .thenReturn(AppsFlyerS2sReporter.ReportResult.recorded(9L, "OK"));
 
         ServerEventCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
 
-        assertThat(result.callbackEventId()).isEqualTo(42L);
+        assertThat(result.serverEventCallbackId()).isEqualTo(42L);
         assertThat(result.duplicate()).isFalse();
-        ArgumentCaptor<CallbackEventRepository.CallbackEventInsert> captor =
-                ArgumentCaptor.forClass(CallbackEventRepository.CallbackEventInsert.class);
-        verify(callbackEventRepository).insert(captor.capture());
-        assertThat(captor.getValue().providerCode()).isEqualTo(CreditProviderCode.PENDANAAN);
-        assertThat(captor.getValue().callbackType()).isEqualTo(CallbackTypes.EVENT_PUSH);
-        assertThat(captor.getValue().businessId()).isEqualTo("USR202506020001");
-        assertThat(captor.getValue().idempotencyKey())
-                .isEqualTo("pendanaan:EVENT_PUSH:USR202506020001");
-        assertThat(captor.getValue().externalStatus()).isEqualTo("BASIC_AUTH_FINISH");
-        assertThat(captor.getValue().payloadJson()).isEqualTo("{}");
-        assertThat(captor.getValue().processStatus()).isEqualTo(CallbackProcessStatus.PROCESSED);
+        ArgumentCaptor<LenderServerEventCallbackRepository.LenderServerEventCallbackInsert> captor =
+                ArgumentCaptor.forClass(LenderServerEventCallbackRepository.LenderServerEventCallbackInsert.class);
+        verify(lenderServerEventCallbackRepository).insert(captor.capture());
+        assertThat(captor.getValue().eventId()).isEqualTo("USR202506020001");
+        assertThat(captor.getValue().eventType()).isEqualTo("BASIC_AUTH_FINISH");
+        assertThat(captor.getValue().eventTime()).isEqualTo(1749792000000L);
+        assertThat(captor.getValue().value()).isEqualByComparingTo("10.5");
+        assertThat(captor.getValue().partnerUserId()).isEqualTo("OPEN_USER_10001");
+        assertThat(captor.getValue().deviceNo()).isEqualTo("DEVICE202506020001");
+        assertThat(captor.getValue().systemPlatform()).isEqualTo("Android");
+        assertThat(captor.getValue().adId()).isEqualTo("gaid-demo-value");
         verify(appsFlyerS2sReporter).report(eq(42L), any());
     }
 
     @Test
     void returnsExistingRecordForDuplicateEventPush() {
         when(serverEventCallbackParser.parse("{}")).thenReturn(parsedEvent());
-        when(callbackEventRepository.findByIdempotencyKey(any())).thenReturn(Optional.of(existingRecord()));
+        when(lenderServerEventCallbackRepository.findByEventId("USR202506020001"))
+                .thenReturn(Optional.of(new LenderServerEventCallbackRepository.LenderServerEventCallbackRecord(
+                        7L, "USR202506020001", "BASIC_AUTH_FINISH"
+                )));
 
         ServerEventCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
 
-        assertThat(result.callbackEventId()).isEqualTo(7L);
+        assertThat(result.serverEventCallbackId()).isEqualTo(7L);
         assertThat(result.duplicate()).isTrue();
         verifyNoInteractions(appsFlyerS2sReporter);
     }
@@ -97,20 +97,6 @@ class ServerEventCallbackIntakeFacadeTest {
                 "DEVICE202506020001",
                 "Android",
                 "gaid-demo-value"
-        );
-    }
-
-    private static CallbackEventRepository.CallbackEventRecord existingRecord() {
-        return new CallbackEventRepository.CallbackEventRecord(
-                7L,
-                "CB-1",
-                CreditProviderCode.PENDANAAN,
-                CallbackTypes.EVENT_PUSH,
-                "USR202506020001",
-                "pendanaan:EVENT_PUSH:USR202506020001",
-                "BASIC_AUTH_FINISH",
-                "{}",
-                CallbackProcessStatus.PROCESSED
         );
     }
 }

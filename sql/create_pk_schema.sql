@@ -1440,26 +1440,30 @@ CREATE TABLE external_interaction (
     KEY idx_external_interaction_mobile_created (mobile_no, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='External API interaction audit records';
 
-CREATE TABLE callback_event (
+CREATE TABLE lender_server_event_callback (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    callback_no VARCHAR(64) NOT NULL COMMENT 'Callback event number',
-    provider_code VARCHAR(32) NOT NULL COMMENT 'External provider code',
-    callback_type VARCHAR(64) NOT NULL COMMENT 'Callback type',
-    business_id VARCHAR(64) NULL COMMENT 'Business identifier',
-    idempotency_key VARCHAR(128) NOT NULL COMMENT 'Idempotency key',
-    external_status VARCHAR(32) NULL COMMENT 'External status',
-    payload_json JSON NOT NULL COMMENT 'Payload JSON',
-    process_status VARCHAR(32) NOT NULL COMMENT 'Processing status',
-    received_at DATETIME(3) NOT NULL COMMENT 'Callback received time',
-    processed_at DATETIME(3) NULL COMMENT 'Callback processed time',
+    event_id VARCHAR(128) NOT NULL COMMENT 'Lender event ID',
+    event_type VARCHAR(128) NOT NULL COMMENT 'Tracking event name',
+    event_time BIGINT NOT NULL COMMENT 'Event time epoch millis (13-digit)',
+    event_value VARCHAR(1024) NULL COMMENT 'Event additional value',
+    value DECIMAL(20, 4) NULL COMMENT 'Event amount / numeric value',
+    client_id VARCHAR(128) NULL COMMENT 'Open client ID',
+    user_id VARCHAR(128) NULL COMMENT 'Lender platform user ID',
+    partner_user_id VARCHAR(64) NULL COMMENT 'Partner user ID',
+    app_name VARCHAR(128) NULL COMMENT 'App name',
+    country_code VARCHAR(16) NULL COMMENT 'Country code',
+    app_version VARCHAR(64) NULL COMMENT 'App version',
+    country_name VARCHAR(128) NULL COMMENT 'Country name',
+    device_no VARCHAR(128) NULL COMMENT 'Device number',
+    system_platform VARCHAR(64) NULL COMMENT 'System platform',
+    ad_id VARCHAR(128) NULL COMMENT 'Advertising ID',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_callback_event_no (callback_no),
-    UNIQUE KEY uk_callback_event_idempotency (idempotency_key),
-    KEY idx_callback_event_business (callback_type, business_id),
-    KEY idx_callback_event_process_status (process_status, received_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='External callback event records';
+    UNIQUE KEY uk_lender_server_event_callback_event_id (event_id),
+    KEY idx_lender_server_event_callback_partner_type (partner_user_id, event_type),
+    KEY idx_lender_server_event_callback_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lender server event push callbacks (structured fields)';
 
 CREATE TABLE outbox_event (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',

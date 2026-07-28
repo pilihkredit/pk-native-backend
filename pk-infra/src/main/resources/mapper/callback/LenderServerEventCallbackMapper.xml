@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.callback.mapper.LenderServerEventCallbackMapper">
+
+    <resultMap id="recordMap" type="com.pk.core.callback.port.LenderServerEventCallbackRepository$LenderServerEventCallbackRecord">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="event_id" javaType="string"/>
+            <arg column="event_type" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO lender_server_event_callback (
+            event_id, event_type, event_time, event_value, value,
+            client_id, user_id, partner_user_id, app_name, country_code,
+            app_version, country_name, device_no, system_platform, ad_id
+        ) VALUES (
+            #{eventId}, #{eventType}, #{eventTime}, #{eventValue}, #{value},
+            #{clientId}, #{userId}, #{partnerUserId}, #{appName}, #{countryCode},
+            #{appVersion}, #{countryName}, #{deviceNo}, #{systemPlatform}, #{adId}
+        )
+    </insert>
+
+    <select id="findByEventId" resultMap="recordMap">
+        SELECT id, event_id, event_type
+        FROM lender_server_event_callback
+        WHERE event_id = #{eventId}
+        LIMIT 1
+    </select>
+</mapper>

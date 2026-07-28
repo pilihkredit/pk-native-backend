@@ -1,13 +1,8 @@
 package com.pk.infra.callback;
 
 import com.pk.core.attribution.port.AppsFlyerS2sReporter;
-import com.pk.core.callback.CallbackProcessStatus;
-import com.pk.core.callback.CallbackTypes;
-import com.pk.core.callback.port.CallbackEventRepository;
+import com.pk.core.callback.port.LenderServerEventCallbackRepository;
 import com.pk.core.callback.port.ServerEventCallbackParser;
-import com.pk.core.credit.CreditProviderCode;
-import java.time.Instant;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -15,16 +10,16 @@ import org.springframework.dao.DataIntegrityViolationException;
 public class ServerEventCallbackIntakeFacade {
     private static final Logger log = LoggerFactory.getLogger(ServerEventCallbackIntakeFacade.class);
 
-    private final CallbackEventRepository callbackEventRepository;
+    private final LenderServerEventCallbackRepository lenderServerEventCallbackRepository;
     private final ServerEventCallbackParser serverEventCallbackParser;
     private final AppsFlyerS2sReporter appsFlyerS2sReporter;
 
     public ServerEventCallbackIntakeFacade(
-            CallbackEventRepository callbackEventRepository,
+            LenderServerEventCallbackRepository lenderServerEventCallbackRepository,
             ServerEventCallbackParser serverEventCallbackParser,
             AppsFlyerS2sReporter appsFlyerS2sReporter
     ) {
-        this.callbackEventRepository = callbackEventRepository;
+        this.lenderServerEventCallbackRepository = lenderServerEventCallbackRepository;
         this.serverEventCallbackParser = serverEventCallbackParser;
         this.appsFlyerS2sReporter = appsFlyerS2sReporter;
     }
@@ -32,27 +27,34 @@ public class ServerEventCallbackIntakeFacade {
     public IntakeResult intake(String rawPayloadJson) {
         ServerEventCallbackParser.ParsedServerEventCallback callback =
                 serverEventCallbackParser.parse(rawPayloadJson);
-        String idempotencyKey = buildIdempotencyKey(callback);
-        var existing = callbackEventRepository.findByIdempotencyKey(idempotencyKey);
+        var existing = lenderServerEventCallbackRepository.findByEventId(callback.eventId());
         if (existing.isPresent()) {
             return new IntakeResult(existing.get().id(), true);
         }
         try {
-            long callbackEventId = callbackEventRepository.insert(new CallbackEventRepository.CallbackEventInsert(
-                    "CB-" + UUID.randomUUID(),
-                    CreditProviderCode.PENDANAAN,
-                    CallbackTypes.EVENT_PUSH,
-                    callback.eventId(),
-                    idempotencyKey,
-                    callback.eventType(),
-                    rawPayloadJson,
-                    CallbackProcessStatus.PROCESSED,
-                    Instant.now()
-            ));
-            reportToAppsFlyer(callbackEventId, callback);
-            return new IntakeResult(callbackEventId, false);
+            long serverEventCallbackId = lenderServerEventCallbackRepository.insert(
+                    new LenderServerEventCallbackRepository.LenderServerEventCallbackInsert(
+                            callback.eventId(),
+                            callback.eventType(),
+                            callback.eventTime(),
+                            callback.eventValue(),
+                            callback.value(),
+                            callback.clientId(),
+                            callback.userId(),
+                            callback.partnerUserId(),
+                            callback.appName(),
+                            callback.countryCode(),
+                            callback.appVersion(),
+                            callback.countryName(),
+                            callback.deviceNo(),
+                            callback.systemPlatform(),
+                            callback.adId()
+                    )
+            );
+            reportToAppsFlyer(serverEventCallbackId, callback);
+            return new IntakeResult(serverEventCallbackId, false);
         } catch (DataIntegrityViolationException exception) {
-            var replay = callbackEventRepository.findByIdempotencyKey(idempotencyKey);
+            var replay = lenderServerEventCallbackRepository.findByEventId(callback.eventId());
             if (replay.isPresent()) {
                 return new IntakeResult(replay.get().id(), true);
             }
@@ -61,23 +63,22 @@ public class ServerEventCallbackIntakeFacade {
     }
 
     private void reportToAppsFlyer(
-            long callbackEventId,
+            long serverEventCallbackId,
             ServerEventCallbackParser.ParsedServerEventCallback callback
     ) {
         try {
-            AppsFlyerS2sReporter.ReportResult result = appsFlyerS2sReporter.report(callbackEventId, callback);
+            AppsFlyerS2sReporter.ReportResult result = appsFlyerS2sReporter.report(serverEventCallbackId, callback);
             log.info(
-                    "AF report for event push: callbackEventId={}, eventType={}, reported={}, message={}",
-                    callbackEventId,
+                    "AF report for event push: serverEventCallbackId={}, eventType={}, reported={}, message={}",
+                    serverEventCallbackId,
                     callback.eventType(),
                     result.reported(),
                     result.message()
             );
         } catch (Exception exception) {
-            // Callback already persisted; AF failure must not fail lender callback ACK.
             log.error(
-                    "AF report failed after callback persisted: callbackEventId={}, eventType={}, error={}",
-                    callbackEventId,
+                    "AF report failed after callback persisted: serverEventCallbackId={}, eventType={}, error={}",
+                    serverEventCallbackId,
                     callback.eventType(),
                     exception.getMessage(),
                     exception
@@ -85,14 +86,6 @@ public class ServerEventCallbackIntakeFacade {
         }
     }
 
-    private static String buildIdempotencyKey(ServerEventCallbackParser.ParsedServerEventCallback callback) {
-        return CreditProviderCode.PENDANAAN
-                + ":"
-                + CallbackTypes.EVENT_PUSH
-                + ":"
-                + callback.eventId();
-    }
-
-    public record IntakeResult(long callbackEventId, boolean duplicate) {
+    public record IntakeResult(long serverEventCallbackId, boolean duplicate) {
     }
 }

@@ -56,7 +56,7 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
     }
 
     @Override
-    public ReportResult report(long callbackEventId, ServerEventCallbackParser.ParsedServerEventCallback event) {
+    public ReportResult report(long serverEventCallbackId, ServerEventCallbackParser.ParsedServerEventCallback event) {
         String osName = normalizeOsName(event.systemPlatform());
         Optional<AdjustConfigRepository.AdjustConfigData> configOpt = adjustConfigRepository.findActiveByOsName(osName);
         if (configOpt.isEmpty()) {
@@ -76,7 +76,7 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
 
         String extraParams = buildExtraParams(event);
         long recordId = adjustEventRecordRepository.insert(new AdjustEventRecordRepository.AdjustEventRecordInsert(
-                callbackEventId,
+                serverEventCallbackId,
                 event.partnerUserId(),
                 resolveUserId(event.deviceNo()),
                 event.deviceNo(),
@@ -132,8 +132,8 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
             );
             if (!success) {
                 log.warn(
-                        "AppsFlyer S2S failed: callbackEventId={}, eventType={}, status={}",
-                        callbackEventId,
+                        "AppsFlyer S2S failed: serverEventCallbackId={}, eventType={}, status={}",
+                        serverEventCallbackId,
                         event.eventType(),
                         response.statusCode()
                 );
@@ -145,8 +145,8 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
             return ReportResult.recorded(recordId, "interrupted");
         } catch (Exception exception) {
             log.error(
-                    "AppsFlyer S2S error: callbackEventId={}, eventType={}, error={}",
-                    callbackEventId,
+                    "AppsFlyer S2S error: serverEventCallbackId={}, eventType={}, error={}",
+                    serverEventCallbackId,
                     event.eventType(),
                     exception.getMessage(),
                     exception

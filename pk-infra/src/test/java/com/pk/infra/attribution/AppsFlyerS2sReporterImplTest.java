@@ -105,7 +105,7 @@ class AppsFlyerS2sReporterImplTest {
         ArgumentCaptor<AdjustEventRecordRepository.AdjustEventRecordInsert> captor =
                 ArgumentCaptor.forClass(AdjustEventRecordRepository.AdjustEventRecordInsert.class);
         verify(adjustEventRecordRepository).insert(captor.capture());
-        assertThat(captor.getValue().callbackEventId()).isEqualTo(10L);
+        assertThat(captor.getValue().serverEventCallbackId()).isEqualTo(10L);
         assertThat(captor.getValue().eventName()).isEqualTo("BASIC_AUTH_FINISH");
         assertThat(captor.getValue().adid()).isEqualTo("af-device-1");
         assertThat(captor.getValue().idfa()).isEqualTo("idfa-1");

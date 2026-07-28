@@ -6,7 +6,7 @@ public interface AdjustEventRecordRepository {
     void updateStatus(long id, int status, String response, String errorMessage, int retryCount);
 
     record AdjustEventRecordInsert(
-            Long callbackEventId,
+            Long serverEventCallbackId,
             String partnerUserId,
             Long userId,
             String deviceUuid,
