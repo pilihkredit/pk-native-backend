@@ -197,9 +197,6 @@ public class IdentityOcrFacade {
                     && MODULE_DRAFT.equals(identity.moduleStatus())) {
                 return new BasicSaveResult(command.requestId().trim(), MODULE_DRAFT);
             }
-            if (MODULE_COMPLETED.equals(identity.moduleStatus())) {
-                throw new ApiException(ApiCode.DUPLICATE_SUBMISSION_IN_PROGRESS);
-            }
         }
 
         EncryptedField encryptedIdNo = sensitiveFieldEncryptor.encrypt(idNo);

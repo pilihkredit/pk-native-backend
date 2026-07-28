@@ -77,7 +77,9 @@ class IdentityOcrFacadeBasicSaveTest {
     }
 
     @Test
-    void saveBasicRejectsWhenIdentityAlreadyCompleted() {
+    void saveBasicRestartsDraftWhenIdentityAlreadyCompleted() {
+        EncryptedField encrypted = new EncryptedField("new-cipher", new byte[12], new byte[16]);
+        when(sensitiveFieldEncryptor.encrypt("3201010101010001")).thenReturn(encrypted);
         when(profileIdentityRepository.findByUserId(1L)).thenReturn(Optional.of(
                 new ProfileIdentityData(
                         1L,
@@ -90,7 +92,7 @@ class IdentityOcrFacadeBasicSaveTest {
                 )
         ));
 
-        assertThatThrownBy(() -> facade.saveBasic(
+        var result = facade.saveBasic(
                 1L,
                 "81234567890",
                 new IdentityOcrFacade.BasicSaveCommand(
@@ -98,10 +100,15 @@ class IdentityOcrFacadeBasicSaveTest {
                         "JOHN DOE",
                         "3201010101010001"
                 )
-        ))
-                .isInstanceOf(ApiException.class)
-                .extracting("apiCode")
-                .isEqualTo(ApiCode.DUPLICATE_SUBMISSION_IN_PROGRESS);
+        );
+
+        assertThat(result.moduleStatus()).isEqualTo(IdentityOcrFacade.MODULE_DRAFT);
+        ArgumentCaptor<ProfileIdentityData> captor = ArgumentCaptor.forClass(ProfileIdentityData.class);
+        verify(profileIdentityRepository).upsert(captor.capture());
+        assertThat(captor.getValue().fullName()).isEqualTo("JOHN DOE");
+        assertThat(captor.getValue().idNo()).isEqualTo(encrypted);
+        assertThat(captor.getValue().moduleStatus()).isEqualTo(IdentityOcrFacade.MODULE_DRAFT);
+        assertThat(captor.getValue().lastRequestId()).isEqualTo("req-2");
     }
 
     @Test
