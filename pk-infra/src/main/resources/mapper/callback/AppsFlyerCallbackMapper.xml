@@ -10,6 +10,10 @@
             device_category, platform, device_model, idfv, idfa, af_ad, af_channel, attributed_touch_type,
             af_ad_id, af_ad_type, contributor1_touch_type, contributor1_touch_time, contributor1_af_prt,
             contributor1_match_type, contributor1_engagement_type, bundle_id, match_type, gp_install_begin,
+            event_source, event_time, event_time_selected_timezone, app_name, campaign_type, conversion_type,
+            is_retargeting, region, state, dma, wifi, carrier, language, install_time_selected_timezone,
+            device_download_time, device_download_time_selected_timezone, gp_referrer, sdk_version, api_version,
+            user_agent, selected_timezone, selected_currency,
             event_name, event_type, customer_user_id, raw_data, callback_status, error_message
         ) VALUES (
             #{userId}, #{deviceNo},
@@ -19,6 +23,10 @@
             #{deviceCategory}, #{platform}, #{deviceModel}, #{idfv}, #{idfa}, #{afAd}, #{afChannel}, #{attributedTouchType},
             #{afAdId}, #{afAdType}, #{contributor1TouchType}, #{contributor1TouchTime}, #{contributor1AfPrt},
             #{contributor1MatchType}, #{contributor1EngagementType}, #{bundleId}, #{matchType}, #{gpInstallBegin},
+            #{eventSource}, #{eventTime}, #{eventTimeSelectedTimezone}, #{appName}, #{campaignType}, #{conversionType},
+            #{isRetargeting}, #{region}, #{state}, #{dma}, #{wifi}, #{carrier}, #{language}, #{installTimeSelectedTimezone},
+            #{deviceDownloadTime}, #{deviceDownloadTimeSelectedTimezone}, #{gpReferrer}, #{sdkVersion}, #{apiVersion},
+            #{userAgent}, #{selectedTimezone}, #{selectedCurrency},
             #{eventName}, #{eventType}, #{customerUserId}, #{rawData}, #{callbackStatus}, #{errorMessage}
         )
     </insert>

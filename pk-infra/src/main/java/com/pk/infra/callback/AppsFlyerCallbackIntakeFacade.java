@@ -87,6 +87,28 @@ public class AppsFlyerCallbackIntakeFacade {
                     text(root, "bundle_id", "bundleId"),
                     text(root, "match_type", "matchType"),
                     text(root, "gp_install_begin", "gpInstallBegin"),
+                    text(root, "event_source", "eventSource"),
+                    text(root, "event_time", "eventTime"),
+                    text(root, "event_time_selected_timezone", "eventTimeSelectedTimezone"),
+                    text(root, "app_name", "appName"),
+                    text(root, "campaign_type", "campaignType"),
+                    text(root, "conversion_type", "conversionType"),
+                    bool(root, "is_retargeting", "isRetargeting"),
+                    text(root, "region"),
+                    text(root, "state"),
+                    text(root, "dma"),
+                    bool(root, "wifi"),
+                    text(root, "carrier"),
+                    text(root, "language"),
+                    text(root, "install_time_selected_timezone", "installTimeSelectedTimezone"),
+                    text(root, "device_download_time", "deviceDownloadTime"),
+                    text(root, "device_download_time_selected_timezone", "deviceDownloadTimeSelectedTimezone"),
+                    text(root, "gp_referrer", "gpReferrer"),
+                    text(root, "sdk_version", "sdkVersion"),
+                    text(root, "api_version", "apiVersion"),
+                    text(root, "user_agent", "userAgent"),
+                    text(root, "selected_timezone", "selectedTimezone"),
+                    text(root, "selected_currency", "selectedCurrency"),
                     text(root, "event_name", "eventName"),
                     text(root, "event_type", "eventType"),
                     text(root, "customer_user_id", "customerUserId"),
@@ -118,6 +140,22 @@ public class AppsFlyerCallbackIntakeFacade {
                 String value = node.asText();
                 if (value != null && !value.isBlank()) {
                     return value.trim();
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Boolean bool(JsonNode root, String... fields) {
+        for (String field : fields) {
+            JsonNode node = root.get(field);
+            if (node != null && !node.isNull()) {
+                if (node.isBoolean()) {
+                    return node.booleanValue();
+                }
+                String value = node.asText();
+                if (value != null && !value.isBlank()) {
+                    return Boolean.parseBoolean(value.trim());
                 }
             }
         }
