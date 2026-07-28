@@ -10,6 +10,10 @@ public interface AppsFlyerS2sReporter {
             return new ReportResult(false, null, message);
         }
 
+        public static ReportResult skipped(long recordId, String message) {
+            return new ReportResult(false, recordId, message);
+        }
+
         public static ReportResult recorded(long recordId, String message) {
             return new ReportResult(true, recordId, message);
         }

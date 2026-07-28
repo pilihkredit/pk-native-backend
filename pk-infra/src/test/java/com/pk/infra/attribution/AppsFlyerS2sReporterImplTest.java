@@ -3,9 +3,9 @@ package com.pk.infra.attribution;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -58,12 +58,15 @@ class AppsFlyerS2sReporterImplTest {
                 )));
         when(adjustEventConfigRepository.findEnabledByEventNameAndAppToken("BASIC_AUTH_FINISH", "app-id"))
                 .thenReturn(Optional.empty());
+        when(adjustEventRecordRepository.insert(any())).thenReturn(77L);
 
         AppsFlyerS2sReporter.ReportResult result = reporter.report(10L, parsedEvent());
 
         assertThat(result.reported()).isFalse();
         assertThat(result.message()).contains("event disabled");
-        verify(adjustEventRecordRepository, never()).insert(any());
+        assertThat(result.recordId()).isEqualTo(77L);
+        verify(adjustEventRecordRepository).insert(any());
+        verify(adjustEventRecordRepository).updateStatus(eq(77L), eq(2), eq(null), contains("event disabled"), eq(0));
     }
 
     @Test

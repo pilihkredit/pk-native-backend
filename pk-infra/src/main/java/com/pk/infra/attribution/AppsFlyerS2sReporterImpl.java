@@ -65,18 +65,30 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
         String osName = normalizeOsName(event.systemPlatform());
         Optional<AdjustConfigRepository.AdjustConfigData> configOpt = adjustConfigRepository.findActiveByOsName(osName);
         if (configOpt.isEmpty()) {
-            return ReportResult.skipped("no active AF config for os=" + osName);
+            return skipRecorded(serverEventCallbackId, event, null, null, "no active AF config for os=" + osName);
         }
         AdjustConfigRepository.AdjustConfigData config = configOpt.get();
         Optional<AdjustEventConfigRepository.AdjustEventConfigData> eventConfigOpt =
                 adjustEventConfigRepository.findEnabledByEventNameAndAppToken(event.eventType(), config.appToken());
         if (eventConfigOpt.isEmpty()) {
-            return ReportResult.skipped("event disabled or missing: " + event.eventType());
+            return skipRecorded(
+                    serverEventCallbackId,
+                    event,
+                    config.appToken(),
+                    null,
+                    "event disabled or missing: " + event.eventType()
+            );
         }
 
         DeviceIds deviceIds = resolveDeviceIds(event);
         if (isBlank(deviceIds.appsflyerId())) {
-            return ReportResult.skipped("appsflyer_id missing");
+            return skipRecorded(
+                    serverEventCallbackId,
+                    event,
+                    config.appToken(),
+                    deviceIds,
+                    "appsflyer_id missing"
+            );
         }
 
         String extraParams = buildExtraParams(event);
@@ -158,6 +170,55 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
             );
             adjustEventRecordRepository.updateStatus(recordId, STATUS_FAILED, null, exception.getMessage(), 0);
             return ReportResult.recorded(recordId, exception.getMessage());
+        }
+    }
+
+    /**
+     * Persist skip reasons into adjust_event_record so ops can see why AF was not sent.
+     * status=2 (failed), error_message=skip reason.
+     */
+    private ReportResult skipRecorded(
+            long serverEventCallbackId,
+            ServerEventCallbackParser.ParsedServerEventCallback event,
+            String appToken,
+            DeviceIds deviceIds,
+            String reason
+    ) {
+        try {
+            long recordId = adjustEventRecordRepository.insert(new AdjustEventRecordRepository.AdjustEventRecordInsert(
+                    serverEventCallbackId,
+                    event.partnerUserId(),
+                    resolveUserId(event.deviceNo()),
+                    event.deviceNo(),
+                    event.eventType(),
+                    appToken,
+                    deviceIds == null ? null : deviceIds.idfa(),
+                    deviceIds == null ? null : deviceIds.idfv(),
+                    deviceIds == null ? null : deviceIds.gpsAdid(),
+                    deviceIds == null ? null : deviceIds.appsflyerId(),
+                    event.eventTime() == null ? Instant.now().toEpochMilli() : event.eventTime(),
+                    STATUS_FAILED,
+                    0,
+                    buildExtraParams(event)
+            ));
+            adjustEventRecordRepository.updateStatus(recordId, STATUS_FAILED, null, reason, 0);
+            log.warn(
+                    "AppsFlyer S2S skipped: serverEventCallbackId={}, eventType={}, reason={}",
+                    serverEventCallbackId,
+                    event.eventType(),
+                    reason
+            );
+            return ReportResult.skipped(recordId, reason);
+        } catch (Exception exception) {
+            log.error(
+                    "AppsFlyer S2S skip persist failed: serverEventCallbackId={}, eventType={}, reason={}, error={}",
+                    serverEventCallbackId,
+                    event.eventType(),
+                    reason,
+                    exception.getMessage(),
+                    exception
+            );
+            return ReportResult.skipped(reason);
         }
     }
 
