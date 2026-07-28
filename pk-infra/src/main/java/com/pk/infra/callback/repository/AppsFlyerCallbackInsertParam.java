@@ -11,6 +11,7 @@ public class AppsFlyerCallbackInsertParam {
     public String advertisingId;
     public String androidId;
     public String attributedTouchTime;
+    public String attributedTouchTimeSelectedTimezone;
     public String gpClickTime;
     public String installTime;
     public String mediaSource;
@@ -51,8 +52,11 @@ public class AppsFlyerCallbackInsertParam {
     public String eventTime;
     public String eventTimeSelectedTimezone;
     public String appName;
+    public String appType;
     public String campaignType;
     public String conversionType;
+    public String engagementType;
+    public String afAttributionLookback;
     public Boolean isRetargeting;
     public String region;
     public String state;
@@ -69,6 +73,12 @@ public class AppsFlyerCallbackInsertParam {
     public String userAgent;
     public String selectedTimezone;
     public String selectedCurrency;
+    public Boolean isLat;
+    public String att;
+    public String originalUrl;
+    public String httpReferrer;
+    public String eventValue;
+    public String eventValueAppId;
     public String eventName;
     public String eventType;
     public String customerUserId;
@@ -84,6 +94,7 @@ public class AppsFlyerCallbackInsertParam {
         p.advertisingId = insert.advertisingId();
         p.androidId = insert.androidId();
         p.attributedTouchTime = insert.attributedTouchTime();
+        p.attributedTouchTimeSelectedTimezone = insert.attributedTouchTimeSelectedTimezone();
         p.gpClickTime = insert.gpClickTime();
         p.installTime = insert.installTime();
         p.mediaSource = insert.mediaSource();
@@ -124,8 +135,11 @@ public class AppsFlyerCallbackInsertParam {
         p.eventTime = insert.eventTime();
         p.eventTimeSelectedTimezone = insert.eventTimeSelectedTimezone();
         p.appName = insert.appName();
+        p.appType = insert.appType();
         p.campaignType = insert.campaignType();
         p.conversionType = insert.conversionType();
+        p.engagementType = insert.engagementType();
+        p.afAttributionLookback = insert.afAttributionLookback();
         p.isRetargeting = insert.isRetargeting();
         p.region = insert.region();
         p.state = insert.state();
@@ -142,6 +156,12 @@ public class AppsFlyerCallbackInsertParam {
         p.userAgent = insert.userAgent();
         p.selectedTimezone = insert.selectedTimezone();
         p.selectedCurrency = insert.selectedCurrency();
+        p.isLat = insert.isLat();
+        p.att = insert.att();
+        p.originalUrl = insert.originalUrl();
+        p.httpReferrer = insert.httpReferrer();
+        p.eventValue = insert.eventValue();
+        p.eventValueAppId = insert.eventValueAppId();
         p.eventName = insert.eventName();
         p.eventType = insert.eventType();
         p.customerUserId = insert.customerUserId();

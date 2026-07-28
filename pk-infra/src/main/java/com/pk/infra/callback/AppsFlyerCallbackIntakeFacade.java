@@ -43,6 +43,7 @@ public class AppsFlyerCallbackIntakeFacade {
                     : profileAfRepository.findLatestByAppsflyerId(appsflyerId);
             Long userId = localAf.map(ProfileAfData::userId).orElse(null);
             String deviceNo = localAf.map(ProfileAfData::deviceNo).filter(v -> v != null && !v.isBlank()).orElse(null);
+            EventValueParts eventValueParts = extractEventValue(root);
 
             long id = appsFlyerCallbackRepository.insert(new AppsFlyerCallbackRepository.AppsFlyerCallbackInsert(
                     userId,
@@ -51,6 +52,7 @@ public class AppsFlyerCallbackIntakeFacade {
                     text(root, "advertising_id", "advertisingId"),
                     text(root, "android_id", "androidId"),
                     text(root, "attributed_touch_time", "attributedTouchTime"),
+                    text(root, "attributed_touch_time_selected_timezone", "attributedTouchTimeSelectedTimezone"),
                     text(root, "gp_click_time", "gpClickTime"),
                     text(root, "install_time", "installTime"),
                     text(root, "media_source", "mediaSource"),
@@ -91,8 +93,11 @@ public class AppsFlyerCallbackIntakeFacade {
                     text(root, "event_time", "eventTime"),
                     text(root, "event_time_selected_timezone", "eventTimeSelectedTimezone"),
                     text(root, "app_name", "appName"),
+                    text(root, "app_type", "appType"),
                     text(root, "campaign_type", "campaignType"),
                     text(root, "conversion_type", "conversionType"),
+                    text(root, "engagement_type", "engagementType"),
+                    text(root, "af_attribution_lookback", "afAttributionLookback"),
                     bool(root, "is_retargeting", "isRetargeting"),
                     text(root, "region"),
                     text(root, "state"),
@@ -109,6 +114,12 @@ public class AppsFlyerCallbackIntakeFacade {
                     text(root, "user_agent", "userAgent"),
                     text(root, "selected_timezone", "selectedTimezone"),
                     text(root, "selected_currency", "selectedCurrency"),
+                    bool(root, "is_lat", "isLat"),
+                    text(root, "att"),
+                    text(root, "original_url", "originalUrl"),
+                    text(root, "http_referrer", "httpReferrer"),
+                    eventValueParts.eventValue(),
+                    eventValueParts.eventValueAppId(),
                     text(root, "event_name", "eventName"),
                     text(root, "event_type", "eventType"),
                     text(root, "customer_user_id", "customerUserId"),
@@ -160,6 +171,44 @@ public class AppsFlyerCallbackIntakeFacade {
             }
         }
         return null;
+    }
+
+    private EventValueParts extractEventValue(JsonNode root) {
+        JsonNode eventValueNode = root.get("event_value");
+        if (eventValueNode == null || eventValueNode.isNull()) {
+            eventValueNode = root.get("eventValue");
+        }
+        if (eventValueNode == null || eventValueNode.isNull()) {
+            return new EventValueParts(null, null);
+        }
+        try {
+            String eventValueJson;
+            if (eventValueNode.isTextual()) {
+                eventValueJson = eventValueNode.asText();
+            } else {
+                eventValueJson = objectMapper.writeValueAsString(eventValueNode);
+            }
+            if (eventValueJson == null || eventValueJson.isBlank()) {
+                return new EventValueParts(null, null);
+            }
+            String eventValueAppId = null;
+            try {
+                JsonNode nested = eventValueNode.isObject()
+                        ? eventValueNode
+                        : objectMapper.readTree(eventValueJson);
+                if (nested != null && nested.isObject()) {
+                    eventValueAppId = text(nested, "app_id", "appId");
+                }
+            } catch (Exception ignored) {
+                // keep event_value string even if nested parse fails
+            }
+            return new EventValueParts(eventValueJson, eventValueAppId);
+        } catch (Exception exception) {
+            return new EventValueParts(eventValueNode.asText(null), null);
+        }
+    }
+
+    private record EventValueParts(String eventValue, String eventValueAppId) {
     }
 
     public record IntakeResult(long id, String status) {
