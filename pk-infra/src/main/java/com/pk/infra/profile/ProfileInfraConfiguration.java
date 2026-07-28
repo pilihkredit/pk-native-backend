@@ -125,11 +125,19 @@ public class ProfileInfraConfiguration {
     }
 
     @Bean
+    AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver(
+            com.pk.core.callback.port.AppsFlyerCallbackRepository appsFlyerCallbackRepository
+    ) {
+        return new AppsFlyerLenderPayloadResolver(appsFlyerCallbackRepository);
+    }
+
+    @Bean
     IdentityVerificationCompletionService identityVerificationCompletionService(
             com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
             com.pk.core.profile.port.BiometricImageStore biometricImageStore,
             ProfileSyncOrchestrator profileSyncOrchestrator,
             com.pk.core.profile.port.ProfileAfRepository profileAfRepository,
+            AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver,
             UserDeviceWriter userDeviceWriter,
             com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
             com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
@@ -141,6 +149,7 @@ public class ProfileInfraConfiguration {
                 biometricImageStore,
                 profileSyncOrchestrator,
                 profileAfRepository,
+                appsFlyerLenderPayloadResolver,
                 userDeviceWriter,
                 profileVersionRepository,
                 userProfileBindingRepository,
@@ -158,6 +167,7 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.BiometricImageStore biometricImageStore,
             ProfileSyncOrchestrator profileSyncOrchestrator,
             com.pk.core.profile.port.ProfileAfRepository profileAfRepository,
+            AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver,
             UserDeviceWriter userDeviceWriter,
             com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
             com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
@@ -174,6 +184,7 @@ public class ProfileInfraConfiguration {
                 biometricImageStore,
                 profileSyncOrchestrator,
                 profileAfRepository,
+                appsFlyerLenderPayloadResolver,
                 userDeviceWriter,
                 profileVersionRepository,
                 userProfileBindingRepository,

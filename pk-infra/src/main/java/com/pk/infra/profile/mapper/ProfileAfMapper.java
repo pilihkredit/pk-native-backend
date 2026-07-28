@@ -10,6 +10,8 @@ public interface ProfileAfMapper {
 
     ProfileAfRow findLatestByDeviceNo(@Param("deviceNo") String deviceNo);
 
+    ProfileAfRow findLatestByAppsflyerId(@Param("appsflyerId") String appsflyerId);
+
     int insert(ProfileAfRow row);
 
     int updateLastLenderInteraction(@Param("requestId") String requestId, @Param("externalInteractionId") Long externalInteractionId);

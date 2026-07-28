@@ -28,6 +28,14 @@ public class ProfileAfRepositoryImpl implements ProfileAfRepository {
     }
 
     @Override
+    public Optional<ProfileAfData> findLatestByAppsflyerId(String appsflyerId) {
+        if (appsflyerId == null || appsflyerId.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(profileAfMapper.findLatestByAppsflyerId(appsflyerId.trim())).map(this::toData);
+    }
+
+    @Override
     public long insert(ProfileAfData data) {
         ProfileAfRow row = toRow(data);
         profileAfMapper.insert(row);

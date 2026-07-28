@@ -4,6 +4,7 @@ import com.pk.app.callback.dto.request.CallbackOAuthTokenRequest;
 import com.pk.app.callback.dto.response.CallbackOAuthTokenResponse;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.infra.callback.AppsFlyerCallbackIntakeFacade;
 import com.pk.infra.callback.CallbackProperties;
 import com.pk.infra.callback.CallbackTokenIssuer;
 import com.pk.infra.callback.ServerEventCallbackIntakeFacade;
@@ -19,19 +20,22 @@ public class CallbackApplicationService {
     private final CreditCallbackIntakeFacade creditCallbackIntakeFacade;
     private final LoanCallbackIntakeFacade loanCallbackIntakeFacade;
     private final ServerEventCallbackIntakeFacade serverEventCallbackIntakeFacade;
+    private final AppsFlyerCallbackIntakeFacade appsFlyerCallbackIntakeFacade;
 
     public CallbackApplicationService(
             CallbackProperties callbackProperties,
             CallbackTokenIssuer callbackTokenIssuer,
             CreditCallbackIntakeFacade creditCallbackIntakeFacade,
             LoanCallbackIntakeFacade loanCallbackIntakeFacade,
-            ServerEventCallbackIntakeFacade serverEventCallbackIntakeFacade
+            ServerEventCallbackIntakeFacade serverEventCallbackIntakeFacade,
+            AppsFlyerCallbackIntakeFacade appsFlyerCallbackIntakeFacade
     ) {
         this.callbackProperties = callbackProperties;
         this.callbackTokenIssuer = callbackTokenIssuer;
         this.creditCallbackIntakeFacade = creditCallbackIntakeFacade;
         this.loanCallbackIntakeFacade = loanCallbackIntakeFacade;
         this.serverEventCallbackIntakeFacade = serverEventCallbackIntakeFacade;
+        this.appsFlyerCallbackIntakeFacade = appsFlyerCallbackIntakeFacade;
     }
 
     public CallbackOAuthTokenResponse issueToken(CallbackOAuthTokenRequest request) {
@@ -69,6 +73,13 @@ public class CallbackApplicationService {
         ensureEnabled();
         callbackTokenIssuer.validateToken(accessToken);
         serverEventCallbackIntakeFacade.intake(rawPayloadJson);
+    }
+
+    /** AppsFlyer Push API — no lender OAuth; AF cannot present our callback Bearer. */
+    @Transactional
+    public AppsFlyerCallbackIntakeFacade.IntakeResult receiveAppsFlyerCallback(String rawPayloadJson) {
+        ensureEnabled();
+        return appsFlyerCallbackIntakeFacade.intake(rawPayloadJson);
     }
 
     private void ensureEnabled() {

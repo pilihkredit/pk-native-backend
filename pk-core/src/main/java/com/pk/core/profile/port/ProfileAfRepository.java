@@ -8,6 +8,8 @@ public interface ProfileAfRepository {
 
     Optional<ProfileAfData> findLatestByDeviceNo(String deviceNo);
 
+    Optional<ProfileAfData> findLatestByAppsflyerId(String appsflyerId);
+
     long insert(ProfileAfData data);
 
     void updateLastLenderInteraction(String requestId, Long externalInteractionId);

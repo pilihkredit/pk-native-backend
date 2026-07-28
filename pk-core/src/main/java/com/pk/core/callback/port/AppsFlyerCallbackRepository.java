@@ -1,0 +1,109 @@
+package com.pk.core.callback.port;
+
+import java.util.Optional;
+
+public interface AppsFlyerCallbackRepository {
+    long insert(AppsFlyerCallbackInsert insert);
+
+    Optional<AppsFlyerCallbackData> findLatestByAppsflyerId(String appsflyerId);
+
+    Optional<AppsFlyerCallbackData> findLatestByAppsflyerIdAndEventName(String appsflyerId, String eventName);
+
+    /** Fields used to fill lender appsFlyerInstall when user_profile_af is blank. */
+    record AppsFlyerCallbackData(
+            String appsflyerId,
+            String advertisingId,
+            String androidId,
+            String attributedTouchTime,
+            String gpClickTime,
+            String installTime,
+            String mediaSource,
+            String afPrt,
+            String afAdsetId,
+            String afAdset,
+            String afSiteid,
+            String afCId,
+            String campaign,
+            String appVersion,
+            String appId,
+            String deviceType,
+            String osVersion,
+            String countryCode,
+            String city,
+            String postalCode,
+            String ip,
+            String operator,
+            String deviceCategory,
+            String platform,
+            String deviceModel,
+            String idfv,
+            String idfa,
+            String afAd,
+            String afChannel,
+            String attributedTouchType,
+            String afAdId,
+            String afAdType,
+            String contributor1TouchType,
+            String contributor1TouchTime,
+            String contributor1AfPrt,
+            String contributor1MatchType,
+            String contributor1EngagementType,
+            String bundleId,
+            String matchType,
+            String gpInstallBegin,
+            String eventName
+    ) {
+    }
+
+    record AppsFlyerCallbackInsert(
+            Long userId,
+            String deviceNo,
+            String appsflyerId,
+            String advertisingId,
+            String androidId,
+            String attributedTouchTime,
+            String gpClickTime,
+            String installTime,
+            String mediaSource,
+            String afPrt,
+            String afAdsetId,
+            String afAdset,
+            String afSiteid,
+            String afCId,
+            String campaign,
+            String appVersion,
+            String appId,
+            String deviceType,
+            String osVersion,
+            String countryCode,
+            String city,
+            String postalCode,
+            String ip,
+            String operator,
+            String deviceCategory,
+            String platform,
+            String deviceModel,
+            String idfv,
+            String idfa,
+            String afAd,
+            String afChannel,
+            String attributedTouchType,
+            String afAdId,
+            String afAdType,
+            String contributor1TouchType,
+            String contributor1TouchTime,
+            String contributor1AfPrt,
+            String contributor1MatchType,
+            String contributor1EngagementType,
+            String bundleId,
+            String matchType,
+            String gpInstallBegin,
+            String eventName,
+            String eventType,
+            String customerUserId,
+            String rawData,
+            String callbackStatus,
+            String errorMessage
+    ) {
+    }
+}

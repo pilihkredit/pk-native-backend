@@ -2,6 +2,7 @@ package com.pk.infra.callback;
 
 import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.auth.port.UserAuthRepository;
+import com.pk.core.callback.port.AppsFlyerCallbackRepository;
 import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.callback.port.LenderServerEventCallbackRepository;
 import com.pk.core.callback.port.LoanCallbackParser;
@@ -14,6 +15,7 @@ import com.pk.infra.credit.CreditCallbackIntakeFacade;
 import com.pk.infra.credit.CreditLenderStatusApplier;
 import com.pk.infra.loan.LoanCallbackIntakeFacade;
 import com.pk.infra.loan.LoanLenderStatusApplier;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -73,5 +75,14 @@ public class CallbackInfraConfiguration {
                 serverEventCallbackParser,
                 appsFlyerS2sReporter
         );
+    }
+
+    @Bean
+    AppsFlyerCallbackIntakeFacade appsFlyerCallbackIntakeFacade(
+            AppsFlyerCallbackRepository appsFlyerCallbackRepository,
+            com.pk.core.profile.port.ProfileAfRepository profileAfRepository,
+            ObjectMapper objectMapper
+    ) {
+        return new AppsFlyerCallbackIntakeFacade(appsFlyerCallbackRepository, profileAfRepository, objectMapper);
     }
 }

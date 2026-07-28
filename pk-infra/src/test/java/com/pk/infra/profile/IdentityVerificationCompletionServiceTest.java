@@ -46,6 +46,7 @@ class IdentityVerificationCompletionServiceTest {
                 imageStore,
                 orchestrator,
                 mock(ProfileAfRepository.class),
+                mock(AppsFlyerLenderPayloadResolver.class),
                 mock(UserDeviceWriter.class),
                 versionRepository,
                 bindingRepository,

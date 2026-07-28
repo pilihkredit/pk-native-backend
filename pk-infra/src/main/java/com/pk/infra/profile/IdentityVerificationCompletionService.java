@@ -24,6 +24,7 @@ public class IdentityVerificationCompletionService {
     private final BiometricImageStore biometricImageStore;
     private final ProfileSyncOrchestrator profileSyncOrchestrator;
     private final ProfileAfRepository profileAfRepository;
+    private final AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver;
     private final UserDeviceWriter userDeviceWriter;
     private final ProfileVersionRepository profileVersionRepository;
     private final UserProfileBindingRepository userProfileBindingRepository;
@@ -35,6 +36,7 @@ public class IdentityVerificationCompletionService {
             BiometricImageStore biometricImageStore,
             ProfileSyncOrchestrator profileSyncOrchestrator,
             ProfileAfRepository profileAfRepository,
+            AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver,
             UserDeviceWriter userDeviceWriter,
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
@@ -45,6 +47,7 @@ public class IdentityVerificationCompletionService {
         this.biometricImageStore = biometricImageStore;
         this.profileSyncOrchestrator = profileSyncOrchestrator;
         this.profileAfRepository = profileAfRepository;
+        this.appsFlyerLenderPayloadResolver = appsFlyerLenderPayloadResolver;
         this.userDeviceWriter = userDeviceWriter;
         this.profileVersionRepository = profileVersionRepository;
         this.userProfileBindingRepository = userProfileBindingRepository;
@@ -129,7 +132,7 @@ public class IdentityVerificationCompletionService {
         return profileAfRepository.findLatestByDeviceNo(device.deviceNo().trim())
                 .map(af -> List.of(new LenderProfileSyncPort.SyncCompanion(
                         ProfileSyncModule.APPSFLYER_INSTALL,
-                        AppsFlyerPayloadMapper.toPayload(af),
+                        appsFlyerLenderPayloadResolver.resolve(af),
                         af.requestId()
                 )))
                 .orElseGet(List::of);
