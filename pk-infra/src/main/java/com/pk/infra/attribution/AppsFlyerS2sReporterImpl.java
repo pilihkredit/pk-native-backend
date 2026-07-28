@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pk.core.attribution.port.AdjustConfigRepository;
-import com.pk.core.attribution.port.AdjustEventConfigRepository;
 import com.pk.core.attribution.port.AdjustEventRecordRepository;
 import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.callback.port.ServerEventCallbackParser;
@@ -36,7 +35,6 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
     private static final int STATUS_FAILED = 2;
 
     private final AdjustConfigRepository adjustConfigRepository;
-    private final AdjustEventConfigRepository adjustEventConfigRepository;
     private final AdjustEventRecordRepository adjustEventRecordRepository;
     private final ProfileDeviceRepository profileDeviceRepository;
     private final ProfileAfRepository profileAfRepository;
@@ -45,14 +43,12 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
 
     public AppsFlyerS2sReporterImpl(
             AdjustConfigRepository adjustConfigRepository,
-            AdjustEventConfigRepository adjustEventConfigRepository,
             AdjustEventRecordRepository adjustEventRecordRepository,
             ProfileDeviceRepository profileDeviceRepository,
             ProfileAfRepository profileAfRepository,
             ObjectMapper objectMapper
     ) {
         this.adjustConfigRepository = adjustConfigRepository;
-        this.adjustEventConfigRepository = adjustEventConfigRepository;
         this.adjustEventRecordRepository = adjustEventRecordRepository;
         this.profileDeviceRepository = profileDeviceRepository;
         this.profileAfRepository = profileAfRepository;
@@ -68,17 +64,6 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
             return skipRecorded(serverEventCallbackId, event, null, null, "no active AF config for os=" + osName);
         }
         AdjustConfigRepository.AdjustConfigData config = configOpt.get();
-        Optional<AdjustEventConfigRepository.AdjustEventConfigData> eventConfigOpt =
-                adjustEventConfigRepository.findEnabledByEventNameAndAppToken(event.eventType(), config.appToken());
-        if (eventConfigOpt.isEmpty()) {
-            return skipRecorded(
-                    serverEventCallbackId,
-                    event,
-                    config.appToken(),
-                    null,
-                    "event disabled or missing: " + event.eventType()
-            );
-        }
 
         DeviceIds deviceIds = resolveDeviceIds(event);
         if (isBlank(deviceIds.appsflyerId())) {

@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.attribution.port.AdjustConfigRepository;
-import com.pk.core.attribution.port.AdjustEventConfigRepository;
 import com.pk.core.attribution.port.AdjustEventRecordRepository;
 import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.callback.port.ServerEventCallbackParser;
@@ -27,7 +26,6 @@ import org.mockito.ArgumentCaptor;
 
 class AppsFlyerS2sReporterImplTest {
     private AdjustConfigRepository adjustConfigRepository;
-    private AdjustEventConfigRepository adjustEventConfigRepository;
     private AdjustEventRecordRepository adjustEventRecordRepository;
     private ProfileDeviceRepository profileDeviceRepository;
     private ProfileAfRepository profileAfRepository;
@@ -36,13 +34,11 @@ class AppsFlyerS2sReporterImplTest {
     @BeforeEach
     void setUp() {
         adjustConfigRepository = mock(AdjustConfigRepository.class);
-        adjustEventConfigRepository = mock(AdjustEventConfigRepository.class);
         adjustEventRecordRepository = mock(AdjustEventRecordRepository.class);
         profileDeviceRepository = mock(ProfileDeviceRepository.class);
         profileAfRepository = mock(ProfileAfRepository.class);
         reporter = new AppsFlyerS2sReporterImpl(
                 adjustConfigRepository,
-                adjustEventConfigRepository,
                 adjustEventRecordRepository,
                 profileDeviceRepository,
                 profileAfRepository,
@@ -51,22 +47,24 @@ class AppsFlyerS2sReporterImplTest {
     }
 
     @Test
-    void skipsWhenEventNotEnabled() {
+    void skipsWhenAppsflyerIdMissing() {
         when(adjustConfigRepository.findActiveByOsName("Android"))
                 .thenReturn(Optional.of(new AdjustConfigRepository.AdjustConfigData(
                         1L, "app-id", "dev-key", "https://api2.appsflyer.com/inappevent/app-id", 30000, "Android"
                 )));
-        when(adjustEventConfigRepository.findEnabledByEventNameAndAppToken("BASIC_AUTH_FINISH", "app-id"))
+        when(profileDeviceRepository.findByDeviceNo("DEVICE202506020001"))
+                .thenReturn(Optional.empty());
+        when(profileAfRepository.findLatestByDeviceNo("DEVICE202506020001"))
                 .thenReturn(Optional.empty());
         when(adjustEventRecordRepository.insert(any())).thenReturn(77L);
 
-        AppsFlyerS2sReporter.ReportResult result = reporter.report(10L, parsedEvent());
+        AppsFlyerS2sReporter.ReportResult result = reporter.report(10L, parsedEventWithoutAdId());
 
         assertThat(result.reported()).isFalse();
-        assertThat(result.message()).contains("event disabled");
+        assertThat(result.message()).contains("appsflyer_id missing");
         assertThat(result.recordId()).isEqualTo(77L);
         verify(adjustEventRecordRepository).insert(any());
-        verify(adjustEventRecordRepository).updateStatus(eq(77L), eq(2), eq(null), contains("event disabled"), eq(0));
+        verify(adjustEventRecordRepository).updateStatus(eq(77L), eq(2), eq(null), contains("appsflyer_id missing"), eq(0));
     }
 
     @Test
@@ -74,10 +72,6 @@ class AppsFlyerS2sReporterImplTest {
         when(adjustConfigRepository.findActiveByOsName("Android"))
                 .thenReturn(Optional.of(new AdjustConfigRepository.AdjustConfigData(
                         1L, "app-id", "dev-key", "https://example.invalid/inappevent/app-id", 1000, "Android"
-                )));
-        when(adjustEventConfigRepository.findEnabledByEventNameAndAppToken("BASIC_AUTH_FINISH", "app-id"))
-                .thenReturn(Optional.of(new AdjustEventConfigRepository.AdjustEventConfigData(
-                        2L, "BASIC_AUTH_FINISH", "app-id", true
                 )));
         when(profileDeviceRepository.findByDeviceNo("DEVICE202506020001"))
                 .thenReturn(Optional.of(new ProfileDeviceData(
@@ -126,10 +120,6 @@ class AppsFlyerS2sReporterImplTest {
         when(adjustConfigRepository.findActiveByOsName("Android"))
                 .thenReturn(Optional.of(new AdjustConfigRepository.AdjustConfigData(
                         1L, "app-id", "dev-key", "https://example.invalid/inappevent/app-id", 1000, "Android"
-                )));
-        when(adjustEventConfigRepository.findEnabledByEventNameAndAppToken("BASIC_AUTH_FINISH", "app-id"))
-                .thenReturn(Optional.of(new AdjustEventConfigRepository.AdjustEventConfigData(
-                        2L, "BASIC_AUTH_FINISH", "app-id", true
                 )));
         when(profileDeviceRepository.findByDeviceNo("DEVICE202506020001"))
                 .thenReturn(Optional.empty());

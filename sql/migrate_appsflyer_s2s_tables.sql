@@ -15,19 +15,6 @@ CREATE TABLE IF NOT EXISTS adjust_config (
     KEY idx_adjust_config_active_os (is_active, os_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AppsFlyer S2S API configs';
 
-CREATE TABLE IF NOT EXISTS adjust_event_config (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-    event_name VARCHAR(128) NOT NULL COMMENT 'Lender callback eventType / AF eventName',
-    app_token VARCHAR(128) NOT NULL COMMENT 'AF App ID matching adjust_config.app_token',
-    description VARCHAR(256) NULL COMMENT 'Description',
-    is_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Whether event reporting is enabled',
-    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
-    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_adjust_event_config (event_name, app_token),
-    KEY idx_adjust_event_config_enabled (is_enabled, event_name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AppsFlyer event enablement config';
-
 CREATE TABLE IF NOT EXISTS adjust_event_record (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     server_event_callback_id BIGINT UNSIGNED NULL COMMENT 'Related lender_server_event_callback.id',

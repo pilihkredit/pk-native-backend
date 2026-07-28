@@ -2,7 +2,6 @@ package com.pk.infra.attribution;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.attribution.port.AdjustConfigRepository;
-import com.pk.core.attribution.port.AdjustEventConfigRepository;
 import com.pk.core.attribution.port.AdjustEventRecordRepository;
 import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.profile.port.ProfileAfRepository;
@@ -15,7 +14,6 @@ public class AttributionInfraConfiguration {
     @Bean
     AppsFlyerS2sReporter appsFlyerS2sReporter(
             AdjustConfigRepository adjustConfigRepository,
-            AdjustEventConfigRepository adjustEventConfigRepository,
             AdjustEventRecordRepository adjustEventRecordRepository,
             ProfileDeviceRepository profileDeviceRepository,
             ProfileAfRepository profileAfRepository,
@@ -23,7 +21,6 @@ public class AttributionInfraConfiguration {
     ) {
         return new AppsFlyerS2sReporterImpl(
                 adjustConfigRepository,
-                adjustEventConfigRepository,
                 adjustEventRecordRepository,
                 profileDeviceRepository,
                 profileAfRepository,
