@@ -34,6 +34,7 @@ import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +53,7 @@ class AuthServiceFacadeTest {
     private UserProfileBindingRepository userProfileBindingRepository;
     private AppsFlyerS2sReporter appsFlyerS2sReporter;
     private AuthOtpConfigLoader authOtpConfigLoader;
+    private SmsConfigLoader smsConfigLoader;
     private AuthServiceFacade facade;
 
     @BeforeEach
@@ -70,6 +72,7 @@ class AuthServiceFacadeTest {
         when(appsFlyerS2sReporter.reportPlatformEvent(any(), any(Long.class), any(), any(), any(), any()))
                 .thenReturn(AppsFlyerS2sReporter.ReportResult.recorded(1L, "OK"));
         authOtpConfigLoader = defaultOtpConfigLoader();
+        smsConfigLoader = defaultSmsConfigLoader(true, "1234", List.of());
         AuthProperties properties = new AuthProperties();
         properties.setOtpTtl(Duration.ofMinutes(5));
         facade = newFacade(properties, mock(SessionStore.class), mock(RefreshTokenStore.class), mock(TokenIssuer.class));
@@ -109,6 +112,7 @@ class AuthServiceFacadeTest {
         return new AuthServiceFacade(
                 properties,
                 authOtpConfigLoader,
+                smsConfigLoader,
                 sessionStore,
                 otpChallengeStore,
                 whatsappOtpChallengeStore,
@@ -138,6 +142,31 @@ class AuthServiceFacadeTest {
                 )
         ));
         return new AuthOtpConfigLoader(repository, new ObjectMapper());
+    }
+
+    private static SmsConfigLoader defaultSmsConfigLoader(
+            boolean enableSms,
+            String defaultCode,
+            List<String> userList
+    ) {
+        AppConfigRepository repository = mock(AppConfigRepository.class);
+        String usersJson = userList.stream()
+                .map(u -> "\"" + u + "\"")
+                .reduce((a, b) -> a + "," + b)
+                .map(s -> "[" + s + "]")
+                .orElse("[]");
+        when(repository.findByKey(SmsConfigLoader.CONF_KEY)).thenReturn(Optional.of(
+                new AppConfigRepository.AppConfigRecord(
+                        1L,
+                        SmsConfigLoader.CONF_KEY,
+                        """
+                        {"enableSms":%s,"url":"https://example.com","spid":"s","pwd":"p",
+                         "commercialCode":"0062","expireTime":300,"timeout":10000,
+                         "defaultCode":"%s","userList":%s}
+                        """.formatted(enableSms, defaultCode, usersJson)
+                )
+        ));
+        return new SmsConfigLoader(repository, new ObjectMapper());
     }
 
     @Test
@@ -475,5 +504,83 @@ class AuthServiceFacadeTest {
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
+    }
+
+    @Test
+    void acceptsWhitelistDefaultCodeWithoutStoredChallenge() {
+        smsConfigLoader = defaultSmsConfigLoader(true, "1234", List.of("8123456789"));
+        AuthProperties properties = verifyProperties();
+        TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
+        SessionStore sessionStore = mock(SessionStore.class);
+        RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
+        when(sessionStore.findByUserId(7L)).thenReturn(Optional.empty());
+        when(otpChallengeStore.findByToken("unused-token")).thenReturn(Optional.empty());
+        when(userAuthRepository.findOrCreateActiveByMobileNo("8123456789"))
+                .thenReturn(new UserProfileSummary(7L, "UABC", "8123456789", false));
+        when(userAuthRepository.isPasswordSet(7L)).thenReturn(false);
+
+        AuthServiceFacade verifyFacade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);
+
+        AuthServiceFacade.OtpVerifyResult result = verifyFacade.verifyOtp(
+                "8123456789",
+                "unused-token",
+                "1234",
+                "device-1"
+        );
+
+        assertThat(result.tokenPair().accessToken()).isNotBlank();
+        verify(otpChallengeStore, never()).delete(any());
+    }
+
+    @Test
+    void rejectsDefaultCodeWhenMobileNotOnWhitelist() {
+        smsConfigLoader = defaultSmsConfigLoader(true, "1234", List.of("8999999999"));
+        AuthProperties properties = verifyProperties();
+        AuthServiceFacade verifyFacade = newFacade(
+                properties,
+                mock(SessionStore.class),
+                mock(RefreshTokenStore.class),
+                new JwtTokenIssuer(properties)
+        );
+        when(otpChallengeStore.findByToken("token-1")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> verifyFacade.verifyOtp("8123456789", "token-1", "1234", "device-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
+    }
+
+    @Test
+    void acceptsDefaultCodeForEveryoneWhenSmsDisabled() {
+        smsConfigLoader = defaultSmsConfigLoader(false, "1234", List.of());
+        AuthProperties properties = verifyProperties();
+        TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
+        SessionStore sessionStore = mock(SessionStore.class);
+        RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
+        when(sessionStore.findByUserId(7L)).thenReturn(Optional.empty());
+        when(otpChallengeStore.findByToken("unused-token")).thenReturn(Optional.empty());
+        when(userAuthRepository.findOrCreateActiveByMobileNo("8123456789"))
+                .thenReturn(new UserProfileSummary(7L, "UABC", "8123456789", false));
+        when(userAuthRepository.isPasswordSet(7L)).thenReturn(false);
+
+        AuthServiceFacade verifyFacade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);
+
+        AuthServiceFacade.OtpVerifyResult result = verifyFacade.verifyOtp(
+                "8123456789",
+                "unused-token",
+                "1234",
+                "device-1"
+        );
+
+        assertThat(result.tokenPair().accessToken()).isNotBlank();
+    }
+
+    private static AuthProperties verifyProperties() {
+        AuthProperties properties = new AuthProperties();
+        properties.setAccessTokenTtl(Duration.ofMinutes(15));
+        properties.setRefreshTokenTtl(Duration.ofDays(30));
+        properties.setJwtSecret("local-dev-secret-change-in-prod-min-32-chars");
+        properties.setOtpBypassEnabled(false);
+        return properties;
     }
 }

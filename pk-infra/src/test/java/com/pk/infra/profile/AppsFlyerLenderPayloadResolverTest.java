@@ -50,6 +50,34 @@ class AppsFlyerLenderPayloadResolverTest {
     }
 
     @Test
+    void prefersInstallCallbackForLenderControlledDeviceFields() {
+        AppsFlyerCallbackRepository callbackRepository = mock(AppsFlyerCallbackRepository.class);
+        AppsFlyerCallbackRepository.AppsFlyerCallbackData callback =
+                mock(AppsFlyerCallbackRepository.AppsFlyerCallbackData.class);
+        when(callback.ip()).thenReturn("74.211.110.94");
+        when(callback.deviceCategory()).thenReturn("mobile_phone");
+        when(callback.deviceModel()).thenReturn("iPhone16Pro");
+        when(callback.bundleId()).thenReturn("com.pilihkredit.id");
+        when(callbackRepository.findLatestByAppsflyerIdAndEventName("af-1", "install"))
+                .thenReturn(Optional.of(callback));
+
+        ProfileAfData local = mock(ProfileAfData.class);
+        when(local.appsflyerId()).thenReturn("af-1");
+        when(local.ip()).thenReturn(null);
+        when(local.deviceCategory()).thenReturn("unknown_device_category");
+        when(local.deviceModel()).thenReturn(null);
+        when(local.bundleId()).thenReturn("id6749564952");
+
+        AppsFlyerLenderPayloadResolver resolver = new AppsFlyerLenderPayloadResolver(callbackRepository);
+        var payload = resolver.resolve(local);
+
+        assertThat(payload.ip()).isEqualTo("74.211.110.94");
+        assertThat(payload.deviceCategory()).isEqualTo("mobile_phone");
+        assertThat(payload.deviceModel()).isEqualTo("iPhone16Pro");
+        assertThat(payload.bundleId()).isEqualTo("com.pilihkredit.id");
+    }
+
+    @Test
     void fallsBackToAdvertisingIdWhenAppsflyerIdMisses() {
         AppsFlyerCallbackRepository callbackRepository = mock(AppsFlyerCallbackRepository.class);
         AppsFlyerCallbackRepository.AppsFlyerCallbackData callback =

@@ -44,6 +44,7 @@ public class AuthServiceFacade {
 
     private final AuthProperties authProperties;
     private final AuthOtpConfigLoader authOtpConfigLoader;
+    private final SmsConfigLoader smsConfigLoader;
     private final SessionStore sessionStore;
     private final OtpChallengeStore otpChallengeStore;
     private final OtpChallengeStore whatsappOtpChallengeStore;
@@ -62,6 +63,7 @@ public class AuthServiceFacade {
     public AuthServiceFacade(
             AuthProperties authProperties,
             AuthOtpConfigLoader authOtpConfigLoader,
+            SmsConfigLoader smsConfigLoader,
             SessionStore sessionStore,
             @Qualifier("otpChallengeStore") OtpChallengeStore otpChallengeStore,
             @Qualifier("whatsappOtpChallengeStore") OtpChallengeStore whatsappOtpChallengeStore,
@@ -79,6 +81,7 @@ public class AuthServiceFacade {
     ) {
         this.authProperties = authProperties;
         this.authOtpConfigLoader = authOtpConfigLoader;
+        this.smsConfigLoader = smsConfigLoader;
         this.sessionStore = sessionStore;
         this.otpChallengeStore = otpChallengeStore;
         this.whatsappOtpChallengeStore = whatsappOtpChallengeStore;
@@ -302,7 +305,9 @@ public class AuthServiceFacade {
         if (deviceNo == null || deviceNo.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        if (isOtpBypass(otpCode)) {
+        boolean allowConfiguredDefault =
+                LOGIN_CHANNEL_OTP.equals(loginChannel) && isSmsConfiguredDefaultCode(mobileNo, otpCode);
+        if (isOtpBypass(otpCode) || allowConfiguredDefault) {
             challengeStore.findByToken(otpToken).ifPresent(challenge -> challengeStore.delete(otpToken));
         } else {
             OtpChallenge challenge = challengeStore.findByToken(otpToken)
@@ -529,6 +534,19 @@ public class AuthServiceFacade {
         return authProperties.otpBypassEnabled()
                 && authProperties.otpBypassCode() != null
                 && authProperties.otpBypassCode().equals(otpCode);
+    }
+
+    /**
+     * Aligns with pk-credit-core VerificationCodeService:
+     * whitelist mobile + defaultCode, or defaultCode when enableSms=false.
+     */
+    private boolean isSmsConfiguredDefaultCode(String mobileNo, String otpCode) {
+        try {
+            return SmsConfigLoader.acceptsConfiguredDefaultCode(smsConfigLoader.loadConf(), mobileNo, otpCode);
+        } catch (Exception exception) {
+            log.warn("smsConf default-code check skipped: {}", exception.getMessage());
+            return false;
+        }
     }
 
     @FunctionalInterface

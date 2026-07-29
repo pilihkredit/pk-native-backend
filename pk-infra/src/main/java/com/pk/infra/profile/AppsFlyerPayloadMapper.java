@@ -35,11 +35,11 @@ final class AppsFlyerPayloadMapper {
                 prefer(data.countryCode(), callback == null ? null : callback.countryCode()),
                 prefer(data.city(), callback == null ? null : callback.city()),
                 prefer(data.postalCode(), callback == null ? null : callback.postalCode()),
-                prefer(data.ip(), callback == null ? null : callback.ip()),
+                preferCallback(callback == null ? null : callback.ip(), data.ip()),
                 prefer(data.operator(), callback == null ? null : callback.operator()),
-                prefer(data.deviceCategory(), callback == null ? null : callback.deviceCategory()),
+                preferCallback(callback == null ? null : callback.deviceCategory(), data.deviceCategory()),
                 prefer(data.platform(), callback == null ? null : callback.platform()),
-                prefer(data.deviceModel(), callback == null ? null : callback.deviceModel()),
+                preferCallback(callback == null ? null : callback.deviceModel(), data.deviceModel()),
                 prefer(data.idfv(), callback == null ? null : callback.idfv()),
                 prefer(data.idfa(), callback == null ? null : callback.idfa()),
                 prefer(data.afAd(), callback == null ? null : callback.afAd()),
@@ -52,7 +52,7 @@ final class AppsFlyerPayloadMapper {
                 prefer(data.contributor1AfPrt(), callback == null ? null : callback.contributor1AfPrt()),
                 prefer(data.contributor1MatchType(), callback == null ? null : callback.contributor1MatchType()),
                 prefer(data.contributor1EngagementType(), callback == null ? null : callback.contributor1EngagementType()),
-                prefer(data.bundleId(), callback == null ? null : callback.bundleId()),
+                preferCallback(callback == null ? null : callback.bundleId(), data.bundleId()),
                 prefer(data.matchType(), callback == null ? null : callback.matchType()),
                 prefer(data.gpInstallBegin(), callback == null ? null : callback.gpInstallBegin())
         );
@@ -121,5 +121,9 @@ final class AppsFlyerPayloadMapper {
             return fallback.trim();
         }
         return null;
+    }
+
+    private static String preferCallback(String callbackValue, String storedValue) {
+        return prefer(callbackValue, storedValue);
     }
 }

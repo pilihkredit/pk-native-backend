@@ -71,6 +71,28 @@ ON DUPLICATE KEY UPDATE
 
 INSERT INTO app_config (`key`, `value`)
 VALUES (
+    'smsConf',
+    JSON_OBJECT(
+        'enableSms', true,
+        'url', '',
+        'spid', '',
+        'pwd', '',
+        'commercialCode', '0062',
+        'contentTemplate', '[PilihKredit] Kode verifikasi Anda adalah {code} valid selama {minutes} menit. JANGAN Bagikan kode ini kepada siapapun!',
+        'expireTime', 300,
+        'minInterval', 60,
+        'codeLength', 6,
+        'numericOnly', true,
+        'timeout', 10000,
+        'defaultCode', '1234',
+        'userList', JSON_ARRAY()
+    )
+)
+ON DUPLICATE KEY UPDATE
+    `value` = VALUES(`value`);
+
+INSERT INTO app_config (`key`, `value`)
+VALUES (
     'whatsapp_daily_limit',
     CAST('5' AS JSON)
 )

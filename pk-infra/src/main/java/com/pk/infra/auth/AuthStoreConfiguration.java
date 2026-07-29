@@ -51,9 +51,15 @@ public class AuthStoreConfiguration {
     }
 
     @Bean
+    SmsConfigLoader smsConfigLoader(AppConfigRepository appConfigRepository, ObjectMapper objectMapper) {
+        return new SmsConfigLoader(appConfigRepository, objectMapper);
+    }
+
+    @Bean
     AuthServiceFacade authServiceFacade(
             AuthProperties authProperties,
             AuthOtpConfigLoader authOtpConfigLoader,
+            SmsConfigLoader smsConfigLoader,
             SessionStore sessionStore,
             @Qualifier("otpChallengeStore") OtpChallengeStore otpChallengeStore,
             @Qualifier("whatsappOtpChallengeStore") OtpChallengeStore whatsappOtpChallengeStore,
@@ -72,6 +78,7 @@ public class AuthStoreConfiguration {
         return new AuthServiceFacade(
                 authProperties,
                 authOtpConfigLoader,
+                smsConfigLoader,
                 sessionStore,
                 otpChallengeStore,
                 whatsappOtpChallengeStore,

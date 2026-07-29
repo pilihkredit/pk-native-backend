@@ -31,7 +31,8 @@ class PendanaanProfileSyncAdapterTest {
         envelope.put("code", ApiCode.SUCCESS.code());
         ObjectNode data = envelope.putObject("data");
         data.put("userId", "USR202506020001");
-        when(httpClient.postEnvelope(anyString(), anyString(), anyString(), anyString())).thenReturn(envelope);
+        when(httpClient.postEnvelopeWithInteraction(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(new PendanaanHttpClient.EnvelopeResult(envelope, 1L));
 
         PendanaanProfileSyncAdapter adapter = new PendanaanProfileSyncAdapter(httpClient, objectMapper);
         LenderProfileSyncPort.LenderProfileSyncResult result = adapter.syncModule(sampleCommand());
@@ -80,13 +81,14 @@ class PendanaanProfileSyncAdapterTest {
         PendanaanHttpClient httpClient = mock(PendanaanHttpClient.class);
         ObjectNode envelope = objectMapper.createObjectNode();
         envelope.put("code", ApiCode.SUCCESS.code());
-        when(httpClient.postEnvelope(anyString(), anyString(), anyString(), anyString())).thenReturn(envelope);
+        when(httpClient.postEnvelopeWithInteraction(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(new PendanaanHttpClient.EnvelopeResult(envelope, 1L));
 
         PendanaanProfileSyncAdapter adapter = new PendanaanProfileSyncAdapter(httpClient, objectMapper);
         adapter.syncModule(sampleCommand());
 
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
-        verify(httpClient).postEnvelope(
+        verify(httpClient).postEnvelopeWithInteraction(
                 eq(PendanaanProfileSyncAdapter.UPSERT_PATH),
                 bodyCaptor.capture(),
                 eq(PendanaanProfileSyncAdapter.BUSINESS_TYPE),
@@ -109,7 +111,8 @@ class PendanaanProfileSyncAdapterTest {
         PendanaanHttpClient httpClient = mock(PendanaanHttpClient.class);
         ObjectNode envelope = objectMapper.createObjectNode();
         envelope.put("code", ApiCode.SUCCESS.code());
-        when(httpClient.postEnvelope(anyString(), anyString(), anyString(), anyString())).thenReturn(envelope);
+        when(httpClient.postEnvelopeWithInteraction(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(new PendanaanHttpClient.EnvelopeResult(envelope, 1L));
 
         PendanaanProfileSyncAdapter adapter = new PendanaanProfileSyncAdapter(httpClient, objectMapper);
         adapter.syncModule(new LenderProfileSyncPort.LenderProfileSyncCommand(
@@ -122,7 +125,7 @@ class PendanaanProfileSyncAdapterTest {
         ));
 
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
-        verify(httpClient).postEnvelope(
+        verify(httpClient).postEnvelopeWithInteraction(
                 eq(PendanaanProfileSyncAdapter.UPSERT_PATH),
                 bodyCaptor.capture(),
                 eq(PendanaanProfileSyncAdapter.BUSINESS_TYPE),
@@ -143,7 +146,8 @@ class PendanaanProfileSyncAdapterTest {
         PendanaanHttpClient httpClient = mock(PendanaanHttpClient.class);
         ObjectNode envelope = objectMapper.createObjectNode();
         envelope.put("code", ApiCode.SUCCESS.code());
-        when(httpClient.postEnvelope(anyString(), anyString(), anyString(), anyString())).thenReturn(envelope);
+        when(httpClient.postEnvelopeWithInteraction(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(new PendanaanHttpClient.EnvelopeResult(envelope, 1L));
 
         PendanaanProfileSyncAdapter adapter = new PendanaanProfileSyncAdapter(httpClient, objectMapper);
         adapter.syncModule(new LenderProfileSyncPort.LenderProfileSyncCommand(
@@ -187,7 +191,7 @@ class PendanaanProfileSyncAdapterTest {
         ));
 
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
-        verify(httpClient).postEnvelope(
+        verify(httpClient).postEnvelopeWithInteraction(
                 eq(PendanaanProfileSyncAdapter.UPSERT_PATH),
                 bodyCaptor.capture(),
                 eq(PendanaanProfileSyncAdapter.BUSINESS_TYPE),
