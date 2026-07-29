@@ -340,9 +340,6 @@ public class IdentityOcrFacade {
                 && MODULE_COMPLETED.equals(storedIdentity.moduleStatus())) {
             return buildIdempotentResult(command.requestId(), storedIdentity);
         }
-        if (MODULE_COMPLETED.equals(storedIdentity.moduleStatus())) {
-            throw new ApiException(ApiCode.DUPLICATE_SUBMISSION_IN_PROGRESS);
-        }
 
         String manualName = storedIdentity.fullName().trim();
         // Decrypt stored ciphertext so lender identity.idNo receives plaintext EKTP.

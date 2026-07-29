@@ -182,9 +182,6 @@ public class TrustDecisionIdentityFacade {
         if (requestId.equals(identity.lastRequestId()) && MODULE_COMPLETED.equals(identity.moduleStatus())) {
             return new FaceRecognitionResult(requestId, null, 0D, null, MODULE_COMPLETED, null);
         }
-        if (MODULE_COMPLETED.equals(identity.moduleStatus())) {
-            throw new ApiException(ApiCode.DUPLICATE_SUBMISSION_IN_PROGRESS);
-        }
         TrustDecisionSessionState session = requireOcrSession(userId);
         String normalizedMobileNo = requireMobile(mobileNo);
         TrustDecisionKycPort.SdkLivenessResult livenessResult;
