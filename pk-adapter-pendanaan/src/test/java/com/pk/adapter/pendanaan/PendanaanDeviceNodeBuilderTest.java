@@ -26,7 +26,7 @@ class PendanaanDeviceNodeBuilderTest {
                 null,
                 null,
                 sampleDevice(null),
-                List.of()
+                sampleAppList()
         ));
 
         JsonNode riskDataInfo = objectMapper.readTree(body).path("riskDataInfo");
@@ -35,6 +35,7 @@ class PendanaanDeviceNodeBuilderTest {
         assertThat(openUserDevice.path("deviceOtherInfo").isObject()).isTrue();
         assertThat(openUserDevice.path("phoneBrand").asText()).isEqualTo("Apple");
         assertThat(riskDataInfo.has("appList")).isTrue();
+        assertThat(riskDataInfo.path("appList").path(0).path("appName").asText()).isEqualTo("Example App");
     }
 
     @Test

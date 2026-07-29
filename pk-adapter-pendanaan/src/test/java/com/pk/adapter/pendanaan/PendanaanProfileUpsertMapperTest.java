@@ -121,7 +121,7 @@ class PendanaanProfileUpsertMapperTest {
                 )
         );
 
-        assertThat(userInfo.get("device").get("appName").asText()).isEqualTo("PKApp");
+        assertThat(userInfo.get("device").get("appName").asText()).isEqualTo("PilihKredit");
         assertThat(userInfo.get("device").get("deviceNo").asText()).isEqualTo("device-1");
         assertThat(userInfo.get("device").get("adId").asText()).isEqualTo("ad-1");
         assertThat(userInfo.get("device").get("phoneBrand").asText()).isEqualTo("Huawei");
