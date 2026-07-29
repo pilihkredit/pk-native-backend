@@ -76,12 +76,43 @@ public class AuthApplicationService {
         return toOtpSessionResponse(result);
     }
 
+    public OtpVerifyResponse verifyOtp(
+            OtpVerifyRequest request,
+            String deviceNoHeader,
+            String platformHeader
+    ) {
+        validateDeviceNoMatchesHeader(request.deviceNo(), deviceNoHeader);
+        AuthServiceFacade.OtpVerifyResult result = authServiceFacade.verifyOtp(
+                request.mobileNo(),
+                request.otpToken(),
+                request.otpCode(),
+                request.deviceNo(),
+                platformHeader
+        );
+        return toOtpSessionResponse(result);
+    }
+
     public OtpVerifyResponse loginWithWhatsApp(WhatsAppLoginRequest request, String deviceNoHeader) {
         validateDeviceNoMatchesHeader(request.deviceNo(), deviceNoHeader);
         AuthServiceFacade.OtpVerifyResult result = authServiceFacade.loginWithWhatsApp(
                 request.mobileNo(),
                 request.otpCode(),
                 request.deviceNo()
+        );
+        return toOtpSessionResponse(result);
+    }
+
+    public OtpVerifyResponse loginWithWhatsApp(
+            WhatsAppLoginRequest request,
+            String deviceNoHeader,
+            String platformHeader
+    ) {
+        validateDeviceNoMatchesHeader(request.deviceNo(), deviceNoHeader);
+        AuthServiceFacade.OtpVerifyResult result = authServiceFacade.loginWithWhatsApp(
+                request.mobileNo(),
+                request.otpCode(),
+                request.deviceNo(),
+                platformHeader
         );
         return toOtpSessionResponse(result);
     }

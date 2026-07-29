@@ -78,10 +78,11 @@ public class AuthController {
     public ApiResponse<OtpVerifyResponse> verifyOtp(
             @Valid @RequestBody OtpVerifyRequest request,
             @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
+            @RequestHeader(value = "X-Platform", required = false) String platformHeader,
             HttpServletRequest httpRequest
     ) {
         return ApiResponse.success(
-                authApplicationService.verifyOtp(request, deviceNoHeader),
+                authApplicationService.verifyOtp(request, deviceNoHeader, platformHeader),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }
@@ -92,10 +93,11 @@ public class AuthController {
     public ApiResponse<OtpVerifyResponse> loginWhatsApp(
             @Valid @RequestBody WhatsAppLoginRequest request,
             @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
+            @RequestHeader(value = "X-Platform", required = false) String platformHeader,
             HttpServletRequest httpRequest
     ) {
         return ApiResponse.success(
-                authApplicationService.loginWithWhatsApp(request, deviceNoHeader),
+                authApplicationService.loginWithWhatsApp(request, deviceNoHeader, platformHeader),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

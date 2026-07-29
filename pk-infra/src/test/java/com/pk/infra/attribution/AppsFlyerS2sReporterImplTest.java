@@ -47,6 +47,26 @@ class AppsFlyerS2sReporterImplTest {
     }
 
     @Test
+    void skipsWhenPlatformIsMissingInsteadOfUsingAndroidConfig() {
+        when(adjustEventRecordRepository.insert(any())).thenReturn(78L);
+
+        AppsFlyerS2sReporter.ReportResult result = reporter.reportPlatformEvent(
+                AppsFlyerS2sReporter.EVENT_REGISTER_SUCCESS_PK,
+                9L,
+                "USER-9",
+                "device-1",
+                null,
+                null
+        );
+
+        assertThat(result.reported()).isFalse();
+        assertThat(result.message()).contains("platform missing or unsupported");
+        verify(adjustEventRecordRepository).updateStatus(
+                eq(78L), eq(2), eq(null), contains("platform missing or unsupported"), eq(0)
+        );
+    }
+
+    @Test
     void skipsWhenAppsflyerIdMissing() {
         when(adjustConfigRepository.findActiveByOsName("Android"))
                 .thenReturn(Optional.of(new AdjustConfigRepository.AdjustConfigData(

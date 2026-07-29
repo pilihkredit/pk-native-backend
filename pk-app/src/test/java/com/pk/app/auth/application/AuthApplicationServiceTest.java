@@ -46,19 +46,21 @@ class AuthApplicationServiceTest {
         HomeApplicationService homeApplicationService = mock(HomeApplicationService.class);
         UserProfileSummary profile = new UserProfileSummary(10L, "U10001", "81234567890", true);
         TokenPair tokenPair = new TokenPair("access", "refresh", 900, "Bearer");
-        when(facade.verifyOtp("81234567890", "otp-token", "123456", "device-1"))
+        when(facade.verifyOtp("81234567890", "otp-token", "123456", "device-1", "ios"))
                 .thenReturn(new AuthServiceFacade.OtpVerifyResult(profile, tokenPair, false));
         when(homeApplicationService.resolveUserStage(10L, "U10001"))
                 .thenThrow(new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada"));
 
         var response = new AuthApplicationService(facade, homeApplicationService).verifyOtp(
                 new OtpVerifyRequest("81234567890", "otp-token", "123456", "device-1"),
-                "device-1"
+                "device-1",
+                "ios"
         );
 
         assertThat(response.userStage()).isEqualTo(HomeUserStage.ONBOARDING);
         assertThat(response.accessToken()).isEqualTo("access");
         assertThat(response.newUser()).isTrue();
+        verify(facade).verifyOtp("81234567890", "otp-token", "123456", "device-1", "ios");
     }
 
     @Test
@@ -67,18 +69,20 @@ class AuthApplicationServiceTest {
         HomeApplicationService homeApplicationService = mock(HomeApplicationService.class);
         UserProfileSummary profile = new UserProfileSummary(10L, "U10001", "81234567890", true);
         TokenPair tokenPair = new TokenPair("access", "refresh", 900, "Bearer");
-        when(facade.loginWithWhatsApp("81234567890", "123456", "device-1"))
+        when(facade.loginWithWhatsApp("81234567890", "123456", "device-1", "android"))
                 .thenReturn(new AuthServiceFacade.OtpVerifyResult(profile, tokenPair, false));
         when(homeApplicationService.resolveUserStage(10L, "U10001"))
                 .thenThrow(new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada"));
 
         var response = new AuthApplicationService(facade, homeApplicationService).loginWithWhatsApp(
                 new WhatsAppLoginRequest("81234567890", "123456", "device-1"),
-                "device-1"
+                "device-1",
+                "android"
         );
 
         assertThat(response.userStage()).isEqualTo(HomeUserStage.ONBOARDING);
         assertThat(response.authAction()).isEqualTo("REGISTER");
+        verify(facade).loginWithWhatsApp("81234567890", "123456", "device-1", "android");
     }
 
     @Test

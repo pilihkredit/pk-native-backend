@@ -59,6 +59,15 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
     @Override
     public ReportResult report(Long serverEventCallbackId, ServerEventCallbackParser.ParsedServerEventCallback event) {
         String osName = normalizeOsName(event.systemPlatform());
+        if (osName == null) {
+            return skipRecorded(
+                    serverEventCallbackId,
+                    event,
+                    null,
+                    null,
+                    "platform missing or unsupported"
+            );
+        }
         Optional<AdjustConfigRepository.AdjustConfigData> configOpt = adjustConfigRepository.findActiveByOsName(osName);
         if (configOpt.isEmpty()) {
             return skipRecorded(serverEventCallbackId, event, null, null, "no active AF config for os=" + osName);
@@ -343,13 +352,16 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
 
     private static String normalizeOsName(String systemPlatform) {
         if (isBlank(systemPlatform)) {
-            return "Android";
+            return null;
         }
         String value = systemPlatform.trim();
         if ("ios".equalsIgnoreCase(value) || "iphone".equalsIgnoreCase(value)) {
             return "iOS";
         }
-        return "Android";
+        if ("android".equalsIgnoreCase(value)) {
+            return "Android";
+        }
+        return null;
     }
 
     private static String firstText(JsonNode root, String... fields) {

@@ -325,7 +325,8 @@ class AuthServiceFacadeTest {
         AuthServiceFacade.OtpVerifyResult result = verifyFacade.loginWithWhatsApp(
                 "8123456789",
                 "654321",
-                "device-1"
+                "device-1",
+                "ios"
         );
 
         assertThat(result.profile().newlyCreated()).isTrue();
@@ -340,7 +341,7 @@ class AuthServiceFacadeTest {
                 eq(9L),
                 eq("UWA"),
                 eq("device-1"),
-                eq(null),
+                eq("ios"),
                 eq(null)
         );
     }

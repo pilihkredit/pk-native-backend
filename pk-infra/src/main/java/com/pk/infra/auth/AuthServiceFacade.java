@@ -251,17 +251,37 @@ public class AuthServiceFacade {
     }
 
     public OtpVerifyResult verifyOtp(String mobileNo, String otpToken, String otpCode, String deviceNo) {
+        return verifyOtp(mobileNo, otpToken, otpCode, deviceNo, null);
+    }
+
+    public OtpVerifyResult verifyOtp(
+            String mobileNo,
+            String otpToken,
+            String otpCode,
+            String deviceNo,
+            String systemPlatform
+    ) {
         return verifyChallengeAndLogin(
                 otpChallengeStore,
                 mobileNo,
                 otpToken,
                 otpCode,
                 deviceNo,
-                LOGIN_CHANNEL_OTP
+                LOGIN_CHANNEL_OTP,
+                systemPlatform
         );
     }
 
     public OtpVerifyResult loginWithWhatsApp(String mobileNo, String otpCode, String deviceNo) {
+        return loginWithWhatsApp(mobileNo, otpCode, deviceNo, null);
+    }
+
+    public OtpVerifyResult loginWithWhatsApp(
+            String mobileNo,
+            String otpCode,
+            String deviceNo,
+            String systemPlatform
+    ) {
         validateMobile(mobileNo);
         if (otpCode == null || otpCode.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -274,7 +294,7 @@ public class AuthServiceFacade {
                     .ifPresent(whatsappOtpChallengeStore::delete);
             UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
             TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_WHATSAPP);
-            reportRegisterSuccessIfNeeded(profile, deviceNo);
+            reportRegisterSuccessIfNeeded(profile, deviceNo, systemPlatform);
             boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
             return new OtpVerifyResult(profile, tokenPair, passwordSet);
         }
@@ -286,7 +306,8 @@ public class AuthServiceFacade {
                 otpToken,
                 otpCode,
                 deviceNo,
-                LOGIN_CHANNEL_WHATSAPP
+                LOGIN_CHANNEL_WHATSAPP,
+                systemPlatform
         );
     }
 
@@ -296,7 +317,8 @@ public class AuthServiceFacade {
             String otpToken,
             String otpCode,
             String deviceNo,
-            String loginChannel
+            String loginChannel,
+            String systemPlatform
     ) {
         validateMobile(mobileNo);
         if (otpToken == null || otpToken.isBlank() || otpCode == null || otpCode.isBlank()) {
@@ -330,12 +352,16 @@ public class AuthServiceFacade {
 
         UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
         TokenPair tokenPair = openSession(profile, deviceNo, loginChannel);
-        reportRegisterSuccessIfNeeded(profile, deviceNo);
+        reportRegisterSuccessIfNeeded(profile, deviceNo, systemPlatform);
         boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
         return new OtpVerifyResult(profile, tokenPair, passwordSet);
     }
 
-    private void reportRegisterSuccessIfNeeded(UserProfileSummary profile, String deviceNo) {
+    private void reportRegisterSuccessIfNeeded(
+            UserProfileSummary profile,
+            String deviceNo,
+            String systemPlatform
+    ) {
         if (profile == null || !profile.newlyCreated()) {
             return;
         }
@@ -345,7 +371,7 @@ public class AuthServiceFacade {
                     profile.userId(),
                     profile.partnerUserId(),
                     deviceNo,
-                    null,
+                    systemPlatform,
                     null
             );
             log.info(
