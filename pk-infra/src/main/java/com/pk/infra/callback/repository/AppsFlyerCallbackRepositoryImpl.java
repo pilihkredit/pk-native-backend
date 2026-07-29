@@ -38,4 +38,52 @@ public class AppsFlyerCallbackRepositoryImpl implements AppsFlyerCallbackReposit
         }
         return Optional.ofNullable(mapper.findLatestByAppsflyerIdAndEventName(appsflyerId.trim(), eventName.trim()));
     }
+
+    @Override
+    public Optional<AppsFlyerCallbackData> findLatestByAdvertisingId(String advertisingId) {
+        if (advertisingId == null || advertisingId.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(mapper.findLatestByAdvertisingId(advertisingId.trim()));
+    }
+
+    @Override
+    public Optional<AppsFlyerCallbackData> findLatestByAdvertisingIdAndEventName(String advertisingId, String eventName) {
+        if (advertisingId == null || advertisingId.isBlank() || eventName == null || eventName.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(mapper.findLatestByAdvertisingIdAndEventName(advertisingId.trim(), eventName.trim()));
+    }
+
+    @Override
+    public Optional<AppsFlyerCallbackData> findLatestByAndroidId(String androidId) {
+        if (androidId == null || androidId.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(mapper.findLatestByAndroidId(androidId.trim()));
+    }
+
+    @Override
+    public Optional<AppsFlyerCallbackData> findLatestByAndroidIdAndEventName(String androidId, String eventName) {
+        if (androidId == null || androidId.isBlank() || eventName == null || eventName.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(mapper.findLatestByAndroidIdAndEventName(androidId.trim(), eventName.trim()));
+    }
+
+    @Override
+    public Optional<AppsFlyerCallbackData> findLatestByDeviceNo(String deviceNo) {
+        if (deviceNo == null || deviceNo.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(mapper.findLatestByDeviceNo(deviceNo.trim()));
+    }
+
+    @Override
+    public Optional<AppsFlyerCallbackData> findLatestByDeviceNoAndEventName(String deviceNo, String eventName) {
+        if (deviceNo == null || deviceNo.isBlank() || eventName == null || eventName.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(mapper.findLatestByDeviceNoAndEventName(deviceNo.trim(), eventName.trim()));
+    }
 }

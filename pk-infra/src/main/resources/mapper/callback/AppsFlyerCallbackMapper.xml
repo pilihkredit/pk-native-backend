@@ -109,4 +109,55 @@
         ORDER BY created_at DESC
         LIMIT 1
     </select>
+
+    <select id="findLatestByAdvertisingId" resultMap="callbackDataMap">
+        SELECT <include refid="Lender_Column_List"/>
+        FROM appsflyer_callback
+        WHERE advertising_id = #{advertisingId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="findLatestByAdvertisingIdAndEventName" resultMap="callbackDataMap">
+        SELECT <include refid="Lender_Column_List"/>
+        FROM appsflyer_callback
+        WHERE advertising_id = #{advertisingId}
+          AND event_name = #{eventName}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="findLatestByAndroidId" resultMap="callbackDataMap">
+        SELECT <include refid="Lender_Column_List"/>
+        FROM appsflyer_callback
+        WHERE android_id = #{androidId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="findLatestByAndroidIdAndEventName" resultMap="callbackDataMap">
+        SELECT <include refid="Lender_Column_List"/>
+        FROM appsflyer_callback
+        WHERE android_id = #{androidId}
+          AND event_name = #{eventName}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="findLatestByDeviceNo" resultMap="callbackDataMap">
+        SELECT <include refid="Lender_Column_List"/>
+        FROM appsflyer_callback
+        WHERE device_no = #{deviceNo}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="findLatestByDeviceNoAndEventName" resultMap="callbackDataMap">
+        SELECT <include refid="Lender_Column_List"/>
+        FROM appsflyer_callback
+        WHERE device_no = #{deviceNo}
+          AND event_name = #{eventName}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
 </mapper>

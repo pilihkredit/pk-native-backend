@@ -9,6 +9,18 @@ public interface AppsFlyerCallbackRepository {
 
     Optional<AppsFlyerCallbackData> findLatestByAppsflyerIdAndEventName(String appsflyerId, String eventName);
 
+    Optional<AppsFlyerCallbackData> findLatestByAdvertisingId(String advertisingId);
+
+    Optional<AppsFlyerCallbackData> findLatestByAdvertisingIdAndEventName(String advertisingId, String eventName);
+
+    Optional<AppsFlyerCallbackData> findLatestByAndroidId(String androidId);
+
+    Optional<AppsFlyerCallbackData> findLatestByAndroidIdAndEventName(String androidId, String eventName);
+
+    Optional<AppsFlyerCallbackData> findLatestByDeviceNo(String deviceNo);
+
+    Optional<AppsFlyerCallbackData> findLatestByDeviceNoAndEventName(String deviceNo, String eventName);
+
     /** Fields used to fill lender appsFlyerInstall when user_profile_af is blank. */
     record AppsFlyerCallbackData(
             String appsflyerId,

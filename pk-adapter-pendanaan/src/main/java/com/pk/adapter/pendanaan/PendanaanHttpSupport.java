@@ -17,11 +17,15 @@ final class PendanaanHttpSupport {
     static final int STORAGE_REF_MAX_CHARS = 256 * 1024;
     private static final int SENSITIVE_PREVIEW_LENGTH = 100;
     private static final ObjectMapper LOG_MAPPER = new ObjectMapper();
+    /** Secrets still preview-truncated in logs. */
     private static final Set<String> SENSITIVE_LOG_FIELDS = Set.of(
             "clientSecret",
             "accessToken",
             "token",
-            "refreshToken",
+            "refreshToken"
+    );
+    /** Image payloads kept in full for lender request/response logs (no preview truncation). */
+    private static final Set<String> FULL_LOG_IMAGE_FIELDS = Set.of(
             "faceBase64",
             "idCardBase64",
             "imageBase64",
@@ -55,12 +59,15 @@ final class PendanaanHttpSupport {
         return value.length() <= STORAGE_REF_MAX_CHARS ? value : value.substring(0, STORAGE_REF_MAX_CHARS);
     }
 
+    /**
+     * Formats a log body. {@code maxBodyBytes <= 0} means no length limit (print full).
+     */
     static String formatLogBody(String value, int maxBodyBytes) {
         if (value == null || value.isEmpty()) {
             return "";
         }
         String sanitized = sanitizeLineBreaks(value);
-        if (sanitized.length() <= maxBodyBytes) {
+        if (maxBodyBytes <= 0 || sanitized.length() <= maxBodyBytes) {
             return sanitized;
         }
         return sanitized.substring(0, maxBodyBytes)
@@ -92,6 +99,8 @@ final class PendanaanHttpSupport {
                 JsonNode child = objectNode.get(field);
                 if (child != null && child.isTextual() && SENSITIVE_LOG_FIELDS.contains(field)) {
                     objectNode.put(field, previewSensitiveValue(child.asText()));
+                } else if (child != null && child.isTextual() && FULL_LOG_IMAGE_FIELDS.contains(field)) {
+                    objectNode.put(field, sanitizeLineBreaks(child.asText()));
                 } else {
                     redactSensitiveNode(child);
                 }

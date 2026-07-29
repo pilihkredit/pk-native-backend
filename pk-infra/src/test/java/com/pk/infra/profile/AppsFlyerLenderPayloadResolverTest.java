@@ -25,7 +25,7 @@ class AppsFlyerLenderPayloadResolverTest {
                 .thenReturn(Optional.of(callback));
 
         AppsFlyerLenderPayloadResolver resolver = new AppsFlyerLenderPayloadResolver(callbackRepository);
-        var payload = resolver.resolve(minimalAf("af-1", null));
+        var payload = resolver.resolve(minimalAf("af-1", null, null, null));
 
         assertThat(payload.appsflyerId()).isEqualTo("af-1");
         assertThat(payload.mediaSource()).isEqualTo("facebook");
@@ -45,18 +45,76 @@ class AppsFlyerLenderPayloadResolverTest {
                 .thenReturn(Optional.of(callback));
 
         AppsFlyerLenderPayloadResolver resolver = new AppsFlyerLenderPayloadResolver(callbackRepository);
-        assertThat(resolver.resolve(minimalAf("af-1", "from-client")).mediaSource()).isEqualTo("from-client");
+        assertThat(resolver.resolve(minimalAf("af-1", null, null, "from-client")).mediaSource())
+                .isEqualTo("from-client");
     }
 
-    private static ProfileAfData minimalAf(String appsflyerId, String mediaSource) {
+    @Test
+    void fallsBackToAdvertisingIdWhenAppsflyerIdMisses() {
+        AppsFlyerCallbackRepository callbackRepository = mock(AppsFlyerCallbackRepository.class);
+        AppsFlyerCallbackRepository.AppsFlyerCallbackData callback =
+                mock(AppsFlyerCallbackRepository.AppsFlyerCallbackData.class);
+        when(callback.mediaSource()).thenReturn("organic");
+        when(callback.installTime()).thenReturn("2026-07-17 00:00:00.000");
+        when(callbackRepository.findLatestByAppsflyerIdAndEventName("af-client", "install"))
+                .thenReturn(Optional.empty());
+        when(callbackRepository.findLatestByAppsflyerId("af-client")).thenReturn(Optional.empty());
+        when(callbackRepository.findLatestByAdvertisingIdAndEventName("gaid-1", "install"))
+                .thenReturn(Optional.of(callback));
+
+        AppsFlyerLenderPayloadResolver resolver = new AppsFlyerLenderPayloadResolver(callbackRepository);
+        var payload = resolver.resolve(minimalAf("af-client", "gaid-1", "android-1", null));
+
+        assertThat(payload.mediaSource()).isEqualTo("organic");
+        assertThat(payload.installTime()).isEqualTo("2026-07-17 00:00:00.000");
+    }
+
+    private static ProfileAfData minimalAf(
+            String appsflyerId, String advertisingId, String androidId, String mediaSource) {
         return new ProfileAfData(
                 1L,
                 2L,
                 "dev-1",
                 appsflyerId,
-                null, null, null, null, null, mediaSource, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null,
+                advertisingId,
+                androidId,
+                null,
+                null,
+                null,
+                mediaSource,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 "COMPLETED",
                 "req-1",
                 null

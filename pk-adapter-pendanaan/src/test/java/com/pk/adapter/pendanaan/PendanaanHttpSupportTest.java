@@ -17,7 +17,7 @@ class PendanaanHttpSupportTest {
     }
 
     @Test
-    void previewsClientSecretAccessTokenAndImageFields() {
+    void previewsSecretsButKeepsFaceBase64Full() {
         String longSecret = "s".repeat(120);
         String longToken = "t".repeat(120);
         String longImage = "i".repeat(120);
@@ -29,8 +29,17 @@ class PendanaanHttpSupportTest {
 
         assertThat(redacted).contains("\"clientSecret\":\"" + "s".repeat(100) + "...[truncated]\"");
         assertThat(redacted).contains("\"accessToken\":\"" + "t".repeat(100) + "...[truncated]\"");
-        assertThat(redacted).contains("\"faceBase64\":\"" + "i".repeat(100) + "...[truncated]\"");
+        assertThat(redacted).contains("\"faceBase64\":\"" + longImage + "\"");
+        assertThat(redacted).doesNotContain("faceBase64\":\"" + "i".repeat(100) + "...[truncated]");
         assertThat(redacted).contains("\"name\":\"Alice\"");
+    }
+
+    @Test
+    void formatLogBodyUnlimitedWhenMaxBodyBytesNonPositive() {
+        String body = "x".repeat(20);
+
+        assertThat(PendanaanHttpSupport.formatLogBody(body, 0)).isEqualTo(body);
+        assertThat(PendanaanHttpSupport.formatLogBody(body, -1)).isEqualTo(body);
     }
 
     @Test

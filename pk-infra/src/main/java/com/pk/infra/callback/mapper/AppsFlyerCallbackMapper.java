@@ -15,4 +15,25 @@ public interface AppsFlyerCallbackMapper {
             @Param("appsflyerId") String appsflyerId,
             @Param("eventName") String eventName
     );
+
+    AppsFlyerCallbackRepository.AppsFlyerCallbackData findLatestByAdvertisingId(@Param("advertisingId") String advertisingId);
+
+    AppsFlyerCallbackRepository.AppsFlyerCallbackData findLatestByAdvertisingIdAndEventName(
+            @Param("advertisingId") String advertisingId,
+            @Param("eventName") String eventName
+    );
+
+    AppsFlyerCallbackRepository.AppsFlyerCallbackData findLatestByAndroidId(@Param("androidId") String androidId);
+
+    AppsFlyerCallbackRepository.AppsFlyerCallbackData findLatestByAndroidIdAndEventName(
+            @Param("androidId") String androidId,
+            @Param("eventName") String eventName
+    );
+
+    AppsFlyerCallbackRepository.AppsFlyerCallbackData findLatestByDeviceNo(@Param("deviceNo") String deviceNo);
+
+    AppsFlyerCallbackRepository.AppsFlyerCallbackData findLatestByDeviceNoAndEventName(
+            @Param("deviceNo") String deviceNo,
+            @Param("eventName") String eventName
+    );
 }

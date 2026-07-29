@@ -27,7 +27,8 @@ public class PendanaanProperties {
 
     public static class Logging {
         private boolean enabled = true;
-        private int maxBodyBytes = 65_536;
+        /** <= 0 means unlimited (print full lender request/response bodies including images). */
+        private int maxBodyBytes = 0;
 
         public boolean enabled() {
             return enabled;

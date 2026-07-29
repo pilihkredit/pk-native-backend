@@ -12,16 +12,19 @@ public final class OcrLogSupport {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Set<String> SENSITIVE_FIELDS = Set.of(
-            "imageBase64",
-            "faceImageBase64",
-            "idCardImageBase64",
-            "faceBase64",
-            "idCardBase64",
             "license",
             "licenseToken",
             "token",
             "rawOcrDetail",
             "signature"
+    );
+    /** Image payloads kept in full in OCR logs (no preview truncation). */
+    private static final Set<String> FULL_IMAGE_FIELDS = Set.of(
+            "imageBase64",
+            "faceImageBase64",
+            "idCardImageBase64",
+            "faceBase64",
+            "idCardBase64"
     );
 
     private OcrLogSupport() {
@@ -70,6 +73,8 @@ public final class OcrLogSupport {
                 JsonNode child = objectNode.get(field);
                 if (child != null && child.isTextual() && SENSITIVE_FIELDS.contains(field)) {
                     objectNode.put(field, preview(child.asText()));
+                } else if (child != null && child.isTextual() && FULL_IMAGE_FIELDS.contains(field)) {
+                    objectNode.put(field, child.asText().replace('\n', ' ').replace('\r', ' '));
                 } else {
                     redactNode(child);
                 }
