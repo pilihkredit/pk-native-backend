@@ -29,7 +29,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -292,16 +291,6 @@ public class AuthServiceFacade {
         if (deviceNo == null || deviceNo.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        if (isOtpBypass(mobileNo, otpCode)) {
-            log.info("WhatsApp OTP accepted via otp-bypass mobile={}", mobileNo);
-            whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
-                    .ifPresent(whatsappOtpChallengeStore::delete);
-            UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
-            TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_WHATSAPP);
-            reportRegisterSuccessIfNeeded(profile, deviceNo, systemPlatform);
-            boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
-            return new OtpVerifyResult(profile, tokenPair, passwordSet);
-        }
         String otpToken = whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
                 .orElseThrow(() -> new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE));
         return verifyChallengeAndLogin(
@@ -333,13 +322,8 @@ public class AuthServiceFacade {
         }
         boolean allowConfiguredDefault =
                 LOGIN_CHANNEL_OTP.equals(loginChannel) && isSmsConfiguredDefaultCode(mobileNo, otpCode);
-        boolean allowOtpBypass = isOtpBypass(mobileNo, otpCode);
-        if (allowOtpBypass || allowConfiguredDefault) {
-            if (allowConfiguredDefault) {
-                log.info("OTP accepted via smsConf defaultCode mobile={}", mobileNo);
-            } else {
-                log.info("OTP accepted via otp-bypass mobile={}", mobileNo);
-            }
+        if (allowConfiguredDefault) {
+            log.info("OTP accepted via smsConf defaultCode mobile={}", mobileNo);
             challengeStore.findByToken(otpToken).ifPresent(challenge -> challengeStore.delete(otpToken));
         } else {
             OtpChallenge challenge = challengeStore.findByToken(otpToken)
@@ -566,43 +550,8 @@ public class AuthServiceFacade {
         }
     }
 
-    private boolean isOtpBypass(String mobileNo, String otpCode) {
-        if (!authProperties.otpBypassEnabled()
-                || authProperties.otpBypassCode() == null
-                || !authProperties.otpBypassCode().equals(otpCode)) {
-            return false;
-        }
-        try {
-            SmsConfigLoader.SmsConf conf = smsConfigLoader.loadConf();
-            // When real SMS is on, bypass must not defeat whitelist (same rule as defaultCode).
-            if (conf.enableSms()) {
-                List<String> userList = conf.userList();
-                if (userList == null || userList.isEmpty()) {
-                    log.warn(
-                            "otp-bypass ignored because enableSms=true and userList is empty mobile={}",
-                            mobileNo
-                    );
-                    return false;
-                }
-                String mobile = mobileNo == null ? "" : mobileNo.trim();
-                if (!userList.contains(mobile)) {
-                    log.warn(
-                            "otp-bypass ignored for non-whitelist mobile={} while enableSms=true",
-                            mobileNo
-                    );
-                    return false;
-                }
-            }
-            return true;
-        } catch (Exception exception) {
-            log.warn("otp-bypass smsConf check failed, denying bypass: {}", exception.getMessage());
-            return false;
-        }
-    }
-
     /**
-     * Aligns with pk-credit-core VerificationCodeService:
-     * whitelist mobile + defaultCode, or defaultCode when enableSms=false.
+     * Uses only {@code app_config.smsConf}: whitelist + defaultCode, or defaultCode when enableSms=false.
      */
     private boolean isSmsConfiguredDefaultCode(String mobileNo, String otpCode) {
         try {

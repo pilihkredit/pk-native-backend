@@ -52,8 +52,6 @@ pk:
     refresh-token-ttl: ${PK_AUTH_REFRESH_TOKEN_TTL:30d}
     otp-ttl: ${PK_AUTH_OTP_TTL:5m}
     jwt-secret: ${PK_AUTH_JWT_SECRET:local-dev-secret-change-in-prod-min-32-chars}
-    otp-bypass-enabled: ${PK_AUTH_OTP_BYPASS_ENABLED:false}
-    otp-bypass-code: ${PK_AUTH_OTP_BYPASS_CODE:123456}
   security:
     field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY:local-dev-field-encryption-key-32b}
   biometric-storage:

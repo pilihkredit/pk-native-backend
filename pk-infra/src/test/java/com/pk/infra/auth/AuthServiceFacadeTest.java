@@ -468,15 +468,10 @@ class AuthServiceFacadeTest {
     }
 
     @Test
-    void acceptsBypassCodeWithoutStoredChallengeWhenEnabled() {
-        // bypass is only allowed for all mobiles when SMS is disabled
+    void acceptsDefaultCodeWhenSmsDisabledWithoutChallenge() {
+        // Dev/test mock: enableSms=false → any mobile may use smsConf.defaultCode
         smsConfigLoader = defaultSmsConfigLoader(false, "1234", List.of());
-        AuthProperties properties = new AuthProperties();
-        properties.setAccessTokenTtl(Duration.ofMinutes(15));
-        properties.setRefreshTokenTtl(Duration.ofDays(30));
-        properties.setJwtSecret("local-dev-secret-change-in-prod-min-32-chars");
-        properties.setOtpBypassEnabled(true);
-        properties.setOtpBypassCode("123456");
+        AuthProperties properties = verifyProperties();
         TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
         SessionStore sessionStore = mock(SessionStore.class);
         RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
@@ -491,7 +486,7 @@ class AuthServiceFacadeTest {
         AuthServiceFacade.OtpVerifyResult result = verifyFacade.verifyOtp(
                 "8123456789",
                 "unused-token",
-                "123456",
+                "1234",
                 "device-1"
         );
 
@@ -500,11 +495,9 @@ class AuthServiceFacadeTest {
     }
 
     @Test
-    void rejectsBypassCodeForNonWhitelistWhenSmsEnabled() {
+    void rejectsDefaultCodeForNonWhitelistWhenSmsEnabled() {
         smsConfigLoader = defaultSmsConfigLoader(true, "2460", List.of("8999999999"));
         AuthProperties properties = verifyProperties();
-        properties.setOtpBypassEnabled(true);
-        properties.setOtpBypassCode("123456");
         AuthServiceFacade verifyFacade = newFacade(
                 properties,
                 mock(SessionStore.class),
@@ -513,11 +506,6 @@ class AuthServiceFacadeTest {
         );
         when(otpChallengeStore.findByToken("token-1")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> verifyFacade.verifyOtp("8123456789", "token-1", "123456", "device-1"))
-                .isInstanceOf(ApiException.class)
-                .extracting("apiCode")
-                .isEqualTo(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
-
         assertThatThrownBy(() -> verifyFacade.verifyOtp("8123456789", "token-1", "2460", "device-1"))
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
@@ -525,7 +513,7 @@ class AuthServiceFacadeTest {
     }
 
     @Test
-    void rejectsBypassCodeWhenBypassDisabled() {
+    void rejectsUnknownCodeWhenSmsEnabledAndNotOnWhitelist() {
         when(otpChallengeStore.findByToken("token-1")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> facade.verifyOtp("8123456789", "token-1", "123456", "device-1"))
@@ -608,7 +596,6 @@ class AuthServiceFacadeTest {
         properties.setAccessTokenTtl(Duration.ofMinutes(15));
         properties.setRefreshTokenTtl(Duration.ofDays(30));
         properties.setJwtSecret("local-dev-secret-change-in-prod-min-32-chars");
-        properties.setOtpBypassEnabled(false);
         return properties;
     }
 }

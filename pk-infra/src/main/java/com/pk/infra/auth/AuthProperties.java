@@ -9,8 +9,6 @@ public class AuthProperties {
     private Duration refreshTokenTtl = Duration.ofDays(30);
     private Duration otpTtl = Duration.ofMinutes(5);
     private String jwtSecret = "local-dev-secret-change-in-prod-min-32-chars";
-    private boolean otpBypassEnabled = false;
-    private String otpBypassCode = "123456";
 
     public Duration accessTokenTtl() {
         return accessTokenTtl;
@@ -42,21 +40,5 @@ public class AuthProperties {
 
     public void setJwtSecret(String jwtSecret) {
         this.jwtSecret = jwtSecret;
-    }
-
-    public boolean otpBypassEnabled() {
-        return otpBypassEnabled;
-    }
-
-    public void setOtpBypassEnabled(boolean otpBypassEnabled) {
-        this.otpBypassEnabled = otpBypassEnabled;
-    }
-
-    public String otpBypassCode() {
-        return otpBypassCode;
-    }
-
-    public void setOtpBypassCode(String otpBypassCode) {
-        this.otpBypassCode = otpBypassCode;
     }
 }
