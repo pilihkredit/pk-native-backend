@@ -16,6 +16,7 @@ class LenderProviderConfigReaderTest {
                 """
                 {"mode":"http","appName":"KtaKilatPlus"}
                 """,
+                "{\"appName\":\"PilihKredit\"}",
                 "client-id",
                 "client-secret",
                 "callback-client",
@@ -30,7 +31,7 @@ class LenderProviderConfigReaderTest {
                 .containsEntry("pk.lender.pendanaan.base-url", "http://gateway.test.ptnadmin.com/ktaid")
                 .containsEntry("pk.lender.pendanaan.client-id", "client-id")
                 .containsEntry("pk.lender.pendanaan.client-secret", "client-secret")
-                .containsEntry("pk.lender.pendanaan.app-name", "KtaKilatPlus")
+                .containsEntry("pk.lender.pendanaan.app-name", "PilihKredit")
                 .containsEntry("pk.callback.oauth.client-id", "callback-client")
                 .containsEntry("pk.callback.oauth.client-secret", "callback-secret");
     }
@@ -43,6 +44,7 @@ class LenderProviderConfigReaderTest {
                 "http://example.com",
                 "https://api.example.com/api/v1",
                 "{\"app_name\":\"KtaKilatPlus\"}",
+                null,
                 "client-id",
                 "client-secret",
                 null,
@@ -53,7 +55,7 @@ class LenderProviderConfigReaderTest {
 
         assertThat(properties)
                 .containsEntry("pk.lender.pendanaan.mode", "http")
-                .containsEntry("pk.lender.pendanaan.app-name", "KtaKilatPlus")
+                .doesNotContainKey("pk.lender.pendanaan.app-name")
                 .doesNotContainKey("pk.callback.oauth.client-id");
     }
 }

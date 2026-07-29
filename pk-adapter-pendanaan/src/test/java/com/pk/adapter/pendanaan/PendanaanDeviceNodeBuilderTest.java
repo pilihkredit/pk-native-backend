@@ -31,7 +31,7 @@ class PendanaanDeviceNodeBuilderTest {
 
         JsonNode riskDataInfo = objectMapper.readTree(body).path("riskDataInfo");
         JsonNode openUserDevice = riskDataInfo.path("openUserDevice");
-        assertThat(openUserDevice.path("appName").asText()).isEqualTo("PilihKredit");
+        assertThat(openUserDevice.path("appName").asText()).isEqualTo("PKApp");
         assertThat(openUserDevice.path("deviceOtherInfo").isObject()).isTrue();
         assertThat(openUserDevice.path("phoneBrand").asText()).isEqualTo("Apple");
         assertThat(riskDataInfo.has("appList")).isTrue();
@@ -41,7 +41,7 @@ class PendanaanDeviceNodeBuilderTest {
     @Test
     void profileSyncDeviceOmitsEmptyDeviceOtherInfo() {
         JsonNode device = PendanaanDeviceNodeBuilder.buildProfileSyncDevice(sampleDevice(null));
-        assertThat(device.path("appName").asText()).isEqualTo("PilihKredit");
+        assertThat(device.path("appName").asText()).isEqualTo("PKApp");
         assertThat(device.has("deviceOtherInfo")).isFalse();
     }
 

@@ -6,6 +6,7 @@ record LenderProviderConfigRecord(
         String baseUrl,
         String callbackBaseUrl,
         String configJson,
+        String lenderDeviceConfigJson,
         String clientId,
         String clientSecret,
         String callbackClientId,

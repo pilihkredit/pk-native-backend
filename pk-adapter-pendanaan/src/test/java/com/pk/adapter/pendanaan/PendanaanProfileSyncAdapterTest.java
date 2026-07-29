@@ -101,7 +101,7 @@ class PendanaanProfileSyncAdapterTest {
         assertThat(root.get("userInfo").get("mobileNo").asText()).isEqualTo("81234567890");
         assertThat(root.get("userInfo").get("profile").get("educationDegree").asInt()).isEqualTo(5);
         assertThat(root.get("userInfo").get("profile").get("income").asText()).isEqualTo("5000000");
-        assertThat(root.get("userInfo").get("device").get("appName").asText()).isEqualTo("PilihKredit");
+        assertThat(root.get("userInfo").get("device").get("appName").asText()).isEqualTo("PKApp");
         assertThat(root.get("userInfo").get("device").get("deviceNo").asText()).isEqualTo("device-1");
         assertThat(root.get("userInfo").has("job")).isFalse();
     }

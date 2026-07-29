@@ -21,6 +21,10 @@ public final class LenderProviderConfigReader {
                 p.base_url,
                 p.callback_base_url,
                 p.config_json,
+                (SELECT CAST(ac.`value` AS CHAR)
+                   FROM app_config ac
+                  WHERE ac.`key` = 'lenderDeviceConf'
+                  LIMIT 1) AS lender_device_config_json,
                 c.client_id,
                 c.client_secret_ref,
                 c.callback_client_id,
@@ -69,7 +73,7 @@ public final class LenderProviderConfigReader {
         putIfPresent(properties, "pk.lender.pendanaan.base-url", record.baseUrl());
         putIfPresent(properties, "pk.lender.pendanaan.client-id", record.clientId());
         putIfPresent(properties, "pk.lender.pendanaan.client-secret", record.clientSecret());
-        LenderProviderConfigJson.readText(record.configJson(), "appName", "app_name")
+        LenderProviderConfigJson.readText(record.lenderDeviceConfigJson(), "appName", "app_name")
                 .ifPresent(value -> properties.put("pk.lender.pendanaan.app-name", value));
         putIfPresent(properties, "pk.callback.oauth.client-id", record.callbackClientId());
         putIfPresent(properties, "pk.callback.oauth.client-secret", record.callbackClientSecret());
@@ -96,6 +100,7 @@ public final class LenderProviderConfigReader {
                         resultSet.getString("base_url"),
                         resultSet.getString("callback_base_url"),
                         resultSet.getString("config_json"),
+                        resultSet.getString("lender_device_config_json"),
                         resultSet.getString("client_id"),
                         resultSet.getString("client_secret_ref"),
                         resultSet.getString("callback_client_id"),
