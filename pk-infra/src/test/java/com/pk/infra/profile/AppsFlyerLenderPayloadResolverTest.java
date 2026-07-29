@@ -2,6 +2,8 @@ package com.pk.infra.profile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pk.core.callback.port.AppsFlyerCallbackRepository;
@@ -150,13 +152,13 @@ class AppsFlyerLenderPayloadResolverTest {
     }
 
     @Test
-    void resolveInstallByDeviceNoUsesConversionTypeInstall() {
+    void resolveInstallByDeviceNoUsesOnlyInstallEventCallback() {
         AppsFlyerCallbackRepository callbackRepository = mock(AppsFlyerCallbackRepository.class);
         AppsFlyerCallbackRepository.AppsFlyerCallbackData callback =
                 mock(AppsFlyerCallbackRepository.AppsFlyerCallbackData.class);
         when(callback.appsflyerId()).thenReturn("af-cb");
         when(callback.mediaSource()).thenReturn("facebook");
-        when(callbackRepository.findLatestByDeviceNoAndConversionType("dev-1", "install"))
+        when(callbackRepository.findLatestByDeviceNoAndEventName("dev-1", "install"))
                 .thenReturn(Optional.of(callback));
 
         AppsFlyerLenderPayloadResolver resolver = new AppsFlyerLenderPayloadResolver(callbackRepository);
@@ -165,5 +167,6 @@ class AppsFlyerLenderPayloadResolverTest {
         assertThat(payload).isPresent();
         assertThat(payload.get().appsflyerId()).isEqualTo("af-cb");
         assertThat(payload.get().mediaSource()).isEqualTo("facebook");
+        verify(callbackRepository, never()).findLatestByDeviceNoAndConversionType("dev-1", "install");
     }
 }

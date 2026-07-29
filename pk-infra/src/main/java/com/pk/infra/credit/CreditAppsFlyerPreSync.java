@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Before credit apply: upsert appsFlyerInstall from appsflyer_callback (device_no + conversion_type=install).
+ * Before credit apply: upsert appsFlyerInstall from the install callback for the current device.
  * Failures are logged and never block credit apply.
  */
 public class CreditAppsFlyerPreSync {

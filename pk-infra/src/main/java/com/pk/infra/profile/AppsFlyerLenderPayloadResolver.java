@@ -7,11 +7,11 @@ import java.util.Optional;
 
 /**
  * Builds lender appsFlyerInstall payload.
- * Credit-apply path: latest appsflyer_callback by device_no + conversion_type=install.
+ * Credit-apply path: latest appsflyer_callback by device_no + event_name=install.
  * Legacy fill path: user_profile_af blanks filled from callback by appsflyer_id / advertising_id / …
  */
 public class AppsFlyerLenderPayloadResolver {
-    static final String CONVERSION_TYPE_INSTALL = "install";
+    static final String INSTALL_EVENT_NAME = "install";
 
     private final AppsFlyerCallbackRepository appsFlyerCallbackRepository;
 
@@ -25,7 +25,7 @@ public class AppsFlyerLenderPayloadResolver {
             return Optional.empty();
         }
         return appsFlyerCallbackRepository
-                .findLatestByDeviceNoAndConversionType(deviceNo.trim(), CONVERSION_TYPE_INSTALL)
+                .findLatestByDeviceNoAndEventName(deviceNo.trim(), INSTALL_EVENT_NAME)
                 .map(AppsFlyerPayloadMapper::fromCallback);
     }
 
