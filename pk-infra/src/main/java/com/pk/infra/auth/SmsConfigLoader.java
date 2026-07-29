@@ -44,6 +44,7 @@ public class SmsConfigLoader {
                     Math.max(60, intOrDefault(root, "expireTime", 300)),
                     Math.max(1_000, intOrDefault(root, "timeout", 10_000)),
                     textOrDefault(root, "defaultCode", "1234"),
+                    clampCodeLength(intOrDefault(root, "codeLength", 6)),
                     parseUserList(root.get("userList"))
             );
         } catch (ApiException apiException) {
@@ -54,7 +55,9 @@ public class SmsConfigLoader {
     }
 
     /**
-     * Credit-core parity: whitelist + defaultCode, or defaultCode when SMS is disabled.
+     * Aligns with pk-credit-core VerificationCodeService when {@code enableSms=false}
+     * (everyone may use {@code defaultCode}). When SMS is enabled, only {@code userList}
+     * mobiles may use {@code defaultCode}.
      */
     static boolean acceptsConfiguredDefaultCode(SmsConf conf, String mobileNo, String otpCode) {
         if (conf == null || otpCode == null || otpCode.isBlank()) {
@@ -65,13 +68,28 @@ public class SmsConfigLoader {
         if (defaultCode.isEmpty() || !defaultCode.equals(code)) {
             return false;
         }
-        if (conf.userList() != null && !conf.userList().isEmpty()) {
-            String mobile = mobileNo == null ? "" : mobileNo.trim();
-            if (conf.userList().contains(mobile)) {
-                return true;
-            }
+        String mobile = mobileNo == null ? "" : mobileNo.trim();
+        List<String> userList = conf.userList();
+        boolean hasWhitelist = userList != null && !userList.isEmpty();
+        if (hasWhitelist && userList.contains(mobile)) {
+            return true;
         }
-        return !conf.enableSms();
+        // SMS disabled → mock mode: any mobile may use defaultCode (credit-core parity)
+        if (!conf.enableSms()) {
+            return true;
+        }
+        // SMS enabled + not on whitelist (or no whitelist) → reject defaultCode
+        return false;
+    }
+
+    private static int clampCodeLength(int codeLength) {
+        if (codeLength < 4) {
+            return 4;
+        }
+        if (codeLength > 8) {
+            return 8;
+        }
+        return codeLength;
     }
 
     private List<String> parseUserList(JsonNode node) {
@@ -124,14 +142,15 @@ public class SmsConfigLoader {
 
     private static String textOrDefault(JsonNode root, String field, String defaultValue) {
         JsonNode node = root.get(field);
-        if (node == null || node.isNull() || !node.isTextual()) {
-            if (node != null && node.isNumber()) {
-                return node.asText();
-            }
+        if (node == null || node.isNull()) {
             return defaultValue;
         }
-        String value = node.asText();
-        return value == null || value.isBlank() ? defaultValue : value.trim();
+        // JSON string, or MySQL/driver quirks that surface as non-textual
+        String value = node.isTextual() ? node.asText() : node.asText(null);
+        if (value == null || value.isBlank() || "null".equalsIgnoreCase(value.trim())) {
+            return defaultValue;
+        }
+        return value.trim();
     }
 
     private static int intOrDefault(JsonNode root, String field, int defaultValue) {
@@ -162,10 +181,12 @@ public class SmsConfigLoader {
             int expireTimeSeconds,
             int timeoutMs,
             String defaultCode,
+            int codeLength,
             List<String> userList
     ) {
         public SmsConf {
             userList = userList == null ? List.of() : List.copyOf(userList);
+            codeLength = clampCodeLength(codeLength <= 0 ? 6 : codeLength);
         }
     }
 }

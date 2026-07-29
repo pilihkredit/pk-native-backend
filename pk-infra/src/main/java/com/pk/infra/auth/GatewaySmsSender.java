@@ -53,6 +53,12 @@ public class GatewaySmsSender implements SmsSender {
             return SmsSendResult.failure(PROVIDER_CODE, "CONFIG_MISSING", "smsConf url/spid/pwd required");
         }
         try {
+            log.info(
+                    "SMS content from smsConf.contentTemplate mobile={} expireSec={} content={}",
+                    mobileNo,
+                    conf.expireTimeSeconds(),
+                    content
+            );
             long timestamp = System.currentTimeMillis() / 1000;
             Map<String, String> params = new LinkedHashMap<>();
             params.put("spid", conf.spid());

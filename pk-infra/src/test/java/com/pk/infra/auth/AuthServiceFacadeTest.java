@@ -162,7 +162,7 @@ class AuthServiceFacadeTest {
                         """
                         {"enableSms":%s,"url":"https://example.com","spid":"s","pwd":"p",
                          "commercialCode":"0062","expireTime":300,"timeout":10000,
-                         "defaultCode":"%s","userList":%s}
+                         "defaultCode":"%s","codeLength":4,"userList":%s}
                         """.formatted(enableSms, defaultCode, usersJson)
                 )
         ));
@@ -469,6 +469,8 @@ class AuthServiceFacadeTest {
 
     @Test
     void acceptsBypassCodeWithoutStoredChallengeWhenEnabled() {
+        // bypass is only allowed for all mobiles when SMS is disabled
+        smsConfigLoader = defaultSmsConfigLoader(false, "1234", List.of());
         AuthProperties properties = new AuthProperties();
         properties.setAccessTokenTtl(Duration.ofMinutes(15));
         properties.setRefreshTokenTtl(Duration.ofDays(30));
@@ -495,6 +497,31 @@ class AuthServiceFacadeTest {
 
         assertThat(result.tokenPair().accessToken()).isNotBlank();
         verify(otpChallengeStore, never()).delete(any());
+    }
+
+    @Test
+    void rejectsBypassCodeForNonWhitelistWhenSmsEnabled() {
+        smsConfigLoader = defaultSmsConfigLoader(true, "2460", List.of("8999999999"));
+        AuthProperties properties = verifyProperties();
+        properties.setOtpBypassEnabled(true);
+        properties.setOtpBypassCode("123456");
+        AuthServiceFacade verifyFacade = newFacade(
+                properties,
+                mock(SessionStore.class),
+                mock(RefreshTokenStore.class),
+                new JwtTokenIssuer(properties)
+        );
+        when(otpChallengeStore.findByToken("token-1")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> verifyFacade.verifyOtp("8123456789", "token-1", "123456", "device-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
+
+        assertThatThrownBy(() -> verifyFacade.verifyOtp("8123456789", "token-1", "2460", "device-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
     }
 
     @Test

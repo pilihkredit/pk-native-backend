@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.credit.port.LenderCreditPort;
+import com.pk.core.loan.port.LenderLoanApplyPort;
 import com.pk.core.profile.sync.DeviceExtendedAttributes;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import java.util.List;
@@ -27,24 +29,72 @@ class PendanaanDeviceNodeBuilderTest {
                 List.of()
         ));
 
-        JsonNode openUserDevice = objectMapper.readTree(body).path("riskDataInfo").path("openUserDevice");
+        JsonNode riskDataInfo = objectMapper.readTree(body).path("riskDataInfo");
+        JsonNode openUserDevice = riskDataInfo.path("openUserDevice");
+        assertThat(openUserDevice.path("appName").asText()).isEqualTo("PilihKredit");
         assertThat(openUserDevice.path("deviceOtherInfo").isObject()).isTrue();
         assertThat(openUserDevice.path("phoneBrand").asText()).isEqualTo("Apple");
+        assertThat(riskDataInfo.has("appList")).isTrue();
     }
 
     @Test
     void profileSyncDeviceOmitsEmptyDeviceOtherInfo() {
         JsonNode device = PendanaanDeviceNodeBuilder.buildProfileSyncDevice(sampleDevice(null));
+        assertThat(device.path("appName").asText()).isEqualTo("PilihKredit");
         assertThat(device.has("deviceOtherInfo")).isFalse();
     }
 
+    @Test
+    void creditApplyOmitsAppListForIos() throws Exception {
+        String body = PendanaanCreditRequestMapper.buildApplyBody(new LenderCreditPort.LenderCreditApplyCommand(
+                "apply-1",
+                "partner-1",
+                null,
+                null,
+                null,
+                null,
+                sampleDevice("ios", null),
+                sampleAppList()
+        ));
+
+        JsonNode riskDataInfo = objectMapper.readTree(body).path("riskDataInfo");
+        assertThat(riskDataInfo.has("appList")).isFalse();
+    }
+
+    @Test
+    void loanApplyOmitsAppListForIos() throws Exception {
+        String body = PendanaanLoanRequestMapper.buildApplyBody(new LenderLoanApplyPort.LenderLoanApplyCommand(
+                "apply-1",
+                "loan-1",
+                null,
+                "product-1",
+                "method-1",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                sampleDevice("ios", null),
+                sampleAppList()
+        ));
+
+        JsonNode riskDataInfo = objectMapper.readTree(body).path("riskDataInfo");
+        assertThat(riskDataInfo.has("appList")).isFalse();
+    }
+
     private static LenderDeviceContext sampleDevice(Map<String, Object> deviceOtherInfo) {
+        return sampleDevice("android", deviceOtherInfo);
+    }
+
+    private static LenderDeviceContext sampleDevice(String platform, Map<String, Object> deviceOtherInfo) {
         return new LenderDeviceContext(
                 "PKApp",
                 "1.0.0",
                 "com.example.pk",
                 "device-1",
-                "android",
+                platform,
                 "ad-1",
                 deviceOtherInfo,
                 "KEC",
@@ -64,5 +114,18 @@ class PendanaanDeviceNodeBuilderTest {
                         null
                 )
         );
+    }
+
+    private static List<CreditRiskAppInfo> sampleAppList() {
+        return List.of(new CreditRiskAppInfo(
+                "Example App",
+                "com.example.app",
+                1,
+                1,
+                "1",
+                "1.0.0",
+                1L,
+                2L
+        ));
     }
 }

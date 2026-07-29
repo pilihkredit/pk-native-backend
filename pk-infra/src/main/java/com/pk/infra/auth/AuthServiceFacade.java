@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -111,12 +112,14 @@ public class AuthServiceFacade {
         );
 
         String otpToken = OtpCodeGenerator.token();
-        String otpCode = OtpCodeGenerator.sixDigits();
-        Instant expiresAt = Instant.now().plus(authProperties.otpTtl());
+        SmsConfigLoader.SmsConf smsConf = smsConfigLoader.loadConf();
+        String otpCode = OtpCodeGenerator.numericCode(smsConf.codeLength());
+        Duration otpTtl = Duration.ofSeconds(smsConf.expireTimeSeconds());
+        Instant expiresAt = Instant.now().plus(otpTtl);
         otpChallengeStore.save(
                 otpToken,
                 new OtpChallenge(mobileNo, deviceNo, otpCode, expiresAt),
-                authProperties.otpTtl()
+                otpTtl
         );
 
         Optional<Long> userId = userAuthRepository.findByMobileNo(mobileNo).map(UserProfileSummary::userId);
@@ -139,7 +142,7 @@ public class AuthServiceFacade {
         otpChallengeStore.markSent(deviceNo, otpConfig.otpResendInterval());
         return new OtpSendResult(
                 otpToken,
-                authProperties.otpTtl().toSeconds(),
+                otpTtl.toSeconds(),
                 otpConfig.otpResendInterval().toSeconds(),
                 otpCode
         );
@@ -289,7 +292,8 @@ public class AuthServiceFacade {
         if (deviceNo == null || deviceNo.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        if (isOtpBypass(otpCode)) {
+        if (isOtpBypass(mobileNo, otpCode)) {
+            log.info("WhatsApp OTP accepted via otp-bypass mobile={}", mobileNo);
             whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
                     .ifPresent(whatsappOtpChallengeStore::delete);
             UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
@@ -329,7 +333,13 @@ public class AuthServiceFacade {
         }
         boolean allowConfiguredDefault =
                 LOGIN_CHANNEL_OTP.equals(loginChannel) && isSmsConfiguredDefaultCode(mobileNo, otpCode);
-        if (isOtpBypass(otpCode) || allowConfiguredDefault) {
+        boolean allowOtpBypass = isOtpBypass(mobileNo, otpCode);
+        if (allowOtpBypass || allowConfiguredDefault) {
+            if (allowConfiguredDefault) {
+                log.info("OTP accepted via smsConf defaultCode mobile={}", mobileNo);
+            } else {
+                log.info("OTP accepted via otp-bypass mobile={}", mobileNo);
+            }
             challengeStore.findByToken(otpToken).ifPresent(challenge -> challengeStore.delete(otpToken));
         } else {
             OtpChallenge challenge = challengeStore.findByToken(otpToken)
@@ -556,10 +566,38 @@ public class AuthServiceFacade {
         }
     }
 
-    private boolean isOtpBypass(String otpCode) {
-        return authProperties.otpBypassEnabled()
-                && authProperties.otpBypassCode() != null
-                && authProperties.otpBypassCode().equals(otpCode);
+    private boolean isOtpBypass(String mobileNo, String otpCode) {
+        if (!authProperties.otpBypassEnabled()
+                || authProperties.otpBypassCode() == null
+                || !authProperties.otpBypassCode().equals(otpCode)) {
+            return false;
+        }
+        try {
+            SmsConfigLoader.SmsConf conf = smsConfigLoader.loadConf();
+            // When real SMS is on, bypass must not defeat whitelist (same rule as defaultCode).
+            if (conf.enableSms()) {
+                List<String> userList = conf.userList();
+                if (userList == null || userList.isEmpty()) {
+                    log.warn(
+                            "otp-bypass ignored because enableSms=true and userList is empty mobile={}",
+                            mobileNo
+                    );
+                    return false;
+                }
+                String mobile = mobileNo == null ? "" : mobileNo.trim();
+                if (!userList.contains(mobile)) {
+                    log.warn(
+                            "otp-bypass ignored for non-whitelist mobile={} while enableSms=true",
+                            mobileNo
+                    );
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception exception) {
+            log.warn("otp-bypass smsConf check failed, denying bypass: {}", exception.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -568,7 +606,20 @@ public class AuthServiceFacade {
      */
     private boolean isSmsConfiguredDefaultCode(String mobileNo, String otpCode) {
         try {
-            return SmsConfigLoader.acceptsConfiguredDefaultCode(smsConfigLoader.loadConf(), mobileNo, otpCode);
+            SmsConfigLoader.SmsConf conf = smsConfigLoader.loadConf();
+            boolean accepted = SmsConfigLoader.acceptsConfiguredDefaultCode(conf, mobileNo, otpCode);
+            if (!accepted
+                    && otpCode != null
+                    && conf.defaultCode() != null
+                    && conf.defaultCode().trim().equals(otpCode.trim())
+                    && conf.enableSms()) {
+                log.info(
+                        "defaultCode rejected (enableSms=true, not on userList) mobile={} userListSize={}",
+                        mobileNo,
+                        conf.userList() == null ? 0 : conf.userList().size()
+                );
+            }
+            return accepted;
         } catch (Exception exception) {
             log.warn("smsConf default-code check skipped: {}", exception.getMessage());
             return false;

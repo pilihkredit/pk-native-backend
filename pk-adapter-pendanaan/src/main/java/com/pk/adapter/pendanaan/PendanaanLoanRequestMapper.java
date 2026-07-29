@@ -46,7 +46,9 @@ final class PendanaanLoanRequestMapper {
             }
             ObjectNode riskDataInfo = root.putObject("riskDataInfo");
             riskDataInfo.set("openUserDevice", PendanaanDeviceNodeBuilder.buildRiskApplyDevice(command.device()));
-            riskDataInfo.set("appList", buildAppList(command.appList()));
+            if (!isIos(command.device().systemPlatform())) {
+                riskDataInfo.set("appList", buildAppList(command.appList()));
+            }
             return OBJECT_MAPPER.writeValueAsString(root);
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to build loan apply request", exception);
@@ -121,6 +123,10 @@ final class PendanaanLoanRequestMapper {
             }
         }
         return arrayNode;
+    }
+
+    private static boolean isIos(String systemPlatform) {
+        return systemPlatform != null && "ios".equalsIgnoreCase(systemPlatform.trim());
     }
 
     private static void putDecimal(ObjectNode node, String field, BigDecimal value) {
