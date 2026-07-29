@@ -16,8 +16,6 @@ import com.pk.core.profile.ocr.OcrSessionState;
 import com.pk.core.profile.port.AdvanceAiOcrPort;
 import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.OcrSessionStore;
-import com.pk.core.profile.port.LenderProfileSyncPort;
-import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
@@ -44,8 +42,6 @@ public class IdentityOcrFacade {
     private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private final BiometricImageStore biometricImageStore;
     private final ProfileSyncOrchestrator profileSyncOrchestrator;
-    private final ProfileAfRepository profileAfRepository;
-    private final AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver;
     private final UserDeviceWriter userDeviceWriter;
     private final ProfileVersionRepository profileVersionRepository;
     private final UserProfileBindingRepository userProfileBindingRepository;
@@ -61,8 +57,6 @@ public class IdentityOcrFacade {
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             BiometricImageStore biometricImageStore,
             ProfileSyncOrchestrator profileSyncOrchestrator,
-            ProfileAfRepository profileAfRepository,
-            AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver,
             UserDeviceWriter userDeviceWriter,
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
@@ -73,7 +67,7 @@ public class IdentityOcrFacade {
     ) {
         this(
                 advanceAiOcrPort, ocrSessionStore, profileIdentityRepository, sensitiveFieldEncryptor,
-                biometricImageStore, profileSyncOrchestrator, profileAfRepository, appsFlyerLenderPayloadResolver,
+                biometricImageStore, profileSyncOrchestrator,
                 userDeviceWriter,
                 profileVersionRepository, userProfileBindingRepository, onboardingProgressFacade,
                 completionService, () -> ocrProperties, objectMapper);
@@ -86,8 +80,6 @@ public class IdentityOcrFacade {
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             BiometricImageStore biometricImageStore,
             ProfileSyncOrchestrator profileSyncOrchestrator,
-            ProfileAfRepository profileAfRepository,
-            AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver,
             UserDeviceWriter userDeviceWriter,
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
@@ -98,7 +90,7 @@ public class IdentityOcrFacade {
     ) {
         this(
                 advanceAiOcrPort, ocrSessionStore, profileIdentityRepository, sensitiveFieldEncryptor,
-                biometricImageStore, profileSyncOrchestrator, profileAfRepository, appsFlyerLenderPayloadResolver,
+                biometricImageStore, profileSyncOrchestrator,
                 userDeviceWriter,
                 profileVersionRepository, userProfileBindingRepository, onboardingProgressFacade,
                 completionService, configLoader::loadAdvanceAi, objectMapper);
@@ -111,8 +103,6 @@ public class IdentityOcrFacade {
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             BiometricImageStore biometricImageStore,
             ProfileSyncOrchestrator profileSyncOrchestrator,
-            ProfileAfRepository profileAfRepository,
-            AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver,
             UserDeviceWriter userDeviceWriter,
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
@@ -127,8 +117,6 @@ public class IdentityOcrFacade {
         this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
         this.biometricImageStore = biometricImageStore;
         this.profileSyncOrchestrator = profileSyncOrchestrator;
-        this.profileAfRepository = profileAfRepository;
-        this.appsFlyerLenderPayloadResolver = appsFlyerLenderPayloadResolver;
         this.userDeviceWriter = userDeviceWriter;
         this.profileVersionRepository = profileVersionRepository;
         this.userProfileBindingRepository = userProfileBindingRepository;
@@ -462,8 +450,7 @@ public class IdentityOcrFacade {
                     resolvedCommand.requestId().trim(),
                     ProfileSyncModule.IDENTITY,
                     resolvedCommand.device(),
-                    payload,
-                    appsFlyerCompanions(resolvedCommand.device())
+                    payload
             ));
             lenderResponse = parseLenderResponse(syncResult.responseDataJson());
         } catch (ApiException exception) {
@@ -776,18 +763,6 @@ public class IdentityOcrFacade {
         return value == null || value.isBlank();
     }
 
-    private List<LenderProfileSyncPort.SyncCompanion> appsFlyerCompanions(LenderDeviceContext device) {
-        if (device == null || device.deviceNo() == null || device.deviceNo().isBlank()) {
-            return List.of();
-        }
-        return profileAfRepository.findLatestByDeviceNo(device.deviceNo().trim())
-                .map(af -> List.of(new LenderProfileSyncPort.SyncCompanion(
-                        ProfileSyncModule.APPSFLYER_INSTALL,
-                        appsFlyerLenderPayloadResolver.resolve(af),
-                        af.requestId()
-                )))
-                .orElseGet(List::of);
-    }
 
     public record LicenseTokenResult(String licenseToken, long effectiveSeconds) {
     }

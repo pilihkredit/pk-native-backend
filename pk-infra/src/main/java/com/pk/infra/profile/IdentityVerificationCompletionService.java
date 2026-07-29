@@ -8,8 +8,6 @@ import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.profile.BiometricImageKind;
 import com.pk.core.profile.ProfileIdentityData;
 import com.pk.core.profile.port.BiometricImageStore;
-import com.pk.core.profile.port.LenderProfileSyncPort;
-import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.ProfileSyncModule;
@@ -23,8 +21,6 @@ public class IdentityVerificationCompletionService {
     private final ProfileIdentityRepository profileIdentityRepository;
     private final BiometricImageStore biometricImageStore;
     private final ProfileSyncOrchestrator profileSyncOrchestrator;
-    private final ProfileAfRepository profileAfRepository;
-    private final AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver;
     private final UserDeviceWriter userDeviceWriter;
     private final ProfileVersionRepository profileVersionRepository;
     private final UserProfileBindingRepository userProfileBindingRepository;
@@ -35,8 +31,6 @@ public class IdentityVerificationCompletionService {
             ProfileIdentityRepository profileIdentityRepository,
             BiometricImageStore biometricImageStore,
             ProfileSyncOrchestrator profileSyncOrchestrator,
-            ProfileAfRepository profileAfRepository,
-            AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver,
             UserDeviceWriter userDeviceWriter,
             ProfileVersionRepository profileVersionRepository,
             UserProfileBindingRepository userProfileBindingRepository,
@@ -46,8 +40,6 @@ public class IdentityVerificationCompletionService {
         this.profileIdentityRepository = profileIdentityRepository;
         this.biometricImageStore = biometricImageStore;
         this.profileSyncOrchestrator = profileSyncOrchestrator;
-        this.profileAfRepository = profileAfRepository;
-        this.appsFlyerLenderPayloadResolver = appsFlyerLenderPayloadResolver;
         this.userDeviceWriter = userDeviceWriter;
         this.profileVersionRepository = profileVersionRepository;
         this.userProfileBindingRepository = userProfileBindingRepository;
@@ -90,8 +82,7 @@ public class IdentityVerificationCompletionService {
                 command.requestId(),
                 ProfileSyncModule.IDENTITY,
                 command.device(),
-                payload,
-                appsFlyerCompanions(command.device())
+                payload
         ));
         var progress = onboardingProgressFacade.getProgress(command.userId(), command.partnerUserId());
         userProfileBindingRepository.updateKycStatus(command.userId(), progress.kycStatus());
@@ -121,21 +112,6 @@ public class IdentityVerificationCompletionService {
                 parsed.bloodType(),
                 parsed.expiryDate()
         );
-    }
-
-    private List<LenderProfileSyncPort.SyncCompanion> appsFlyerCompanions(
-            com.pk.core.profile.sync.LenderDeviceContext device
-    ) {
-        if (device == null || device.deviceNo() == null || device.deviceNo().isBlank()) {
-            return List.of();
-        }
-        return profileAfRepository.findLatestByDeviceNo(device.deviceNo().trim())
-                .map(af -> List.of(new LenderProfileSyncPort.SyncCompanion(
-                        ProfileSyncModule.APPSFLYER_INSTALL,
-                        appsFlyerLenderPayloadResolver.resolve(af),
-                        af.requestId()
-                )))
-                .orElseGet(List::of);
     }
 
     private JsonNode parseLenderResponse(String responseJson) {

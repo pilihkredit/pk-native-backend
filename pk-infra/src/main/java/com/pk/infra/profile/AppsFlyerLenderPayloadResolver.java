@@ -6,15 +6,27 @@ import com.pk.core.profile.sync.ProfileSyncPayload;
 import java.util.Optional;
 
 /**
- * Builds lender appsFlyerInstall payload from user_profile_af,
- * filling blank fields from appsflyer_callback (prefer install, else latest).
- * Lookup order: appsflyer_id → advertising_id → android_id → device_no.
+ * Builds lender appsFlyerInstall payload.
+ * Credit-apply path: latest appsflyer_callback by device_no + conversion_type=install.
+ * Legacy fill path: user_profile_af blanks filled from callback by appsflyer_id / advertising_id / …
  */
 public class AppsFlyerLenderPayloadResolver {
+    static final String CONVERSION_TYPE_INSTALL = "install";
+
     private final AppsFlyerCallbackRepository appsFlyerCallbackRepository;
 
     public AppsFlyerLenderPayloadResolver(AppsFlyerCallbackRepository appsFlyerCallbackRepository) {
         this.appsFlyerCallbackRepository = appsFlyerCallbackRepository;
+    }
+
+    /** Credit apply: lookup Push install row by device number. */
+    public Optional<ProfileSyncPayload.AppsFlyerInstallPayload> resolveInstallByDeviceNo(String deviceNo) {
+        if (deviceNo == null || deviceNo.isBlank()) {
+            return Optional.empty();
+        }
+        return appsFlyerCallbackRepository
+                .findLatestByDeviceNoAndConversionType(deviceNo.trim(), CONVERSION_TYPE_INSTALL)
+                .map(AppsFlyerPayloadMapper::fromCallback);
     }
 
     public ProfileSyncPayload.AppsFlyerInstallPayload resolve(ProfileAfData af) {

@@ -153,10 +153,12 @@ public class ProfileSyncHandler {
                     userId,
                     externalInteractionId
             );
-            case APPSFLYER_INSTALL -> profileAfRepository.updateLastLenderInteraction(
-                    requestId,
-                    externalInteractionId
-            );
+            case APPSFLYER_INSTALL -> {
+                // Credit-apply AF upsert uses applyId as requestId; may not match user_profile_af.
+                if (requestId != null && !requestId.isBlank()) {
+                    profileAfRepository.updateLastLenderInteraction(requestId, externalInteractionId);
+                }
+            }
             case TONGDUN_DEVICE -> profileTongdunRepository.updateLastLenderInteraction(
                     requestId,
                     externalInteractionId

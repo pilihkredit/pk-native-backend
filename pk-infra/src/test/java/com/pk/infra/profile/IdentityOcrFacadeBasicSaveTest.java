@@ -41,8 +41,6 @@ class IdentityOcrFacadeBasicSaveTest {
                 sensitiveFieldEncryptor,
                 mock(BiometricImageStore.class),
                 mock(ProfileSyncOrchestrator.class),
-                mock(com.pk.core.profile.port.ProfileAfRepository.class),
-                mock(AppsFlyerLenderPayloadResolver.class),
                 mock(UserDeviceWriter.class),
                 mock(ProfileVersionRepository.class),
                 mock(UserProfileBindingRepository.class),

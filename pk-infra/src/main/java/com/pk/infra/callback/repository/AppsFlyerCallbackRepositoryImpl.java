@@ -86,4 +86,14 @@ public class AppsFlyerCallbackRepositoryImpl implements AppsFlyerCallbackReposit
         }
         return Optional.ofNullable(mapper.findLatestByDeviceNoAndEventName(deviceNo.trim(), eventName.trim()));
     }
+
+    @Override
+    public Optional<AppsFlyerCallbackData> findLatestByDeviceNoAndConversionType(String deviceNo, String conversionType) {
+        if (deviceNo == null || deviceNo.isBlank() || conversionType == null || conversionType.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(
+                mapper.findLatestByDeviceNoAndConversionType(deviceNo.trim(), conversionType.trim())
+        );
+    }
 }

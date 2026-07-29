@@ -21,6 +21,8 @@ public interface AppsFlyerCallbackRepository {
 
     Optional<AppsFlyerCallbackData> findLatestByDeviceNoAndEventName(String deviceNo, String eventName);
 
+    Optional<AppsFlyerCallbackData> findLatestByDeviceNoAndConversionType(String deviceNo, String conversionType);
+
     /** Fields used to fill lender appsFlyerInstall when user_profile_af is blank. */
     record AppsFlyerCallbackData(
             String appsflyerId,

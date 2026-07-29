@@ -120,4 +120,22 @@ class AppsFlyerLenderPayloadResolverTest {
                 null
         );
     }
+
+    @Test
+    void resolveInstallByDeviceNoUsesConversionTypeInstall() {
+        AppsFlyerCallbackRepository callbackRepository = mock(AppsFlyerCallbackRepository.class);
+        AppsFlyerCallbackRepository.AppsFlyerCallbackData callback =
+                mock(AppsFlyerCallbackRepository.AppsFlyerCallbackData.class);
+        when(callback.appsflyerId()).thenReturn("af-cb");
+        when(callback.mediaSource()).thenReturn("facebook");
+        when(callbackRepository.findLatestByDeviceNoAndConversionType("dev-1", "install"))
+                .thenReturn(Optional.of(callback));
+
+        AppsFlyerLenderPayloadResolver resolver = new AppsFlyerLenderPayloadResolver(callbackRepository);
+        var payload = resolver.resolveInstallByDeviceNo("dev-1");
+
+        assertThat(payload).isPresent();
+        assertThat(payload.get().appsflyerId()).isEqualTo("af-cb");
+        assertThat(payload.get().mediaSource()).isEqualTo("facebook");
+    }
 }

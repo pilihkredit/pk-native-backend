@@ -36,4 +36,9 @@ public interface AppsFlyerCallbackMapper {
             @Param("deviceNo") String deviceNo,
             @Param("eventName") String eventName
     );
+
+    AppsFlyerCallbackRepository.AppsFlyerCallbackData findLatestByDeviceNoAndConversionType(
+            @Param("deviceNo") String deviceNo,
+            @Param("conversionType") String conversionType
+    );
 }

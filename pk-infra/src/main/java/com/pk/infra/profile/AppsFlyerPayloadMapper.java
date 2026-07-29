@@ -58,6 +58,61 @@ final class AppsFlyerPayloadMapper {
         );
     }
 
+    static ProfileSyncPayload.AppsFlyerInstallPayload fromCallback(AppsFlyerCallbackData callback) {
+        if (callback == null) {
+            throw new IllegalArgumentException("callback is required");
+        }
+        return new ProfileSyncPayload.AppsFlyerInstallPayload(
+                blankToNull(callback.appsflyerId()),
+                blankToNull(callback.advertisingId()),
+                blankToNull(callback.androidId()),
+                blankToNull(callback.attributedTouchTime()),
+                blankToNull(callback.gpClickTime()),
+                blankToNull(callback.installTime()),
+                blankToNull(callback.mediaSource()),
+                blankToNull(callback.afPrt()),
+                blankToNull(callback.afAdsetId()),
+                blankToNull(callback.afAdset()),
+                blankToNull(callback.afSiteid()),
+                blankToNull(callback.afCId()),
+                blankToNull(callback.campaign()),
+                blankToNull(callback.appVersion()),
+                blankToNull(callback.appId()),
+                blankToNull(callback.deviceType()),
+                blankToNull(callback.osVersion()),
+                blankToNull(callback.countryCode()),
+                blankToNull(callback.city()),
+                blankToNull(callback.postalCode()),
+                blankToNull(callback.ip()),
+                blankToNull(callback.operator()),
+                blankToNull(callback.deviceCategory()),
+                blankToNull(callback.platform()),
+                blankToNull(callback.deviceModel()),
+                blankToNull(callback.idfv()),
+                blankToNull(callback.idfa()),
+                blankToNull(callback.afAd()),
+                blankToNull(callback.afChannel()),
+                blankToNull(callback.attributedTouchType()),
+                blankToNull(callback.afAdId()),
+                blankToNull(callback.afAdType()),
+                blankToNull(callback.contributor1TouchType()),
+                blankToNull(callback.contributor1TouchTime()),
+                blankToNull(callback.contributor1AfPrt()),
+                blankToNull(callback.contributor1MatchType()),
+                blankToNull(callback.contributor1EngagementType()),
+                blankToNull(callback.bundleId()),
+                blankToNull(callback.matchType()),
+                blankToNull(callback.gpInstallBegin())
+        );
+    }
+
+    private static String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
     private static String prefer(String primary, String fallback) {
         if (primary != null && !primary.isBlank()) {
             return primary.trim();

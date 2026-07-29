@@ -66,7 +66,8 @@ public class AuthStoreConfiguration {
             WhatsAppSendLogRepository whatsAppSendLogRepository,
             WhatsAppSender whatsAppSender,
             WhatsAppConfigLoader whatsAppConfigLoader,
-            UserProfileBindingRepository userProfileBindingRepository
+            UserProfileBindingRepository userProfileBindingRepository,
+            com.pk.core.attribution.port.AppsFlyerS2sReporter appsFlyerS2sReporter
     ) {
         return new AuthServiceFacade(
                 authProperties,
@@ -83,7 +84,8 @@ public class AuthStoreConfiguration {
                 whatsAppSendLogRepository,
                 whatsAppSender,
                 whatsAppConfigLoader,
-                userProfileBindingRepository
+                userProfileBindingRepository,
+                appsFlyerS2sReporter
         );
     }
 }

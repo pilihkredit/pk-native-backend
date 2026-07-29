@@ -57,7 +57,7 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
     }
 
     @Override
-    public ReportResult report(long serverEventCallbackId, ServerEventCallbackParser.ParsedServerEventCallback event) {
+    public ReportResult report(Long serverEventCallbackId, ServerEventCallbackParser.ParsedServerEventCallback event) {
         String osName = normalizeOsName(event.systemPlatform());
         Optional<AdjustConfigRepository.AdjustConfigData> configOpt = adjustConfigRepository.findActiveByOsName(osName);
         if (configOpt.isEmpty()) {
@@ -80,7 +80,7 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
         long recordId = adjustEventRecordRepository.insert(new AdjustEventRecordRepository.AdjustEventRecordInsert(
                 serverEventCallbackId,
                 event.partnerUserId(),
-                resolveUserId(event.deviceNo()),
+                resolveUserId(event),
                 event.deviceNo(),
                 event.eventType(),
                 config.appToken(),
@@ -158,12 +158,45 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
         }
     }
 
+    @Override
+    public ReportResult reportPlatformEvent(
+            String eventType,
+            long userId,
+            String partnerUserId,
+            String deviceNo,
+            String systemPlatform,
+            String adId
+    ) {
+        long now = Instant.now().toEpochMilli();
+        String eventId = "platform-" + eventType + "-" + userId + "-" + now;
+        return report(
+                null,
+                new ServerEventCallbackParser.ParsedServerEventCallback(
+                        eventId,
+                        eventType,
+                        now,
+                        null,
+                        null,
+                        null,
+                        Long.toString(userId),
+                        partnerUserId,
+                        null,
+                        null,
+                        null,
+                        null,
+                        deviceNo,
+                        systemPlatform,
+                        adId
+                )
+        );
+    }
+
     /**
      * Persist skip reasons into adjust_event_record so ops can see why AF was not sent.
      * status=2 (failed), error_message=skip reason.
      */
     private ReportResult skipRecorded(
-            long serverEventCallbackId,
+            Long serverEventCallbackId,
             ServerEventCallbackParser.ParsedServerEventCallback event,
             String appToken,
             DeviceIds deviceIds,
@@ -173,7 +206,7 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
             long recordId = adjustEventRecordRepository.insert(new AdjustEventRecordRepository.AdjustEventRecordInsert(
                     serverEventCallbackId,
                     event.partnerUserId(),
-                    resolveUserId(event.deviceNo()),
+                    resolveUserId(event),
                     event.deviceNo(),
                     event.eventType(),
                     appToken,
@@ -259,11 +292,18 @@ public class AppsFlyerS2sReporterImpl implements AppsFlyerS2sReporter {
         }
     }
 
-    private Long resolveUserId(String deviceNo) {
-        if (isBlank(deviceNo)) {
+    private Long resolveUserId(ServerEventCallbackParser.ParsedServerEventCallback event) {
+        if (event != null && !isBlank(event.userId())) {
+            try {
+                return Long.parseLong(event.userId().trim());
+            } catch (NumberFormatException ignored) {
+                // fall through to device lookup
+            }
+        }
+        if (event == null || isBlank(event.deviceNo())) {
             return null;
         }
-        return profileDeviceRepository.findByDeviceNo(deviceNo).map(ProfileDeviceData::userId).orElse(null);
+        return profileDeviceRepository.findByDeviceNo(event.deviceNo()).map(ProfileDeviceData::userId).orElse(null);
     }
 
     private String buildExtraParams(ServerEventCallbackParser.ParsedServerEventCallback event) {

@@ -13,7 +13,6 @@ import com.pk.core.profile.ProfileIdentityData;
 import com.pk.core.profile.ocr.OcrSessionState;
 import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.LenderProfileSyncPort;
-import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileIdentityRepository;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
@@ -45,8 +44,6 @@ class IdentityVerificationCompletionServiceTest {
                 identityRepository,
                 imageStore,
                 orchestrator,
-                mock(ProfileAfRepository.class),
-                mock(AppsFlyerLenderPayloadResolver.class),
                 mock(UserDeviceWriter.class),
                 versionRepository,
                 bindingRepository,

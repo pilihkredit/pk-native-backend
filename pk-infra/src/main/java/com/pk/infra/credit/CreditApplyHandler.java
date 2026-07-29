@@ -7,19 +7,24 @@ import com.pk.core.external.LenderInteractionContext;
 public class CreditApplyHandler {
     private final CreditApplicationRepository creditApplicationRepository;
     private final LenderCreditPort lenderCreditPort;
+    private final CreditAppsFlyerPreSync creditAppsFlyerPreSync;
 
     public CreditApplyHandler(
             CreditApplicationRepository creditApplicationRepository,
-            LenderCreditPort lenderCreditPort
+            LenderCreditPort lenderCreditPort,
+            CreditAppsFlyerPreSync creditAppsFlyerPreSync
     ) {
         this.creditApplicationRepository = creditApplicationRepository;
         this.lenderCreditPort = lenderCreditPort;
+        this.creditAppsFlyerPreSync = creditAppsFlyerPreSync;
     }
 
     public String submit(CreditApplyJob job) {
         if (creditApplicationRepository.findById(job.creditApplicationId()).isEmpty()) {
             throw new IllegalStateException("Credit application not found: " + job.creditApplicationId());
         }
+
+        creditAppsFlyerPreSync.syncBeforeCreditApply(job);
 
         LenderCreditPort.LenderCreditApplyResult result = LenderInteractionContext.runWithMobileNo(
                 job.mobileNo(),

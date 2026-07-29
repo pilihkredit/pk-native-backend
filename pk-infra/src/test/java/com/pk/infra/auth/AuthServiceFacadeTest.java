@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.appconfig.port.AppConfigRepository;
+import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.auth.OtpChallenge;
 import com.pk.core.auth.SmsSendResult;
 import com.pk.core.auth.AuthenticatedPrincipal;
@@ -49,6 +50,7 @@ class AuthServiceFacadeTest {
     private WhatsAppSender whatsAppSender;
     private WhatsAppConfigLoader whatsAppConfigLoader;
     private UserProfileBindingRepository userProfileBindingRepository;
+    private AppsFlyerS2sReporter appsFlyerS2sReporter;
     private AuthOtpConfigLoader authOtpConfigLoader;
     private AuthServiceFacade facade;
 
@@ -64,6 +66,9 @@ class AuthServiceFacadeTest {
         whatsAppSender = mock(WhatsAppSender.class);
         whatsAppConfigLoader = mock(WhatsAppConfigLoader.class);
         userProfileBindingRepository = mock(UserProfileBindingRepository.class);
+        appsFlyerS2sReporter = mock(AppsFlyerS2sReporter.class);
+        when(appsFlyerS2sReporter.reportPlatformEvent(any(), any(Long.class), any(), any(), any(), any()))
+                .thenReturn(AppsFlyerS2sReporter.ReportResult.recorded(1L, "OK"));
         authOtpConfigLoader = defaultOtpConfigLoader();
         AuthProperties properties = new AuthProperties();
         properties.setOtpTtl(Duration.ofMinutes(5));
@@ -116,7 +121,8 @@ class AuthServiceFacadeTest {
                 whatsAppSendLogRepository,
                 whatsAppSender,
                 whatsAppConfigLoader,
-                userProfileBindingRepository
+                userProfileBindingRepository,
+                appsFlyerS2sReporter
         );
     }
 
@@ -300,6 +306,14 @@ class AuthServiceFacadeTest {
         verify(userAuthRepository).findOrCreateActiveByMobileNo("8123456789");
         verify(userAuthRepository, never()).createByMobileNo(any());
         verify(userAuthRepository).updateLastLoginAt(eq(9L), any(Instant.class));
+        verify(appsFlyerS2sReporter).reportPlatformEvent(
+                eq(AppsFlyerS2sReporter.EVENT_REGISTER_SUCCESS_PK),
+                eq(9L),
+                eq("UWA"),
+                eq("device-1"),
+                eq(null),
+                eq(null)
+        );
     }
 
     @Test

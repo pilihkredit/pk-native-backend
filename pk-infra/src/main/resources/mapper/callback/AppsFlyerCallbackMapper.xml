@@ -160,4 +160,13 @@
         ORDER BY created_at DESC
         LIMIT 1
     </select>
+
+    <select id="findLatestByDeviceNoAndConversionType" resultMap="callbackDataMap">
+        SELECT <include refid="Lender_Column_List"/>
+        FROM appsflyer_callback
+        WHERE device_no = #{deviceNo}
+          AND conversion_type = #{conversionType}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
 </mapper>

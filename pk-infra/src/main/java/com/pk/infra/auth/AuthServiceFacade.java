@@ -2,6 +2,7 @@ package com.pk.infra.auth;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.auth.AuthSession;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.auth.OtpChallenge;
@@ -56,6 +57,7 @@ public class AuthServiceFacade {
     private final WhatsAppSender whatsAppSender;
     private final WhatsAppConfigLoader whatsAppConfigLoader;
     private final UserProfileBindingRepository userProfileBindingRepository;
+    private final AppsFlyerS2sReporter appsFlyerS2sReporter;
 
     public AuthServiceFacade(
             AuthProperties authProperties,
@@ -72,7 +74,8 @@ public class AuthServiceFacade {
             WhatsAppSendLogRepository whatsAppSendLogRepository,
             WhatsAppSender whatsAppSender,
             WhatsAppConfigLoader whatsAppConfigLoader,
-            UserProfileBindingRepository userProfileBindingRepository
+            UserProfileBindingRepository userProfileBindingRepository,
+            AppsFlyerS2sReporter appsFlyerS2sReporter
     ) {
         this.authProperties = authProperties;
         this.authOtpConfigLoader = authOtpConfigLoader;
@@ -89,6 +92,7 @@ public class AuthServiceFacade {
         this.whatsAppSender = whatsAppSender;
         this.whatsAppConfigLoader = whatsAppConfigLoader;
         this.userProfileBindingRepository = userProfileBindingRepository;
+        this.appsFlyerS2sReporter = appsFlyerS2sReporter;
     }
 
     public OtpSendResult sendOtp(String mobileNo, String deviceNo) {
@@ -267,6 +271,7 @@ public class AuthServiceFacade {
                     .ifPresent(whatsappOtpChallengeStore::delete);
             UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
             TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_WHATSAPP);
+            reportRegisterSuccessIfNeeded(profile, deviceNo);
             boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
             return new OtpVerifyResult(profile, tokenPair, passwordSet);
         }
@@ -320,8 +325,39 @@ public class AuthServiceFacade {
 
         UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
         TokenPair tokenPair = openSession(profile, deviceNo, loginChannel);
+        reportRegisterSuccessIfNeeded(profile, deviceNo);
         boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
         return new OtpVerifyResult(profile, tokenPair, passwordSet);
+    }
+
+    private void reportRegisterSuccessIfNeeded(UserProfileSummary profile, String deviceNo) {
+        if (profile == null || !profile.newlyCreated()) {
+            return;
+        }
+        try {
+            AppsFlyerS2sReporter.ReportResult result = appsFlyerS2sReporter.reportPlatformEvent(
+                    AppsFlyerS2sReporter.EVENT_REGISTER_SUCCESS_PK,
+                    profile.userId(),
+                    profile.partnerUserId(),
+                    deviceNo,
+                    null,
+                    null
+            );
+            log.info(
+                    "AF S2S REGISTER_SUCCESS_PK userId={} deviceNo={} reported={} message={}",
+                    profile.userId(),
+                    deviceNo,
+                    result.reported(),
+                    result.message()
+            );
+        } catch (Exception exception) {
+            log.warn(
+                    "AF S2S REGISTER_SUCCESS_PK failed userId={} deviceNo={} error={}",
+                    profile.userId(),
+                    deviceNo,
+                    exception.getMessage()
+            );
+        }
     }
 
     public TokenPair refresh(String refreshToken) {

@@ -444,7 +444,7 @@ public class ProfileServiceFacade {
                 null
         ));
 
-        // Store-only: lender appsFlyerInstall is attached on identity upsert.
+        // Store-only: lender appsFlyerInstall is upserted before credit apply from appsflyer_callback.
         if (loggedIn) {
             persistDevice(userId, partnerUserId, command.requestId(), command.device());
         }

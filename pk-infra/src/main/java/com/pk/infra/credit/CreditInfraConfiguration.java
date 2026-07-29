@@ -50,13 +50,28 @@ public class CreditInfraConfiguration {
     }
 
     @Bean
+    CreditAppsFlyerPreSync creditAppsFlyerPreSync(
+            com.pk.infra.profile.AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver,
+            com.pk.infra.profile.ProfileSyncOrchestrator profileSyncOrchestrator,
+            CreditApplicationRepository creditApplicationRepository
+    ) {
+        return new CreditAppsFlyerPreSync(
+                appsFlyerLenderPayloadResolver,
+                profileSyncOrchestrator,
+                creditApplicationRepository
+        );
+    }
+
+    @Bean
     CreditApplyHandler creditApplyHandler(
             CreditApplicationRepository creditApplicationRepository,
-            LenderCreditPort lenderCreditPort
+            LenderCreditPort lenderCreditPort,
+            CreditAppsFlyerPreSync creditAppsFlyerPreSync
     ) {
         return new CreditApplyHandler(
                 creditApplicationRepository,
-                lenderCreditPort
+                lenderCreditPort,
+                creditAppsFlyerPreSync
         );
     }
 
