@@ -128,8 +128,8 @@ public class AgreementFieldApplicationService {
                 bankAccount == null ? null : borrowerName,
                 config.fundingPurpose(),
                 electronicSignatureFee(quote),
-                DisplayFormatters.formatJakartaDate(quote.lendingDate()),
-                DisplayFormatters.formatJakartaDate(quote.lastRepayDate())
+                "",
+                ""
         );
     }
 

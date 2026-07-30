@@ -128,8 +128,35 @@ class AgreementFieldApplicationServiceTest {
         assertThat(response.borrowerAccountHolder()).isEqualTo("OPEN USER");
         assertThat(response.fundingPurpose()).isEqualTo("konsumtif multiguna");
         assertThat(response.eSignFeeDisplay()).isEqualTo("Rp 12.500");
-        assertThat(response.effectiveDateDisplay()).isEqualTo("29/07/2026");
-        assertThat(response.maturityDateDisplay()).isEqualTo("26/12/2026");
+        assertThat(response.effectiveDateDisplay()).isEmpty();
+        assertThat(response.maturityDateDisplay()).isEmpty();
+    }
+
+    @Test
+    void derivesAgreementDatesWhenQuoteDatesAreMissing() throws Exception {
+        when(profileQueryFacade.query(
+                PRINCIPAL.partnerUserId(),
+                java.util.List.of("mobileNo", "identity", "bankCard")
+        )).thenReturn(new ObjectMapper().createObjectNode());
+        LoanTrialQuoteDetail quote = mock(LoanTrialQuoteDetail.class);
+        when(quote.totalDays()).thenReturn(110L);
+        when(loanQuoteRepository.findByQuoteNo("QUOTE-2")).thenReturn(Optional.of(
+                new LoanQuoteRepository.LoanQuoteRecord(
+                        2L,
+                        "QUOTE-2",
+                        PRINCIPAL.userId(),
+                        2L,
+                        null,
+                        null,
+                        quote,
+                        Instant.parse("2026-07-29T02:00:00Z")
+                )
+        ));
+
+        var response = service.loanPreview(PRINCIPAL, "QUOTE-2");
+
+        assertThat(response.effectiveDateDisplay()).isEmpty();
+        assertThat(response.maturityDateDisplay()).isEmpty();
     }
 
     private static AgreementFieldConfigLoader.AgreementFieldConfig config() {

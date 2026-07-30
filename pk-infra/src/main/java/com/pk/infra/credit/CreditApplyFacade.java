@@ -8,6 +8,7 @@ import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.core.provider.port.PkProviderRepository;
+import com.pk.core.review.ReviewSandboxConfigPort;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import com.pk.infra.profile.ProfileSyncPayloadLoader;
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ public class CreditApplyFacade {
     private final CreditApplyHandler creditApplyHandler;
     private final CreditApplyOutboxPublisher creditApplyOutboxPublisher;
     private final CreditStatusPollHandler creditStatusPollHandler;
+    private final ReviewSandboxConfigPort reviewSandboxConfigPort;
     private final String configuredProviderCode;
 
     public CreditApplyFacade(
@@ -36,6 +38,7 @@ public class CreditApplyFacade {
             CreditApplyHandler creditApplyHandler,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
             CreditStatusPollHandler creditStatusPollHandler,
+            ReviewSandboxConfigPort reviewSandboxConfigPort,
             String configuredProviderCode
     ) {
         this.onboardingProgressFacade = onboardingProgressFacade;
@@ -46,6 +49,7 @@ public class CreditApplyFacade {
         this.creditApplyHandler = creditApplyHandler;
         this.creditApplyOutboxPublisher = creditApplyOutboxPublisher;
         this.creditStatusPollHandler = creditStatusPollHandler;
+        this.reviewSandboxConfigPort = reviewSandboxConfigPort;
         this.configuredProviderCode = configuredProviderCode;
     }
 
@@ -90,9 +94,17 @@ public class CreditApplyFacade {
                     command.device(),
                     command.appList()
             );
-            String creditApplyNo = creditApplyProperties.inlineEnabled()
+            boolean reviewUser = reviewSandboxConfigPort.findEnabledScenario(mobileNo).isPresent();
+            String creditApplyNo = reviewUser || creditApplyProperties.inlineEnabled()
                     ? creditApplyHandler.submit(job)
                     : enqueueOutbox(job);
+            if (reviewUser) {
+                CreditApplicationRepository.CreditApplicationRecord reviewRecord = creditApplicationRepository
+                        .findByApplyIdAndUserId(applyId, userId)
+                        .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
+                creditStatusPollHandler.syncFromLenderForApi(reviewRecord);
+                return new ApplyResult(applyId, CreditApplicationStatus.APPROVED, creditApplyNo);
+            }
             return new ApplyResult(applyId, PUBLIC_PROCESSING, creditApplyNo);
         } catch (DataIntegrityViolationException exception) {
             var replay = creditApplicationRepository.findByRequestId(command.requestId());

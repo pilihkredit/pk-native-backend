@@ -19,6 +19,7 @@ import com.pk.core.loan.port.ContractFileRepository;
 import com.pk.core.loan.port.ProductListCache;
 import com.pk.core.loan.port.LenderProductListRepository;
 import com.pk.core.outbox.port.OutboxEventRepository;
+import com.pk.core.review.ReviewSandboxConfigPort;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -110,7 +111,8 @@ public class LoanInfraConfiguration {
             LoanApplyHandler loanApplyHandler,
             LoanApplyProperties loanApplyProperties,
             LoanApplyOutboxPublisher loanApplyOutboxPublisher,
-            LoanStatusPollHandler loanStatusPollHandler
+            LoanStatusPollHandler loanStatusPollHandler,
+            ReviewSandboxConfigPort reviewSandboxConfigPort
     ) {
         return new LoanApplyFacade(
                 onboardingProgressFacade,
@@ -123,7 +125,8 @@ public class LoanInfraConfiguration {
                 loanApplyHandler,
                 loanApplyProperties,
                 loanApplyOutboxPublisher,
-                loanStatusPollHandler
+                loanStatusPollHandler,
+                reviewSandboxConfigPort
         );
     }
 

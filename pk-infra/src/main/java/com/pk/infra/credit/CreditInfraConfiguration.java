@@ -7,6 +7,7 @@ import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.LenderCreditPort;
 import com.pk.core.outbox.port.OutboxEventRepository;
 import com.pk.core.provider.port.PkProviderRepository;
+import com.pk.core.review.ReviewSandboxConfigPort;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -34,6 +35,7 @@ public class CreditInfraConfiguration {
             CreditApplyHandler creditApplyHandler,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
             CreditStatusPollHandler creditStatusPollHandler,
+            ReviewSandboxConfigPort reviewSandboxConfigPort,
             @Value("${pk.lender.config.provider-code:pendanaan}") String configuredProviderCode
     ) {
         return new CreditApplyFacade(
@@ -45,6 +47,7 @@ public class CreditInfraConfiguration {
                 creditApplyHandler,
                 creditApplyOutboxPublisher,
                 creditStatusPollHandler,
+                reviewSandboxConfigPort,
                 configuredProviderCode
         );
     }

@@ -109,6 +109,31 @@ VALUES (
 ON DUPLICATE KEY UPDATE
     `value` = VALUES(`value`);
 
+INSERT INTO app_config (`key`, `value`)
+VALUES (
+    'reviewSandboxConf',
+    JSON_OBJECT(
+        'enabled', false,
+        'users', JSON_ARRAY(),
+        'scenarios', JSON_OBJECT(
+            'APP_STORE', JSON_OBJECT(
+                'minAmount', 500000,
+                'maxAmount', 3000000,
+                'amountStep', 100000,
+                'comprehensiveRate', 0.18,
+                'disbursementRate', 0.97,
+                'termCount', 6,
+                'termDays', 30,
+                'vaBankCode', 'REVIEW_BANK',
+                'vaBankName', 'Review Bank',
+                'vaNo', '0000000000000000'
+            )
+        )
+    )
+)
+ON DUPLICATE KEY UPDATE
+    `key` = VALUES(`key`);
+
 CREATE TABLE ref_bank (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',

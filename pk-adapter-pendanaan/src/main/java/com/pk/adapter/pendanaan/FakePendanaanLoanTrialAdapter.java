@@ -19,12 +19,25 @@ public class FakePendanaanLoanTrialAdapter implements LenderLoanTrialPort {
     @Override
     public LenderLoanTrialResult trial(LenderLoanTrialCommand command) {
         int loanTerm = "RP002".equals(command.repayMethod()) ? 2 : 6;
+        return trial(command, loanTerm, 30, new BigDecimal("0.18"), new BigDecimal("0.97"));
+    }
+
+    LenderLoanTrialResult trial(
+            LenderLoanTrialCommand command,
+            int loanTerm,
+            int termDays,
+            BigDecimal comprehensiveRate,
+            BigDecimal disbursementRate
+    ) {
         BigDecimal applyAmt = command.applyAmt();
-        BigDecimal payAmount = applyAmt.multiply(new BigDecimal("0.97")).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal schdAmount = applyAmt.multiply(new BigDecimal("1.18")).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal payAmount = applyAmt.multiply(disbursementRate).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal schdAmount = applyAmt.multiply(BigDecimal.ONE.add(comprehensiveRate))
+                .setScale(0, RoundingMode.HALF_UP);
         BigDecimal interest = schdAmount.subtract(applyAmt);
-        List<LenderTrialTerm> terms = buildTerms(loanTerm, applyAmt, schdAmount, interest);
-        LoanTrialQuoteDetail quote = buildQuote(command, applyAmt, payAmount, schdAmount, interest, loanTerm);
+        List<LenderTrialTerm> terms = buildTerms(loanTerm, termDays, applyAmt, schdAmount, interest);
+        LoanTrialQuoteDetail quote = buildQuote(
+                command, applyAmt, payAmount, schdAmount, interest, loanTerm, termDays
+        );
         return new LenderLoanTrialResult(quote, terms, 1L);
     }
 
@@ -34,7 +47,8 @@ public class FakePendanaanLoanTrialAdapter implements LenderLoanTrialPort {
             BigDecimal payAmount,
             BigDecimal schdAmount,
             BigDecimal interest,
-            int loanTerm
+            int loanTerm,
+            int termDays
     ) {
         long now = Instant.now().toEpochMilli();
         return new LoanTrialQuoteDetail(
@@ -54,7 +68,7 @@ public class FakePendanaanLoanTrialAdapter implements LenderLoanTrialPort {
                 interest,
                 new BigDecimal("0.003"),
                 new BigDecimal("0.003"),
-                (long) loanTerm * 30,
+                (long) loanTerm * termDays,
                 "Admin Fee",
                 BigDecimal.ZERO,
                 "Service Fee",
@@ -89,14 +103,15 @@ public class FakePendanaanLoanTrialAdapter implements LenderLoanTrialPort {
                 "N",
                 0,
                 now,
-                now + 30L * 24 * 60 * 60 * 1000,
-                now + (long) loanTerm * 30 * 24 * 60 * 60 * 1000,
+                now + (long) termDays * 24 * 60 * 60 * 1000,
+                now + (long) loanTerm * termDays * 24 * 60 * 60 * 1000,
                 false
         );
     }
 
     private List<LenderTrialTerm> buildTerms(
             int loanTerm,
+            int termDays,
             BigDecimal applyAmt,
             BigDecimal schdAmount,
             BigDecimal interest
@@ -108,8 +123,8 @@ public class FakePendanaanLoanTrialAdapter implements LenderLoanTrialPort {
         long dayMs = 24L * 60 * 60 * 1000;
         List<LenderTrialTerm> terms = new ArrayList<>();
         for (int termNo = 1; termNo <= loanTerm; termNo++) {
-            long valueDate = baseValue + (termNo - 1L) * 30L * dayMs;
-            long dueDate = baseValue + termNo * 30L * dayMs;
+            long valueDate = baseValue + (termNo - 1L) * termDays * dayMs;
+            long dueDate = baseValue + (long) termNo * termDays * dayMs;
             long graceDate = dueDate + 7L * dayMs;
             terms.add(new LenderTrialTerm(
                     termNo,
