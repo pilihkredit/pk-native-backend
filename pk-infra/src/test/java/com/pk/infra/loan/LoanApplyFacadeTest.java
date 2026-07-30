@@ -15,7 +15,6 @@ import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.loan.port.LoanQuoteRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
-import com.pk.core.review.ReviewSandboxConfigPort;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -52,8 +51,6 @@ class LoanApplyFacadeTest {
     private LoanApplyOutboxPublisher loanApplyOutboxPublisher;
     @Mock
     private LoanStatusPollHandler loanStatusPollHandler;
-    @Mock
-    private ReviewSandboxConfigPort reviewSandboxConfigPort;
 
     private LoanApplyFacade facade;
 
@@ -70,8 +67,7 @@ class LoanApplyFacadeTest {
                 loanApplyHandler,
                 loanApplyProperties,
                 loanApplyOutboxPublisher,
-                loanStatusPollHandler,
-                reviewSandboxConfigPort
+                loanStatusPollHandler
         );
     }
 
@@ -217,45 +213,6 @@ class LoanApplyFacadeTest {
         assertThat(insertCaptor.getValue().quoteId()).isNull();
         assertThat(insertCaptor.getValue().loanApplyId()).isEqualTo("QUOTE-1");
         verify(loanApplyOutboxPublisher).publish(any(LoanApplyJob.class));
-    }
-
-    @Test
-    void submitsReviewUserInlineWithoutCreatingOutbox() {
-        when(loanApplicationRepository.findByRequestId("REQ-1")).thenReturn(Optional.empty());
-        when(creditApplicationRepository.findByApplyIdAndUserId("APPLY-1", 1L))
-                .thenReturn(Optional.of(approvedCredit("APPLY-1")));
-        when(loanQuoteRepository.findByQuoteNo("QUOTE-1")).thenReturn(Optional.of(quoteRecord()));
-        when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
-                new OnboardingProgressFacade.OnboardingProgressResult(
-                        "partner-1", OnboardingProgressFacade.KYC_SYNCED, List.of("PERSONAL"), List.of()
-                )
-        );
-        when(profileVersionRepository.createSnapshot(1L, "81234567890", List.of("PERSONAL"), "LOAN_APPLY"))
-                .thenReturn(9L);
-        when(loanApplicationRepository.insert(any())).thenReturn(200L);
-        when(reviewSandboxConfigPort.findEnabledScenario("81234567890"))
-                .thenReturn(Optional.of(reviewScenario()));
-        when(loanApplyHandler.submit(any(LoanApplyJob.class))).thenReturn("REVIEW-LOAN");
-        when(loanApplicationRepository.findByLoanApplyIdAndUserId("QUOTE-1", 1L))
-                .thenReturn(Optional.of(existingLoan()));
-
-        LoanApplyFacade.ApplyResult result = facade.apply(
-                1L, "partner-1", "81234567890", sampleCommand()
-        );
-
-        assertThat(result.loanApplyNo()).isEqualTo("REVIEW-LOAN");
-        assertThat(result.status()).isEqualTo(LoanApplicationStatus.DISBURSED);
-        verify(loanApplyHandler).submit(any(LoanApplyJob.class));
-        verify(loanStatusPollHandler).syncFromLenderForApi(any());
-        verify(loanApplyOutboxPublisher, never()).publish(any());
-    }
-
-    private static ReviewSandboxConfigPort.ReviewSandboxScenario reviewScenario() {
-        return new ReviewSandboxConfigPort.ReviewSandboxScenario(
-                "APP_STORE", new BigDecimal("500000"), new BigDecimal("3000000"),
-                new BigDecimal("100000"), new BigDecimal("0.18"), new BigDecimal("0.97"),
-                6, 30, "REVIEW_BANK", "Review Bank", "0000000000000000"
-        );
     }
 
     @Test

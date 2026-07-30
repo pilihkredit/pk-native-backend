@@ -15,7 +15,6 @@ import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.core.provider.port.PkProviderRepository;
-import com.pk.core.review.ReviewSandboxConfigPort;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -46,8 +45,6 @@ class CreditApplyFacadeTest {
     private CreditApplyOutboxPublisher creditApplyOutboxPublisher;
     @Mock
     private CreditStatusPollHandler creditStatusPollHandler;
-    @Mock
-    private ReviewSandboxConfigPort reviewSandboxConfigPort;
 
     private CreditApplyFacade facade;
 
@@ -62,7 +59,6 @@ class CreditApplyFacadeTest {
                 creditApplyHandler,
                 creditApplyOutboxPublisher,
                 creditStatusPollHandler,
-                reviewSandboxConfigPort,
                 "pendanaan"
         );
     }
@@ -226,41 +222,6 @@ class CreditApplyFacadeTest {
         assertThat(result.creditApplyNo()).isNull();
         verify(creditApplyOutboxPublisher).publish(any(CreditApplyJob.class));
         verify(creditApplyHandler, never()).submit(any());
-    }
-
-    @Test
-    void submitsReviewUserInlineWithoutCreatingOutbox() {
-        when(creditApplicationRepository.findByRequestId("req-1")).thenReturn(Optional.empty());
-        when(onboardingProgressFacade.getProgress(1L, "partner-1")).thenReturn(
-                new OnboardingProgressFacade.OnboardingProgressResult(
-                        "partner-1", OnboardingProgressFacade.KYC_SYNCED, List.of("PERSONAL"), List.of()
-                )
-        );
-        when(pkProviderRepository.findActiveProviderCode("pendanaan")).thenReturn(Optional.of("pendanaan"));
-        when(creditApplicationRepository.insert(any())).thenReturn(100L);
-        when(reviewSandboxConfigPort.findEnabledScenario("81234567890"))
-                .thenReturn(Optional.of(reviewScenario()));
-        when(creditApplyHandler.submit(any(CreditApplyJob.class))).thenReturn("REVIEW-CREDIT");
-        when(creditApplicationRepository.findByApplyIdAndUserId(any(String.class), eq(1L)))
-                .thenReturn(optionalRecord());
-
-        CreditApplyFacade.ApplyResult result = facade.apply(
-                1L, "partner-1", "81234567890", sampleCommand("req-1")
-        );
-
-        assertThat(result.creditApplyNo()).isEqualTo("REVIEW-CREDIT");
-        assertThat(result.status()).isEqualTo(CreditApplicationStatus.APPROVED);
-        verify(creditApplyHandler).submit(any(CreditApplyJob.class));
-        verify(creditStatusPollHandler).syncFromLenderForApi(any());
-        verify(creditApplyOutboxPublisher, never()).publish(any());
-    }
-
-    private static ReviewSandboxConfigPort.ReviewSandboxScenario reviewScenario() {
-        return new ReviewSandboxConfigPort.ReviewSandboxScenario(
-                "APP_STORE", new BigDecimal("500000"), new BigDecimal("3000000"),
-                new BigDecimal("100000"), new BigDecimal("0.18"), new BigDecimal("0.97"),
-                6, 30, "REVIEW_BANK", "Review Bank", "0000000000000000"
-        );
     }
 
     private static Optional<CreditApplicationRepository.CreditApplicationRecord> optionalRecord() {

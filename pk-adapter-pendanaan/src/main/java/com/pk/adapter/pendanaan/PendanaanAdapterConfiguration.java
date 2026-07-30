@@ -24,8 +24,6 @@ import com.pk.core.repay.port.LenderRepayCurrentOrderPort;
 import com.pk.core.repay.port.LenderRepayPlanPort;
 import com.pk.core.repay.port.LenderRepayTrialPort;
 import com.pk.core.repay.port.LenderRepayVaPort;
-import com.pk.core.review.ReviewSandboxConfigPort;
-import com.pk.core.review.ReviewSandboxLoanDataPort;
 import com.pk.core.tracking.port.LenderTrackingPort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -36,15 +34,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(PendanaanProperties.class)
 public class PendanaanAdapterConfiguration {
-    @Bean
-    ReviewSandboxAdapters reviewSandboxAdapters(
-            ReviewSandboxConfigPort configPort,
-            ReviewSandboxLoanDataPort loanDataPort,
-            ObjectMapper objectMapper
-    ) {
-        return new ReviewSandboxAdapters(configPort, loanDataPort, objectMapper);
-    }
-
     @Bean
     @ConditionalOnMissingBean(CreditCallbackParser.class)
     CreditCallbackParser pendanaanCreditCallbackParser(ObjectMapper objectMapper) {
@@ -90,215 +79,131 @@ public class PendanaanAdapterConfiguration {
     }
 
     @Bean
-    LenderProfileSyncPort lenderProfileSyncPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderProfileSyncPort live = httpStack.enabled()
-                ? new PendanaanProfileSyncAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanProfileSyncAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderProfileSyncPort.class, live, review.profileSync(), configPort);
+    LenderProfileSyncPort lenderProfileSyncPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanProfileSyncAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanProfileSyncAdapter();
     }
 
     @Bean
-    LenderProfileQueryPort lenderProfileQueryPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderProfileQueryPort live = httpStack.enabled()
-                ? new PendanaanProfileQueryAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanProfileQueryAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderProfileQueryPort.class, live, review.profileQuery(), configPort);
+    LenderProfileQueryPort lenderProfileQueryPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanProfileQueryAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanProfileQueryAdapter();
     }
 
     @Bean
-    LenderBankCardPort lenderBankCardPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderBankCardPort live = httpStack.enabled()
-                ? new PendanaanBankCardAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanBankCardAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderBankCardPort.class, live, review.bankCard(), configPort);
+    LenderBankCardPort lenderBankCardPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanBankCardAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanBankCardAdapter();
     }
 
     @Bean
-    LenderCreditPort lenderCreditPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderCreditPort live = httpStack.enabled()
-                ? new PendanaanCreditAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanCreditAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderCreditPort.class, live, review.credit(), configPort);
+    LenderCreditPort lenderCreditPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanCreditAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanCreditAdapter();
     }
 
     @Bean
-    LenderUserStatusPort lenderUserStatusPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderUserStatusPort live = httpStack.enabled()
-                ? new PendanaanUserStatusAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanUserStatusAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderUserStatusPort.class, live, review.userStatus(), configPort);
+    LenderUserStatusPort lenderUserStatusPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanUserStatusAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanUserStatusAdapter();
     }
 
     @Bean
-    LenderLoanProductPort lenderLoanProductPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderLoanProductPort live = httpStack.enabled()
-                ? new PendanaanLoanProductAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanLoanProductAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderLoanProductPort.class, live, review.products(), configPort);
+    LenderLoanProductPort lenderLoanProductPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanProductAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanLoanProductAdapter();
     }
 
     @Bean
-    LenderLoanTrialPort lenderLoanTrialPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderLoanTrialPort live = httpStack.enabled()
-                ? new PendanaanLoanTrialAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanLoanTrialAdapter(objectMapper);
-        return ReviewSandboxRoutingProxy.wrap(LenderLoanTrialPort.class, live, review.loanTrial(), configPort);
+    LenderLoanTrialPort lenderLoanTrialPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanTrialAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanLoanTrialAdapter(objectMapper);
     }
 
     @Bean
-    LenderLoanApplyPort lenderLoanApplyPort(
-            PendanaanHttpStack httpStack,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderLoanApplyPort live = httpStack.enabled()
-                ? new PendanaanLoanApplyAdapter(httpStack.requireHttpClient())
-                : new FakePendanaanLoanApplyAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderLoanApplyPort.class, live, review.loanApply(), configPort);
+    LenderLoanApplyPort lenderLoanApplyPort(PendanaanHttpStack httpStack) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanApplyAdapter(httpStack.requireHttpClient());
+        }
+        return new FakePendanaanLoanApplyAdapter();
     }
 
     @Bean
-    LenderLoanStatusPort lenderLoanStatusPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderLoanStatusPort live = httpStack.enabled()
-                ? new PendanaanLoanStatusAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanLoanStatusAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderLoanStatusPort.class, live, review.loanStatus(), configPort);
+    LenderLoanStatusPort lenderLoanStatusPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanStatusAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanLoanStatusAdapter();
     }
 
     @Bean
-    LenderLoanHistoryPort lenderLoanHistoryPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderLoanHistoryPort live = httpStack.enabled()
-                ? new PendanaanLoanHistoryAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanLoanHistoryAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderLoanHistoryPort.class, live, review.loanHistory(), configPort);
+    LenderLoanHistoryPort lenderLoanHistoryPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanHistoryAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanLoanHistoryAdapter();
     }
 
     @Bean
-    LenderLoanBillListPort lenderLoanBillListPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderLoanBillListPort live = httpStack.enabled()
-                ? new PendanaanLoanBillListAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanLoanBillListAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderLoanBillListPort.class, live, review.bills(), configPort);
+    LenderLoanBillListPort lenderLoanBillListPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanBillListAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanLoanBillListAdapter();
     }
 
     @Bean
-    LenderLoanContractPort lenderLoanContractPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderLoanContractPort live = httpStack.enabled()
-                ? new PendanaanLoanContractAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanLoanContractAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderLoanContractPort.class, live, review.loanContracts(), configPort);
+    LenderLoanContractPort lenderLoanContractPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanLoanContractAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanLoanContractAdapter();
     }
 
     @Bean
-    LenderRepayPlanPort lenderRepayPlanPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderRepayPlanPort live = httpStack.enabled()
-                ? new PendanaanRepayPlanAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanRepayPlanAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderRepayPlanPort.class, live, review.repayPlan(), configPort);
+    LenderRepayPlanPort lenderRepayPlanPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanRepayPlanAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanRepayPlanAdapter();
     }
 
     @Bean
-    LenderRepayVaPort lenderRepayVaPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderRepayVaPort live = httpStack.enabled()
-                ? new PendanaanRepayVaAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanRepayVaAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderRepayVaPort.class, live, review.repayVa(), configPort);
+    LenderRepayVaPort lenderRepayVaPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanRepayVaAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanRepayVaAdapter();
     }
 
     @Bean
-    LenderRepayTrialPort lenderRepayTrialPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderRepayTrialPort live = httpStack.enabled()
-                ? new PendanaanRepayTrialAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanRepayTrialAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderRepayTrialPort.class, live, review.repayTrial(), configPort);
+    LenderRepayTrialPort lenderRepayTrialPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanRepayTrialAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanRepayTrialAdapter();
     }
 
     @Bean
-    LenderRepayCurrentOrderPort lenderRepayCurrentOrderPort(
-            PendanaanHttpStack httpStack,
-            ObjectMapper objectMapper,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
-    ) {
-        LenderRepayCurrentOrderPort live = httpStack.enabled()
-                ? new PendanaanRepayCurrentOrderAdapter(httpStack.requireHttpClient(), objectMapper)
-                : new FakePendanaanRepayCurrentOrderAdapter();
-        return ReviewSandboxRoutingProxy.wrap(
-                LenderRepayCurrentOrderPort.class,
-                live,
-                review.repayCurrentOrder(),
-                configPort
-        );
+    LenderRepayCurrentOrderPort lenderRepayCurrentOrderPort(PendanaanHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new PendanaanRepayCurrentOrderAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakePendanaanRepayCurrentOrderAdapter();
     }
 
     @Bean
@@ -307,13 +212,11 @@ public class PendanaanAdapterConfiguration {
             PendanaanProperties properties,
             LenderInteractionLogRepository interactionLogRepository,
             ObjectMapper objectMapper,
-            @Autowired(required = false) PlatformStructuredLogger structuredLogger,
-            ReviewSandboxAdapters review,
-            ReviewSandboxConfigPort configPort
+            @Autowired(required = false) PlatformStructuredLogger structuredLogger
     ) {
-        LenderTrackingPort live = httpStack.enabled()
-                ? new PendanaanTrackingAdapter(properties, interactionLogRepository, objectMapper, structuredLogger)
-                : new FakePendanaanTrackingAdapter();
-        return ReviewSandboxRoutingProxy.wrap(LenderTrackingPort.class, live, review.tracking(), configPort);
+        if (httpStack.enabled()) {
+            return new PendanaanTrackingAdapter(properties, interactionLogRepository, objectMapper, structuredLogger);
+        }
+        return new FakePendanaanTrackingAdapter();
     }
 }

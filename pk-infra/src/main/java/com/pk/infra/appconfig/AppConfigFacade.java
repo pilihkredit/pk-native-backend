@@ -8,11 +8,7 @@ import com.pk.core.appconfig.port.AppConfigRepository;
 import java.util.Set;
 
 public class AppConfigFacade {
-    private static final Set<String> PRIVATE_KEYS = Set.of(
-            "advanceAiConf",
-            "trustDecisionConf",
-            "reviewSandboxConf"
-    );
+    private static final Set<String> PRIVATE_KEYS = Set.of("advanceAiConf", "trustDecisionConf");
     private final AppConfigRepository appConfigRepository;
     private final ObjectMapper objectMapper;
 

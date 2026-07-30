@@ -12,7 +12,6 @@ import com.pk.core.loan.port.LoanLenderStatusQueryRepository;
 import com.pk.core.loan.port.LoanQuoteRepository;
 import com.pk.core.loan.port.LoanStatusHistoryRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
-import com.pk.core.review.ReviewSandboxConfigPort;
 import com.pk.infra.profile.ProfileSyncPayloadLoader;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import java.math.BigDecimal;
@@ -34,7 +33,6 @@ public class LoanApplyFacade {
     private final LoanApplyProperties loanApplyProperties;
     private final LoanApplyOutboxPublisher loanApplyOutboxPublisher;
     private final LoanStatusPollHandler loanStatusPollHandler;
-    private final ReviewSandboxConfigPort reviewSandboxConfigPort;
 
     public LoanApplyFacade(
             OnboardingProgressFacade onboardingProgressFacade,
@@ -47,8 +45,7 @@ public class LoanApplyFacade {
             LoanApplyHandler loanApplyHandler,
             LoanApplyProperties loanApplyProperties,
             LoanApplyOutboxPublisher loanApplyOutboxPublisher,
-            LoanStatusPollHandler loanStatusPollHandler,
-            ReviewSandboxConfigPort reviewSandboxConfigPort
+            LoanStatusPollHandler loanStatusPollHandler
     ) {
         this.onboardingProgressFacade = onboardingProgressFacade;
         this.creditApplicationRepository = creditApplicationRepository;
@@ -61,7 +58,6 @@ public class LoanApplyFacade {
         this.loanApplyProperties = loanApplyProperties;
         this.loanApplyOutboxPublisher = loanApplyOutboxPublisher;
         this.loanStatusPollHandler = loanStatusPollHandler;
-        this.reviewSandboxConfigPort = reviewSandboxConfigPort;
     }
 
     public ApplyResult apply(long userId, String partnerUserId, String mobileNo, ApplyCommand command) {
@@ -141,17 +137,9 @@ public class LoanApplyFacade {
                     command.device(),
                     command.appList()
             );
-            boolean reviewUser = reviewSandboxConfigPort.findEnabledScenario(mobileNo).isPresent();
-            String loanApplyNo = reviewUser || loanApplyProperties.inlineEnabled()
+            String loanApplyNo = loanApplyProperties.inlineEnabled()
                     ? loanApplyHandler.submit(job)
                     : enqueueOutbox(job);
-            if (reviewUser) {
-                LoanApplicationRepository.LoanApplicationRecord reviewRecord = loanApplicationRepository
-                        .findByLoanApplyIdAndUserId(loanApplyId, userId)
-                        .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
-                loanStatusPollHandler.syncFromLenderForApi(reviewRecord);
-                return new ApplyResult(loanApplyId, LoanApplicationStatus.DISBURSED, loanApplyNo);
-            }
             return new ApplyResult(loanApplyId, PUBLIC_PROCESSING, loanApplyNo);
         } catch (DataIntegrityViolationException exception) {
             var replay = loanApplicationRepository.findByRequestId(command.requestId());

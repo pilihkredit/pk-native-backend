@@ -61,8 +61,6 @@ class AppConfigFacadeTest {
                 .isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> facade.getValueByKey("trustDecisionConf"))
                 .isInstanceOf(ApiException.class);
-        assertThatThrownBy(() -> facade.getValueByKey("reviewSandboxConf"))
-                .isInstanceOf(ApiException.class);
 
         verifyNoInteractions(appConfigRepository);
     }
