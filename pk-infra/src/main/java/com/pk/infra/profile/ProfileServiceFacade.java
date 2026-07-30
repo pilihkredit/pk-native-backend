@@ -3,6 +3,7 @@ package com.pk.infra.profile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.callback.port.AppsFlyerCallbackRepository;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileAfData;
 import com.pk.core.profile.ProfileBankCardData;
@@ -54,6 +55,7 @@ public class ProfileServiceFacade {
     private final ProfileQueryFacade profileQueryFacade;
     private final LenderBankCardPort lenderBankCardPort;
     private final BankCardMaxConfigLoader bankCardMaxConfigLoader;
+    private final AppsFlyerCallbackRepository appsFlyerCallbackRepository;
 
     public ProfileServiceFacade(
             ProfilePersonalRepository profilePersonalRepository,
@@ -71,7 +73,8 @@ public class ProfileServiceFacade {
             UserProfileBindingRepository userProfileBindingRepository,
             ProfileQueryFacade profileQueryFacade,
             LenderBankCardPort lenderBankCardPort,
-            BankCardMaxConfigLoader bankCardMaxConfigLoader
+            BankCardMaxConfigLoader bankCardMaxConfigLoader,
+            AppsFlyerCallbackRepository appsFlyerCallbackRepository
     ) {
         this.profilePersonalRepository = profilePersonalRepository;
         this.profileContactRepository = profileContactRepository;
@@ -89,6 +92,7 @@ public class ProfileServiceFacade {
         this.profileQueryFacade = profileQueryFacade;
         this.lenderBankCardPort = lenderBankCardPort;
         this.bankCardMaxConfigLoader = bankCardMaxConfigLoader;
+        this.appsFlyerCallbackRepository = appsFlyerCallbackRepository;
     }
 
     public PersonalSaveResult savePersonal(
@@ -387,6 +391,11 @@ public class ProfileServiceFacade {
 
         var existing = profileAfRepository.findByRequestId(command.requestId());
         if (existing.isPresent()) {
+            appsFlyerCallbackRepository.backfillBinding(
+                    command.appsflyerId().trim(),
+                    userId,
+                    command.device().deviceNo().trim()
+            );
             return new AppsFlyerSaveResult(
                     command.requestId(),
                     MODULE_COMPLETED,
@@ -443,6 +452,11 @@ public class ProfileServiceFacade {
                 command.requestId().trim(),
                 null
         ));
+        appsFlyerCallbackRepository.backfillBinding(
+                command.appsflyerId().trim(),
+                userId,
+                deviceNo
+        );
 
         // Store-only: lender appsFlyerInstall is upserted before credit apply from appsflyer_callback.
         if (loggedIn) {

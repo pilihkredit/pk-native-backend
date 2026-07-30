@@ -243,7 +243,8 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
             ProfileQueryFacade profileQueryFacade,
             com.pk.core.profile.port.LenderBankCardPort lenderBankCardPort,
-            BankCardMaxConfigLoader bankCardMaxConfigLoader
+            BankCardMaxConfigLoader bankCardMaxConfigLoader,
+            com.pk.core.callback.port.AppsFlyerCallbackRepository appsFlyerCallbackRepository
     ) {
         return new ProfileServiceFacade(
                 profilePersonalRepository,
@@ -261,7 +262,8 @@ public class ProfileInfraConfiguration {
                 userProfileBindingRepository,
                 profileQueryFacade,
                 lenderBankCardPort,
-                bankCardMaxConfigLoader
+                bankCardMaxConfigLoader,
+                appsFlyerCallbackRepository
         );
     }
 }

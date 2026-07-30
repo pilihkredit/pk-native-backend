@@ -9,6 +9,12 @@ import org.apache.ibatis.annotations.Param;
 public interface AppsFlyerCallbackMapper {
     int insert(AppsFlyerCallbackInsertParam param);
 
+    int backfillBinding(
+            @Param("appsflyerId") String appsflyerId,
+            @Param("userId") Long userId,
+            @Param("deviceNo") String deviceNo
+    );
+
     AppsFlyerCallbackRepository.AppsFlyerCallbackData findLatestByAppsflyerId(@Param("appsflyerId") String appsflyerId);
 
     AppsFlyerCallbackRepository.AppsFlyerCallbackData findLatestByAppsflyerIdAndEventName(

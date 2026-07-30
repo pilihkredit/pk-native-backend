@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.callback.port.AppsFlyerCallbackRepository;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.ProfileAfData;
 import com.pk.core.profile.ProfileTongdunData;
@@ -36,6 +37,7 @@ class ProfileServiceFacadeAfTongdunTest {
     private ProfileAfRepository profileAfRepository;
     private ProfileTongdunRepository profileTongdunRepository;
     private ProfileSyncOrchestrator profileSyncOrchestrator;
+    private AppsFlyerCallbackRepository appsFlyerCallbackRepository;
     private UserDeviceWriter userDeviceWriter;
     private ProfileServiceFacade facade;
 
@@ -44,6 +46,7 @@ class ProfileServiceFacadeAfTongdunTest {
         profileAfRepository = mock(ProfileAfRepository.class);
         profileTongdunRepository = mock(ProfileTongdunRepository.class);
         profileSyncOrchestrator = mock(ProfileSyncOrchestrator.class);
+        appsFlyerCallbackRepository = mock(AppsFlyerCallbackRepository.class);
         userDeviceWriter = mock(UserDeviceWriter.class);
         OnboardingProgressFacade onboardingProgressFacade = mock(OnboardingProgressFacade.class);
         when(onboardingProgressFacade.getProgress(anyLong(), any()))
@@ -95,7 +98,8 @@ class ProfileServiceFacadeAfTongdunTest {
                 mock(UserProfileBindingRepository.class),
                 mock(ProfileQueryFacade.class),
                 mock(com.pk.core.profile.port.LenderBankCardPort.class),
-                mock(BankCardMaxConfigLoader.class)
+                mock(BankCardMaxConfigLoader.class),
+                appsFlyerCallbackRepository
         );
     }
 
@@ -142,6 +146,7 @@ class ProfileServiceFacadeAfTongdunTest {
 
         assertThat(result.lenderResponseJson()).isNull();
         verify(profileAfRepository, never()).insert(any());
+        verify(appsFlyerCallbackRepository).backfillBinding("AF1", 1L, "device-1");
         verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
     }
 
@@ -155,6 +160,7 @@ class ProfileServiceFacadeAfTongdunTest {
         verify(profileAfRepository).insert(insertCaptor.capture());
         assertThat(insertCaptor.getValue().deviceNo()).isEqualTo("device-1");
         assertThat(insertCaptor.getValue().appsflyerId()).isEqualTo("AF2");
+        verify(appsFlyerCallbackRepository).backfillBinding("AF2", 1L, "device-1");
         verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
         verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
     }

@@ -105,7 +105,8 @@ class ProfileServiceFacadeTest {
                 userProfileBindingRepository,
                 profileQueryFacade,
                 lenderBankCardPort,
-                bankCardMaxConfigLoader
+                bankCardMaxConfigLoader,
+                mock(com.pk.core.callback.port.AppsFlyerCallbackRepository.class)
         );
         when(onboardingProgressFacade.getProgress(anyLong(), any()))
                 .thenReturn(new OnboardingProgressFacade.OnboardingProgressResult(

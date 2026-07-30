@@ -37,6 +37,17 @@
         )
     </insert>
 
+    <update id="backfillBinding">
+        UPDATE appsflyer_callback
+        SET user_id = COALESCE(user_id, #{userId}),
+            device_no = CASE
+                WHEN device_no IS NULL OR device_no = '' THEN #{deviceNo}
+                ELSE device_no
+            END
+        WHERE appsflyer_id = #{appsflyerId}
+          AND (user_id IS NULL OR device_no IS NULL OR device_no = '')
+    </update>
+
     <resultMap id="callbackDataMap" type="com.pk.core.callback.port.AppsFlyerCallbackRepository$AppsFlyerCallbackData">
         <constructor>
             <arg column="appsflyer_id" javaType="string"/>

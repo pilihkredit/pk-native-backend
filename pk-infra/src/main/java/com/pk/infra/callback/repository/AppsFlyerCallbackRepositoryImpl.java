@@ -24,6 +24,14 @@ public class AppsFlyerCallbackRepositoryImpl implements AppsFlyerCallbackReposit
     }
 
     @Override
+    public int backfillBinding(String appsflyerId, Long userId, String deviceNo) {
+        if (appsflyerId == null || appsflyerId.isBlank() || deviceNo == null || deviceNo.isBlank()) {
+            return 0;
+        }
+        return mapper.backfillBinding(appsflyerId.trim(), userId, deviceNo.trim());
+    }
+
+    @Override
     public Optional<AppsFlyerCallbackData> findLatestByAppsflyerId(String appsflyerId) {
         if (appsflyerId == null || appsflyerId.isBlank()) {
             return Optional.empty();

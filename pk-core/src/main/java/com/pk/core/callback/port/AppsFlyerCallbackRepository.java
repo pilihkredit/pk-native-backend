@@ -5,6 +5,8 @@ import java.util.Optional;
 public interface AppsFlyerCallbackRepository {
     long insert(AppsFlyerCallbackInsert insert);
 
+    int backfillBinding(String appsflyerId, Long userId, String deviceNo);
+
     Optional<AppsFlyerCallbackData> findLatestByAppsflyerId(String appsflyerId);
 
     Optional<AppsFlyerCallbackData> findLatestByAppsflyerIdAndEventName(String appsflyerId, String eventName);
