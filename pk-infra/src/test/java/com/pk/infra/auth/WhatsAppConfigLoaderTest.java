@@ -34,7 +34,9 @@ class WhatsAppConfigLoaderTest {
                           "countryDialCode": "62",
                           "timeout": 8000,
                           "minInterval": 90,
-                          "expireTime": 180
+                          "expireTime": 180,
+                          "defaultCode": "2460",
+                          "userList": ["8123456789"]
                         }
                         """
                 )
@@ -49,6 +51,10 @@ class WhatsAppConfigLoaderTest {
         assertThat(conf.minInterval()).isEqualTo(Duration.ofSeconds(90));
         assertThat(conf.expireTime()).isEqualTo(Duration.ofSeconds(180));
         assertThat(conf.timeout()).isEqualTo(Duration.ofMillis(8000));
+        assertThat(conf.defaultCode()).isEqualTo("2460");
+        assertThat(conf.userList()).containsExactly("8123456789");
+        assertThat(WhatsAppConfigLoader.acceptsConfiguredDefaultCode(conf, "8123456789", "2460")).isTrue();
+        assertThat(WhatsAppConfigLoader.acceptsConfiguredDefaultCode(conf, "8999999999", "2460")).isFalse();
     }
 
     @Test

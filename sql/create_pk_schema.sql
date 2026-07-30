@@ -63,7 +63,9 @@ VALUES (
         'countryDialCode', '62',
         'timeout', 10000,
         'minInterval', 60,
-        'expireTime', 300
+        'expireTime', 300,
+        'defaultCode', '1234',
+        'userList', JSON_ARRAY()
     )
 )
 ON DUPLICATE KEY UPDATE

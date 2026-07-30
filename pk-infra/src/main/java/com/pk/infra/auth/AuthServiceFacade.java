@@ -291,6 +291,16 @@ public class AuthServiceFacade {
         if (deviceNo == null || deviceNo.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
+        if (isWhatsAppConfiguredDefaultCode(mobileNo, otpCode)) {
+            log.info("WhatsApp OTP accepted via whatsappConf defaultCode mobile={}", mobileNo);
+            whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
+                    .ifPresent(whatsappOtpChallengeStore::delete);
+            UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
+            TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_WHATSAPP);
+            reportRegisterSuccessIfNeeded(profile, deviceNo, systemPlatform);
+            boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
+            return new OtpVerifyResult(profile, tokenPair, passwordSet);
+        }
         String otpToken = whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
                 .orElseThrow(() -> new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE));
         return verifyChallengeAndLogin(
@@ -321,9 +331,15 @@ public class AuthServiceFacade {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
         boolean allowConfiguredDefault =
-                LOGIN_CHANNEL_OTP.equals(loginChannel) && isSmsConfiguredDefaultCode(mobileNo, otpCode);
+                (LOGIN_CHANNEL_OTP.equals(loginChannel) && isSmsConfiguredDefaultCode(mobileNo, otpCode))
+                        || (LOGIN_CHANNEL_WHATSAPP.equals(loginChannel)
+                        && isWhatsAppConfiguredDefaultCode(mobileNo, otpCode));
         if (allowConfiguredDefault) {
-            log.info("OTP accepted via smsConf defaultCode mobile={}", mobileNo);
+            log.info(
+                    "OTP accepted via app_config defaultCode channel={} mobile={}",
+                    loginChannel,
+                    mobileNo
+            );
             challengeStore.findByToken(otpToken).ifPresent(challenge -> challengeStore.delete(otpToken));
         } else {
             OtpChallenge challenge = challengeStore.findByToken(otpToken)
@@ -571,6 +587,32 @@ public class AuthServiceFacade {
             return accepted;
         } catch (Exception exception) {
             log.warn("smsConf default-code check skipped: {}", exception.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Uses only {@code app_config.whatsappConf}: whitelist + defaultCode, or defaultCode when
+     * enableWhatsApp=false.
+     */
+    private boolean isWhatsAppConfiguredDefaultCode(String mobileNo, String otpCode) {
+        try {
+            WhatsAppConfigLoader.WhatsAppConf conf = whatsAppConfigLoader.loadConf();
+            boolean accepted = WhatsAppConfigLoader.acceptsConfiguredDefaultCode(conf, mobileNo, otpCode);
+            if (!accepted
+                    && otpCode != null
+                    && conf.defaultCode() != null
+                    && conf.defaultCode().trim().equals(otpCode.trim())
+                    && conf.enableWhatsApp()) {
+                log.info(
+                        "WhatsApp defaultCode rejected (enableWhatsApp=true, not on userList) mobile={} userListSize={}",
+                        mobileNo,
+                        conf.userList() == null ? 0 : conf.userList().size()
+                );
+            }
+            return accepted;
+        } catch (Exception exception) {
+            log.warn("whatsappConf default-code check skipped: {}", exception.getMessage());
             return false;
         }
     }

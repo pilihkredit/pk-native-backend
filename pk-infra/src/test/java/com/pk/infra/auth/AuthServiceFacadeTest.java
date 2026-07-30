@@ -99,7 +99,9 @@ class AuthServiceFacadeTest {
                 "62",
                 Duration.ofSeconds(10),
                 Duration.ofSeconds(60),
-                Duration.ofSeconds(300)
+                Duration.ofSeconds(300),
+                "1234",
+                List.of()
         );
     }
 
@@ -589,6 +591,31 @@ class AuthServiceFacadeTest {
         );
 
         assertThat(result.tokenPair().accessToken()).isNotBlank();
+    }
+
+    @Test
+    void acceptsWhatsAppDefaultCodeWhenWhatsAppDisabled() {
+        when(whatsAppConfigLoader.loadConf()).thenReturn(defaultWhatsAppConf());
+        AuthProperties properties = verifyProperties();
+        TokenIssuer tokenIssuer = new JwtTokenIssuer(properties);
+        SessionStore sessionStore = mock(SessionStore.class);
+        RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
+        when(sessionStore.findByUserId(7L)).thenReturn(Optional.empty());
+        when(whatsappOtpChallengeStore.findTokenByMobile("8123456789")).thenReturn(Optional.empty());
+        when(userAuthRepository.findOrCreateActiveByMobileNo("8123456789"))
+                .thenReturn(new UserProfileSummary(7L, "UWA", "8123456789", false));
+        when(userAuthRepository.isPasswordSet(7L)).thenReturn(false);
+
+        AuthServiceFacade verifyFacade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);
+
+        AuthServiceFacade.OtpVerifyResult result = verifyFacade.loginWithWhatsApp(
+                "8123456789",
+                "1234",
+                "device-1"
+        );
+
+        assertThat(result.tokenPair().accessToken()).isNotBlank();
+        verify(whatsappOtpChallengeStore, never()).findByToken(any());
     }
 
     private static AuthProperties verifyProperties() {

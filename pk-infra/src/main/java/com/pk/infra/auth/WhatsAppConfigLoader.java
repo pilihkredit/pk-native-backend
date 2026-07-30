@@ -6,6 +6,9 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.appconfig.port.AppConfigRepository;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Loads WhatsApp provider settings and daily send limit from {@code app_config}.
@@ -48,13 +51,40 @@ public class WhatsAppConfigLoader {
                     textOrDefault(root, "countryDialCode", "62"),
                     Duration.ofMillis(Math.max(1_000, intOrDefault(root, "timeout", 10_000))),
                     Duration.ofSeconds(Math.max(1, intOrDefault(root, "minInterval", 60))),
-                    Duration.ofSeconds(Math.max(1, intOrDefault(root, "expireTime", 300)))
+                    Duration.ofSeconds(Math.max(1, intOrDefault(root, "expireTime", 300))),
+                    textOrDefault(root, "defaultCode", "1234"),
+                    parseUserList(root.get("userList"))
             );
         } catch (ApiException apiException) {
             throw apiException;
         } catch (Exception exception) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, exception);
         }
+    }
+
+    /**
+     * Same rules as SMS / pk-credit-core WhatsApp verify:
+     * whitelist + defaultCode, or defaultCode for everyone when enableWhatsApp=false.
+     */
+    static boolean acceptsConfiguredDefaultCode(WhatsAppConf conf, String mobileNo, String otpCode) {
+        if (conf == null || otpCode == null || otpCode.isBlank()) {
+            return false;
+        }
+        String code = otpCode.trim();
+        String defaultCode = conf.defaultCode() == null ? "" : conf.defaultCode().trim();
+        if (defaultCode.isEmpty() || !defaultCode.equals(code)) {
+            return false;
+        }
+        String mobile = mobileNo == null ? "" : mobileNo.trim();
+        List<String> userList = conf.userList();
+        boolean hasWhitelist = userList != null && !userList.isEmpty();
+        if (hasWhitelist && userList.contains(mobile)) {
+            return true;
+        }
+        if (!conf.enableWhatsApp()) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -86,6 +116,37 @@ public class WhatsAppConfigLoader {
         }
     }
 
+    private List<String> parseUserList(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return List.of();
+        }
+        if (node.isArray()) {
+            List<String> users = new ArrayList<>();
+            for (JsonNode item : node) {
+                if (item == null || item.isNull()) {
+                    continue;
+                }
+                String value = item.asText(null);
+                if (value != null && !value.isBlank()) {
+                    users.add(value.trim());
+                }
+            }
+            return Collections.unmodifiableList(users);
+        }
+        if (node.isTextual()) {
+            String text = node.asText().trim();
+            if (text.isEmpty() || !text.startsWith("[")) {
+                return List.of();
+            }
+            try {
+                return parseUserList(objectMapper.readTree(text));
+            } catch (Exception ignored) {
+                return List.of();
+            }
+        }
+        return List.of();
+    }
+
     private static boolean booleanOrDefault(JsonNode root, String field, boolean defaultValue) {
         JsonNode node = root.get(field);
         if (node == null || node.isNull()) {
@@ -110,10 +171,14 @@ public class WhatsAppConfigLoader {
 
     private static String textOrDefault(JsonNode root, String field, String defaultValue) {
         JsonNode node = root.get(field);
-        if (node == null || node.isNull() || node.asText().isBlank()) {
+        if (node == null || node.isNull()) {
             return defaultValue;
         }
-        return node.asText().trim();
+        String value = node.isTextual() ? node.asText() : node.asText(null);
+        if (value == null || value.isBlank() || "null".equalsIgnoreCase(value.trim())) {
+            return defaultValue;
+        }
+        return value.trim();
     }
 
     public record WhatsAppConf(
@@ -128,7 +193,12 @@ public class WhatsAppConfigLoader {
             String countryDialCode,
             Duration timeout,
             Duration minInterval,
-            Duration expireTime
+            Duration expireTime,
+            String defaultCode,
+            List<String> userList
     ) {
+        public WhatsAppConf {
+            userList = userList == null ? List.of() : List.copyOf(userList);
+        }
     }
 }
