@@ -13,9 +13,11 @@ public final class DeviceOtherInfoDocumentFields {
             "basebandVersion",
             "battery",
             "batteryTemp",
+            "blueMac",
             "brand",
             "brightness",
             "cameraNum",
+            "cameraSize",
             "cpuHardware",
             "dbm",
             "diskFreeSpace",
@@ -60,6 +62,7 @@ public final class DeviceOtherInfoDocumentFields {
             "wifiSSID",
             "mac",
             "netMode",
+            "netModeName",
             "memoryTotal",
             "memoryAvailable",
             "sdCardTotal",
@@ -82,17 +85,9 @@ public final class DeviceOtherInfoDocumentFields {
         }
         Map<String, Object> filtered = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : raw.entrySet()) {
-            if (entry.getKey() == null || !NAMES.contains(entry.getKey())) {
-                continue;
+            if (entry.getKey() != null && NAMES.contains(entry.getKey())) {
+                filtered.put(entry.getKey(), entry.getValue());
             }
-            Object value = entry.getValue();
-            if (value == null) {
-                continue;
-            }
-            if (value instanceof String stringValue && stringValue.isBlank()) {
-                continue;
-            }
-            filtered.put(entry.getKey(), value);
         }
         return filtered.isEmpty() ? Map.of() : Collections.unmodifiableMap(filtered);
     }
