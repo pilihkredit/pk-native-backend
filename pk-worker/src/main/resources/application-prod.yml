@@ -1,33 +1,35 @@
+# Production configuration. All environment variables are required.
 spring:
   datasource:
-    url: ${PK_DB_URL}
-    username: ${PK_DB_USERNAME}
-    password: ${PK_DB_PASSWORD}
+    url: ${PK_BACKEND_MYSQL_HOST}
+    username: ${PK_BACKEND_MYSQL_USER}
+    password: ${PK_BACKEND_MYSQL_PASSWORD}
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+      maximum-pool-size: ${PK_DB_MAXIMUM_POOL_SIZE}
+  data:
+    redis:
+      host: ${PK_REDIS_HOST}
+      port: ${PK_REDIS_PORT}
 
 logging:
   level:
-    root: WARN
+    root: INFO
     com.pk: INFO
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus
 
 pk:
   logging:
     sls:
-      enabled: ${PK_SLS_ENABLED:true}
-      endpoint: ${PK_SLS_ENDPOINT:ap-southeast-5.log.aliyuncs.com}
-      project: ${PK_SLS_PROJECT:pk-backend-prod}
+      enabled: ${PK_SLS_ENABLED}
+      endpoint: ${PK_SLS_ENDPOINT}
+      project: ${PK_SLS_PROJECT}
+      access-key-id: ${PK_SLS_ACCESS_KEY_ID}
+      access-key-secret: ${PK_SLS_ACCESS_KEY_SECRET}
   lender:
     config:
       source: db
       provider-code: pendanaan
+    pendanaan:
+      read-timeout-ms: ${PK_LENDER_PENDANAAN_READ_TIMEOUT_MS}
   worker:
     reference:
       enabled: true
