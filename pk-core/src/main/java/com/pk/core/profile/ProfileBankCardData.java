@@ -1,13 +1,17 @@
 package com.pk.core.profile;
 
 public record ProfileBankCardData(
-        long profileId,
-        String bankCode,
+        Long id,
+        long userId,
+String bankCode,
         EncryptedField cardNumber,
         String cardNoHash,
         String verifyStatus,
         String verifyErrorCode,
+        boolean defaultFlag,
+        boolean deletedFlag,
         String moduleStatus,
-        String lastRequestId
+        String lastRequestId,
+        Long externalInteractionId
 ) {
 }

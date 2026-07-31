@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.credit.mapper.CreditLenderStatusQueryMapper">
+
+    <resultMap id="creditLenderStatusQueryMap"
+               type="com.pk.core.credit.port.CreditLenderStatusQueryRepository$CreditLenderStatusQueryData">
+        <constructor>
+            <arg column="apply_id" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="partner_user_id" javaType="string"/>
+            <arg column="lender_user_id" javaType="string"/>
+            <arg column="credit_apply_no" javaType="string"/>
+            <arg column="external_status" javaType="string"/>
+            <arg column="credit_contract_expire_time" javaType="java.lang.Long"/>
+            <arg column="freeze_end_time" javaType="java.lang.Long"/>
+            <arg column="risk_min_limit" javaType="java.math.BigDecimal"/>
+            <arg column="risk_max_limit" javaType="java.math.BigDecimal"/>
+            <arg column="psychological_credit_limit" javaType="java.math.BigDecimal"/>
+            <arg column="fake_credit_limit" javaType="java.math.BigDecimal"/>
+            <arg column="borrow_amt_step_size" javaType="java.math.BigDecimal"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
+            <arg column="external_interaction_callback_id" javaType="java.lang.Long"/>
+            <arg column="queried_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="creditLenderStatusQueryColumns">
+        apply_id, user_id, partner_user_id, lender_user_id, credit_apply_no, external_status,
+        credit_contract_expire_time, freeze_end_time, risk_min_limit, risk_max_limit,
+        psychological_credit_limit, fake_credit_limit, borrow_amt_step_size,
+        external_interaction_id, external_interaction_callback_id, queried_at
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO credit_lender_status_query (
+            apply_id,
+            user_id,
+            partner_user_id,
+            lender_user_id,
+            credit_apply_no,
+            external_status,
+            credit_contract_expire_time,
+            freeze_end_time,
+            risk_min_limit,
+            risk_max_limit,
+            psychological_credit_limit,
+            fake_credit_limit,
+            borrow_amt_step_size,
+            external_interaction_id,
+            external_interaction_callback_id,
+            queried_at
+        ) VALUES (
+            #{applyId},
+            #{userId},
+            #{partnerUserId},
+            #{lenderUserId},
+            #{creditApplyNo},
+            #{externalStatus},
+            #{creditContractExpireTime},
+            #{freezeEndTime},
+            #{riskMinLimit},
+            #{riskMaxLimit},
+            #{psychologicalCreditLimit},
+            #{fakeCreditLimit},
+            #{borrowAmtStepSize},
+            #{externalInteractionId},
+            #{externalInteractionCallbackId},
+            #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        )
+    </insert>
+
+    <select id="findLatestByApplyId" resultMap="creditLenderStatusQueryMap">
+        SELECT <include refid="creditLenderStatusQueryColumns"/>
+        FROM credit_lender_status_query
+        WHERE apply_id = #{applyId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findLatestByApplyIdAndUserId" resultMap="creditLenderStatusQueryMap">
+        SELECT <include refid="creditLenderStatusQueryColumns"/>
+        FROM credit_lender_status_query
+        WHERE apply_id = #{applyId}
+          AND user_id = #{userId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+</mapper>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.credit.mapper.CreditApplicationMapper">
+
+    <resultMap id="creditApplicationRecordMap"
+               type="com.pk.core.credit.port.CreditApplicationRepository$CreditApplicationRecord">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="apply_id" javaType="string"/>
+            <arg column="request_id" javaType="string"/>
+            <arg column="provider_code" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="partner_user_id" javaType="string"/>
+            <arg column="apply_no" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="creditApplicationColumns">
+        id, apply_id, request_id, provider_code, user_id,
+        (SELECT up.partner_user_id FROM user_profile up WHERE up.id = user_id) AS partner_user_id,
+        apply_no
+    </sql>
+
+    <select id="findById" resultMap="creditApplicationRecordMap">
+        SELECT <include refid="creditApplicationColumns"/>
+        FROM credit_application
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByRequestId" resultMap="creditApplicationRecordMap">
+        SELECT <include refid="creditApplicationColumns"/>
+        FROM credit_application
+        WHERE request_id = #{requestId}
+    </select>
+
+    <select id="findByApplyIdAndUserId" resultMap="creditApplicationRecordMap">
+        SELECT <include refid="creditApplicationColumns"/>
+        FROM credit_application
+        WHERE apply_id = #{applyId}
+          AND user_id = #{userId}
+    </select>
+
+    <select id="findLatestByUserId" resultMap="creditApplicationRecordMap">
+        SELECT <include refid="creditApplicationColumns"/>
+        FROM credit_application
+        WHERE user_id = #{userId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findByApplyId" resultMap="creditApplicationRecordMap">
+        SELECT <include refid="creditApplicationColumns"/>
+        FROM credit_application
+        WHERE apply_id = #{applyId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO credit_application (
+            apply_id,
+            request_id,
+            provider_code,
+            user_id
+        ) VALUES (
+            #{applyId},
+            #{requestId},
+            #{providerCode},
+            #{userId}
+        )
+    </insert>
+
+    <select id="findIdByApplyId" resultType="long">
+        SELECT id
+        FROM credit_application
+        WHERE apply_id = #{applyId}
+    </select>
+
+    <update id="updateApplyNo">
+        UPDATE credit_application
+        SET apply_no = #{applyNo}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateLastLenderInteraction">
+        UPDATE credit_application
+        SET external_interaction_id = #{externalInteractionId}
+        WHERE id = #{id}
+    </update>
+</mapper>

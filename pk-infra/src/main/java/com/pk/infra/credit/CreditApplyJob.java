@@ -9,6 +9,7 @@ public record CreditApplyJob(
         long creditApplicationId,
         String applyId,
         String partnerUserId,
+        String mobileNo,
         BigDecimal lat,
         BigDecimal lng,
         String ip,

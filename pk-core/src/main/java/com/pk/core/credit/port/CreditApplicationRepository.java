@@ -1,7 +1,5 @@
 package com.pk.core.credit.port;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 
 public interface CreditApplicationRepository {
@@ -9,25 +7,23 @@ public interface CreditApplicationRepository {
 
     Optional<CreditApplicationRecord> findByRequestId(String requestId);
 
-    Optional<CreditApplicationRecord> findByApplyIdAndProfileId(String applyId, long profileId);
+    Optional<CreditApplicationRecord> findByApplyIdAndUserId(String applyId, long userId);
+
+    Optional<CreditApplicationRecord> findLatestByUserId(long userId);
+
+    Optional<CreditApplicationRecord> findByApplyId(String applyId);
 
     long insert(CreditApplicationInsert insert);
 
-    void updateStatus(long id, String status, String externalStatus, String lastErrorCode);
+    void updateApplyNo(long id, String applyNo);
 
-    void markSubmitted(long id, String externalCreditApplyNo, String externalStatus);
-
-    void scheduleNextPoll(long id, Instant nextPollAt);
-
-    List<CreditApplicationRecord> findDueForPoll(int limit);
+    void updateLastLenderInteraction(long id, Long externalInteractionId);
 
     record CreditApplicationInsert(
             String applyId,
             String requestId,
             String providerCode,
-            long profileId,
-            long profileVersionId,
-            String status
+            long userId
     ) {
     }
 
@@ -36,11 +32,9 @@ public interface CreditApplicationRepository {
             String applyId,
             String requestId,
             String providerCode,
-            long profileId,
-            long profileVersionId,
-            String externalCreditApplyNo,
-            String status,
-            String externalStatus
+            long userId,
+            String partnerUserId,
+            String applyNo
     ) {
     }
 }

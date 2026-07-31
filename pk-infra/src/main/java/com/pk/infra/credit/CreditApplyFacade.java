@@ -3,13 +3,11 @@ package com.pk.infra.credit;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.credit.CreditApplicationStatus;
-import com.pk.core.credit.CreditProviderCode;
 import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
-import com.pk.core.credit.port.CreditStatusHistoryRepository;
-import com.pk.core.credit.port.ProfileVersionRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.profile.sync.LenderDeviceContext;
+import com.pk.core.provider.port.PkProviderRepository;
 import com.pk.infra.profile.OnboardingProgressFacade;
 import com.pk.infra.profile.ProfileSyncPayloadLoader;
 import java.math.BigDecimal;
@@ -18,32 +16,40 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 public class CreditApplyFacade {
     public static final String PUBLIC_PROCESSING = CreditApplicationStatus.PROCESSING;
-    private static final String SOURCE = "CREDIT_APPLY";
 
     private final OnboardingProgressFacade onboardingProgressFacade;
     private final CreditApplicationRepository creditApplicationRepository;
-    private final ProfileVersionRepository profileVersionRepository;
-    private final CreditLimitSnapshotRepository creditLimitSnapshotRepository;
+    private final PkProviderRepository pkProviderRepository;
+    private final CreditLenderStatusQueryRepository creditLenderStatusQueryRepository;
+    private final CreditApplyProperties creditApplyProperties;
+    private final CreditApplyHandler creditApplyHandler;
     private final CreditApplyOutboxPublisher creditApplyOutboxPublisher;
-    private final CreditStatusHistoryRepository creditStatusHistoryRepository;
+    private final CreditStatusPollHandler creditStatusPollHandler;
+    private final String configuredProviderCode;
 
     public CreditApplyFacade(
             OnboardingProgressFacade onboardingProgressFacade,
             CreditApplicationRepository creditApplicationRepository,
-            ProfileVersionRepository profileVersionRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            PkProviderRepository pkProviderRepository,
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
+            CreditApplyProperties creditApplyProperties,
+            CreditApplyHandler creditApplyHandler,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
-            CreditStatusHistoryRepository creditStatusHistoryRepository
+            CreditStatusPollHandler creditStatusPollHandler,
+            String configuredProviderCode
     ) {
         this.onboardingProgressFacade = onboardingProgressFacade;
         this.creditApplicationRepository = creditApplicationRepository;
-        this.profileVersionRepository = profileVersionRepository;
-        this.creditLimitSnapshotRepository = creditLimitSnapshotRepository;
+        this.pkProviderRepository = pkProviderRepository;
+        this.creditLenderStatusQueryRepository = creditLenderStatusQueryRepository;
+        this.creditApplyProperties = creditApplyProperties;
+        this.creditApplyHandler = creditApplyHandler;
         this.creditApplyOutboxPublisher = creditApplyOutboxPublisher;
-        this.creditStatusHistoryRepository = creditStatusHistoryRepository;
+        this.creditStatusPollHandler = creditStatusPollHandler;
+        this.configuredProviderCode = configuredProviderCode;
     }
 
-    public ApplyResult apply(long profileId, String partnerUserId, ApplyCommand command) {
+    public ApplyResult apply(long userId, String partnerUserId, String mobileNo, ApplyCommand command) {
         validate(command);
         ProfileSyncPayloadLoader.validateDevice(command.device());
 
@@ -53,48 +59,41 @@ public class CreditApplyFacade {
         }
 
         OnboardingProgressFacade.OnboardingProgressResult onboarding = onboardingProgressFacade.getProgress(
-                profileId,
+                userId,
                 partnerUserId
         );
         if (!OnboardingProgressFacade.KYC_SYNCED.equals(onboarding.kycStatus())) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
 
+        String providerCode = pkProviderRepository.findActiveProviderCode(configuredProviderCode)
+                .orElseThrow(() -> new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS));
+
         String applyId = CreditApplyIdGenerator.generate();
-        long profileVersionId = profileVersionRepository.createSnapshot(
-                profileId,
-                onboarding.completedModules(),
-                SOURCE
-        );
 
         try {
             long creditApplicationId = creditApplicationRepository.insert(new CreditApplicationRepository.CreditApplicationInsert(
                     applyId,
                     command.requestId(),
-                    CreditProviderCode.PENDANAAN,
-                    profileId,
-                    profileVersionId,
-                    CreditApplicationStatus.INIT
+                    providerCode,
+                    userId
             ));
-            creditStatusHistoryRepository.insert(
-                    creditApplicationId,
-                    null,
-                    CreditApplicationStatus.INIT,
-                    null,
-                    SOURCE
-            );
-            creditApplyOutboxPublisher.publish(new CreditApplyJob(
+            CreditApplyJob job = new CreditApplyJob(
                     creditApplicationId,
                     applyId,
                     partnerUserId,
+                    mobileNo,
                     command.lat(),
                     command.lng(),
                     command.ip(),
                     command.address(),
                     command.device(),
                     command.appList()
-            ));
-            return new ApplyResult(applyId, PUBLIC_PROCESSING, null);
+            );
+            String creditApplyNo = creditApplyProperties.inlineEnabled()
+                    ? creditApplyHandler.submit(job)
+                    : enqueueOutbox(job);
+            return new ApplyResult(applyId, PUBLIC_PROCESSING, creditApplyNo);
         } catch (DataIntegrityViolationException exception) {
             var replay = creditApplicationRepository.findByRequestId(command.requestId());
             if (replay.isPresent()) {
@@ -104,12 +103,23 @@ public class CreditApplyFacade {
         }
     }
 
-    public StatusResult getStatus(long profileId, String applyId) {
+    public StatusResult getStatus(long userId) {
         CreditApplicationRepository.CreditApplicationRecord record = creditApplicationRepository
-                .findByApplyIdAndProfileId(applyId, profileId)
+                .findLatestByUserId(userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
-        var limits = creditLimitSnapshotRepository.findByCreditApplicationId(record.id()).orElse(null);
-        return toStatusResult(record, limits);
+        creditStatusPollHandler.syncFromLenderForApi(record);
+        record = creditApplicationRepository
+                .findByApplyIdAndUserId(record.applyId(), userId)
+                .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
+        var query = creditLenderStatusQueryRepository
+                .findLatestByApplyIdAndUserId(record.applyId(), userId)
+                .orElse(null);
+        return toStatusResult(record, query);
+    }
+
+    private String enqueueOutbox(CreditApplyJob job) {
+        creditApplyOutboxPublisher.publish(job);
+        return null;
     }
 
     private static void validate(ApplyCommand command) {
@@ -125,27 +135,31 @@ public class CreditApplyFacade {
         return new ApplyResult(
                 record.applyId(),
                 PUBLIC_PROCESSING,
-                record.externalCreditApplyNo()
+                record.applyNo()
         );
     }
 
     private static StatusResult toStatusResult(
             CreditApplicationRepository.CreditApplicationRecord record,
-            CreditLimitSnapshotRepository.CreditLimitSnapshotData limits
+            CreditLenderStatusQueryRepository.CreditLenderStatusQueryData query
     ) {
-        Long contractExpireTime = limits == null || limits.contractExpireAt() == null
-                ? null
-                : limits.contractExpireAt().toEpochMilli();
+        String status = PUBLIC_PROCESSING;
+        if (query != null && query.externalStatus() != null && !query.externalStatus().isBlank()) {
+            status = CreditExternalStatusMapper.toPublicStatus(
+                    CreditExternalStatusMapper.mapLenderStatus(query.externalStatus())
+            );
+        }
         return new StatusResult(
                 record.applyId(),
-                CreditExternalStatusMapper.publicStatusOf(record),
-                record.externalCreditApplyNo(),
-                contractExpireTime,
-                limits == null ? null : limits.riskMinLimit(),
-                limits == null ? null : limits.riskMaxLimit(),
-                limits == null ? null : limits.psychologicalCreditLimit(),
-                limits == null ? null : limits.fakeCreditLimit(),
-                limits == null ? null : limits.borrowAmtStepSize()
+                status,
+                query == null || query.creditApplyNo() == null ? record.applyNo() : query.creditApplyNo(),
+                query == null ? null : query.creditContractExpireTime(),
+                query == null ? null : query.freezeEndTime(),
+                query == null ? null : query.riskMinLimit(),
+                query == null ? null : query.riskMaxLimit(),
+                query == null ? null : query.psychologicalCreditLimit(),
+                query == null ? null : query.fakeCreditLimit(),
+                query == null ? null : query.borrowAmtStepSize()
         );
     }
 
@@ -168,6 +182,7 @@ public class CreditApplyFacade {
             String status,
             String creditApplyNo,
             Long creditContractExpireTime,
+            Long freezeEndTime,
             BigDecimal riskMinLimit,
             BigDecimal riskMaxLimit,
             BigDecimal psychologicalCreditLimit,

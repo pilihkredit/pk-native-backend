@@ -12,8 +12,40 @@ public class PendanaanProperties {
     private String clientId = "";
     private String clientSecret = "";
     private String appName = "";
+    private String trackingUrl = "https://logcus.pendanaan.com";
     private int connectTimeoutMs = 10_000;
     private int readTimeoutMs = 30_000;
+    private Logging logging = new Logging();
+
+    public Logging logging() {
+        return logging;
+    }
+
+    public void setLogging(Logging logging) {
+        this.logging = logging;
+    }
+
+    public static class Logging {
+        private boolean enabled = true;
+        /** <= 0 means unlimited (print full lender request/response bodies including images). */
+        private int maxBodyBytes = 0;
+
+        public boolean enabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int maxBodyBytes() {
+            return maxBodyBytes;
+        }
+
+        public void setMaxBodyBytes(int maxBodyBytes) {
+            this.maxBodyBytes = maxBodyBytes;
+        }
+    }
 
     public String mode() {
         return mode;
@@ -55,6 +87,14 @@ public class PendanaanProperties {
         this.appName = appName;
     }
 
+    public String trackingUrl() {
+        return trackingUrl;
+    }
+
+    public void setTrackingUrl(String trackingUrl) {
+        this.trackingUrl = trackingUrl;
+    }
+
     public int connectTimeoutMs() {
         return connectTimeoutMs;
     }
@@ -75,21 +115,25 @@ public class PendanaanProperties {
         return MODE_HTTP.equalsIgnoreCase(mode);
     }
 
+    public boolean httpCredentialsPresent() {
+        return isPresent(baseUrl)
+                && isPresent(clientId)
+                && isPresent(clientSecret)
+                && isPresent(appName);
+    }
+
     public void validateHttpSettings() {
         if (!httpEnabled()) {
             return;
         }
-        if (baseUrl == null || baseUrl.isBlank()) {
-            throw new IllegalStateException("pk.lender.pendanaan.base-url is required when mode=http");
+        if (!httpCredentialsPresent()) {
+            throw new IllegalStateException(
+                    "pk.lender.pendanaan.base-url, client-id, client-secret, and app-name are required when mode=http"
+            );
         }
-        if (clientId == null || clientId.isBlank()) {
-            throw new IllegalStateException("pk.lender.pendanaan.client-id is required when mode=http");
-        }
-        if (clientSecret == null || clientSecret.isBlank()) {
-            throw new IllegalStateException("pk.lender.pendanaan.client-secret is required when mode=http");
-        }
-        if (appName == null || appName.isBlank()) {
-            throw new IllegalStateException("pk.lender.pendanaan.app-name is required when mode=http");
-        }
+    }
+
+    private static boolean isPresent(String value) {
+        return value != null && !value.isBlank();
     }
 }

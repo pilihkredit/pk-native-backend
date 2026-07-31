@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.loan.mapper.LoanLenderStatusQueryMapper">
+
+    <resultMap id="loanLenderStatusQueryMap"
+               type="com.pk.core.loan.port.LoanLenderStatusQueryRepository$LoanLenderStatusQueryData">
+        <constructor>
+            <arg column="loan_apply_id" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="lender_user_id" javaType="string"/>
+            <arg column="external_loan_apply_no" javaType="string"/>
+            <arg column="external_status" javaType="string"/>
+            <arg column="bill_no" javaType="string"/>
+            <arg column="apply_amt" javaType="java.math.BigDecimal"/>
+            <arg column="pay_amount" javaType="java.math.BigDecimal"/>
+            <arg column="pay_time" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="freeze_end_time" javaType="java.lang.Long"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
+            <arg column="external_interaction_callback_id" javaType="java.lang.Long"/>
+            <arg column="queried_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="loanLenderStatusQueryColumns">
+        loan_apply_id, user_id, lender_user_id, external_loan_apply_no, external_status,
+        bill_no, apply_amt, pay_amount, pay_time, freeze_end_time, external_interaction_id,
+        external_interaction_callback_id, queried_at
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO loan_lender_status_query (
+            loan_apply_id,
+            user_id,
+            lender_user_id,
+            external_loan_apply_no,
+            external_status,
+            bill_no,
+            apply_amt,
+            pay_amount,
+            pay_time,
+            freeze_end_time,
+            external_interaction_id,
+            external_interaction_callback_id,
+            queried_at
+        ) VALUES (
+            #{loanApplyId},
+            #{userId},
+            #{lenderUserId},
+            #{externalLoanApplyNo},
+            #{externalStatus},
+            #{billNo},
+            #{applyAmt},
+            #{payAmount},
+            #{payTime, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+            #{freezeEndTime},
+            #{externalInteractionId},
+            #{externalInteractionCallbackId},
+            #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        )
+    </insert>
+
+    <select id="findLatestByLoanApplyId" resultMap="loanLenderStatusQueryMap">
+        SELECT <include refid="loanLenderStatusQueryColumns"/>
+        FROM loan_lender_status_query
+        WHERE loan_apply_id = #{loanApplyId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findLatestByLoanApplyIdAndUserId" resultMap="loanLenderStatusQueryMap">
+        SELECT <include refid="loanLenderStatusQueryColumns"/>
+        FROM loan_lender_status_query
+        WHERE loan_apply_id = #{loanApplyId}
+          AND user_id = #{userId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+</mapper>

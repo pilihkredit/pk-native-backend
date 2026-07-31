@@ -2,8 +2,7 @@ package com.pk.core.profile.catalog;
 
 public enum ProfileEnumFieldKey {
     EDUCATION_DEGREE("educationDegree", ProfileOnboardingModule.PERSONAL, "educationDegree"),
-    INDUSTRY("industry", ProfileOnboardingModule.WORK, "industry"),
-    PROFESSION_DEGREE("professionDegree", ProfileOnboardingModule.WORK, "professionDegree"),
+    INDUSTRY("industry", ProfileOnboardingModule.PERSONAL, "industry"),
     RELATIONSHIP("relationship", ProfileOnboardingModule.CONTACT, "relationship");
 
     private final String fieldKey;

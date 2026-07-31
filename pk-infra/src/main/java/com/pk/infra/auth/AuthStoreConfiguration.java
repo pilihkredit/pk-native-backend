@@ -3,12 +3,17 @@ package com.pk.infra.auth;
 import com.pk.core.auth.port.OtpChallengeStore;
 import com.pk.core.auth.port.RefreshTokenStore;
 import com.pk.core.auth.port.SessionStore;
-import com.pk.core.auth.port.PasswordHasher;
 import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.UserAuthRepository;
-import com.pk.core.auth.port.UserPasswordCredentialRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.appconfig.port.AppConfigRepository;
 import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSender;
+import com.pk.core.auth.port.WhatsAppSendLogRepository;
+import com.pk.core.auth.port.WhatsAppSender;
+import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import com.pk.core.profile.port.UserProfileBindingRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -26,34 +31,68 @@ public class AuthStoreConfiguration {
     }
 
     @Bean
+    OtpChallengeStore whatsappOtpChallengeStore(StringRedisTemplate redisTemplate) {
+        return new RedisOtpChallengeStore(redisTemplate, "whatsapp");
+    }
+
+    @Bean
     RefreshTokenStore refreshTokenStore(StringRedisTemplate redisTemplate) {
         return new RedisRefreshTokenStore(redisTemplate);
     }
 
     @Bean
+    AuthOtpConfigLoader authOtpConfigLoader(AppConfigRepository appConfigRepository, ObjectMapper objectMapper) {
+        return new AuthOtpConfigLoader(appConfigRepository, objectMapper);
+    }
+
+    @Bean
+    WhatsAppConfigLoader whatsAppConfigLoader(AppConfigRepository appConfigRepository, ObjectMapper objectMapper) {
+        return new WhatsAppConfigLoader(appConfigRepository, objectMapper);
+    }
+
+    @Bean
+    SmsConfigLoader smsConfigLoader(AppConfigRepository appConfigRepository, ObjectMapper objectMapper) {
+        return new SmsConfigLoader(appConfigRepository, objectMapper);
+    }
+
+    @Bean
     AuthServiceFacade authServiceFacade(
             AuthProperties authProperties,
+            AuthOtpConfigLoader authOtpConfigLoader,
+            SmsConfigLoader smsConfigLoader,
             SessionStore sessionStore,
-            OtpChallengeStore otpChallengeStore,
+            @Qualifier("otpChallengeStore") OtpChallengeStore otpChallengeStore,
+            @Qualifier("whatsappOtpChallengeStore") OtpChallengeStore whatsappOtpChallengeStore,
             RefreshTokenStore refreshTokenStore,
             TokenIssuer tokenIssuer,
             UserAuthRepository userAuthRepository,
-            UserPasswordCredentialRepository userPasswordCredentialRepository,
-            PasswordHasher passwordHasher,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
             SmsSendLogRepository smsSendLogRepository,
-            SmsSender smsSender
+            SmsSender smsSender,
+            WhatsAppSendLogRepository whatsAppSendLogRepository,
+            WhatsAppSender whatsAppSender,
+            WhatsAppConfigLoader whatsAppConfigLoader,
+            UserProfileBindingRepository userProfileBindingRepository,
+            com.pk.core.attribution.port.AppsFlyerS2sReporter appsFlyerS2sReporter
     ) {
         return new AuthServiceFacade(
                 authProperties,
+                authOtpConfigLoader,
+                smsConfigLoader,
                 sessionStore,
                 otpChallengeStore,
+                whatsappOtpChallengeStore,
                 refreshTokenStore,
                 tokenIssuer,
                 userAuthRepository,
-                userPasswordCredentialRepository,
-                passwordHasher,
+                sensitiveFieldEncryptor,
                 smsSendLogRepository,
-                smsSender
+                smsSender,
+                whatsAppSendLogRepository,
+                whatsAppSender,
+                whatsAppConfigLoader,
+                userProfileBindingRepository,
+                appsFlyerS2sReporter
         );
     }
 }

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.loan.mapper.LoanLenderHistoryOrderMapper">
+
+    <resultMap id="loanLenderHistoryOrderMap"
+               type="com.pk.core.loan.port.LoanLenderHistoryOrderRepository$LoanLenderHistoryOrderData">
+        <constructor>
+            <arg column="loan_apply_id" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="external_loan_apply_no" javaType="string"/>
+            <arg column="lender_user_id" javaType="string"/>
+            <arg column="external_status" javaType="string"/>
+            <arg column="bill_no" javaType="string"/>
+            <arg column="apply_amt" javaType="java.math.BigDecimal"/>
+            <arg column="pay_amount" javaType="java.math.BigDecimal"/>
+            <arg column="pay_time" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="freeze_end_time" javaType="java.lang.Long"/>
+            <arg column="lender_create_time" javaType="java.lang.Long"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
+            <arg column="queried_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="loanLenderHistoryOrderColumns">
+        loan_apply_id, user_id, external_loan_apply_no, lender_user_id, external_status,
+        bill_no, apply_amt, pay_amount, pay_time, freeze_end_time, lender_create_time,
+        external_interaction_id, queried_at
+    </sql>
+
+    <insert id="upsert">
+        INSERT INTO loan_lender_history_order (
+            loan_apply_id,
+            user_id,
+            external_loan_apply_no,
+            lender_user_id,
+            external_status,
+            bill_no,
+            apply_amt,
+            pay_amount,
+            pay_time,
+            freeze_end_time,
+            lender_create_time,
+            external_interaction_id,
+            queried_at
+        ) VALUES (
+            #{loanApplyId},
+            #{userId},
+            #{externalLoanApplyNo},
+            #{lenderUserId},
+            #{externalStatus},
+            #{billNo},
+            #{applyAmt},
+            #{payAmount},
+            #{payTime, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+            #{freezeEndTime},
+            #{lenderCreateTime},
+            #{externalInteractionId},
+            #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        )
+        ON DUPLICATE KEY UPDATE
+            user_id = VALUES(user_id),
+            external_loan_apply_no = VALUES(external_loan_apply_no),
+            lender_user_id = VALUES(lender_user_id),
+            external_status = VALUES(external_status),
+            bill_no = VALUES(bill_no),
+            apply_amt = VALUES(apply_amt),
+            pay_amount = VALUES(pay_amount),
+            pay_time = VALUES(pay_time),
+            freeze_end_time = VALUES(freeze_end_time),
+            lender_create_time = VALUES(lender_create_time),
+            external_interaction_id = VALUES(external_interaction_id),
+            queried_at = VALUES(queried_at)
+    </insert>
+
+    <select id="findByUserId" resultMap="loanLenderHistoryOrderMap">
+        SELECT <include refid="loanLenderHistoryOrderColumns"/>
+        FROM loan_lender_history_order
+        WHERE user_id = #{userId}
+        ORDER BY lender_create_time DESC
+    </select>
+</mapper>

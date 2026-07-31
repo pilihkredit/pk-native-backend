@@ -17,7 +17,9 @@ class ProfileEnumApplicationServiceTest {
         var response = service.listEnums("personal");
 
         assertThat(response.lenderProvider()).isEqualTo("pendanaan");
-        assertThat(response.fields()).hasSize(1);
+        assertThat(response.fields())
+                .extracting(field -> field.fieldKey())
+                .containsExactly("educationDegree", "industry");
         assertThat(response.fields().getFirst().fieldKey()).isEqualTo("educationDegree");
         assertThat(response.fields().getFirst().lenderField()).isEqualTo("educationDegree");
         assertThat(response.fields().getFirst().options())
@@ -28,6 +30,8 @@ class ProfileEnumApplicationServiceTest {
     void returnsAllProfileEnumsWhenModuleOmitted() {
         var response = service.listEnums(null);
 
-        assertThat(response.fields()).hasSize(4);
+        assertThat(response.fields())
+                .extracting(field -> field.fieldKey())
+                .containsExactly("educationDegree", "industry", "relationship");
     }
 }

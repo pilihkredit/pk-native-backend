@@ -16,10 +16,14 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
 public class JwtTokenIssuer implements TokenIssuer {
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenIssuer.class);
+
     private final AuthProperties authProperties;
     private final byte[] secret;
 
@@ -32,12 +36,12 @@ public class JwtTokenIssuer implements TokenIssuer {
     }
 
     @Override
-    public TokenPair issue(long profileId, String partnerUserId, String mobileNo, long sessionVersion, String deviceId) {
+    public TokenPair issue(long userId, String partnerUserId, String mobileNo, long sessionVersion, String deviceId) {
         try {
             Instant now = Instant.now();
             Instant expiresAt = now.plus(authProperties.accessTokenTtl());
             JWTClaimsSet claims = new JWTClaimsSet.Builder()
-                    .subject(Long.toString(profileId))
+                    .subject(Long.toString(userId))
                     .claim("partnerUserId", partnerUserId)
                     .claim("mobile", mobileNo)
                     .claim("sv", sessionVersion)
@@ -63,21 +67,29 @@ public class JwtTokenIssuer implements TokenIssuer {
         try {
             SignedJWT signedJwt = SignedJWT.parse(accessToken);
             if (!signedJwt.verify(new MACVerifier(secret))) {
+                AuthRejectReasons.set(AuthRejectReasons.TOKEN_REJECTED);
                 throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
             }
             JWTClaimsSet claims = signedJwt.getJWTClaimsSet();
             Date expiration = claims.getExpirationTime();
             if (expiration == null || expiration.toInstant().isBefore(Instant.now())) {
+                AuthRejectReasons.set(AuthRejectReasons.TOKEN_EXPIRED);
+                log.warn(
+                        "Access token expired mobileNo={} subject={}",
+                        claims.getStringClaim("mobile"),
+                        claims.getSubject()
+                );
                 throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
             }
-            long profileId = Long.parseLong(Objects.requireNonNull(claims.getSubject()));
+            long userId = Long.parseLong(Objects.requireNonNull(claims.getSubject()));
             long sessionVersion = claims.getLongClaim("sv");
             String partnerUserId = claims.getStringClaim("partnerUserId");
             String mobileNo = claims.getStringClaim("mobile");
-            return new AuthenticatedPrincipal(profileId, partnerUserId, mobileNo, sessionVersion);
+            return new AuthenticatedPrincipal(userId, partnerUserId, mobileNo, sessionVersion);
         } catch (ApiException exception) {
             throw exception;
         } catch (Exception exception) {
+            AuthRejectReasons.set(AuthRejectReasons.TOKEN_REJECTED);
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST, exception);
         }
     }

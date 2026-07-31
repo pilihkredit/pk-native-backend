@@ -2,53 +2,111 @@ spring:
   application:
     name: pk-app
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
+    active: ${SPRING_PROFILES_ACTIVE:test}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
+  metrics:
+    tags:
+      service: ${spring.application.name}
+      environment: ${pk.environment}
+
+logging:
+  config: classpath:logback-spring.xml
 
 server:
   port: ${PK_APP_PORT:8831}
 
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-handlers-package: com.pk.infra.mybatis.typehandler
+  configuration:
+    map-underscore-to-camel-case: true
+
 pk:
   environment: ${SPRING_PROFILES_ACTIVE:local}
+  logging:
+    sls:
+      enabled: ${PK_SLS_ENABLED:false}
+      endpoint: ${PK_SLS_ENDPOINT:}
+      project: ${PK_SLS_PROJECT:}
+      logstore: ${PK_SLS_LOGSTORE:${spring.application.name}}
+      access-key-id: ${PK_SLS_ACCESS_KEY_ID:}
+      access-key-secret: ${PK_SLS_ACCESS_KEY_SECRET:}
+      topic: ${PK_SLS_TOPIC:}
+      source: ${PK_SLS_SOURCE:}
   api:
     v1-prefix: ${PK_API_V1_PREFIX:/api/v1}
     logging:
       enabled: ${PK_API_LOGGING_ENABLED:true}
       max-body-bytes: ${PK_API_LOGGING_MAX_BODY_BYTES:65536}
+  debug:
+    user-progress:
+      enabled: ${PK_DEBUG_USER_PROGRESS_ENABLED:false}
+      token: ${PK_DEBUG_USER_PROGRESS_TOKEN:}
   auth:
     access-token-ttl: ${PK_AUTH_ACCESS_TOKEN_TTL:15m}
     refresh-token-ttl: ${PK_AUTH_REFRESH_TOKEN_TTL:30d}
     otp-ttl: ${PK_AUTH_OTP_TTL:5m}
-    otp-resend-interval: ${PK_AUTH_OTP_RESEND_INTERVAL:60s}
-    otp-daily-limit: ${PK_AUTH_OTP_DAILY_LIMIT:10}
-    otp-daily-limit-zone: ${PK_AUTH_OTP_DAILY_LIMIT_ZONE:Asia/Jakarta}
     jwt-secret: ${PK_AUTH_JWT_SECRET:local-dev-secret-change-in-prod-min-32-chars}
-    password-max-failed-attempts: ${PK_AUTH_PASSWORD_MAX_FAILED_ATTEMPTS:5}
-    password-lock-duration: ${PK_AUTH_PASSWORD_LOCK_DURATION:15m}
   security:
     field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY:local-dev-field-encryption-key-32b}
+  biometric-storage:
+    encryption-key-ref: pk-field-encryption-key
+    local:
+      base-dir: ${PK_BIOMETRIC_LOCAL_BASE_DIR:${java.io.tmpdir}/pk-biometric}
+      path-prefix: pk-biometric
+    oss:
+      enabled: ${PK_BIOMETRIC_OSS_ENABLED:false}
+      endpoint: ${PK_BIOMETRIC_OSS_ENDPOINT:}
+      bucket: ${PK_BIOMETRIC_OSS_BUCKET:}
+      access-key-id: ${PK_BIOMETRIC_OSS_ACCESS_KEY_ID:}
+      access-key-secret: ${PK_BIOMETRIC_OSS_ACCESS_KEY_SECRET:}
+      path-prefix: ${PK_BIOMETRIC_OSS_PATH_PREFIX:pk-biometric}
   reference:
     bank-cache-ttl: ${PK_REFERENCE_BANK_CACHE_TTL:24h}
     area-cache-ttl: ${PK_REFERENCE_AREA_CACHE_TTL:24h}
   lender:
+    config:
+      source: ${PK_LENDER_CONFIG_SOURCE:db}
+      provider-code: ${PK_LENDER_CONFIG_PROVIDER_CODE:pendanaan}
+      provider-name: ${PK_LENDER_CONFIG_PROVIDER_NAME:}
     pendanaan:
-      mode: ${PK_LENDER_PENDANAAN_MODE:http}
-      base-url: ${PK_PENDANAAN_BASE_URL:}
-      client-id: ${PK_PENDANAAN_CLIENT_ID:}
-      client-secret: ${PK_PENDANAAN_CLIENT_SECRET:}
-      app-name: ${PK_PENDANAAN_APP_NAME:}
+      connect-timeout-ms: ${PK_LENDER_PENDANAAN_CONNECT_TIMEOUT_MS:10000}
+      read-timeout-ms: ${PK_LENDER_PENDANAAN_READ_TIMEOUT_MS:30000}
+      tracking-url: ${PK_LENDER_PENDANAAN_TRACKING_URL:https://logcus.pendanaan.com}
+      logging:
+        enabled: ${PK_LENDER_PENDANAAN_LOGGING_ENABLED:true}
+        max-body-bytes: ${PK_LENDER_PENDANAAN_LOGGING_MAX_BODY_BYTES:65536}
   profile:
     sync:
       mode: ${PK_PROFILE_SYNC_MODE:inline}
       max-retries: ${PK_PROFILE_SYNC_MAX_RETRIES:5}
       retry-backoff-seconds: ${PK_PROFILE_SYNC_RETRY_BACKOFF_SECONDS:60}
+  ocr:
+    dev-lender-sync-enabled: ${PK_OCR_DEV_LENDER_SYNC_ENABLED:false}
   credit:
     apply:
+      mode: ${PK_CREDIT_APPLY_MODE:inline}
       max-retries: ${PK_CREDIT_APPLY_MAX_RETRIES:5}
       retry-backoff-seconds: ${PK_CREDIT_APPLY_RETRY_BACKOFF_SECONDS:60}
       poll-interval-seconds: ${PK_CREDIT_POLL_INTERVAL_SECONDS:30}
+  loan:
+    product:
+      cache-ttl: ${PK_LOAN_PRODUCT_CACHE_TTL:30s}
+    quote:
+      ttl: ${PK_LOAN_QUOTE_TTL:15m}
+    apply:
+      mode: ${PK_LOAN_APPLY_MODE:inline}
+      max-retries: ${PK_LOAN_APPLY_MAX_RETRIES:5}
+      retry-backoff-seconds: ${PK_LOAN_APPLY_RETRY_BACKOFF_SECONDS:60}
+      poll-interval-seconds: ${PK_LOAN_POLL_INTERVAL_SECONDS:30}
+  callback:
+    enabled: ${PK_CALLBACK_ENABLED:true}
+    oauth:
+      client-id: ${PK_CALLBACK_CLIENT_ID:local-callback-client}
+      client-secret: ${PK_CALLBACK_CLIENT_SECRET:local-callback-secret}
+      access-token-ttl: ${PK_CALLBACK_ACCESS_TOKEN_TTL:2h}

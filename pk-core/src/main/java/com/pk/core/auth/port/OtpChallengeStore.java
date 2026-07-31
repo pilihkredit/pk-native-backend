@@ -7,6 +7,8 @@ import java.util.Optional;
 public interface OtpChallengeStore {
     Optional<OtpChallenge> findByToken(String otpToken);
 
+    Optional<String> findTokenByMobile(String mobileNo);
+
     void save(String otpToken, OtpChallenge challenge, Duration ttl);
 
     void delete(String otpToken);

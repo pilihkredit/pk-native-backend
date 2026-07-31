@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.external.port.LenderInteractionLogRepository;
+import com.pk.core.logging.PlatformStructuredLogger;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -15,23 +16,26 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class PendanaanOAuthTokenProvider {
-    private static final String TOKEN_PATH = "/oauth/token";
+    private static final String TOKEN_PATH = PendanaanOpenApiPaths.OAUTH_TOKEN;
     private static final long EXPIRY_SKEW_SECONDS = 60;
 
     private final PendanaanProperties properties;
     private final LenderInteractionLogRepository interactionLogRepository;
     private final ObjectMapper objectMapper;
+    private final PlatformStructuredLogger structuredLogger;
     private final HttpClient httpClient;
     private final AtomicReference<CachedToken> cachedToken = new AtomicReference<>();
 
     public PendanaanOAuthTokenProvider(
             PendanaanProperties properties,
             LenderInteractionLogRepository interactionLogRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            PlatformStructuredLogger structuredLogger
     ) {
         this.properties = properties;
         this.interactionLogRepository = interactionLogRepository;
         this.objectMapper = objectMapper;
+        this.structuredLogger = structuredLogger;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(properties.connectTimeoutMs()))
                 .build();
@@ -71,6 +75,7 @@ public class PendanaanOAuthTokenProvider {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
                     .timeout(Duration.ofMillis(properties.readTimeoutMs()))
+                    .header("Accept-Language", PendanaanHttpSupport.ACCEPT_LANGUAGE)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
@@ -99,6 +104,8 @@ public class PendanaanOAuthTokenProvider {
             int durationMs = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - startedAt);
             PendanaanInteractionSupport.log(
                     interactionLogRepository,
+                    properties.logging(),
+                    structuredLogger,
                     interactionNo,
                     "OAUTH_TOKEN",
                     null,
@@ -109,7 +116,8 @@ public class PendanaanOAuthTokenProvider {
                     responseMsg,
                     responseText,
                     success,
-                    durationMs
+                    durationMs,
+                    null
             );
         }
     }

@@ -1,69 +1,56 @@
 package com.pk.infra.credit;
 
-import com.pk.core.credit.CreditApplicationStatus;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
-import com.pk.core.credit.port.CreditStatusHistoryRepository;
 import com.pk.core.credit.port.LenderCreditPort;
-import java.time.Instant;
+import com.pk.core.external.LenderInteractionContext;
 
 public class CreditApplyHandler {
-    private static final String SOURCE = "CREDIT_APPLY_WORKER";
-    private static final String EXTERNAL_PROCESSING = "PROCESSING";
-
     private final CreditApplicationRepository creditApplicationRepository;
-    private final CreditStatusHistoryRepository creditStatusHistoryRepository;
     private final LenderCreditPort lenderCreditPort;
-    private final CreditApplyProperties creditApplyProperties;
+    private final CreditAppsFlyerPreSync creditAppsFlyerPreSync;
 
     public CreditApplyHandler(
             CreditApplicationRepository creditApplicationRepository,
-            CreditStatusHistoryRepository creditStatusHistoryRepository,
             LenderCreditPort lenderCreditPort,
-            CreditApplyProperties creditApplyProperties
+            CreditAppsFlyerPreSync creditAppsFlyerPreSync
     ) {
         this.creditApplicationRepository = creditApplicationRepository;
-        this.creditStatusHistoryRepository = creditStatusHistoryRepository;
         this.lenderCreditPort = lenderCreditPort;
-        this.creditApplyProperties = creditApplyProperties;
+        this.creditAppsFlyerPreSync = creditAppsFlyerPreSync;
     }
 
-    public void submit(CreditApplyJob job) {
-        transition(job.creditApplicationId(), CreditApplicationStatus.INIT, CreditApplicationStatus.SUBMITTING, null);
+    public String submit(CreditApplyJob job) {
+        if (creditApplicationRepository.findById(job.creditApplicationId()).isEmpty()) {
+            throw new IllegalStateException("Credit application not found: " + job.creditApplicationId());
+        }
 
-        LenderCreditPort.LenderCreditApplyResult result = lenderCreditPort.apply(
-                new LenderCreditPort.LenderCreditApplyCommand(
-                        job.applyId(),
-                        job.partnerUserId(),
-                        job.lat(),
-                        job.lng(),
-                        job.ip(),
-                        job.address(),
-                        job.device(),
-                        job.appList()
+        creditAppsFlyerPreSync.syncBeforeCreditApply(job);
+
+        LenderCreditPort.LenderCreditApplyResult result = LenderInteractionContext.runWithMobileNo(
+                job.mobileNo(),
+                () -> lenderCreditPort.apply(
+                        new LenderCreditPort.LenderCreditApplyCommand(
+                                job.applyId(),
+                                job.partnerUserId(),
+                                job.lat(),
+                                job.lng(),
+                                job.ip(),
+                                job.address(),
+                                job.device(),
+                                job.appList()
+                        )
                 )
         );
 
-        creditApplicationRepository.markSubmitted(
-                job.creditApplicationId(),
-                result.creditApplyNo(),
-                EXTERNAL_PROCESSING
-        );
-        creditStatusHistoryRepository.insert(
-                job.creditApplicationId(),
-                CreditApplicationStatus.SUBMITTING,
-                CreditApplicationStatus.PROCESSING,
-                EXTERNAL_PROCESSING,
-                SOURCE
-        );
-        creditApplicationRepository.scheduleNextPoll(
-                job.creditApplicationId(),
-                Instant.now().plusSeconds(creditApplyProperties.pollIntervalSeconds())
-        );
-    }
-
-    private void transition(long creditApplicationId, String fromStatus, String toStatus, String externalStatus) {
-        creditApplicationRepository.updateStatus(creditApplicationId, toStatus, externalStatus, null);
-        creditStatusHistoryRepository.insert(creditApplicationId, fromStatus, toStatus, externalStatus, SOURCE);
+        if (result.externalInteractionId() != null) {
+            creditApplicationRepository.updateLastLenderInteraction(
+                    job.creditApplicationId(),
+                    result.externalInteractionId()
+            );
+        }
+        if (result.creditApplyNo() != null && !result.creditApplyNo().isBlank()) {
+            creditApplicationRepository.updateApplyNo(job.creditApplicationId(), result.creditApplyNo());
+        }
+        return result.creditApplyNo();
     }
 }

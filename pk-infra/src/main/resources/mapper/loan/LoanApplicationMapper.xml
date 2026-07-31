@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.loan.mapper.LoanApplicationMapper">
+    <resultMap id="loanApplicationRecordMap" type="com.pk.core.loan.port.LoanApplicationRepository$LoanApplicationRecord">
+        <constructor>
+            <arg column="id" javaType="_long"/><arg column="loan_apply_id" javaType="string"/>
+            <arg column="request_id" javaType="string"/><arg column="apply_id" javaType="string"/>
+            <arg column="credit_application_id" javaType="_long"/>
+            <arg column="quote_id" javaType="java.lang.Long"/>
+            <arg column="quote_no" javaType="string"/>
+            <arg column="user_id" javaType="_long"/><arg column="profile_version_id" javaType="_long"/>
+            <arg column="external_loan_apply_no" javaType="string"/><arg column="lender_user_id" javaType="string"/>
+            <arg column="bill_no" javaType="string"/>
+            <arg column="status" javaType="string"/><arg column="external_status" javaType="string"/>
+            <arg column="apply_amt" javaType="java.math.BigDecimal"/><arg column="pay_amount" javaType="java.math.BigDecimal"/>
+            <arg column="pay_time" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+    <sql id="cols">id, loan_apply_id, request_id, apply_id, credit_application_id, quote_id, quote_no, user_id, profile_version_id,
+        external_loan_apply_no, lender_user_id, bill_no, status, external_status, apply_amt, pay_amount, pay_time</sql>
+    <select id="findById" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE id = #{id}</select>
+    <select id="findByRequestId" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE request_id = #{requestId}</select>
+    <select id="findByLoanApplyId" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE loan_apply_id = #{loanApplyId}</select>
+    <select id="findByLoanApplyIdAndUserId" resultMap="loanApplicationRecordMap">SELECT <include refid="cols"/> FROM loan_application WHERE loan_apply_id = #{loanApplyId} AND user_id = #{userId}</select>
+    <insert id="insert">
+        INSERT INTO loan_application (
+            loan_apply_id, request_id, apply_id, credit_application_id, quote_id, quote_no, user_id, profile_version_id,
+            status, apply_amt, product_code, repay_method, coupon_id, loan_purpose, lat, lng, ip, address, ad_id, submitted_at
+        )
+        VALUES (
+            #{loanApplyId}, #{requestId}, #{applyId}, #{creditApplicationId}, #{quoteId}, #{quoteNo}, #{userId}, #{profileVersionId},
+            #{status}, #{applyAmt}, #{productCode}, #{repayMethod}, #{couponId}, #{loanPurpose}, #{lat}, #{lng}, #{ip}, #{address}, #{adId},
+            CURRENT_TIMESTAMP(3)
+        )
+    </insert>
+    <select id="findIdByLoanApplyId" resultType="long">SELECT id FROM loan_application WHERE loan_apply_id = #{loanApplyId}</select>
+    <update id="updateStatus">
+        UPDATE loan_application SET status = #{status}, external_status = #{externalStatus},
+            finalized_at = CASE WHEN #{status} IN ('DISBURSED', 'REJECTED', 'FAILED', 'CANCEL') THEN CURRENT_TIMESTAMP(3) ELSE finalized_at END
+        WHERE id = #{id}
+    </update>
+    <update id="markSubmitted">
+        UPDATE loan_application
+        SET status = CASE WHEN status IN ('INIT', 'SUBMITTING') THEN 'PROCESSING' ELSE status END,
+            external_loan_apply_no = #{externalLoanApplyNo}, external_status = #{externalStatus},
+            submitted_at = COALESCE(submitted_at, CURRENT_TIMESTAMP(3)) WHERE id = #{id}
+    </update>
+    <update id="markLenderApplySubmitted">
+        UPDATE loan_application
+        SET status = CASE WHEN status IN ('INIT', 'SUBMITTING') THEN 'PROCESSING' ELSE status END,
+            external_loan_apply_no = #{externalLoanApplyNo},
+            lender_user_id = #{lenderUserId},
+            external_status = #{externalStatus},
+            external_interaction_id = #{externalInteractionId},
+            submitted_at = COALESCE(submitted_at, CURRENT_TIMESTAMP(3))
+        WHERE id = #{id}
+    </update>
+    <update id="updateDisbursementDetails">
+        UPDATE loan_application SET bill_no = #{billNo}, apply_amt = COALESCE(#{applyAmt}, apply_amt),
+            pay_amount = #{payAmount}, pay_time = #{payTime, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler} WHERE id = #{id}
+    </update>
+    <update id="scheduleNextPoll">UPDATE loan_application SET next_poll_at = #{nextPollAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler} WHERE id = #{id}</update>
+    <select id="findPendingPoll" resultMap="loanApplicationRecordMap">
+        SELECT <include refid="cols"/> FROM loan_application WHERE status = 'PROCESSING' AND next_poll_at IS NOT NULL
+        AND next_poll_at &lt;= CURRENT_TIMESTAMP(3) ORDER BY next_poll_at LIMIT #{limit}
+    </select>
+</mapper>

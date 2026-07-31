@@ -1,0 +1,5 @@
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-handlers-package: com.pk.infra.mybatis.typehandler
+  configuration:
+    map-underscore-to-camel-case: true

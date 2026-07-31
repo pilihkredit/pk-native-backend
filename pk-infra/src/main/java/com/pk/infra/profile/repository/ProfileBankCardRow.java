@@ -1,0 +1,18 @@
+package com.pk.infra.profile.repository;
+
+public record ProfileBankCardRow(
+        Long id,
+        long userId,
+String bankCode,
+        String cardNoCiphertext,
+        byte[] cardNoNonce,
+        byte[] cardNoTag,
+        String cardNoHash,
+        String verifyStatus,
+        String verifyErrorCode,
+        boolean defaultFlag,
+        boolean deletedFlag,
+        String moduleStatus,
+        String lastRequestId,
+        Long externalInteractionId
+) {}

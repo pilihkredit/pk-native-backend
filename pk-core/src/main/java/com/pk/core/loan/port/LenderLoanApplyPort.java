@@ -1,0 +1,37 @@
+package com.pk.core.loan.port;
+
+import com.pk.core.credit.CreditRiskAppInfo;
+import com.pk.core.profile.sync.LenderDeviceContext;
+import java.math.BigDecimal;
+import java.util.List;
+
+public interface LenderLoanApplyPort {
+    LenderLoanApplyResult apply(LenderLoanApplyCommand command);
+
+    record LenderLoanApplyCommand(
+            String applyId,
+            String loanApplyId,
+            BigDecimal applyAmt,
+            String productCode,
+            String repayMethod,
+            String loanPurpose,
+            Long couponId,
+            BigDecimal lat,
+            BigDecimal lng,
+            String ip,
+            String address,
+            String adId,
+            LenderDeviceContext device,
+            List<CreditRiskAppInfo> appList
+    ) {
+    }
+
+    record LenderLoanApplyResult(
+            String loanApplyId,
+            String loanApplyNo,
+            String lenderUserId,
+            String externalStatus,
+            Long externalInteractionId
+    ) {
+    }
+}

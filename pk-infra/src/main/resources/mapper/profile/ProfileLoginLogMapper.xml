@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileLoginLogMapper">
+    <resultMap id="loginLogRowMap" type="com.pk.infra.profile.repository.ProfileLoginLogRow">
+        <constructor>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="login_type" javaType="_int"/>
+            <arg column="login_ip" javaType="string"/>
+            <arg column="login_lat" javaType="java.math.BigDecimal"/>
+            <arg column="login_lng" javaType="java.math.BigDecimal"/>
+            <arg column="module_status" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+    <sql id="loginLogColumns">
+        user_id, login_type, login_ip, login_lat, login_lng, module_status, last_request_id,
+        external_interaction_id
+    </sql>
+    <select id="findByUserId" resultMap="loginLogRowMap">
+        SELECT <include refid="loginLogColumns"/> FROM user_profile_login_log WHERE user_id = #{userId}
+    </select>
+    <insert id="upsert">
+        INSERT INTO user_profile_login_log (
+            user_id, login_type, login_ip, login_lat, login_lng, module_status, last_request_id
+        ) VALUES (
+            #{userId}, #{loginType}, #{loginIp}, #{loginLat}, #{loginLng}, #{moduleStatus}, #{lastRequestId}
+        )
+        ON DUPLICATE KEY UPDATE
+            login_type = VALUES(login_type),
+            login_ip = VALUES(login_ip),
+            login_lat = VALUES(login_lat),
+            login_lng = VALUES(login_lng),
+            module_status = VALUES(module_status),
+            last_request_id = VALUES(last_request_id)
+    </insert>
+        <update id="updateLastLenderInteraction">
+        UPDATE user_profile_login_log
+        SET external_interaction_id = #{externalInteractionId}
+        WHERE user_id = #{userId}
+    </update>
+</mapper>

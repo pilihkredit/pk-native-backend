@@ -13,9 +13,11 @@ class PendanaanProfileEnumCatalogTest {
     void listsPersonalModuleFields() {
         var fields = catalog.listFieldsByModule(ProfileOnboardingModule.PERSONAL);
 
-        assertThat(fields).hasSize(1);
-        assertThat(fields.getFirst().fieldKey()).isEqualTo("educationDegree");
+        assertThat(fields)
+                .extracting(field -> field.fieldKey())
+                .containsExactly("educationDegree", "industry");
         assertThat(fields.getFirst().options()).hasSize(9);
+        assertThat(fields.get(1).options()).hasSize(18);
     }
 
     @Test

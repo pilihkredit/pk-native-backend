@@ -13,7 +13,6 @@ import com.pk.core.auth.AuthenticatedPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,17 +42,14 @@ public class CreditController {
         );
     }
 
-    @GetMapping("/{applyId}/status")
-    public ApiResponse<CreditStatusResponse> getStatus(
-            @PathVariable("applyId") String applyId,
-            HttpServletRequest httpRequest
-    ) {
+    @GetMapping("/status")
+    public ApiResponse<CreditStatusResponse> getStatus(HttpServletRequest httpRequest) {
         AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                creditApplicationService.getStatus(principal, applyId),
+                creditApplicationService.getStatus(principal),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

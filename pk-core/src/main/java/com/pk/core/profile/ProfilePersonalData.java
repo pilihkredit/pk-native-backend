@@ -1,15 +1,14 @@
 package com.pk.core.profile;
 
 public record ProfilePersonalData(
-        long profileId,
-        String provinceCode,
-        String cityCode,
-        String districtCode,
-        String address,
-        int educationDegree,
+        long userId,
+int educationDegree,
+        int industry,
+        String income,
         EncryptedField motherSurname,
         String userEmail,
         String moduleStatus,
-        String lastRequestId
+        String lastRequestId,
+        Long externalInteractionId
 ) {
 }

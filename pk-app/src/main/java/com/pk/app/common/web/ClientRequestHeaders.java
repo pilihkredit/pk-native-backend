@@ -17,7 +17,10 @@ public final class ClientRequestHeaders {
             throw new ApiException(ApiCode.DEVICE_NO_REQUIRED);
         }
         if (appVersion == null || platform == null || appPackage == null) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+            throw new ApiException(
+                    ApiCode.INVALID_REQUEST_PARAMETERS,
+                    "Missing required headers: X-App-Version, X-Platform, and/or X-App-Package"
+            );
         }
         return new ResolvedClientHeaders(deviceNo, appVersion, platform, appPackage);
     }

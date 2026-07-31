@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.reference.mapper.RefBankMapper">
+<resultMap id="bankMap" type="com.pk.core.reference.BankReference">
+<constructor><arg column="bank_code" javaType="string"/><arg column="bank_name" javaType="string"/>
+<arg column="bank_type" javaType="java.lang.Integer"/><arg column="icon_url" javaType="string"/></constructor></resultMap>
+<select id="findAllActive" resultMap="bankMap">SELECT bank_code,bank_name,bank_type,icon_url FROM ref_bank WHERE status=#{status} ORDER BY bank_code</select>
+<select id="findLatestSyncedAt" resultType="java.time.Instant">SELECT MAX(synced_at) FROM ref_bank WHERE status=#{status}</select>
+<select id="countActiveByBankCode" resultType="int">SELECT COUNT(*) FROM ref_bank WHERE status=#{status} AND bank_code=#{bankCode}</select>
+<update id="deactivateAll">UPDATE ref_bank SET status='INACTIVE' WHERE status=#{status}</update>
+<insert id="upsertBank">INSERT INTO ref_bank (bank_code,bank_name,bank_type,icon_url,status,synced_at) VALUES (#{bankCode},#{bankName},#{bankType},#{iconUrl},#{status},#{syncedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})
+ON DUPLICATE KEY UPDATE bank_name=VALUES(bank_name),bank_type=VALUES(bank_type),icon_url=VALUES(icon_url),status=VALUES(status),synced_at=VALUES(synced_at)</insert>
+</mapper>

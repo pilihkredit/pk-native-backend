@@ -1,0 +1,15 @@
+package com.pk.infra.provider;
+
+record LenderProviderConfigRecord(
+        String providerCode,
+        String providerName,
+        String baseUrl,
+        String callbackBaseUrl,
+        String configJson,
+        String lenderDeviceConfigJson,
+        String clientId,
+        String clientSecret,
+        String callbackClientId,
+        String callbackClientSecret
+) {
+}

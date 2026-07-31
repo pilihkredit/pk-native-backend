@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.auth.mapper.UserAuthMapper">
+
+    <resultMap id="userProfileSummaryMap" type="com.pk.core.auth.UserProfileSummary">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="partner_user_id" javaType="string"/>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="newly_created" javaType="_boolean"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="passwordCredentialMap"
+               type="com.pk.infra.auth.repository.PasswordCredentialRow">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="password_ciphertext" javaType="string"/>
+            <arg column="password_nonce" javaType="_byte[]"/>
+            <arg column="password_tag" javaType="_byte[]"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findByMobileNo" resultMap="userProfileSummaryMap">
+        SELECT id, partner_user_id, mobile_no, 0 AS newly_created
+        FROM user_profile
+        WHERE mobile_no = #{mobileNo}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <select id="findActiveByMobileNoExcludingUserId" resultMap="userProfileSummaryMap">
+        SELECT id, partner_user_id, mobile_no, 0 AS newly_created
+        FROM user_profile
+        WHERE mobile_no = #{mobileNo}
+          AND deleted_at IS NULL
+          AND id &lt;&gt; #{userId}
+        LIMIT 1
+    </select>
+
+    <select id="findByUserId" resultMap="userProfileSummaryMap">
+        SELECT id, partner_user_id, mobile_no, 0 AS newly_created
+        FROM user_profile
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <select id="findByPartnerUserId" resultMap="userProfileSummaryMap">
+        SELECT id, partner_user_id, mobile_no, 0 AS newly_created
+        FROM user_profile
+        WHERE partner_user_id = #{partnerUserId}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <select id="findLatestClosedByMobileNoForUpdate" resultMap="userProfileSummaryMap">
+        SELECT id, partner_user_id, mobile_no, 0 AS newly_created
+        FROM user_profile
+        WHERE mobile_no = #{mobileNo}
+          AND deleted_at IS NOT NULL
+        ORDER BY deleted_at DESC, id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <update id="relinquishPartnerUserId">
+        UPDATE user_profile
+        SET partner_user_id = #{relinquishedPartnerUserId},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{userId}
+          AND deleted_at IS NOT NULL
+    </update>
+
+    <insert id="insertProfile">
+        INSERT INTO user_profile (
+            partner_user_id,
+            mobile_no,
+            kyc_status
+        ) VALUES (
+            #{partnerUserId},
+            #{mobileNo},
+            'PENDING'
+        )
+    </insert>
+
+    <update id="saveSessionTokens">
+        UPDATE user_profile
+        SET access_token = #{accessToken},
+            refresh_token = #{refreshToken},
+            access_token_expires_at = #{accessTokenExpiresAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="saveAccessToken">
+        UPDATE user_profile
+        SET access_token = #{accessToken},
+            access_token_expires_at = #{accessTokenExpiresAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="clearSessionTokens">
+        UPDATE user_profile
+        SET access_token = NULL,
+            refresh_token = NULL,
+            access_token_expires_at = NULL
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updateMobileNo">
+        UPDATE user_profile
+        SET mobile_no = #{mobileNo}
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updateLastLoginAt">
+        UPDATE user_profile
+        SET last_login_at = #{lastLoginAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updateLastLogoutAt">
+        UPDATE user_profile
+        SET last_logout_at = #{lastLogoutAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+    <select id="countPasswordSet" resultType="int">
+        SELECT COUNT(1)
+        FROM user_profile
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+          AND password_ciphertext IS NOT NULL
+    </select>
+
+    <select id="findPasswordCredential" resultMap="passwordCredentialMap">
+        SELECT id,
+               password_ciphertext,
+               password_nonce,
+               password_tag
+        FROM user_profile
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+          AND password_ciphertext IS NOT NULL
+        LIMIT 1
+    </select>
+
+    <update id="savePassword">
+        UPDATE user_profile
+        SET password_ciphertext = #{passwordCiphertext},
+            password_nonce = #{passwordNonce},
+            password_tag = #{passwordTag},
+            password_set_at = NOW(3)
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+</mapper>

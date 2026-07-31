@@ -10,7 +10,8 @@ public record LenderDeviceContext(
         String systemPlatform,
         String adId,
         Map<String, Object> deviceOtherInfo,
-        String clientAppName
+        String clientAppName,
+        DeviceExtendedAttributes extendedAttributes
 ) {
     public LenderDeviceContext(
             String appName,
@@ -19,7 +20,30 @@ public record LenderDeviceContext(
             String deviceNo,
             String systemPlatform
     ) {
-        this(appName, appVersion, packageName, deviceNo, systemPlatform, null, null, appName);
+        this(appName, appVersion, packageName, deviceNo, systemPlatform, null, null, appName, DeviceExtendedAttributes.empty());
+    }
+
+    public LenderDeviceContext(
+            String appName,
+            String appVersion,
+            String packageName,
+            String deviceNo,
+            String systemPlatform,
+            String adId,
+            Map<String, Object> deviceOtherInfo,
+            String clientAppName
+    ) {
+        this(
+                appName,
+                appVersion,
+                packageName,
+                deviceNo,
+                systemPlatform,
+                adId,
+                deviceOtherInfo,
+                clientAppName,
+                DeviceExtendedAttributes.empty()
+        );
     }
 
     public String resolvedClientAppName() {
@@ -27,5 +51,9 @@ public record LenderDeviceContext(
             return clientAppName.trim();
         }
         return appName;
+    }
+
+    public DeviceExtendedAttributes resolvedExtendedAttributes() {
+        return extendedAttributes == null ? DeviceExtendedAttributes.empty() : extendedAttributes;
     }
 }

@@ -20,7 +20,7 @@ public class OnboardingApplicationService {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         OnboardingProgressFacade.OnboardingProgressResult result = onboardingProgressFacade.getProgress(
-                principal.profileId(),
+                principal.userId(),
                 principal.partnerUserId()
         );
         return new OnboardingProgressResponse(

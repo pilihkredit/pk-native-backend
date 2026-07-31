@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileContactMapper">
+
+    <resultMap id="moduleMap" type="com.pk.core.profile.ProfileContactsModuleData">
+        <constructor>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="module_status" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="contactMap" type="com.pk.core.profile.ProfileContactData">
+        <constructor>
+            <arg column="sort_no" javaType="_int"/>
+            <arg column="relationship" javaType="_int"/>
+            <arg column="contact_name" javaType="string"/>
+            <arg column="contact_mobile" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findModuleByUserId" resultMap="moduleMap">
+        SELECT user_id, module_status, last_request_id,
+               external_interaction_id
+        FROM user_profile_contacts
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="findContactsByUserId" resultMap="contactMap">
+        SELECT sort_no, relationship, contact_name, contact_mobile
+        FROM user_profile_contact
+        WHERE user_id = #{userId}
+        ORDER BY sort_no
+    </select>
+
+    <insert id="upsertModule">
+        INSERT INTO user_profile_contacts (user_id, module_status, last_request_id)
+        VALUES (#{userId}, #{moduleStatus}, #{lastRequestId})
+        ON DUPLICATE KEY UPDATE
+            module_status = VALUES(module_status),
+            last_request_id = VALUES(last_request_id)
+    </insert>
+
+    <delete id="deleteContactsByUserId">
+        DELETE FROM user_profile_contact WHERE user_id = #{userId}
+    </delete>
+
+    <insert id="insertContact">
+        INSERT INTO user_profile_contact (
+            user_id, sort_no, relationship, contact_name, contact_mobile
+        ) VALUES (#{userId}, #{sortNo}, #{relationship}, #{contactName}, #{contactMobile})
+    </insert>
+
+    <update id="updateLastLenderInteraction">
+        UPDATE user_profile_contacts
+        SET external_interaction_id = #{externalInteractionId}
+        WHERE user_id = #{userId}
+    </update>
+</mapper>

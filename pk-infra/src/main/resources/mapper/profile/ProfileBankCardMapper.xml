@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileBankCardMapper">
+    <resultMap id="bankCardRowMap" type="com.pk.infra.profile.repository.ProfileBankCardRow">
+        <constructor>
+            <arg column="id" javaType="java.lang.Long"/>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="bank_code" javaType="string"/>
+            <arg column="card_no_ciphertext" javaType="string"/>
+            <arg column="card_no_nonce" javaType="_byte[]"/>
+            <arg column="card_no_tag" javaType="_byte[]"/>
+            <arg column="card_no_hash" javaType="string"/>
+            <arg column="verify_status" javaType="string"/>
+            <arg column="verify_error_code" javaType="string"/>
+            <arg column="default_flag" javaType="_boolean" typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
+            <arg column="deleted_flag" javaType="_boolean" typeHandler="com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler"/>
+            <arg column="module_status" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+    <sql id="bankCardColumns">
+        id, user_id, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
+        verify_status, verify_error_code, default_flag, deleted_flag, module_status, last_request_id,
+        external_interaction_id
+    </sql>
+    <select id="findDefaultByUserId" resultMap="bankCardRowMap">
+        SELECT <include refid="bankCardColumns"/>
+        FROM user_profile_bank_card
+        WHERE user_id = #{userId}
+          AND deleted_flag = 0
+        ORDER BY default_flag DESC, id DESC
+        LIMIT 1
+    </select>
+    <select id="findByLastRequestId" resultMap="bankCardRowMap">
+        SELECT <include refid="bankCardColumns"/>
+        FROM user_profile_bank_card
+        WHERE last_request_id = #{lastRequestId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+    <select id="findByCardNoHash" resultMap="bankCardRowMap">
+        SELECT <include refid="bankCardColumns"/>
+        FROM user_profile_bank_card
+        WHERE card_no_hash = #{cardNoHash}
+        LIMIT 1
+    </select>
+    <select id="findActiveByUserIdAndCardNoHash" resultMap="bankCardRowMap">
+        SELECT <include refid="bankCardColumns"/>
+        FROM user_profile_bank_card
+        WHERE user_id = #{userId}
+          AND card_no_hash = #{cardNoHash}
+          AND deleted_flag = 0
+        LIMIT 1
+    </select>
+    <select id="countActiveByUserId" resultType="int">
+        SELECT COUNT(1)
+        FROM user_profile_bank_card
+        WHERE user_id = #{userId}
+          AND deleted_flag = 0
+    </select>
+    <insert id="insert">
+        INSERT INTO user_profile_bank_card (
+            user_id, bank_code, card_no_hash, card_no_ciphertext, card_no_nonce, card_no_tag,
+            verify_status, verify_error_code, default_flag, deleted_flag, module_status, last_request_id
+        ) VALUES (
+            #{userId}, #{bankCode}, #{cardNoHash}, #{cardNoCiphertext}, #{cardNoNonce}, #{cardNoTag},
+            #{verifyStatus}, #{verifyErrorCode},
+            #{defaultFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            #{deletedFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            #{moduleStatus}, #{lastRequestId}
+        )
+    </insert>
+    <update id="updateById">
+        UPDATE user_profile_bank_card
+        SET bank_code = #{bankCode},
+            card_no_hash = #{cardNoHash},
+            card_no_ciphertext = #{cardNoCiphertext},
+            card_no_nonce = #{cardNoNonce},
+            card_no_tag = #{cardNoTag},
+            verify_status = #{verifyStatus},
+            verify_error_code = #{verifyErrorCode},
+            default_flag = #{defaultFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            deleted_flag = #{deletedFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            module_status = #{moduleStatus},
+            last_request_id = #{lastRequestId}
+        WHERE id = #{id}
+    </update>
+    <update id="clearDefaultByUserId">
+        UPDATE user_profile_bank_card
+        SET default_flag = 0
+        WHERE user_id = #{userId}
+          AND deleted_flag = 0
+          AND default_flag = 1
+    </update>
+    <update id="softDeleteById">
+        UPDATE user_profile_bank_card
+        SET deleted_flag = 1,
+            default_flag = 0,
+            last_request_id = #{lastRequestId}
+        WHERE id = #{id}
+          AND deleted_flag = 0
+    </update>
+        <update id="updateLastLenderInteraction">
+        UPDATE user_profile_bank_card
+        SET external_interaction_id = #{externalInteractionId}
+        WHERE last_request_id = #{lastRequestId}
+    </update>
+</mapper>

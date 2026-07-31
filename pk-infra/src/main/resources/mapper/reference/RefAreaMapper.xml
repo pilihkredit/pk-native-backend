@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.reference.mapper.RefAreaMapper">
+<resultMap id="areaMap" type="com.pk.core.reference.AreaReference">
+<constructor><arg column="area_code" javaType="string"/><arg column="area_name" javaType="string"/>
+<arg column="parent_code" javaType="string"/><arg column="area_level" javaType="_int"/></constructor></resultMap>
+<select id="findActiveByParentCode" resultMap="areaMap">SELECT area_code,area_name,parent_code,area_level FROM ref_area WHERE status=#{status} AND COALESCE(parent_code,'')=#{parentCode} ORDER BY area_name</select>
+<select id="findLatestSyncedAtByParent" resultType="java.time.Instant">SELECT MAX(synced_at) FROM ref_area WHERE status=#{status} AND COALESCE(parent_code,'')=#{parentCode}</select>
+<select id="findActiveByCode" resultMap="areaMap">SELECT area_code,area_name,parent_code,area_level FROM ref_area WHERE status=#{status} AND area_code=#{areaCode} LIMIT 1</select>
+<select id="countActiveByAreaCode" resultType="int">SELECT COUNT(*) FROM ref_area WHERE status=#{status} AND area_code=#{areaCode}</select>
+<update id="deactivateChildrenByParent">UPDATE ref_area SET status='INACTIVE' WHERE status=#{status} AND COALESCE(parent_code,'')=#{parentCode}</update>
+<insert id="upsertArea">INSERT INTO ref_area (area_code,area_name,parent_code,area_level,status,synced_at) VALUES (#{areaCode},#{areaName},#{parentCode},#{level},#{status},#{syncedAt,typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler})
+ON DUPLICATE KEY UPDATE area_name=VALUES(area_name),parent_code=VALUES(parent_code),area_level=VALUES(area_level),status=VALUES(status),synced_at=VALUES(synced_at)</insert>
+<select id="findRefreshableParentCodes" resultType="string">SELECT area_code FROM ref_area WHERE status=#{status} AND area_level IN (1,2) ORDER BY area_code</select>
+</mapper>

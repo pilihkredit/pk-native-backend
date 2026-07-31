@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.debug.mapper.DebugUserInfoReadMapper">
+    <resultMap id="userAccountRecordMap" type="com.pk.infra.debug.mapper.DebugUserInfoReadMapper$UserAccountRecord">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="partner_user_id" javaType="string"/>
+            <arg column="external_user_id" javaType="string"/>
+            <arg column="mobile_no" javaType="string"/>
+            <arg column="email" javaType="string"/>
+            <arg column="whats_app" javaType="string"/>
+            <arg column="kyc_status" javaType="string"/>
+            <arg column="last_synced_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="created_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="updated_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findAccountByUserId" resultMap="userAccountRecordMap">
+        SELECT id,
+               partner_user_id,
+               external_user_id,
+               mobile_no,
+               email,
+               whats_app,
+               kyc_status,
+               last_synced_at,
+               created_at,
+               updated_at
+        FROM user_profile
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <resultMap id="identityAssetRecordMap" type="com.pk.infra.debug.mapper.DebugUserInfoReadMapper$IdentityAssetRecord">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="full_name" javaType="string"/>
+            <arg column="id_card_image_encrypted_ref" javaType="string"/>
+            <arg column="face_photo_image_encrypted_ref" javaType="string"/>
+            <arg column="ocr_channel" javaType="string"/>
+            <arg column="ocr_vendor_call_log_id" javaType="java.lang.Long"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
+            <arg column="created_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findLatestIdentityAssetByUserId" resultMap="identityAssetRecordMap">
+        SELECT user_id AS id,
+               full_name,
+               id_card_image_encrypted_ref,
+               face_photo_image_encrypted_ref,
+               ocr_channel,
+               ocr_vendor_call_log_id,
+               external_interaction_id,
+               created_at
+        FROM user_profile_identity
+        WHERE user_id = #{userId}
+        LIMIT 1
+    </select>
+
+    <resultMap id="deviceRecordMap" type="com.pk.infra.debug.mapper.DebugUserInfoReadMapper$DeviceRecord">
+        <constructor>
+            <arg column="device_no" javaType="string"/>
+            <arg column="system_platform" javaType="string"/>
+            <arg column="app_name" javaType="string"/>
+            <arg column="app_version" javaType="string"/>
+            <arg column="package_name" javaType="string"/>
+            <arg column="phone_brand" javaType="string"/>
+            <arg column="phone_brand_model" javaType="string"/>
+            <arg column="mac" javaType="string"/>
+            <arg column="system_version" javaType="string"/>
+            <arg column="delivery_platform" javaType="string"/>
+            <arg column="cpu_cores" javaType="java.lang.Integer"/>
+            <arg column="memory_total" javaType="java.lang.Long"/>
+            <arg column="sd_card_total" javaType="java.lang.Long"/>
+            <arg column="ad_id" javaType="string"/>
+            <arg column="idfv" javaType="string"/>
+            <arg column="idfa" javaType="string"/>
+            <arg column="ext_param" javaType="string"/>
+            <arg column="ip" javaType="string"/>
+            <arg column="device_json" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+            <arg column="updated_at" javaType="java.time.Instant" typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findDevicesByUserId" resultMap="deviceRecordMap">
+        SELECT device_no,
+               system_platform,
+               app_name,
+               app_version,
+               package_name,
+               phone_brand,
+               phone_brand_model,
+               mac,
+               system_version,
+               delivery_platform,
+               cpu_cores,
+               memory_total,
+               sd_card_total,
+               ad_id,
+               idfv,
+               idfa,
+               ext_param,
+               ip,
+               device_json,
+               last_request_id,
+               updated_at
+        FROM user_device
+        WHERE user_id = #{userId}
+        ORDER BY updated_at DESC, id DESC
+    </select>
+</mapper>

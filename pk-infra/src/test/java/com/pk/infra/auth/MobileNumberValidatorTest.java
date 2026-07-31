@@ -8,6 +8,14 @@ class MobileNumberValidatorTest {
     @Test
     void acceptsValidIndonesiaMobileNumber() {
         assertThat(MobileNumberValidator.isValid("81234567890")).isTrue();
+        assertThat(MobileNumberValidator.isValid("812345678")).isTrue();
+        assertThat(MobileNumberValidator.isValid("8987654321")).isTrue();
+    }
+
+    @Test
+    void rejectsMobileNotStartingWithEight() {
+        assertThat(MobileNumberValidator.isValid("123456783")).isFalse();
+        assertThat(MobileNumberValidator.isValid("1234567890")).isFalse();
     }
 
     @Test

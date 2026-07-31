@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.loan.mapper.LenderProductListMapper">
+
+    <resultMap id="headerMap" type="com.pk.infra.loan.repository.LenderProductListHeaderRow">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="credit_application_id" property="creditApplicationId"/>
+        <result column="apply_id" property="applyId"/>
+        <result column="credit_apply_no" property="creditApplyNo"/>
+        <result column="lender_user_id" property="lenderUserId"/>
+        <result column="credit_status" property="creditStatus"/>
+        <result column="product_status" property="productStatus"/>
+        <result column="content_hash" property="contentHash"/>
+        <result column="external_interaction_id" property="externalInteractionId"/>
+        <result column="fetched_at" property="fetchedAt"
+                typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+    </resultMap>
+
+    <resultMap id="productMap" type="com.pk.infra.loan.repository.LenderProductRow">
+        <id column="id" property="id"/>
+        <result column="product_list_id" property="productListId"/>
+        <result column="product_code" property="productCode"/>
+        <result column="min_amount" property="minAmount"/>
+        <result column="max_amount" property="maxAmount"/>
+        <result column="comprehensive_rate_unit" property="comprehensiveRateUnit"/>
+        <result column="comprehensive_rate" property="comprehensiveRate"/>
+    </resultMap>
+
+    <resultMap id="repayMethodMap" type="com.pk.infra.loan.repository.LenderProductRepayMethodRow">
+        <id column="id" property="id"/>
+        <result column="product_id" property="productId"/>
+        <result column="repay_method" property="repayMethod"/>
+        <result column="cycle_type" property="cycleType"/>
+        <result column="cycle_interval" property="cycleInterval"/>
+        <result column="cycle_count" property="cycleCount"/>
+        <result column="total_cycle_interval" property="totalCycleInterval"/>
+        <result column="repay_method_type" property="repayMethodType"/>
+    </resultMap>
+
+    <resultMap id="unevenRateMap" type="com.pk.infra.loan.repository.LenderProductUnevenRateRow">
+        <id column="id" property="id"/>
+        <result column="repay_method_id" property="repayMethodId"/>
+        <result column="term_num" property="termNum"/>
+        <result column="repayment_rate" property="repaymentRate"/>
+    </resultMap>
+
+    <sql id="headerColumns">
+        id, user_id, credit_application_id, apply_id, credit_apply_no, lender_user_id,
+        credit_status, product_status, content_hash, external_interaction_id, fetched_at
+    </sql>
+
+    <insert id="insertList" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pk_lender_product_list (
+            user_id,
+            credit_application_id,
+            apply_id,
+            credit_apply_no,
+            lender_user_id,
+            credit_status,
+            product_status,
+            content_hash,
+            external_interaction_id,
+            fetched_at
+        ) VALUES (
+            #{userId},
+            #{creditApplicationId},
+            #{applyId},
+            #{creditApplyNo},
+            #{lenderUserId},
+            #{creditStatus},
+            #{productStatus},
+            #{contentHash},
+            #{externalInteractionId},
+            #{fetchedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        )
+    </insert>
+
+    <insert id="insertProduct" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pk_lender_product (
+            product_list_id,
+            user_id,
+            product_code,
+            min_amount,
+            max_amount,
+            comprehensive_rate_unit,
+            comprehensive_rate
+        ) VALUES (
+            #{productListId},
+            #{userId},
+            #{productCode},
+            #{minAmount},
+            #{maxAmount},
+            #{comprehensiveRateUnit},
+            #{comprehensiveRate}
+        )
+    </insert>
+
+    <insert id="insertRepayMethod" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pk_lender_product_repay_method (
+            product_id,
+            user_id,
+            repay_method,
+            cycle_type,
+            cycle_interval,
+            cycle_count,
+            total_cycle_interval,
+            repay_method_type
+        ) VALUES (
+            #{productId},
+            #{userId},
+            #{repayMethod},
+            #{cycleType},
+            #{cycleInterval},
+            #{cycleCount},
+            #{totalCycleInterval},
+            #{repayMethodType}
+        )
+    </insert>
+
+    <insert id="insertUnevenRate" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pk_lender_product_uneven_rate (
+            repay_method_id,
+            user_id,
+            term_num,
+            repayment_rate
+        ) VALUES (
+            #{repayMethodId},
+            #{userId},
+            #{termNum},
+            #{repaymentRate}
+        )
+    </insert>
+
+    <select id="findHeaderById" resultMap="headerMap">
+        SELECT <include refid="headerColumns"/>
+        FROM pk_lender_product_list
+        WHERE id = #{id}
+    </select>
+
+    <select id="findLatestHeaderByApplyId" resultMap="headerMap">
+        SELECT <include refid="headerColumns"/>
+        FROM pk_lender_product_list
+        WHERE apply_id = #{applyId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findProductsByListId" resultMap="productMap">
+        SELECT id, product_list_id, product_code, min_amount, max_amount,
+               comprehensive_rate_unit, comprehensive_rate
+        FROM pk_lender_product
+        WHERE product_list_id = #{productListId}
+        ORDER BY id ASC
+    </select>
+
+    <select id="findRepayMethodsByProductIds" resultMap="repayMethodMap">
+        SELECT id, product_id, repay_method, cycle_type, cycle_interval, cycle_count,
+               total_cycle_interval, repay_method_type
+        FROM pk_lender_product_repay_method
+        WHERE product_id IN
+        <foreach collection="productIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY id ASC
+    </select>
+
+    <select id="findUnevenRatesByRepayMethodIds" resultMap="unevenRateMap">
+        SELECT id, repay_method_id, term_num, repayment_rate
+        FROM pk_lender_product_uneven_rate
+        WHERE repay_method_id IN
+        <foreach collection="repayMethodIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY id ASC
+    </select>
+</mapper>

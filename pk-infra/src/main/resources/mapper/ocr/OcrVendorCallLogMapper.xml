@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.ocr.mapper.OcrVendorCallLogMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO ocr_vendor_call_log (
+            user_id, partner_user_id, mobile_no, operation_type, channel,
+            trace_id, client_request_id, status, api_code, vendor_code, vendor_message,
+            score, threshold, endpoint, http_status, duration_ms,
+            request_json, response_json, id_card_image_encrypted_ref, liveness_image_encrypted_ref
+        ) VALUES (
+            #{userId}, #{partnerUserId}, #{mobileNo}, #{operationType}, #{channel},
+            #{traceId}, #{clientRequestId}, #{status}, #{apiCode}, #{vendorCode}, #{vendorMessage},
+            #{score}, #{threshold}, #{endpoint}, #{httpStatus}, #{durationMs},
+            #{requestJson}, #{responseJson}, #{idCardImageEncryptedRef}, #{livenessImageEncryptedRef}
+        )
+    </insert>
+</mapper>

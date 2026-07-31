@@ -1,17 +1,22 @@
 package com.pk.infra.profile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pk.core.profile.port.AreaHierarchyValidator;
 import com.pk.core.profile.port.LenderEnumMapper;
+import com.pk.core.profile.port.LenderProfileQueryPort;
 import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileEnumCatalog;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties({ProfileProperties.class, ProfileSyncProperties.class})
+@org.springframework.context.annotation.Import({
+        com.pk.infra.ocr.OcrInfraConfiguration.class,
+        com.pk.infra.biometric.BiometricStorageConfiguration.class
+})
 public class ProfileInfraConfiguration {
     @Bean
     ProfileEnumCatalog profileEnumCatalog() {
@@ -36,24 +41,66 @@ public class ProfileInfraConfiguration {
     @Bean
     ProfileSyncPayloadLoader profileSyncPayloadLoader(
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
-            com.pk.core.profile.port.ProfileWorkRepository profileWorkRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             SensitiveFieldEncryptor sensitiveFieldEncryptor
     ) {
         return new ProfileSyncPayloadLoader(
                 profilePersonalRepository,
-                profileWorkRepository,
                 profileContactRepository,
                 sensitiveFieldEncryptor
         );
     }
 
     @Bean
+    LenderSyncAuditRequestBuilder lenderSyncAuditRequestBuilder(
+            com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
+            com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
+            com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
+            com.pk.core.profile.port.ProfileLoginLogRepository profileLoginLogRepository,
+            ObjectMapper objectMapper
+    ) {
+        return new LenderSyncAuditRequestBuilder(
+                profilePersonalRepository,
+                profileContactRepository,
+                profileBankCardRepository,
+                profileLoginLogRepository,
+                objectMapper
+        );
+    }
+
+    @Bean
+    ProfileQueryFacade profileQueryFacade(
+            LenderProfileQueryPort lenderProfileQueryPort,
+            ObjectMapper objectMapper
+    ) {
+        return new ProfileQueryFacade(lenderProfileQueryPort, objectMapper);
+    }
+
+    @Bean
     ProfileSyncHandler profileSyncHandler(
             LenderProfileSyncPort lenderProfileSyncPort,
-            ProfileSyncPayloadLoader profileSyncPayloadLoader
+            ProfileSyncPayloadLoader profileSyncPayloadLoader,
+            com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
+            com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
+            com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
+            com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
+            com.pk.core.profile.port.ProfileLoginLogRepository profileLoginLogRepository,
+            com.pk.core.profile.port.ProfileAfRepository profileAfRepository,
+            com.pk.core.profile.port.ProfileTongdunRepository profileTongdunRepository
     ) {
-        return new ProfileSyncHandler(lenderProfileSyncPort, profileSyncPayloadLoader);
+        return new ProfileSyncHandler(
+                lenderProfileSyncPort,
+                profileSyncPayloadLoader,
+                userProfileBindingRepository,
+                profilePersonalRepository,
+                profileContactRepository,
+                profileBankCardRepository,
+                profileIdentityRepository,
+                profileLoginLogRepository,
+                profileAfRepository,
+                profileTongdunRepository
+        );
     }
 
     @Bean
@@ -71,45 +118,152 @@ public class ProfileInfraConfiguration {
 
     @Bean
     OnboardingProgressFacade onboardingProgressFacade(
-            com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
-            com.pk.core.profile.port.ProfileWorkRepository profileWorkRepository,
-            com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
-            com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
-            com.pk.core.profile.port.ProfileDeviceRepository profileDeviceRepository
+            LenderProfileQueryPort lenderProfileQueryPort,
+            ObjectMapper objectMapper
     ) {
-        return new OnboardingProgressFacade(
-                profilePersonalRepository,
-                profileWorkRepository,
-                profileBankCardRepository,
-                profileContactRepository,
-                profileDeviceRepository
+        return new OnboardingProgressFacade(lenderProfileQueryPort, objectMapper);
+    }
+
+    @Bean
+    AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver(
+            com.pk.core.callback.port.AppsFlyerCallbackRepository appsFlyerCallbackRepository
+    ) {
+        return new AppsFlyerLenderPayloadResolver(appsFlyerCallbackRepository);
+    }
+
+    @Bean
+    IdentityVerificationCompletionService identityVerificationCompletionService(
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
+            com.pk.core.profile.port.BiometricImageStore biometricImageStore,
+            ProfileSyncOrchestrator profileSyncOrchestrator,
+            UserDeviceWriter userDeviceWriter,
+            com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
+            com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
+            OnboardingProgressFacade onboardingProgressFacade,
+            ObjectMapper objectMapper
+    ) {
+        return new IdentityVerificationCompletionService(
+                profileIdentityRepository,
+                biometricImageStore,
+                profileSyncOrchestrator,
+                userDeviceWriter,
+                profileVersionRepository,
+                userProfileBindingRepository,
+                onboardingProgressFacade,
+                objectMapper
         );
+    }
+
+    @Bean
+    IdentityOcrFacade identityOcrFacade(
+            com.pk.core.profile.port.AdvanceAiOcrPort advanceAiOcrPort,
+            com.pk.core.profile.port.OcrSessionStore ocrSessionStore,
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
+            com.pk.core.profile.port.BiometricImageStore biometricImageStore,
+            ProfileSyncOrchestrator profileSyncOrchestrator,
+            UserDeviceWriter userDeviceWriter,
+            com.pk.core.credit.port.ProfileVersionRepository profileVersionRepository,
+            com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
+            OnboardingProgressFacade onboardingProgressFacade,
+            IdentityVerificationCompletionService completionService,
+            com.pk.infra.ocr.OcrProviderConfigLoader configLoader,
+            ObjectMapper objectMapper
+    ) {
+        return new IdentityOcrFacade(
+                advanceAiOcrPort,
+                ocrSessionStore,
+                profileIdentityRepository,
+                sensitiveFieldEncryptor,
+                biometricImageStore,
+                profileSyncOrchestrator,
+                userDeviceWriter,
+                profileVersionRepository,
+                userProfileBindingRepository,
+                onboardingProgressFacade,
+                completionService,
+                configLoader,
+                objectMapper
+        );
+    }
+
+    @Bean
+    TrustDecisionIdentityFacade trustDecisionIdentityFacade(
+            com.pk.core.profile.port.TrustDecisionKycPort trustDecisionKycPort,
+            com.pk.core.profile.port.TrustDecisionSessionStore trustDecisionSessionStore,
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
+            com.pk.core.profile.port.BiometricImageStore biometricImageStore,
+            IdentityVerificationCompletionService completionService,
+            com.pk.infra.ocr.OcrProviderConfigLoader configLoader,
+            ObjectMapper objectMapper
+    ) {
+        return new TrustDecisionIdentityFacade(
+                trustDecisionKycPort,
+                trustDecisionSessionStore,
+                profileIdentityRepository,
+                sensitiveFieldEncryptor,
+                biometricImageStore,
+                completionService,
+                configLoader,
+                objectMapper
+        );
+    }
+
+    @Bean
+    BankCardListAccessFacade bankCardListAccessFacade(
+            ProfileQueryFacade profileQueryFacade,
+            com.pk.core.home.port.LenderUserStatusPort lenderUserStatusPort
+    ) {
+        return new BankCardListAccessFacade(profileQueryFacade, lenderUserStatusPort);
+    }
+
+    @Bean
+    BankCardMaxConfigLoader bankCardMaxConfigLoader(
+            com.pk.core.appconfig.port.AppConfigRepository appConfigRepository,
+            ObjectMapper objectMapper
+    ) {
+        return new BankCardMaxConfigLoader(appConfigRepository, objectMapper);
     }
 
     @Bean
     ProfileServiceFacade profileServiceFacade(
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
-            com.pk.core.profile.port.ProfileWorkRepository profileWorkRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,
             com.pk.core.profile.port.ProfileBankCardRepository profileBankCardRepository,
-            com.pk.core.profile.port.ProfileDeviceRepository profileDeviceRepository,
-            AreaHierarchyValidator areaHierarchyValidator,
+            com.pk.core.profile.port.ProfileLoginLogRepository profileLoginLogRepository,
+            com.pk.core.profile.port.ProfileAfRepository profileAfRepository,
+            com.pk.core.profile.port.ProfileTongdunRepository profileTongdunRepository,
+            UserDeviceWriter userDeviceWriter,
             SensitiveFieldEncryptor sensitiveFieldEncryptor,
             ProfileEnumValidator profileEnumValidator,
             com.pk.infra.reference.BankReferenceFacade bankReferenceFacade,
-            ProfileSyncOrchestrator profileSyncOrchestrator
+            ProfileSyncOrchestrator profileSyncOrchestrator,
+            OnboardingProgressFacade onboardingProgressFacade,
+            com.pk.core.profile.port.UserProfileBindingRepository userProfileBindingRepository,
+            ProfileQueryFacade profileQueryFacade,
+            com.pk.core.profile.port.LenderBankCardPort lenderBankCardPort,
+            BankCardMaxConfigLoader bankCardMaxConfigLoader,
+            com.pk.core.callback.port.AppsFlyerCallbackRepository appsFlyerCallbackRepository
     ) {
         return new ProfileServiceFacade(
                 profilePersonalRepository,
-                profileWorkRepository,
                 profileContactRepository,
                 profileBankCardRepository,
-                profileDeviceRepository,
-                areaHierarchyValidator,
+                profileLoginLogRepository,
+                profileAfRepository,
+                profileTongdunRepository,
+                userDeviceWriter,
                 sensitiveFieldEncryptor,
                 profileEnumValidator,
                 bankReferenceFacade,
-                profileSyncOrchestrator
+                profileSyncOrchestrator,
+                onboardingProgressFacade,
+                userProfileBindingRepository,
+                profileQueryFacade,
+                lenderBankCardPort,
+                bankCardMaxConfigLoader,
+                appsFlyerCallbackRepository
         );
     }
 }

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileDeviceMapper">
+    <resultMap id="deviceMap" type="com.pk.core.profile.ProfileDeviceData">
+        <constructor>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="partner_user_id" javaType="string"/>
+            <arg column="device_no" javaType="string"/>
+            <arg column="system_platform" javaType="string"/>
+            <arg column="app_name" javaType="string"/>
+            <arg column="app_version" javaType="string"/>
+            <arg column="package_name" javaType="string"/>
+            <arg column="phone_brand" javaType="string"/>
+            <arg column="phone_brand_model" javaType="string"/>
+            <arg column="mac" javaType="string"/>
+            <arg column="system_version" javaType="string"/>
+            <arg column="delivery_platform" javaType="string"/>
+            <arg column="cpu_cores" javaType="java.lang.Integer"/>
+            <arg column="memory_total" javaType="java.lang.Long"/>
+            <arg column="sd_card_total" javaType="java.lang.Long"/>
+            <arg column="ad_id" javaType="string"/>
+            <arg column="idfv" javaType="string"/>
+            <arg column="idfa" javaType="string"/>
+            <arg column="ext_param" javaType="string"/>
+            <arg column="ip" javaType="string"/>
+            <arg column="device_json" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+        </constructor>
+    </resultMap>
+    <select id="existsByUserId" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM user_device WHERE user_id = #{userId} LIMIT 1)
+    </select>
+    <select id="findByDeviceNo" resultMap="deviceMap">
+        SELECT user_id, partner_user_id, device_no, system_platform, app_name, app_version,
+               package_name, phone_brand, phone_brand_model, mac, system_version, delivery_platform,
+               cpu_cores, memory_total, sd_card_total, ad_id, idfv, idfa, ext_param, ip,
+               device_json, last_request_id
+        FROM user_device WHERE device_no = #{deviceNo}
+    </select>
+    <insert id="upsertByDeviceNo">
+        INSERT INTO user_device (
+            user_id, partner_user_id, device_no, system_platform, app_name, app_version, package_name,
+            phone_brand, phone_brand_model, mac, system_version, delivery_platform,
+            cpu_cores, memory_total, sd_card_total, ad_id, idfv, idfa, ext_param, ip,
+            device_json, last_request_id
+        ) VALUES (
+            #{userId}, #{partnerUserId}, #{deviceNo}, #{systemPlatform}, #{appName}, #{appVersion}, #{packageName},
+            #{phoneBrand}, #{phoneBrandModel}, #{mac}, #{systemVersion}, #{deliveryPlatform},
+            #{cpuCores}, #{memoryTotal}, #{sdCardTotal}, #{adId}, #{idfv}, #{idfa}, #{extParam}, #{ip},
+            #{deviceJson}, #{lastRequestId}
+        )
+        ON DUPLICATE KEY UPDATE
+            user_id=VALUES(user_id),
+            partner_user_id=VALUES(partner_user_id),
+            system_platform=VALUES(system_platform),
+            app_name=VALUES(app_name),
+            app_version=VALUES(app_version),
+            package_name=VALUES(package_name),
+            phone_brand=VALUES(phone_brand),
+            phone_brand_model=VALUES(phone_brand_model),
+            mac=VALUES(mac),
+            system_version=VALUES(system_version),
+            delivery_platform=VALUES(delivery_platform),
+            cpu_cores=VALUES(cpu_cores),
+            memory_total=VALUES(memory_total),
+            sd_card_total=VALUES(sd_card_total),
+            ad_id=VALUES(ad_id),
+            idfv=VALUES(idfv),
+            idfa=VALUES(idfa),
+            ext_param=VALUES(ext_param),
+            ip=VALUES(ip),
+            device_json=VALUES(device_json),
+            last_request_id=VALUES(last_request_id),
+            updated_at=CURRENT_TIMESTAMP(3)
+    </insert>
+</mapper>

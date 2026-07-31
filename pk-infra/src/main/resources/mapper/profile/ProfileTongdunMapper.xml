@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileTongdunMapper">
+    <sql id="tongdunColumns">
+        id, user_id, scene_type, tongdun_key, module_status, request_id,
+        external_interaction_id
+    </sql>
+    <select id="findByRequestId" resultType="com.pk.infra.profile.repository.ProfileTongdunRow">
+        SELECT <include refid="tongdunColumns"/>
+        FROM user_profile_tongdun
+        WHERE request_id = #{requestId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO user_profile_tongdun (
+            user_id, scene_type, tongdun_key, module_status, request_id
+        ) VALUES (
+            #{userId}, #{sceneType}, #{tongdunKey}, #{moduleStatus}, #{requestId}
+        )
+    </insert>
+        <update id="updateLastLenderInteraction">
+        UPDATE user_profile_tongdun
+        SET external_interaction_id = #{externalInteractionId}
+        WHERE request_id = #{requestId}
+    </update>
+</mapper>

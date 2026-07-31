@@ -30,15 +30,6 @@ public final class ProfileEnumValidator {
         }
     }
 
-    public void validateProfessionDegree(Integer professionDegree) {
-        if (professionDegree == null) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        if (!profileEnumCatalog.isValid(ProfileEnumFieldKey.PROFESSION_DEGREE, professionDegree)) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-    }
-
     public void validateRelationship(Integer relationship) {
         if (relationship == null) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);

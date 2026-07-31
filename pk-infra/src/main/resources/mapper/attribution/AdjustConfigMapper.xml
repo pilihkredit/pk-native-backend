@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.attribution.mapper.AdjustConfigMapper">
+    <resultMap id="adjustConfigMap" type="com.pk.core.attribution.port.AdjustConfigRepository$AdjustConfigData">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="app_token" javaType="string"/>
+            <arg column="api_token" javaType="string"/>
+            <arg column="base_url" javaType="string"/>
+            <arg column="timeout" javaType="_int"/>
+            <arg column="os_name" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findActiveByOsName" resultMap="adjustConfigMap">
+        SELECT id, app_token, api_token, base_url, timeout, os_name
+        FROM adjust_config
+        WHERE is_active = 1
+          AND os_name = #{osName}
+        LIMIT 1
+    </select>
+</mapper>

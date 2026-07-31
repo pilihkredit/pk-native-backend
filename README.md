@@ -34,8 +34,11 @@ External write path: Controller -> ApplicationService -> business table + `outbo
 
 ```bash
 ./mvnw clean verify
-./mvnw -pl pk-app spring-boot:run
-./mvnw -pl pk-worker spring-boot:run
+
+# Local real lender (profile local + seeded pk_provider in Docker MySQL)
+docker compose up -d mysql redis
+SPRING_PROFILES_ACTIVE=local ./mvnw -pl pk-app spring-boot:run
+SPRING_PROFILES_ACTIVE=local ./mvnw -pl pk-worker spring-boot:run
 ```
 
 ## Database
@@ -43,12 +46,12 @@ External write path: Controller -> ApplicationService -> business table + `outbo
 Schema is managed **manually** (no Flyway). With Docker MySQL for local dev:
 
 ```bash
-docker compose up -d mysql
+docker compose up -d mysql redis
 docker compose ps          # wait until healthy
 ```
 
 Local credentials match `application-local.yml`: database `pk`, user `pk`, password `pk`, port `3306`.  
-On first start, `sql/create_pk_schema.sql` is applied automatically.
+On **first** MySQL volume init, `sql/create_pk_schema.sql` runs automatically (all tables plus Pendanaan test gateway seed data).
 
 Without Docker:
 
@@ -57,7 +60,7 @@ mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS pk DEFAULT CHARSET utf8mb4"
 mysql -u root -p pk < sql/create_pk_schema.sql
 ```
 
-Add new tables or columns via reviewed SQL scripts under `sql/`; apply in test/prod through your release process.
+Schema changes are made by editing `sql/create_pk_schema.sql` and applying the full script in test/prod through your release process.
 
 ## Configuration
 
@@ -95,6 +98,34 @@ SPRING_PROFILES_ACTIVE=prod PK_DB_URL=... PK_DB_USERNAME=... PK_DB_PASSWORD=... 
 
 Config files: `pk-app` and `pk-worker` each have `application.yml` + `application-{local,test,prod}.yml`.
 
+### Lender (Pendanaan) configuration
+
+By default (`pk.lender.config.source=db`), Pendanaan credentials are loaded at startup from `pk_provider` and `pk_api_credential`. Local Docker init applies the test seed at the end of `sql/create_pk_schema.sql`. Production values must be inserted manually in the database.
+
+### Partner callback URLs (register with Pendanaan)
+
+`pk_provider.callback_base_url` must match the public API prefix (no trailing slash). Pendanaan calls:
+
+| Environment | `callback_base_url` | Server |
+|-------------|---------------------|--------|
+| Test | `https://api-test.pilihkredit.id/api/v1` | 147.139.188.108 |
+| Prod | `https://api.pilihkredit.id/api/v1` | 8.215.70.226 |
+
+| Purpose | Test URL | Prod URL |
+|---------|----------|----------|
+| OAuth token | `https://api-test.pilihkredit.id/api/v1/oauth/token` | `https://api.pilihkredit.id/api/v1/oauth/token` |
+| Credit callback | `https://api-test.pilihkredit.id/api/v1/callback/credit/result` | `https://api.pilihkredit.id/api/v1/callback/credit/result` |
+| Loan callback | `https://api-test.pilihkredit.id/api/v1/callback/loan/result` | `https://api.pilihkredit.id/api/v1/callback/loan/result` |
+
+Set `pk_api_credential.callback_client_id` and `callback_secret_ref` to the values you give Pendanaan (same pair as `PK_CALLBACK_*` when using env override). Restart `pk-app` after updating credentials.
+
+Set `pk.lender.config.source=env` to fall back to YAML / environment variables only (e.g. local `fake` mode without DB rows).
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `PK_LENDER_CONFIG_SOURCE` | `db` | `db` = load from MySQL; `env` = YAML/env only |
+| `PK_LENDER_CONFIG_PROVIDER_CODE` | `pendanaan` | `pk_provider.provider_code` row to load |
+
 ## API prefix
 
 Client APIs use `/api/v1` (see interface documentation v0.4.x). Controllers declare paths relative to this prefix (e.g. `@RequestMapping("/auth")`).
@@ -126,4 +157,33 @@ Never commit `target/`, IDE folders (`.idea/`, `.vscode/`, `.cursor/`), logs, or
 - Java 21
 - Spring Boot 3.3.5
 - Maven multi-module + Maven Wrapper
+- **MyBatis 3** (pure, SQL in XML) — migrating from Spring `JdbcTemplate`
 - Aliyun RDS MySQL 8.0 (target)
+
+## Persistence (MyBatis)
+
+Data access lives in `pk-infra`. Domain ports stay in `pk-core`; implementations use MyBatis.
+
+```
+pk-infra/
+  src/main/java/com/pk/infra/
+    {domain}/
+      mapper/          # MyBatis @Mapper interfaces (no SQL here)
+        XxxMapper.java
+      repository/      # Port implementations (@Repository)
+        XxxRepositoryImpl.java
+    mybatis/
+      config/MybatisInfraConfiguration.java   # @MapperScan("com.pk.infra.**.mapper")
+      typehandler/InstantTypeHandler.java
+      typehandler/BooleanTinyintTypeHandler.java
+  src/main/resources/
+    mapper/
+      {domain}/
+        XxxMapper.xml  # All SQL statements
+```
+
+Runtime processes (`pk-app` and `pk-worker`) declare `mybatis.mapper-locations` and `type-handlers-package` in their own `application.yml` files.
+
+**Call chain (unchanged):** `Facade` → `pk-core` Port → `{domain}.repository.*RepositoryImpl` → `{domain}.mapper.*Mapper` → XML
+
+**Migration status:** All `pk-infra` database repositories use MyBatis. `DatabaseConnectionChecker` still uses `JdbcTemplate` for health `SELECT 1` only.

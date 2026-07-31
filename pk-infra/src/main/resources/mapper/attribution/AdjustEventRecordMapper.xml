@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.attribution.mapper.AdjustEventRecordMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO adjust_event_record (
+            server_event_callback_id, partner_user_id, user_id, device_uuid, event_name, app_token,
+            idfa, idfv, gps_adid, adid, event_timestamp, status, retry_count, extra_params
+        ) VALUES (
+            #{serverEventCallbackId}, #{partnerUserId}, #{userId}, #{deviceUuid}, #{eventName}, #{appToken},
+            #{idfa}, #{idfv}, #{gpsAdid}, #{adid}, #{eventTimestamp}, #{status}, #{retryCount}, #{extraParams}
+        )
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE adjust_event_record
+        SET status = #{status},
+            response = #{response},
+            error_message = #{errorMessage},
+            retry_count = #{retryCount}
+        WHERE id = #{id}
+    </update>
+</mapper>

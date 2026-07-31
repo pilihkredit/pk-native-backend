@@ -16,6 +16,24 @@ class ApiExceptionTest {
     }
 
     @Test
+    void keepsDetailForLoggingWithoutChangingApiCodeMessage() {
+        ApiException exception = new ApiException(
+                ApiCode.INVALID_REQUEST_PARAMETERS,
+                "device.deviceNo does not match header X-Device-No"
+        );
+
+        assertEquals(ApiCode.INVALID_REQUEST_PARAMETERS, exception.apiCode());
+        assertEquals(
+                "device.deviceNo does not match header X-Device-No",
+                exception.detail()
+        );
+        assertEquals(
+                "Invalid request parameters: device.deviceNo does not match header X-Device-No",
+                exception.getMessage()
+        );
+    }
+
+    @Test
     void rejectsSuccessCode() {
         IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,

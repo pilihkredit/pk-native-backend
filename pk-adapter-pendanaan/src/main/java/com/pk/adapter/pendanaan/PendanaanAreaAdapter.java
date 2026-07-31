@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PendanaanAreaAdapter implements LenderAreaPort {
-    static final String AREA_LIST_PATH = "/area/list";
+    static final String AREA_LIST_PATH = PendanaanOpenApiPaths.AREA_LIST;
     static final String BUSINESS_TYPE = "REFERENCE_AREA_LIST";
 
     private final PendanaanHttpClient httpClient;

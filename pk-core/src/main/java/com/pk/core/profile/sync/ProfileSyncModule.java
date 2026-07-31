@@ -2,7 +2,10 @@ package com.pk.core.profile.sync;
 
 public enum ProfileSyncModule {
     PERSONAL,
-    WORK,
     CONTACT,
-    BANK_CARD
+    BANK_CARD,
+    IDENTITY,
+    LOGIN_LOG,
+    APPSFLYER_INSTALL,
+    TONGDUN_DEVICE
 }

@@ -1,13 +1,14 @@
 package com.pk.infra.credit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.credit.port.CreditApplicationRepository;
-import com.pk.core.credit.port.CreditLimitSnapshotRepository;
-import com.pk.core.credit.port.CreditStatusHistoryRepository;
+import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.LenderCreditPort;
-import com.pk.core.credit.port.ProfileVersionRepository;
 import com.pk.core.outbox.port.OutboxEventRepository;
+import com.pk.core.provider.port.PkProviderRepository;
 import com.pk.infra.profile.OnboardingProgressFacade;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,50 +28,63 @@ public class CreditInfraConfiguration {
     CreditApplyFacade creditApplyFacade(
             OnboardingProgressFacade onboardingProgressFacade,
             CreditApplicationRepository creditApplicationRepository,
-            ProfileVersionRepository profileVersionRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
+            PkProviderRepository pkProviderRepository,
+            CreditLenderStatusQueryRepository creditLenderStatusQueryRepository,
+            CreditApplyProperties creditApplyProperties,
+            CreditApplyHandler creditApplyHandler,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
-            CreditStatusHistoryRepository creditStatusHistoryRepository
+            CreditStatusPollHandler creditStatusPollHandler,
+            @Value("${pk.lender.config.provider-code:pendanaan}") String configuredProviderCode
     ) {
         return new CreditApplyFacade(
                 onboardingProgressFacade,
                 creditApplicationRepository,
-                profileVersionRepository,
-                creditLimitSnapshotRepository,
+                pkProviderRepository,
+                creditLenderStatusQueryRepository,
+                creditApplyProperties,
+                creditApplyHandler,
                 creditApplyOutboxPublisher,
-                creditStatusHistoryRepository
+                creditStatusPollHandler,
+                configuredProviderCode
+        );
+    }
+
+    @Bean
+    CreditAppsFlyerPreSync creditAppsFlyerPreSync(
+            com.pk.infra.profile.AppsFlyerLenderPayloadResolver appsFlyerLenderPayloadResolver,
+            com.pk.infra.profile.ProfileSyncOrchestrator profileSyncOrchestrator,
+            CreditApplicationRepository creditApplicationRepository
+    ) {
+        return new CreditAppsFlyerPreSync(
+                appsFlyerLenderPayloadResolver,
+                profileSyncOrchestrator,
+                creditApplicationRepository
         );
     }
 
     @Bean
     CreditApplyHandler creditApplyHandler(
             CreditApplicationRepository creditApplicationRepository,
-            CreditStatusHistoryRepository creditStatusHistoryRepository,
             LenderCreditPort lenderCreditPort,
-            CreditApplyProperties creditApplyProperties
+            CreditAppsFlyerPreSync creditAppsFlyerPreSync
     ) {
         return new CreditApplyHandler(
                 creditApplicationRepository,
-                creditStatusHistoryRepository,
                 lenderCreditPort,
-                creditApplyProperties
+                creditAppsFlyerPreSync
         );
     }
 
     @Bean
     CreditStatusPollHandler creditStatusPollHandler(
-            CreditApplicationRepository creditApplicationRepository,
-            CreditStatusHistoryRepository creditStatusHistoryRepository,
-            CreditLimitSnapshotRepository creditLimitSnapshotRepository,
             LenderCreditPort lenderCreditPort,
-            CreditApplyProperties creditApplyProperties
+            CreditLenderStatusApplier creditLenderStatusApplier,
+            UserAuthRepository userAuthRepository
     ) {
         return new CreditStatusPollHandler(
-                creditApplicationRepository,
-                creditStatusHistoryRepository,
-                creditLimitSnapshotRepository,
                 lenderCreditPort,
-                creditApplyProperties
+                creditLenderStatusApplier,
+                userAuthRepository
         );
     }
 }

@@ -1,5 +1,9 @@
 package com.pk.infra.auth;
 
+/**
+ * Indonesian mobile number rules: pure digits, starts with {@code 8}, length 9–32.
+ * Rejects country prefixes ({@code +86}, {@code 0}, {@code 62}) and embedded spaces.
+ */
 public final class MobileNumberValidator {
     private MobileNumberValidator() {
     }
@@ -20,6 +24,9 @@ public final class MobileNumberValidator {
         if (!normalized.chars().allMatch(Character::isDigit)) {
             return false;
         }
-        return normalized.length() >= 9;
+        if (!normalized.startsWith("8")) {
+            return false;
+        }
+        return normalized.length() >= 9 && normalized.length() <= 32;
     }
 }

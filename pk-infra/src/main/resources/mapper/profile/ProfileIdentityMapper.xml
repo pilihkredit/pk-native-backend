@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.ProfileIdentityMapper">
+
+    <resultMap id="identityRowMap" type="com.pk.infra.profile.repository.ProfileIdentityRow">
+        <constructor>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="full_name" javaType="string"/>
+            <arg column="id_no_ciphertext" javaType="string"/>
+            <arg column="id_no_nonce" javaType="_byte[]"/>
+            <arg column="id_no_tag" javaType="_byte[]"/>
+            <arg column="id_no_hash" javaType="string"/>
+            <arg column="module_status" javaType="string"/>
+            <arg column="last_request_id" javaType="string"/>
+            <arg column="external_interaction_id" javaType="java.lang.Long"/>
+            <arg column="profile_version_id" javaType="java.lang.Long"/>
+            <arg column="id_card_image_encrypted_ref" javaType="string"/>
+            <arg column="face_photo_image_encrypted_ref" javaType="string"/>
+            <arg column="encryption_key_ref" javaType="string"/>
+            <arg column="identity_data_retention_until" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="biometric_image_retention_until" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="ocr_channel" javaType="string"/>
+            <arg column="ocr_vendor_call_log_id" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findByUserId" resultMap="identityRowMap">
+        SELECT user_id, full_name,
+               id_no_ciphertext, id_no_nonce, id_no_tag,
+               id_no_hash, module_status, last_request_id,
+               external_interaction_id,
+               profile_version_id,
+               id_card_image_encrypted_ref, face_photo_image_encrypted_ref,
+               encryption_key_ref,
+               identity_data_retention_until, biometric_image_retention_until,
+               ocr_channel, ocr_vendor_call_log_id
+        FROM user_profile_identity
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO user_profile_identity (
+            user_id, full_name,
+            id_no_ciphertext, id_no_nonce, id_no_tag,
+            id_no_hash, module_status, last_request_id,
+            external_interaction_id,
+            profile_version_id,
+            id_card_image_encrypted_ref, face_photo_image_encrypted_ref,
+            encryption_key_ref,
+            identity_data_retention_until, biometric_image_retention_until,
+            ocr_channel, ocr_vendor_call_log_id
+        ) VALUES (
+            #{userId}, #{fullName},
+            #{idNoCiphertext}, #{idNoNonce}, #{idNoTag},
+            #{idNoHash}, #{moduleStatus}, #{lastRequestId},
+            #{externalInteractionId},
+            #{profileVersionId},
+            #{idCardImageEncryptedRef}, #{facePhotoImageEncryptedRef},
+            #{encryptionKeyRef},
+            #{identityDataRetentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+            #{biometricImageRetentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+            #{ocrChannel}, #{ocrVendorCallLogId}
+        )
+        ON DUPLICATE KEY UPDATE
+            full_name = VALUES(full_name),
+            id_no_ciphertext = VALUES(id_no_ciphertext),
+            id_no_nonce = VALUES(id_no_nonce),
+            id_no_tag = VALUES(id_no_tag),
+            id_no_hash = VALUES(id_no_hash),
+            module_status = VALUES(module_status),
+            last_request_id = VALUES(last_request_id),
+            external_interaction_id = COALESCE(VALUES(external_interaction_id), external_interaction_id),
+            profile_version_id = COALESCE(VALUES(profile_version_id), profile_version_id),
+            id_card_image_encrypted_ref = COALESCE(VALUES(id_card_image_encrypted_ref), id_card_image_encrypted_ref),
+            face_photo_image_encrypted_ref = COALESCE(VALUES(face_photo_image_encrypted_ref), face_photo_image_encrypted_ref),
+            encryption_key_ref = COALESCE(VALUES(encryption_key_ref), encryption_key_ref),
+            identity_data_retention_until = COALESCE(VALUES(identity_data_retention_until), identity_data_retention_until),
+            biometric_image_retention_until = COALESCE(VALUES(biometric_image_retention_until), biometric_image_retention_until),
+            ocr_channel = COALESCE(VALUES(ocr_channel), ocr_channel),
+            ocr_vendor_call_log_id = COALESCE(VALUES(ocr_vendor_call_log_id), ocr_vendor_call_log_id)
+    </insert>
+
+    <update id="updateLastLenderInteraction">
+        UPDATE user_profile_identity
+        SET external_interaction_id = #{externalInteractionId}
+        WHERE user_id = #{userId}
+    </update>
+    <update id="scheduleRetentionAfterAccountClosure">
+        UPDATE user_profile_identity
+        SET identity_data_retention_until = #{retentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+            biometric_image_retention_until = #{retentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE user_id = #{userId}
+    </update>
+</mapper>

@@ -1,16 +1,27 @@
 package com.pk.core.profile;
 
-import java.util.Map;
-
 public record ProfileDeviceData(
-        long profileId,
+        long userId,
+        String partnerUserId,
         String deviceNo,
         String systemPlatform,
-        String clientAppName,
+        String appName,
         String appVersion,
         String packageName,
+        String phoneBrand,
+        String phoneBrandModel,
+        String mac,
+        String systemVersion,
+        String deliveryPlatform,
+        Integer cpuCores,
+        Long memoryTotal,
+        Long sdCardTotal,
         String adId,
-        Map<String, Object> deviceOtherInfo,
+        String idfv,
+        String idfa,
+        String extParam,
+        String ip,
+        String deviceJson,
         String lastRequestId
 ) {
 }

@@ -2,21 +2,35 @@ package com.pk.app.profile.controller;
 
 import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.pk.app.profile.application.ProfileQueryApplicationService;
 import com.pk.app.profile.application.ProfileEnumApplicationService;
 import com.pk.app.profile.application.ProfileApplicationService;
+import com.pk.app.profile.dto.request.ProfileAppsFlyerInstallSaveRequest;
+import com.pk.app.profile.dto.request.ProfileBankCardListAccessRequest;
+import com.pk.app.profile.dto.request.ProfileBankCardDeleteRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
+import com.pk.app.profile.dto.request.ProfileInfoQueryRequest;
+import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
+import com.pk.app.profile.dto.request.ProfileMobileChangeRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
-import com.pk.app.profile.dto.request.ProfileWorkSaveRequest;
+import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
+import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
+import com.pk.app.profile.dto.response.ProfileBankCardListAccessResponse;
+import com.pk.app.profile.dto.response.ProfileBankCardDeleteResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileEnumsResponse;
+import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
+import com.pk.app.profile.dto.response.ProfileMobileChangeResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
-import com.pk.app.profile.dto.response.ProfileWorkSaveResponse;
+import com.pk.app.profile.dto.response.ProfileTongdunDeviceSaveResponse;
 import com.pk.app.security.SecurityContextSupport;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
+import com.pk.core.auth.PublicApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,13 +47,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/profile")
 public class ProfileController {
     private final ProfileApplicationService profileApplicationService;
+    private final ProfileQueryApplicationService profileQueryApplicationService;
     private final ProfileEnumApplicationService profileEnumApplicationService;
 
     public ProfileController(
             ProfileApplicationService profileApplicationService,
+            ProfileQueryApplicationService profileQueryApplicationService,
             ProfileEnumApplicationService profileEnumApplicationService
     ) {
         this.profileApplicationService = profileApplicationService;
+        this.profileQueryApplicationService = profileQueryApplicationService;
         this.profileEnumApplicationService = profileEnumApplicationService;
     }
 
@@ -59,6 +76,22 @@ public class ProfileController {
         );
     }
 
+    /** Query synced profile modules from lender. */
+    @PostMapping("/info/query")
+    public ApiResponse<JsonNode> queryInfo(
+            @Valid @RequestBody ProfileInfoQueryRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileQueryApplicationService.query(principal, request),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
     /** Save personal info. */
     @PostMapping("/personal")
     public ApiResponse<ProfilePersonalSaveResponse> savePersonal(
@@ -71,22 +104,6 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileApplicationService.savePersonal(principal, request, httpRequest),
-                RequestTrace.resolveTraceId(httpRequest)
-        );
-    }
-
-    /** Save work info. */
-    @PostMapping("/work")
-    public ApiResponse<ProfileWorkSaveResponse> saveWork(
-            @Valid @RequestBody ProfileWorkSaveRequest request,
-            HttpServletRequest httpRequest
-    ) {
-        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
-        if (principal == null) {
-            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
-        }
-        return ApiResponse.success(
-                profileApplicationService.saveWork(principal, request, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }
@@ -119,6 +136,100 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileApplicationService.saveBankCard(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Soft-delete a non-default bank card. */
+    @PostMapping("/bank-card/delete")
+    public ApiResponse<ProfileBankCardDeleteResponse> deleteBankCard(
+            @Valid @RequestBody ProfileBankCardDeleteRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.deleteBankCard(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Whether the client may open the bank card list (real-time lender gate). */
+    @PostMapping("/bank-card/list-access")
+    public ApiResponse<ProfileBankCardListAccessResponse> checkBankCardListAccess(
+            @Valid @RequestBody ProfileBankCardListAccessRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.checkBankCardListAccess(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Save login log and sync to lender. */
+    @PostMapping("/login-log")
+    public ApiResponse<ProfileLoginLogSaveResponse> saveLoginLog(
+            @Valid @RequestBody ProfileLoginLogSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.saveLoginLog(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Save AppsFlyer install data locally (public). Lender sync attaches AF on identity upsert when logged in. */
+    @PublicApi
+    @PostMapping("/appsflyer-install")
+    public ApiResponse<ProfileAppsFlyerInstallSaveResponse> saveAppsFlyerInstall(
+            @Valid @RequestBody ProfileAppsFlyerInstallSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        return ApiResponse.success(
+                profileApplicationService.saveAppsFlyerInstall(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Save Tongdun device fingerprint and sync to lender. */
+    @PostMapping("/tongdun-device")
+    public ApiResponse<ProfileTongdunDeviceSaveResponse> saveTongdunDevice(
+            @Valid @RequestBody ProfileTongdunDeviceSaveRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.saveTongdunDevice(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Change the authenticated user's mobile number (login rebinding). */
+    @PostMapping("/mobile/change")
+    public ApiResponse<ProfileMobileChangeResponse> changeMobile(
+            @Valid @RequestBody ProfileMobileChangeRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.changeMobile(principal, request),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

@@ -22,18 +22,25 @@ public interface LenderCreditPort {
     ) {
     }
 
-    record LenderCreditApplyResult(String creditApplyNo, String externalUserId) {
+    record LenderCreditApplyResult(
+            String creditApplyNo,
+            String externalUserId,
+            Long externalInteractionId
+    ) {
     }
 
     record LenderCreditStatusResult(
             String externalStatus,
+            String lenderUserId,
             String creditApplyNo,
             Long creditContractExpireTime,
+            Long freezeEndTime,
             BigDecimal riskMinLimit,
             BigDecimal riskMaxLimit,
             BigDecimal psychologicalCreditLimit,
             BigDecimal fakeCreditLimit,
-            BigDecimal borrowAmtStepSize
+            BigDecimal borrowAmtStepSize,
+            Long externalInteractionId
     ) {
     }
 }

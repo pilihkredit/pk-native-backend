@@ -2,6 +2,7 @@ package com.pk.infra.auth;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.attribution.port.AppsFlyerS2sReporter;
 import com.pk.core.auth.AuthSession;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.auth.OtpChallenge;
@@ -16,82 +17,118 @@ import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSender;
 import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.UserAuthRepository;
-import com.pk.core.auth.port.PasswordHasher;
-import com.pk.core.auth.port.UserPasswordCredentialRepository;
+import com.pk.core.auth.port.WhatsAppSendLogRepository;
+import com.pk.core.auth.port.WhatsAppSender;
+import com.pk.core.profile.AccountCloseResult;
+import com.pk.core.profile.EncryptedField;
+import com.pk.core.profile.port.SensitiveFieldEncryptor;
+import com.pk.core.profile.port.UserProfileBindingRepository;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 public class AuthServiceFacade {
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceFacade.class);
     private static final String LOGIN_CHANNEL_OTP = "OTP";
+    private static final String LOGIN_CHANNEL_WHATSAPP = "WHATSAPP";
     private static final String LOGIN_CHANNEL_PASSWORD = "PASSWORD";
-    private static final String SMS_PURPOSE_OTP = "OTP";
+    private static final String OTP_PURPOSE = "OTP";
 
     private final AuthProperties authProperties;
+    private final AuthOtpConfigLoader authOtpConfigLoader;
+    private final SmsConfigLoader smsConfigLoader;
     private final SessionStore sessionStore;
     private final OtpChallengeStore otpChallengeStore;
+    private final OtpChallengeStore whatsappOtpChallengeStore;
     private final RefreshTokenStore refreshTokenStore;
     private final TokenIssuer tokenIssuer;
     private final UserAuthRepository userAuthRepository;
-    private final UserPasswordCredentialRepository userPasswordCredentialRepository;
-    private final PasswordHasher passwordHasher;
+    private final SensitiveFieldEncryptor sensitiveFieldEncryptor;
     private final SmsSendLogRepository smsSendLogRepository;
     private final SmsSender smsSender;
+    private final WhatsAppSendLogRepository whatsAppSendLogRepository;
+    private final WhatsAppSender whatsAppSender;
+    private final WhatsAppConfigLoader whatsAppConfigLoader;
+    private final UserProfileBindingRepository userProfileBindingRepository;
+    private final AppsFlyerS2sReporter appsFlyerS2sReporter;
 
     public AuthServiceFacade(
             AuthProperties authProperties,
+            AuthOtpConfigLoader authOtpConfigLoader,
+            SmsConfigLoader smsConfigLoader,
             SessionStore sessionStore,
-            OtpChallengeStore otpChallengeStore,
+            @Qualifier("otpChallengeStore") OtpChallengeStore otpChallengeStore,
+            @Qualifier("whatsappOtpChallengeStore") OtpChallengeStore whatsappOtpChallengeStore,
             RefreshTokenStore refreshTokenStore,
             TokenIssuer tokenIssuer,
             UserAuthRepository userAuthRepository,
-            UserPasswordCredentialRepository userPasswordCredentialRepository,
-            PasswordHasher passwordHasher,
+            SensitiveFieldEncryptor sensitiveFieldEncryptor,
             SmsSendLogRepository smsSendLogRepository,
-            SmsSender smsSender
+            SmsSender smsSender,
+            WhatsAppSendLogRepository whatsAppSendLogRepository,
+            WhatsAppSender whatsAppSender,
+            WhatsAppConfigLoader whatsAppConfigLoader,
+            UserProfileBindingRepository userProfileBindingRepository,
+            AppsFlyerS2sReporter appsFlyerS2sReporter
     ) {
         this.authProperties = authProperties;
+        this.authOtpConfigLoader = authOtpConfigLoader;
+        this.smsConfigLoader = smsConfigLoader;
         this.sessionStore = sessionStore;
         this.otpChallengeStore = otpChallengeStore;
+        this.whatsappOtpChallengeStore = whatsappOtpChallengeStore;
         this.refreshTokenStore = refreshTokenStore;
         this.tokenIssuer = tokenIssuer;
         this.userAuthRepository = userAuthRepository;
-        this.userPasswordCredentialRepository = userPasswordCredentialRepository;
-        this.passwordHasher = passwordHasher;
+        this.sensitiveFieldEncryptor = sensitiveFieldEncryptor;
         this.smsSendLogRepository = smsSendLogRepository;
         this.smsSender = smsSender;
+        this.whatsAppSendLogRepository = whatsAppSendLogRepository;
+        this.whatsAppSender = whatsAppSender;
+        this.whatsAppConfigLoader = whatsAppConfigLoader;
+        this.userProfileBindingRepository = userProfileBindingRepository;
+        this.appsFlyerS2sReporter = appsFlyerS2sReporter;
     }
 
     public OtpSendResult sendOtp(String mobileNo, String deviceNo) {
         validateMobile(mobileNo);
-        Objects.requireNonNull(deviceNo, "deviceNo is required");
-        if (deviceNo.isBlank()) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        Optional<Duration> wait = otpChallengeStore.timeUntilResendAllowed(deviceNo);
-        if (wait.isPresent()) {
-            throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
-        }
-        enforceDailySmsLimit(mobileNo);
+        requireDeviceNo(deviceNo);
+        AuthOtpConfigLoader.AuthOtpConfig otpConfig = authOtpConfigLoader.load();
+        enforceResendInterval(otpChallengeStore, deviceNo);
+        enforceDailyLimit(
+                smsSendLogRepository::countSince,
+                mobileNo,
+                otpConfig.otpDailyLimit(),
+                otpConfig.otpDailyLimitZone()
+        );
 
         String otpToken = OtpCodeGenerator.token();
-        String otpCode = OtpCodeGenerator.sixDigits();
-        Instant expiresAt = Instant.now().plus(authProperties.otpTtl());
+        SmsConfigLoader.SmsConf smsConf = smsConfigLoader.loadConf();
+        String otpCode = OtpCodeGenerator.numericCode(smsConf.codeLength());
+        Duration otpTtl = Duration.ofSeconds(smsConf.expireTimeSeconds());
+        Instant expiresAt = Instant.now().plus(otpTtl);
         otpChallengeStore.save(
                 otpToken,
                 new OtpChallenge(mobileNo, deviceNo, otpCode, expiresAt),
-                authProperties.otpTtl()
+                otpTtl
         );
 
-        Optional<Long> profileId = userAuthRepository.findByMobileNo(mobileNo).map(UserProfileSummary::profileId);
+        Optional<Long> userId = userAuthRepository.findByMobileNo(mobileNo).map(UserProfileSummary::userId);
         long logId = smsSendLogRepository.insert(new SmsSendLogRepository.SmsSendLogEntry(
-                profileId,
+                userId,
                 mobileNo,
                 deviceNo,
+                otpToken,
                 otpCode,
-                SMS_PURPOSE_OTP
+                OTP_PURPOSE
         ));
 
         SmsSendResult smsResult = smsSender.send(mobileNo, otpCode);
@@ -101,41 +138,77 @@ public class AuthServiceFacade {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
 
-        otpChallengeStore.markSent(deviceNo, authProperties.otpResendInterval());
+        otpChallengeStore.markSent(deviceNo, otpConfig.otpResendInterval());
         return new OtpSendResult(
                 otpToken,
-                authProperties.otpTtl().toSeconds(),
-                authProperties.otpResendInterval().toSeconds(),
+                otpTtl.toSeconds(),
+                otpConfig.otpResendInterval().toSeconds(),
                 otpCode
         );
     }
 
-    private void enforceDailySmsLimit(String mobileNo) {
-        Instant startOfDay = ZonedDateTime.now(authProperties.otpDailyLimitZone())
-                .toLocalDate()
-                .atStartOfDay(authProperties.otpDailyLimitZone())
-                .toInstant();
-        long sentToday = smsSendLogRepository.countSince(mobileNo, startOfDay);
-        if (sentToday >= authProperties.otpDailyLimit()) {
-            throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
+    public OtpSendResult sendWhatsAppCode(String mobileNo, String deviceNo) {
+        validateMobile(mobileNo);
+        requireDeviceNo(deviceNo);
+        WhatsAppConfigLoader.WhatsAppConf whatsAppConf = whatsAppConfigLoader.loadConf();
+        AuthOtpConfigLoader.AuthOtpConfig otpConfig = authOtpConfigLoader.load();
+        enforceResendInterval(whatsappOtpChallengeStore, deviceNo);
+        enforceDailyLimit(
+                whatsAppSendLogRepository::countSince,
+                mobileNo,
+                whatsAppConfigLoader.loadDailyLimit(),
+                otpConfig.otpDailyLimitZone()
+        );
+
+        String otpToken = OtpCodeGenerator.token();
+        String otpCode = OtpCodeGenerator.sixDigits();
+        Duration challengeTtl = whatsAppConf.expireTime();
+        Instant expiresAt = Instant.now().plus(challengeTtl);
+        whatsappOtpChallengeStore.save(
+                otpToken,
+                new OtpChallenge(mobileNo, deviceNo, otpCode, expiresAt),
+                challengeTtl
+        );
+
+        Optional<Long> userId = userAuthRepository.findByMobileNo(mobileNo).map(UserProfileSummary::userId);
+        long logId = whatsAppSendLogRepository.insert(new WhatsAppSendLogRepository.WhatsAppSendLogEntry(
+                userId,
+                mobileNo,
+                deviceNo,
+                otpToken,
+                otpCode,
+                OTP_PURPOSE
+        ));
+
+        SmsSendResult sendResult = whatsAppSender.send(mobileNo, otpCode);
+        whatsAppSendLogRepository.updateProviderResult(logId, sendResult);
+        if (!sendResult.success()) {
+            whatsappOtpChallengeStore.delete(otpToken);
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
+
+        Duration resendInterval = whatsAppConf.minInterval();
+        whatsappOtpChallengeStore.markSent(deviceNo, resendInterval);
+        return new OtpSendResult(
+                otpToken,
+                challengeTtl.toSeconds(),
+                resendInterval.toSeconds(),
+                otpCode
+        );
     }
 
     public MobileCheckResult checkMobileRegistration(String mobileNo, String deviceNo) {
         validateMobile(mobileNo);
-        Objects.requireNonNull(deviceNo, "deviceNo is required");
-        if (deviceNo.isBlank()) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
+        requireDeviceNo(deviceNo);
 
         boolean registered = userAuthRepository.findByMobileNo(mobileNo).isPresent();
         boolean passwordSet = userAuthRepository.findByMobileNo(mobileNo)
-                .map(profile -> userPasswordCredentialRepository.isPasswordSet(profile.profileId()))
+                .map(profile -> userAuthRepository.isPasswordSet(profile.userId()))
                 .orElse(false);
         return new MobileCheckResult(registered, registered ? "EXISTING" : "NEW", passwordSet);
     }
 
-    public void setPassword(long profileId, String password, String confirmPassword) {
+    public void setPassword(long userId, String password, String confirmPassword) {
         if (password == null || password.isBlank() || confirmPassword == null || confirmPassword.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
@@ -145,10 +218,11 @@ public class AuthServiceFacade {
         if (!PasswordFormatValidator.isValid(password)) {
             throw new ApiException(ApiCode.INVALID_PASSWORD_FORMAT);
         }
-        if (userPasswordCredentialRepository.isPasswordSet(profileId)) {
+        if (userAuthRepository.isPasswordSet(userId)) {
             throw new ApiException(ApiCode.PASSWORD_ALREADY_SET);
         }
-        userPasswordCredentialRepository.insert(profileId, passwordHasher.hash(password));
+        EncryptedField encryptedPassword = sensitiveFieldEncryptor.encrypt(password);
+        userAuthRepository.savePassword(userId, encryptedPassword);
     }
 
     public PasswordLoginResult loginByPassword(String mobileNo, String password, String deviceNo) {
@@ -162,39 +236,93 @@ public class AuthServiceFacade {
 
         UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
                 .orElseThrow(() -> new ApiException(ApiCode.INVALID_MOBILE_OR_PASSWORD));
-        UserPasswordCredentialRepository.PasswordCredential credential = userPasswordCredentialRepository
-                .findByProfileId(profile.profileId())
+        UserAuthRepository.PasswordCredential credential = userAuthRepository
+                .findPasswordCredential(profile.userId())
                 .orElseThrow(() -> new ApiException(ApiCode.PASSWORD_NOT_SET));
 
-        Instant now = Instant.now();
-        if (credential.lockedUntil() != null && credential.lockedUntil().isAfter(now)) {
-            throw new ApiException(ApiCode.PASSWORD_ACCOUNT_LOCKED);
-        }
-
-        if (!passwordHasher.matches(password, credential.passwordHash())) {
-            int nextAttempts = credential.failedAttempts() + 1;
-            if (nextAttempts >= authProperties.passwordMaxFailedAttempts()) {
-                userPasswordCredentialRepository.recordFailedAttempt(
-                        profile.profileId(),
-                        0,
-                        now.plus(authProperties.passwordLockDuration())
-                );
-            } else {
-                userPasswordCredentialRepository.recordFailedAttempt(profile.profileId(), nextAttempts, null);
-            }
+        if (!passwordMatches(password, credential.password())) {
             throw new ApiException(ApiCode.INVALID_MOBILE_OR_PASSWORD);
         }
 
-        userPasswordCredentialRepository.resetFailedAttempts(profile.profileId());
         TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_PASSWORD);
         return new PasswordLoginResult(profile, tokenPair, true);
     }
 
-    public boolean isPasswordSet(long profileId) {
-        return userPasswordCredentialRepository.isPasswordSet(profileId);
+    public boolean isPasswordSet(long userId) {
+        return userAuthRepository.isPasswordSet(userId);
     }
 
     public OtpVerifyResult verifyOtp(String mobileNo, String otpToken, String otpCode, String deviceNo) {
+        return verifyOtp(mobileNo, otpToken, otpCode, deviceNo, null);
+    }
+
+    public OtpVerifyResult verifyOtp(
+            String mobileNo,
+            String otpToken,
+            String otpCode,
+            String deviceNo,
+            String systemPlatform
+    ) {
+        return verifyChallengeAndLogin(
+                otpChallengeStore,
+                mobileNo,
+                otpToken,
+                otpCode,
+                deviceNo,
+                LOGIN_CHANNEL_OTP,
+                systemPlatform
+        );
+    }
+
+    public OtpVerifyResult loginWithWhatsApp(String mobileNo, String otpCode, String deviceNo) {
+        return loginWithWhatsApp(mobileNo, otpCode, deviceNo, null);
+    }
+
+    public OtpVerifyResult loginWithWhatsApp(
+            String mobileNo,
+            String otpCode,
+            String deviceNo,
+            String systemPlatform
+    ) {
+        validateMobile(mobileNo);
+        if (otpCode == null || otpCode.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (deviceNo == null || deviceNo.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (isWhatsAppConfiguredDefaultCode(mobileNo, otpCode)) {
+            log.info("WhatsApp OTP accepted via whatsappConf defaultCode mobile={}", mobileNo);
+            whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
+                    .ifPresent(whatsappOtpChallengeStore::delete);
+            UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
+            TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_WHATSAPP);
+            reportRegisterSuccessIfNeeded(profile, deviceNo, systemPlatform);
+            boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
+            return new OtpVerifyResult(profile, tokenPair, passwordSet);
+        }
+        String otpToken = whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
+                .orElseThrow(() -> new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE));
+        return verifyChallengeAndLogin(
+                whatsappOtpChallengeStore,
+                mobileNo,
+                otpToken,
+                otpCode,
+                deviceNo,
+                LOGIN_CHANNEL_WHATSAPP,
+                systemPlatform
+        );
+    }
+
+    private OtpVerifyResult verifyChallengeAndLogin(
+            OtpChallengeStore challengeStore,
+            String mobileNo,
+            String otpToken,
+            String otpCode,
+            String deviceNo,
+            String loginChannel,
+            String systemPlatform
+    ) {
         validateMobile(mobileNo);
         if (otpToken == null || otpToken.isBlank() || otpCode == null || otpCode.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -202,28 +330,75 @@ public class AuthServiceFacade {
         if (deviceNo == null || deviceNo.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        OtpChallenge challenge = otpChallengeStore.findByToken(otpToken)
-                .orElseThrow(() -> new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE));
-        if (challenge.expired(Instant.now())) {
-            otpChallengeStore.delete(otpToken);
-            throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
+        boolean allowConfiguredDefault =
+                (LOGIN_CHANNEL_OTP.equals(loginChannel) && isSmsConfiguredDefaultCode(mobileNo, otpCode))
+                        || (LOGIN_CHANNEL_WHATSAPP.equals(loginChannel)
+                        && isWhatsAppConfiguredDefaultCode(mobileNo, otpCode));
+        if (allowConfiguredDefault) {
+            log.info(
+                    "OTP accepted via app_config defaultCode channel={} mobile={}",
+                    loginChannel,
+                    mobileNo
+            );
+            challengeStore.findByToken(otpToken).ifPresent(challenge -> challengeStore.delete(otpToken));
+        } else {
+            OtpChallenge challenge = challengeStore.findByToken(otpToken)
+                    .orElseThrow(() -> new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE));
+            if (challenge.expired(Instant.now())) {
+                challengeStore.delete(otpToken);
+                throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
+            }
+            if (!mobileNo.equals(challenge.mobileNo())) {
+                throw new ApiException(ApiCode.OTP_TOKEN_MISMATCH);
+            }
+            if (!deviceNo.equals(challenge.deviceNo())) {
+                throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+            }
+            if (!otpCode.equals(challenge.otpCode())) {
+                throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
+            }
+            challengeStore.delete(otpToken);
         }
-        if (!mobileNo.equals(challenge.mobileNo())) {
-            throw new ApiException(ApiCode.OTP_TOKEN_MISMATCH);
-        }
-        if (!deviceNo.equals(challenge.deviceNo())) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        if (!otpCode.equals(challenge.otpCode())) {
-            throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
-        }
-        otpChallengeStore.delete(otpToken);
 
-        UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
-                .orElseGet(() -> userAuthRepository.createByMobileNo(mobileNo));
-        TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_OTP);
-        boolean passwordSet = userPasswordCredentialRepository.isPasswordSet(profile.profileId());
+        UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
+        TokenPair tokenPair = openSession(profile, deviceNo, loginChannel);
+        reportRegisterSuccessIfNeeded(profile, deviceNo, systemPlatform);
+        boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
         return new OtpVerifyResult(profile, tokenPair, passwordSet);
+    }
+
+    private void reportRegisterSuccessIfNeeded(
+            UserProfileSummary profile,
+            String deviceNo,
+            String systemPlatform
+    ) {
+        if (profile == null || !profile.newlyCreated()) {
+            return;
+        }
+        try {
+            AppsFlyerS2sReporter.ReportResult result = appsFlyerS2sReporter.reportPlatformEvent(
+                    AppsFlyerS2sReporter.EVENT_REGISTER_SUCCESS_PK,
+                    profile.userId(),
+                    profile.partnerUserId(),
+                    deviceNo,
+                    systemPlatform,
+                    null
+            );
+            log.info(
+                    "AF S2S REGISTER_SUCCESS_PK userId={} deviceNo={} reported={} message={}",
+                    profile.userId(),
+                    deviceNo,
+                    result.reported(),
+                    result.message()
+            );
+        } catch (Exception exception) {
+            log.warn(
+                    "AF S2S REGISTER_SUCCESS_PK failed userId={} deviceNo={} error={}",
+                    profile.userId(),
+                    deviceNo,
+                    exception.getMessage()
+            );
+        }
     }
 
     public TokenPair refresh(String refreshToken) {
@@ -232,42 +407,93 @@ public class AuthServiceFacade {
         }
         RefreshTokenStore.RefreshTokenRecord record = refreshTokenStore.find(refreshToken)
                 .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
-        AuthSession session = sessionStore.findByProfileId(record.profileId())
+        AuthSession session = sessionStore.findByUserId(record.userId())
                 .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
         if (session.sessionVersion() != record.sessionVersion()) {
             refreshTokenStore.delete(refreshToken);
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        UserProfileSummary profile = userAuthRepository.findByProfileId(record.profileId())
+        UserProfileSummary profile = userAuthRepository.findByUserId(record.userId())
                 .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
         return issueAccessToken(profile, session.sessionVersion(), session.deviceId());
     }
 
     public void logout(AuthenticatedPrincipal principal) {
-        sessionStore.delete(principal.profileId());
-        refreshTokenStore.deleteAllForProfile(principal.profileId());
+        sessionStore.delete(principal.userId());
+        refreshTokenStore.deleteAllForProfile(principal.userId());
+        userAuthRepository.clearSessionTokens(principal.userId());
+        userAuthRepository.updateLastLogoutAt(principal.userId(), Instant.now());
+    }
+
+    /**
+     * Soft-close the account and invalidate the current session (SMS / WhatsApp / password).
+     */
+    public AccountCloseResult closeAccount(AuthenticatedPrincipal principal) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        AccountCloseResult result;
+        try {
+            result = userProfileBindingRepository.closeAccount(principal.userId());
+        } catch (ApiException exception) {
+            if (exception.apiCode() == ApiCode.UNAUTHORIZED_REQUEST) {
+                log.warn(
+                        "Close account rejected: profile row missing userId={} mobileNo={}",
+                        principal.userId(),
+                        principal.mobileNo()
+                );
+            }
+            throw exception;
+        }
+        logout(principal);
+        return result;
     }
 
     public AuthenticatedPrincipal validateAccessToken(String accessToken) {
         AuthenticatedPrincipal principal = tokenIssuer.parseAccessToken(accessToken);
-        AuthSession session = sessionStore.findByProfileId(principal.profileId())
-                .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
+        AuthSession session = sessionStore.findByUserId(principal.userId()).orElse(null);
+        if (session == null) {
+            AuthRejectReasons.set(AuthRejectReasons.SESSION_NOT_FOUND);
+            log.warn(
+                    "Access token session not found userId={} mobileNo={} tokenSessionVersion={}",
+                    principal.userId(),
+                    principal.mobileNo(),
+                    principal.sessionVersion()
+            );
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
         if (session.sessionVersion() != principal.sessionVersion()) {
+            AuthRejectReasons.set(AuthRejectReasons.SESSION_VERSION_MISMATCH);
+            log.warn(
+                    "Access token session version mismatch userId={} mobileNo={} tokenSessionVersion={} activeSessionVersion={}",
+                    principal.userId(),
+                    principal.mobileNo(),
+                    principal.sessionVersion(),
+                    session.sessionVersion()
+            );
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return principal;
     }
 
+    private boolean passwordMatches(String rawPassword, EncryptedField encryptedPassword) {
+        String storedPassword = sensitiveFieldEncryptor.decrypt(encryptedPassword);
+        return MessageDigest.isEqual(
+                storedPassword.getBytes(StandardCharsets.UTF_8),
+                rawPassword.getBytes(StandardCharsets.UTF_8)
+        );
+    }
+
     private TokenPair openSession(UserProfileSummary profile, String deviceId, String loginChannel) {
-        long nextVersion = sessionStore.findByProfileId(profile.profileId())
+        long nextVersion = sessionStore.findByUserId(profile.userId())
                 .map(AuthSession::sessionVersion)
                 .orElse(0L) + 1L;
         Instant issuedAt = Instant.now();
-        AuthSession session = new AuthSession(profile.profileId(), nextVersion, deviceId, loginChannel, issuedAt);
-        sessionStore.save(profile.profileId(), session, authProperties.refreshTokenTtl());
-        refreshTokenStore.deleteAllForProfile(profile.profileId());
+        AuthSession session = new AuthSession(profile.userId(), nextVersion, deviceId, loginChannel, issuedAt);
+        sessionStore.save(profile.userId(), session, authProperties.refreshTokenTtl());
+        refreshTokenStore.deleteAllForProfile(profile.userId());
         TokenPair tokenPair = tokenIssuer.issue(
-                profile.profileId(),
+                profile.userId(),
                 profile.partnerUserId(),
                 profile.mobileNo(),
                 nextVersion,
@@ -275,26 +501,125 @@ public class AuthServiceFacade {
         );
         refreshTokenStore.save(
                 tokenPair.refreshToken(),
-                new RefreshTokenStore.RefreshTokenRecord(profile.profileId(), nextVersion, deviceId),
+                new RefreshTokenStore.RefreshTokenRecord(profile.userId(), nextVersion, deviceId),
                 authProperties.refreshTokenTtl()
         );
+        userAuthRepository.saveSessionTokens(
+                profile.userId(),
+                tokenPair.accessToken(),
+                tokenPair.refreshToken(),
+                Instant.now().plusSeconds(tokenPair.accessTokenExpiresInSeconds())
+        );
+        userAuthRepository.updateLastLoginAt(profile.userId(), Instant.now());
         return tokenPair;
     }
 
     private TokenPair issueAccessToken(UserProfileSummary profile, long sessionVersion, String deviceId) {
-        return tokenIssuer.issue(
-                profile.profileId(),
+        TokenPair tokenPair = tokenIssuer.issue(
+                profile.userId(),
                 profile.partnerUserId(),
                 profile.mobileNo(),
                 sessionVersion,
                 deviceId
         );
+        userAuthRepository.saveAccessToken(
+                profile.userId(),
+                tokenPair.accessToken(),
+                Instant.now().plusSeconds(tokenPair.accessTokenExpiresInSeconds())
+        );
+        return tokenPair;
+    }
+
+    private void requireDeviceNo(String deviceNo) {
+        Objects.requireNonNull(deviceNo, "deviceNo is required");
+        if (deviceNo.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+    }
+
+    private void enforceResendInterval(OtpChallengeStore challengeStore, String deviceNo) {
+        Optional<Duration> wait = challengeStore.timeUntilResendAllowed(deviceNo);
+        if (wait.isPresent()) {
+            throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
+        }
+    }
+
+    private void enforceDailyLimit(
+            DailyCountQuery countQuery,
+            String mobileNo,
+            int dailyLimit,
+            ZoneId dailyLimitZone
+    ) {
+        Instant startOfDay = ZonedDateTime.now(dailyLimitZone)
+                .toLocalDate()
+                .atStartOfDay(dailyLimitZone)
+                .toInstant();
+        long sentToday = countQuery.countSince(mobileNo, startOfDay);
+        if (sentToday >= dailyLimit) {
+            throw new ApiException(ApiCode.TOO_MANY_REQUESTS);
+        }
     }
 
     private void validateMobile(String mobileNo) {
         if (!MobileNumberValidator.isValid(mobileNo)) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+            throw new ApiException(ApiCode.INVALID_MOBILE_NUMBER);
         }
+    }
+
+    /**
+     * Uses only {@code app_config.smsConf}: whitelist + defaultCode, or defaultCode when enableSms=false.
+     */
+    private boolean isSmsConfiguredDefaultCode(String mobileNo, String otpCode) {
+        try {
+            SmsConfigLoader.SmsConf conf = smsConfigLoader.loadConf();
+            boolean accepted = SmsConfigLoader.acceptsConfiguredDefaultCode(conf, mobileNo, otpCode);
+            if (!accepted
+                    && otpCode != null
+                    && conf.defaultCode() != null
+                    && conf.defaultCode().trim().equals(otpCode.trim())
+                    && conf.enableSms()) {
+                log.info(
+                        "defaultCode rejected (enableSms=true, not on userList) mobile={} userListSize={}",
+                        mobileNo,
+                        conf.userList() == null ? 0 : conf.userList().size()
+                );
+            }
+            return accepted;
+        } catch (Exception exception) {
+            log.warn("smsConf default-code check skipped: {}", exception.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Uses only {@code app_config.whatsappConf}: whitelist + defaultCode, or defaultCode when
+     * enableWhatsApp=false.
+     */
+    private boolean isWhatsAppConfiguredDefaultCode(String mobileNo, String otpCode) {
+        try {
+            WhatsAppConfigLoader.WhatsAppConf conf = whatsAppConfigLoader.loadConf();
+            boolean accepted = WhatsAppConfigLoader.acceptsConfiguredDefaultCode(conf, mobileNo, otpCode);
+            if (!accepted
+                    && otpCode != null
+                    && conf.defaultCode() != null
+                    && conf.defaultCode().trim().equals(otpCode.trim())
+                    && conf.enableWhatsApp()) {
+                log.info(
+                        "WhatsApp defaultCode rejected (enableWhatsApp=true, not on userList) mobile={} userListSize={}",
+                        mobileNo,
+                        conf.userList() == null ? 0 : conf.userList().size()
+                );
+            }
+            return accepted;
+        } catch (Exception exception) {
+            log.warn("whatsappConf default-code check skipped: {}", exception.getMessage());
+            return false;
+        }
+    }
+
+    @FunctionalInterface
+    private interface DailyCountQuery {
+        long countSince(String mobileNo, Instant sinceInclusive);
     }
 
     public record OtpSendResult(String otpToken, long expireIn, long resendAfter, String otpCodeForLocalDev) {

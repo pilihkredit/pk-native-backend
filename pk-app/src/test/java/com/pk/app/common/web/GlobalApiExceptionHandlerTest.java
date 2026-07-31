@@ -1,13 +1,20 @@
 package com.pk.app.common.web;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.logging.StructuredLogEntry;
+import com.pk.infra.logging.StructuredLogWriter;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -18,10 +25,20 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 class GlobalApiExceptionHandlerTest {
+    private final StructuredLogWriter structuredLogWriter = mock(StructuredLogWriter.class);
     private final MockMvc mockMvc = MockMvcBuilders
             .standaloneSetup(new TestController())
-            .setControllerAdvice(new GlobalApiExceptionHandler())
+            .setControllerAdvice(new GlobalApiExceptionHandler(structuredLogWriter))
             .build();
+
+    @Test
+    void mapsApiExceptionDetailToClientMessage() throws Exception {
+        mockMvc.perform(get("/test/api-exception-with-detail").header("X-Trace-Id", "trace-detail"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("K000001"))
+                .andExpect(jsonPath("$.msg").value("device.deviceNo does not match header X-Device-No"))
+                .andExpect(jsonPath("$.traceId").value("trace-detail"));
+    }
 
     @Test
     void mapsApiExceptionToWrappedFailure() throws Exception {
@@ -40,14 +57,23 @@ class GlobalApiExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("999998"))
                 .andExpect(jsonPath("$.msg").value("Service unavailable"))
                 .andExpect(jsonPath("$.traceId").value("trace-service"));
+
+        verify(structuredLogWriter).logError(
+                org.mockito.ArgumentMatchers.eq("api.error"),
+                org.mockito.ArgumentMatchers.eq("trace-service"),
+                org.mockito.ArgumentMatchers.eq("/test/service-unavailable"),
+                org.mockito.ArgumentMatchers.eq("GET"),
+                any(),
+                any()
+        );
     }
 
     @Test
-    void mapsValidationExceptionToInvalidRequestParameters() throws Exception {
+    void logsValidationExceptionDetails() throws Exception {
         mockMvc.perform(get("/test/validated").header("X-Trace-Id", "trace-validation"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("K000001"))
-                .andExpect(jsonPath("$.msg").value("Invalid request parameters"))
+                .andExpect(jsonPath("$.msg").value("name: is required"))
                 .andExpect(jsonPath("$.traceId").value("trace-validation"));
     }
 
@@ -67,11 +93,28 @@ class GlobalApiExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("999999"))
                 .andExpect(jsonPath("$.msg").value("Internal server error"))
                 .andExpect(jsonPath("$.traceId").value("trace-unknown"));
+
+        verify(structuredLogWriter).logError(
+                org.mockito.ArgumentMatchers.eq("api.error"),
+                org.mockito.ArgumentMatchers.eq("trace-unknown"),
+                org.mockito.ArgumentMatchers.eq("/test/unknown"),
+                org.mockito.ArgumentMatchers.eq("GET"),
+                any(),
+                any()
+        );
     }
 
     @Validated
     @RestController
     private static class TestController {
+        @GetMapping("/test/api-exception-with-detail")
+        ApiResponse<Void> apiExceptionWithDetail() {
+            throw new ApiException(
+                    ApiCode.INVALID_REQUEST_PARAMETERS,
+                    "device.deviceNo does not match header X-Device-No"
+            );
+        }
+
         @GetMapping("/test/api-exception")
         ApiResponse<Void> apiException() {
             throw new ApiException(ApiCode.INVALID_LOAN_AMOUNT);

@@ -28,6 +28,9 @@
         <spring.boot.version>3.3.5</spring.boot.version>
         <junit.version>5.10.5</junit.version>
         <nimbus.jose.jwt.version>9.40</nimbus.jose.jwt.version>
+        <mybatis-spring-boot.version>3.0.4</mybatis-spring-boot.version>
+        <aliyun-log-logback-appender.version>0.1.27</aliyun-log-logback-appender.version>
+        <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
     </properties>
 
     <dependencyManagement>
@@ -51,6 +54,21 @@
                 <artifactId>nimbus-jose-jwt</artifactId>
                 <version>${nimbus.jose.jwt.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis-spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.openservices</groupId>
+                <artifactId>aliyun-log-logback-appender</artifactId>
+                <version>${aliyun-log-logback-appender.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logstash-logback-encoder.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -71,6 +89,7 @@
                     <version>3.5.2</version>
                     <configuration>
                         <useModulePath>false</useModulePath>
+                        <argLine>-Dnet.bytebuddy.experimental=true</argLine>
                     </configuration>
                 </plugin>
                 <plugin>

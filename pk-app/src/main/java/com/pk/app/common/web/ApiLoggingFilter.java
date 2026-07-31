@@ -1,13 +1,16 @@
 package com.pk.app.common.web;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pk.core.logging.StructuredLogEntry;
+import com.pk.infra.logging.StructuredLogWriter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.Ordered;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -15,16 +18,23 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(1)
 public class ApiLoggingFilter extends OncePerRequestFilter {
-    private static final Logger log = LoggerFactory.getLogger(ApiLoggingFilter.class);
-
     private final ApiProperties apiProperties;
     private final ApiLoggingProperties loggingProperties;
+    private final StructuredLogWriter structuredLogWriter;
+    private final ObjectMapper objectMapper;
 
-    public ApiLoggingFilter(ApiProperties apiProperties, ApiLoggingProperties loggingProperties) {
+    public ApiLoggingFilter(
+            ApiProperties apiProperties,
+            ApiLoggingProperties loggingProperties,
+            StructuredLogWriter structuredLogWriter,
+            ObjectMapper objectMapper
+    ) {
         this.apiProperties = apiProperties;
         this.loggingProperties = loggingProperties;
+        this.structuredLogWriter = structuredLogWriter;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -49,32 +59,72 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
             filterChain.doFilter(requestWrapper, responseWrapper);
         } finally {
             long durationMs = System.currentTimeMillis() - startedAt;
-            log.info(
-                    "API request method={} path={} traceId={} query={} body={}",
-                    method,
-                    path,
-                    traceId,
-                    ApiHttpPayloadFormatter.formatQueryString(request),
-                    ApiHttpPayloadFormatter.formatBody(
-                            requestWrapper.getContentAsByteArray(),
-                            request.getContentType(),
-                            loggingProperties.maxBodyBytes()
-                    )
+            boolean redactOcrFields = isOcrPath(path);
+            String requestBody = ApiHttpPayloadFormatter.formatBody(
+                    requestWrapper.getContentAsByteArray(),
+                    request.getContentType(),
+                    loggingProperties.maxBodyBytes(),
+                    redactOcrFields
             );
-            log.info(
-                    "API response method={} path={} traceId={} status={} durationMs={} body={}",
-                    method,
-                    path,
-                    traceId,
-                    responseWrapper.getStatus(),
-                    durationMs,
-                    ApiHttpPayloadFormatter.formatBody(
-                            responseWrapper.getContentAsByteArray(),
-                            responseWrapper.getContentType(),
-                            loggingProperties.maxBodyBytes()
-                    )
+            byte[] responseBytes = responseWrapper.getContentAsByteArray();
+            String responseBody = ApiHttpPayloadFormatter.formatBody(
+                    responseBytes,
+                    responseWrapper.getContentType(),
+                    loggingProperties.maxBodyBytes(),
+                    redactOcrFields
             );
+            Map<String, Object> extra = new LinkedHashMap<>();
+            Map<String, String> requestHeaders = ApiHttpPayloadFormatter.formatHeaders(request);
+            if (!requestHeaders.isEmpty()) {
+                extra.put("requestHeaders", requestHeaders);
+            }
+            String query = ApiHttpPayloadFormatter.formatQueryString(request);
+            if (!query.isBlank()) {
+                extra.put("query", query);
+            }
+            if (!requestBody.isBlank()) {
+                extra.put("requestBody", requestBody);
+            }
+            if (!responseBody.isBlank()) {
+                extra.put("responseBody", responseBody);
+            }
+            structuredLogWriter.log(StructuredLogEntry.builder(resolveLevel(responseWrapper.getStatus()), "api.access")
+                    .traceId(traceId)
+                    .uri(path)
+                    .method(method)
+                    .status(responseWrapper.getStatus())
+                    .durationMs(durationMs)
+                    .code(extractBusinessCode(responseBytes))
+                    .extra(extra.isEmpty() ? null : extra)
+                    .build());
             responseWrapper.copyBodyToResponse();
+        }
+    }
+
+    private String resolveLevel(int status) {
+        if (status >= 500) {
+            return "ERROR";
+        }
+        if (status >= 400) {
+            return "WARN";
+        }
+        return "INFO";
+    }
+
+    private String extractBusinessCode(byte[] responseBytes) {
+        if (responseBytes == null || responseBytes.length == 0) {
+            return null;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(responseBytes);
+            JsonNode code = root.get("code");
+            if (code == null || code.isNull()) {
+                return null;
+            }
+            String value = code.asText();
+            return value.isBlank() ? null : value;
+        } catch (Exception ignored) {
+            return null;
         }
     }
 
@@ -89,5 +139,9 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
             return ApiPaths.V1_PREFIX;
         }
         return prefix.endsWith("/") ? prefix.substring(0, prefix.length() - 1) : prefix;
+    }
+
+    private static boolean isOcrPath(String path) {
+        return path != null && path.contains("/profile/identity/ocr");
     }
 }

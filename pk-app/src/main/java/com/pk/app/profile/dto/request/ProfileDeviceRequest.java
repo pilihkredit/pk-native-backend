@@ -7,6 +7,9 @@ import java.util.Map;
 
 /**
  * Device payload submitted with each onboarding write API.
+ * Field set is identical to the lender OpenAPI {@code device} object
+ * (https://ek8l1y505u.feishu.cn/wiki/ExC1wwGVWiQ8CqkrRdEcc2ZinKb).
+ * {@code deviceOtherInfo} accepts any sub-fields defined in lender {@code deviceOtherInfo}.
  */
 public record ProfileDeviceRequest(
         @NotBlank @Size(max = 64) String appName,
@@ -17,7 +20,20 @@ public record ProfileDeviceRequest(
         @Pattern(regexp = "ios|android", flags = Pattern.Flag.CASE_INSENSITIVE)
         @Size(max = 16)
         String systemPlatform,
+        @Size(max = 64) String phoneBrand,
+        @Size(max = 64) String phoneBrandModel,
+        @Size(max = 64) String mac,
+        @Size(max = 32) String systemVersion,
+        @Size(max = 64) String deliveryPlatform,
+        Integer cpuCores,
+        Long memoryTotal,
+        Long sdCardTotal,
         @Size(max = 128) String adId,
+        @Size(max = 64) String adChannel,
+        @Size(max = 64) String idfv,
+        @Size(max = 64) String idfa,
+        @Size(max = 1024) String extParam,
+        @NotBlank @Size(max = 64) String ip,
         Map<String, Object> deviceOtherInfo
 ) {
 }

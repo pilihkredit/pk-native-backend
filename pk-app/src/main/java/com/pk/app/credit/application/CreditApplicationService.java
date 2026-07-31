@@ -13,22 +13,27 @@ import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.credit.CreditRiskAppInfo;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.credit.CreditApplyFacade;
+import com.pk.infra.profile.UserDeviceWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CreditApplicationService {
     private final CreditApplyFacade creditApplyFacade;
     private final PendanaanProperties pendanaanProperties;
+    private final UserDeviceWriter userDeviceWriter;
 
-    public CreditApplicationService(CreditApplyFacade creditApplyFacade, PendanaanProperties pendanaanProperties) {
+    public CreditApplicationService(
+            CreditApplyFacade creditApplyFacade,
+            PendanaanProperties pendanaanProperties,
+            UserDeviceWriter userDeviceWriter
+    ) {
         this.creditApplyFacade = creditApplyFacade;
         this.pendanaanProperties = pendanaanProperties;
+        this.userDeviceWriter = userDeviceWriter;
     }
 
-    @Transactional
     public CreditApplyResponse apply(
             AuthenticatedPrincipal principal,
             CreditApplyRequest request,
@@ -37,14 +42,21 @@ public class CreditApplicationService {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        LenderDeviceContext device = ProfileDeviceSupport.resolveLenderDevice(
+        LenderDeviceContext device = ProfileDeviceSupport.resolveRiskLenderDevice(
                 request.riskDataInfo().openUserDevice(),
                 ClientRequestHeaders.require(httpRequest),
                 pendanaanProperties
         );
-        CreditApplyFacade.ApplyResult result = creditApplyFacade.apply(
-                principal.profileId(),
+        userDeviceWriter.upsertFromRequest(
+                principal.userId(),
                 principal.partnerUserId(),
+                request.requestId(),
+                device
+        );
+        CreditApplyFacade.ApplyResult result = creditApplyFacade.apply(
+                principal.userId(),
+                principal.partnerUserId(),
+                principal.mobileNo(),
                 new CreditApplyFacade.ApplyCommand(
                         request.requestId(),
                         request.lat(),
@@ -58,16 +70,17 @@ public class CreditApplicationService {
         return new CreditApplyResponse(result.applyId(), result.status(), result.creditApplyNo());
     }
 
-    public CreditStatusResponse getStatus(AuthenticatedPrincipal principal, String applyId) {
+    public CreditStatusResponse getStatus(AuthenticatedPrincipal principal) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        CreditApplyFacade.StatusResult result = creditApplyFacade.getStatus(principal.profileId(), applyId);
+        CreditApplyFacade.StatusResult result = creditApplyFacade.getStatus(principal.userId());
         return new CreditStatusResponse(
                 result.applyId(),
                 result.status(),
                 result.creditApplyNo(),
                 result.creditContractExpireTime(),
+                result.freezeEndTime(),
                 result.riskMinLimit(),
                 result.riskMaxLimit(),
                 result.psychologicalCreditLimit(),

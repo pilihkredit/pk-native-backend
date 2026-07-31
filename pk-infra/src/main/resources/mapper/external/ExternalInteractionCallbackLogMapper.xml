@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.external.mapper.ExternalInteractionCallbackLogMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO external_interaction_callback (
+            provider_code,
+            interaction_no,
+            idempotency_key,
+            business_type,
+            business_id,
+            mobile_no,
+            user_id,
+            http_method,
+            endpoint,
+            request_id,
+            request_hash,
+            request_ref,
+            response_code,
+            response_msg,
+            response_ref,
+            success,
+            duration_ms
+        ) VALUES (
+            #{providerCode},
+            #{interactionNo},
+            #{idempotencyKey},
+            #{businessType},
+            #{businessId},
+            #{mobileNo},
+            #{userId},
+            #{httpMethod},
+            #{endpoint},
+            #{requestId},
+            #{requestHash},
+            #{requestRef},
+            #{responseCode},
+            #{responseMsg},
+            #{responseRef},
+            #{success, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            #{durationMs}
+        )
+    </insert>
+
+    <select id="findIdByIdempotencyKey" resultType="java.lang.Long">
+        SELECT id
+        FROM external_interaction_callback
+        WHERE idempotency_key = #{idempotencyKey}
+    </select>
+
+    <update id="updateResponse">
+        UPDATE external_interaction_callback
+        SET mobile_no = COALESCE(#{mobileNo}, mobile_no),
+            user_id = COALESCE(#{userId}, user_id),
+            response_code = #{responseCode},
+            response_msg = #{responseMsg},
+            response_ref = #{responseRef},
+            success = #{success, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
+            duration_ms = #{durationMs}
+        WHERE id = #{id}
+    </update>
+</mapper>

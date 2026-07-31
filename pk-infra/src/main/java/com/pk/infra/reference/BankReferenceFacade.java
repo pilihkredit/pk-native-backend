@@ -25,12 +25,7 @@ public class BankReferenceFacade {
     }
 
     public List<BankReference> listBanks() {
-        List<BankReference> cached = refBankRepository.findAllActive();
-        if (!cached.isEmpty() && !isStale(refBankRepository.findLatestSyncedAt())) {
-            return cached;
-        }
-        syncFromLender();
-        return refBankRepository.findAllActive();
+        return syncFromLender();
     }
 
     public boolean isValidBankCode(String bankCode) {
@@ -47,13 +42,14 @@ public class BankReferenceFacade {
         return true;
     }
 
-    private void syncFromLender() {
+    private List<BankReference> syncFromLender() {
         try {
             List<BankReference> banks = lenderBankPort.listBanks();
             if (banks == null || banks.isEmpty()) {
                 throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
             }
             refBankRepository.replaceAll(banks, Instant.now());
+            return banks;
         } catch (ApiException exception) {
             throw exception;
         } catch (RuntimeException exception) {
