@@ -86,6 +86,10 @@ pk:
       mode: ${PK_PROFILE_SYNC_MODE:inline}
       max-retries: ${PK_PROFILE_SYNC_MAX_RETRIES:5}
       retry-backoff-seconds: ${PK_PROFILE_SYNC_RETRY_BACKOFF_SECONDS:60}
+      lock:
+        wait-timeout-ms: ${PK_PROFILE_SYNC_LOCK_WAIT_TIMEOUT_MS:35000}
+        lease-timeout-ms: ${PK_PROFILE_SYNC_LOCK_LEASE_TIMEOUT_MS:60000}
+        retry-interval-ms: ${PK_PROFILE_SYNC_LOCK_RETRY_INTERVAL_MS:100}
   ocr:
     dev-lender-sync-enabled: ${PK_OCR_DEV_LENDER_SYNC_ENABLED:false}
   credit:

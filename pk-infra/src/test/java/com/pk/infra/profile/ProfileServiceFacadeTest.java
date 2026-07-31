@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,6 +46,7 @@ class ProfileServiceFacadeTest {
     private UserDeviceWriter userDeviceWriter;
     private BankReferenceFacade bankReferenceFacade;
     private ProfileSyncOrchestrator profileSyncOrchestrator;
+    private RedisProfileSyncUserLock profileSyncUserLock;
     private OnboardingProgressFacade onboardingProgressFacade;
     private UserProfileBindingRepository userProfileBindingRepository;
     private ProfileQueryFacade profileQueryFacade;
@@ -62,6 +64,10 @@ class ProfileServiceFacadeTest {
         userDeviceWriter = mock(UserDeviceWriter.class);
         bankReferenceFacade = mock(BankReferenceFacade.class);
         profileSyncOrchestrator = mock(ProfileSyncOrchestrator.class);
+        profileSyncUserLock = mock(RedisProfileSyncUserLock.class);
+        when(profileSyncUserLock.execute(any(), any())).thenAnswer(
+                invocation -> ((java.util.function.Supplier<?>) invocation.getArgument(1)).get()
+        );
         onboardingProgressFacade = mock(OnboardingProgressFacade.class);
         userProfileBindingRepository = mock(UserProfileBindingRepository.class);
         profileQueryFacade = mock(ProfileQueryFacade.class);
@@ -106,7 +112,8 @@ class ProfileServiceFacadeTest {
                 profileQueryFacade,
                 lenderBankCardPort,
                 bankCardMaxConfigLoader,
-                mock(com.pk.core.callback.port.AppsFlyerCallbackRepository.class)
+                mock(com.pk.core.callback.port.AppsFlyerCallbackRepository.class),
+                profileSyncUserLock
         );
         when(onboardingProgressFacade.getProgress(anyLong(), any()))
                 .thenReturn(new OnboardingProgressFacade.OnboardingProgressResult(
@@ -499,6 +506,27 @@ class ProfileServiceFacadeTest {
         verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
         verify(profileSyncOrchestrator).scheduleAfterSave(any());
         verify(onboardingProgressFacade, never()).getProgress(anyLong(), any());
+    }
+
+    @Test
+    void loginLogLockFailureDoesNotReadOrWriteLocalState() {
+        doThrow(new ApiException(ApiCode.SERVICE_UNAVAILABLE))
+                .when(profileSyncUserLock).execute(any(), any());
+
+        assertThatThrownBy(() -> facade.saveLoginLog(
+                10L,
+                "U10001",
+                "81234567890",
+                sampleLoginLogCommand("req-lock-failure")
+        ))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.SERVICE_UNAVAILABLE);
+
+        verify(profileLoginLogRepository, never()).findByUserId(anyLong());
+        verify(profileLoginLogRepository, never()).upsert(any());
+        verify(userDeviceWriter, never()).upsertFromRequest(anyLong(), any(), any(), any());
+        verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
     }
 
     @Test

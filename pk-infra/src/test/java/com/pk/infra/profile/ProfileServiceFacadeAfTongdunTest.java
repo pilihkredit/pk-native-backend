@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +38,7 @@ class ProfileServiceFacadeAfTongdunTest {
     private ProfileAfRepository profileAfRepository;
     private ProfileTongdunRepository profileTongdunRepository;
     private ProfileSyncOrchestrator profileSyncOrchestrator;
+    private RedisProfileSyncUserLock profileSyncUserLock;
     private AppsFlyerCallbackRepository appsFlyerCallbackRepository;
     private UserDeviceWriter userDeviceWriter;
     private ProfileServiceFacade facade;
@@ -46,6 +48,10 @@ class ProfileServiceFacadeAfTongdunTest {
         profileAfRepository = mock(ProfileAfRepository.class);
         profileTongdunRepository = mock(ProfileTongdunRepository.class);
         profileSyncOrchestrator = mock(ProfileSyncOrchestrator.class);
+        profileSyncUserLock = mock(RedisProfileSyncUserLock.class);
+        when(profileSyncUserLock.execute(any(), any())).thenAnswer(
+                invocation -> ((java.util.function.Supplier<?>) invocation.getArgument(1)).get()
+        );
         appsFlyerCallbackRepository = mock(AppsFlyerCallbackRepository.class);
         userDeviceWriter = mock(UserDeviceWriter.class);
         OnboardingProgressFacade onboardingProgressFacade = mock(OnboardingProgressFacade.class);
@@ -99,7 +105,8 @@ class ProfileServiceFacadeAfTongdunTest {
                 mock(ProfileQueryFacade.class),
                 mock(com.pk.core.profile.port.LenderBankCardPort.class),
                 mock(BankCardMaxConfigLoader.class),
-                appsFlyerCallbackRepository
+                appsFlyerCallbackRepository,
+                profileSyncUserLock
         );
     }
 
@@ -189,6 +196,32 @@ class ProfileServiceFacadeAfTongdunTest {
         ArgumentCaptor<ProfileSyncJob> captor = ArgumentCaptor.forClass(ProfileSyncJob.class);
         verify(profileSyncOrchestrator).scheduleAfterSave(captor.capture());
         assertThat(captor.getValue().module()).isEqualTo(ProfileSyncModule.TONGDUN_DEVICE);
+    }
+
+    @Test
+    void tongdunLockFailureDoesNotReadOrWriteLocalState() {
+        doThrow(new ApiException(ApiCode.SERVICE_UNAVAILABLE))
+                .when(profileSyncUserLock).execute(any(), any());
+
+        assertThatThrownBy(() -> facade.saveTongdunDevice(
+                1L,
+                "U1",
+                "81234567890",
+                new ProfileServiceFacade.TongdunSaveCommand(
+                        "req-lock-failure",
+                        "LOGIN",
+                        "KEY1",
+                        sampleDevice()
+                )
+        ))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.SERVICE_UNAVAILABLE);
+
+        verify(profileTongdunRepository, never()).findByRequestId(any());
+        verify(profileTongdunRepository, never()).insert(any());
+        verify(userDeviceWriter, never()).upsertFromRequest(anyLong(), any(), any(), any());
+        verify(profileSyncOrchestrator, never()).scheduleAfterSave(any());
     }
 
     private static ProfileServiceFacade.AppsFlyerSaveCommand afCommand(String requestId, String appsflyerId) {
