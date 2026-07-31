@@ -56,6 +56,7 @@ public class ProfileServiceFacade {
     private final LenderBankCardPort lenderBankCardPort;
     private final BankCardMaxConfigLoader bankCardMaxConfigLoader;
     private final AppsFlyerCallbackRepository appsFlyerCallbackRepository;
+    private final RedisProfileSyncUserLock profileSyncUserLock;
 
     public ProfileServiceFacade(
             ProfilePersonalRepository profilePersonalRepository,
@@ -74,7 +75,8 @@ public class ProfileServiceFacade {
             ProfileQueryFacade profileQueryFacade,
             LenderBankCardPort lenderBankCardPort,
             BankCardMaxConfigLoader bankCardMaxConfigLoader,
-            AppsFlyerCallbackRepository appsFlyerCallbackRepository
+            AppsFlyerCallbackRepository appsFlyerCallbackRepository,
+            RedisProfileSyncUserLock profileSyncUserLock
     ) {
         this.profilePersonalRepository = profilePersonalRepository;
         this.profileContactRepository = profileContactRepository;
@@ -93,6 +95,7 @@ public class ProfileServiceFacade {
         this.lenderBankCardPort = lenderBankCardPort;
         this.bankCardMaxConfigLoader = bankCardMaxConfigLoader;
         this.appsFlyerCallbackRepository = appsFlyerCallbackRepository;
+        this.profileSyncUserLock = profileSyncUserLock;
     }
 
     public PersonalSaveResult savePersonal(
@@ -326,6 +329,18 @@ public class ProfileServiceFacade {
             String mobileNo,
             LoginLogSaveCommand command
     ) {
+        return profileSyncUserLock.execute(
+                partnerUserId,
+                () -> saveLoginLogLocked(userId, partnerUserId, mobileNo, command)
+        );
+    }
+
+    private LoginLogSaveResult saveLoginLogLocked(
+            long userId,
+            String partnerUserId,
+            String mobileNo,
+            LoginLogSaveCommand command
+    ) {
         String normalizedMobileNo = normalizeMobile(mobileNo);
         validateLoginLog(command);
 
@@ -466,6 +481,18 @@ public class ProfileServiceFacade {
     }
 
     public TongdunSaveResult saveTongdunDevice(
+            long userId,
+            String partnerUserId,
+            String mobileNo,
+            TongdunSaveCommand command
+    ) {
+        return profileSyncUserLock.execute(
+                partnerUserId,
+                () -> saveTongdunDeviceLocked(userId, partnerUserId, mobileNo, command)
+        );
+    }
+
+    private TongdunSaveResult saveTongdunDeviceLocked(
             long userId,
             String partnerUserId,
             String mobileNo,

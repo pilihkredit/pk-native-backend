@@ -12,7 +12,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties({ProfileProperties.class, ProfileSyncProperties.class})
+@EnableConfigurationProperties({
+        ProfileProperties.class,
+        ProfileSyncProperties.class,
+        ProfileSyncLockProperties.class
+})
 @org.springframework.context.annotation.Import({
         com.pk.infra.ocr.OcrInfraConfiguration.class,
         com.pk.infra.biometric.BiometricStorageConfiguration.class
@@ -114,6 +118,14 @@ public class ProfileInfraConfiguration {
     @Bean
     ProfileSyncOrchestrator profileSyncOrchestrator(ProfileSyncHandler profileSyncHandler) {
         return new ProfileSyncOrchestrator(profileSyncHandler);
+    }
+
+    @Bean
+    RedisProfileSyncUserLock redisProfileSyncUserLock(
+            org.springframework.data.redis.core.StringRedisTemplate redisTemplate,
+            ProfileSyncLockProperties properties
+    ) {
+        return new RedisProfileSyncUserLock(redisTemplate, properties);
     }
 
     @Bean
@@ -244,7 +256,8 @@ public class ProfileInfraConfiguration {
             ProfileQueryFacade profileQueryFacade,
             com.pk.core.profile.port.LenderBankCardPort lenderBankCardPort,
             BankCardMaxConfigLoader bankCardMaxConfigLoader,
-            com.pk.core.callback.port.AppsFlyerCallbackRepository appsFlyerCallbackRepository
+            com.pk.core.callback.port.AppsFlyerCallbackRepository appsFlyerCallbackRepository,
+            RedisProfileSyncUserLock profileSyncUserLock
     ) {
         return new ProfileServiceFacade(
                 profilePersonalRepository,
@@ -263,7 +276,8 @@ public class ProfileInfraConfiguration {
                 profileQueryFacade,
                 lenderBankCardPort,
                 bankCardMaxConfigLoader,
-                appsFlyerCallbackRepository
+                appsFlyerCallbackRepository,
+                profileSyncUserLock
         );
     }
 }
