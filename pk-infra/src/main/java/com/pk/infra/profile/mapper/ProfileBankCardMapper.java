@@ -25,6 +25,8 @@ public interface ProfileBankCardMapper {
 
     int clearDefaultByUserId(@Param("userId") long userId);
 
+    int setDefaultByUserIdAndCardId(@Param("userId") long userId, @Param("cardId") long cardId);
+
     int softDeleteById(@Param("id") long id, @Param("lastRequestId") String lastRequestId);
 
     int updateLastLenderInteraction(@Param("lastRequestId") String lastRequestId, @Param("externalInteractionId") Long externalInteractionId);

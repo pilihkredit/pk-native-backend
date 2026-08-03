@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -493,6 +494,59 @@ class ProfileServiceFacadeTest {
         assertThat(result.deleted()).isTrue();
         verify(lenderBankCardPort, never()).deleteBankCard(any());
         verify(profileBankCardRepository, never()).softDeleteById(anyLong(), any());
+    }
+
+    @Test
+    void setsDefaultBankCardAtLenderBeforeUpdatingLocalCards() {
+        ObjectNode root = new ObjectMapper().createObjectNode();
+        ObjectNode item = root.putArray("bankCardList").addObject();
+        item.put("bankCardId", 10001L);
+        item.put("cardNumber", "1234567890");
+        when(profileQueryFacade.query(any(), any())).thenReturn(root);
+        when(profileBankCardRepository.findActiveByUserIdAndCardNoHash(anyLong(), any())).thenReturn(Optional.of(
+                new com.pk.core.profile.ProfileBankCardData(
+                        8L, 10L, "BCA", new EncryptedField("cipher", new byte[12], new byte[16]),
+                        "hash", "PASSED", null, false, false, "COMPLETED", "req-old", null
+                )
+        ));
+
+        var result = facade.setDefaultBankCard(
+                10L,
+                "U10001",
+                new ProfileServiceFacade.BankCardDefaultCommand("req-default-1", 10001L)
+        );
+
+        assertThat(result).isEqualTo(new ProfileServiceFacade.BankCardDefaultResult("req-default-1", 10001L, true));
+        var ordered = inOrder(lenderBankCardPort, profileBankCardRepository);
+        ordered.verify(lenderBankCardPort).setDefaultBankCard(
+                new LenderBankCardPort.SetDefaultBankCardCommand("U10001", 10001L)
+        );
+        ordered.verify(profileBankCardRepository).setDefaultByUserIdAndCardId(10L, 8L);
+    }
+
+    @Test
+    void leavesLocalDefaultUnchangedWhenLenderRejectsSwitch() {
+        ObjectNode root = new ObjectMapper().createObjectNode();
+        ObjectNode item = root.putArray("bankCardList").addObject();
+        item.put("bankCardId", 10001L);
+        item.put("cardNumber", "1234567890");
+        when(profileQueryFacade.query(any(), any())).thenReturn(root);
+        when(profileBankCardRepository.findActiveByUserIdAndCardNoHash(anyLong(), any())).thenReturn(Optional.of(
+                new com.pk.core.profile.ProfileBankCardData(
+                        8L, 10L, "BCA", new EncryptedField("cipher", new byte[12], new byte[16]),
+                        "hash", "PASSED", null, false, false, "COMPLETED", "req-old", null
+                )
+        ));
+        doThrow(new ApiException(ApiCode.SERVICE_UNAVAILABLE))
+                .when(lenderBankCardPort).setDefaultBankCard(any());
+
+        assertThatThrownBy(() -> facade.setDefaultBankCard(
+                10L,
+                "U10001",
+                new ProfileServiceFacade.BankCardDefaultCommand("req-default-2", 10001L)
+        )).isInstanceOf(ApiException.class);
+
+        verify(profileBankCardRepository, never()).setDefaultByUserIdAndCardId(anyLong(), anyLong());
     }
 
     @Test

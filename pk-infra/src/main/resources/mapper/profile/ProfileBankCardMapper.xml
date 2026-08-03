@@ -93,6 +93,12 @@
           AND deleted_flag = 0
           AND default_flag = 1
     </update>
+    <update id="setDefaultByUserIdAndCardId">
+        UPDATE user_profile_bank_card
+        SET default_flag = CASE WHEN id = #{cardId} THEN 1 ELSE 0 END
+        WHERE user_id = #{userId}
+          AND deleted_flag = 0
+    </update>
     <update id="softDeleteById">
         UPDATE user_profile_bank_card
         SET deleted_flag = 1,

@@ -66,6 +66,7 @@ final class PendanaanLenderCodeMapper {
             case "A000010" -> ApiCode.UPSTREAM_APPLICATION_NOT_FOUND;
             case "A000124" -> ApiCode.CREDIT_LIMIT_NOT_AVAILABLE;
             case "A000145" -> ApiCode.LENDER_LOAN_AMOUNT_REJECTED;
+            case "A000181" -> ApiCode.BANK_CARD_SWITCH_NOT_ALLOWED;
             case "A000063" -> ApiCode.LENDER_INDUSTRY_REQUIRED;
             case "A000069" -> ApiCode.LENDER_INCOME_REQUIRED;
             case "A000078" -> ApiCode.LENDER_INVALID_INCOME_FORMAT;

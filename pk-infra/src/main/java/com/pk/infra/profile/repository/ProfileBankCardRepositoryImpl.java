@@ -57,6 +57,11 @@ public class ProfileBankCardRepositoryImpl implements ProfileBankCardRepository 
     }
 
     @Override
+    public void setDefaultByUserIdAndCardId(long userId, long cardId) {
+        profileBankCardMapper.setDefaultByUserIdAndCardId(userId, cardId);
+    }
+
+    @Override
     public void softDeleteById(long id, String lastRequestId) {
         profileBankCardMapper.softDeleteById(id, lastRequestId);
     }

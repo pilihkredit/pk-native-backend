@@ -7,7 +7,9 @@ import com.pk.core.profile.port.LenderBankCardPort;
 
 public class PendanaanBankCardAdapter implements LenderBankCardPort {
     static final String DELETE_PATH = PendanaanOpenApiPaths.USER_BANK_CARD_DELETE;
-    static final String BUSINESS_TYPE = "USER_BANK_CARD_DELETE";
+    static final String DEFAULT_PATH = PendanaanOpenApiPaths.USER_BANK_CARD_DEFAULT;
+    static final String DELETE_BUSINESS_TYPE = "USER_BANK_CARD_DELETE";
+    static final String DEFAULT_BUSINESS_TYPE = "USER_BANK_CARD_DEFAULT";
 
     private final PendanaanHttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -26,7 +28,26 @@ public class PendanaanBankCardAdapter implements LenderBankCardPort {
             httpClient.post(
                     DELETE_PATH,
                     objectMapper.writeValueAsString(root),
-                    BUSINESS_TYPE,
+                    DELETE_BUSINESS_TYPE,
+                    command.partnerUserId()
+            );
+        } catch (ApiException apiException) {
+            throw apiException;
+        } catch (Exception exception) {
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, exception);
+        }
+    }
+
+    @Override
+    public void setDefaultBankCard(SetDefaultBankCardCommand command) {
+        try {
+            var root = objectMapper.createObjectNode();
+            root.put("partnerUserId", command.partnerUserId());
+            root.put("bankCardId", command.bankCardId());
+            httpClient.post(
+                    DEFAULT_PATH,
+                    objectMapper.writeValueAsString(root),
+                    DEFAULT_BUSINESS_TYPE,
                     command.partnerUserId()
             );
         } catch (ApiException apiException) {

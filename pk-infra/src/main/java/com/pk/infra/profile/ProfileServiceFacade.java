@@ -323,6 +323,48 @@ public class ProfileServiceFacade {
         throw new ApiException(ApiCode.BANK_CARD_NOT_FOUND);
     }
 
+    public BankCardDefaultResult setDefaultBankCard(
+            long userId,
+            String partnerUserId,
+            BankCardDefaultCommand command
+    ) {
+        if (command == null
+                || command.requestId() == null
+                || command.requestId().isBlank()
+                || command.requestId().trim().length() > 64
+                || command.bankCardId() <= 0) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+
+        JsonNode lenderCard = findLenderBankCard(partnerUserId, command.bankCardId());
+        String normalizedCardNumber = CardNumberSupport.normalize(lenderCard.path("cardNumber").asText(null));
+        if (normalizedCardNumber.isBlank()) {
+            throw new ApiException(ApiCode.BANK_CARD_NOT_FOUND);
+        }
+        ProfileBankCardData localCard = profileBankCardRepository.findActiveByUserIdAndCardNoHash(
+                userId,
+                CardNumberSupport.sha256Hex(normalizedCardNumber)
+        ).orElseThrow(() -> new ApiException(ApiCode.BANK_CARD_NOT_FOUND));
+
+        lenderBankCardPort.setDefaultBankCard(
+                new LenderBankCardPort.SetDefaultBankCardCommand(partnerUserId, command.bankCardId())
+        );
+        profileBankCardRepository.setDefaultByUserIdAndCardId(userId, localCard.id());
+        return new BankCardDefaultResult(command.requestId().trim(), command.bankCardId(), true);
+    }
+
+    private JsonNode findLenderBankCard(String partnerUserId, long bankCardId) {
+        JsonNode list = profileQueryFacade.query(partnerUserId, List.of("bankCard")).path("bankCardList");
+        if (list.isArray()) {
+            for (JsonNode item : list) {
+                if (item.path("bankCardId").asLong(-1L) == bankCardId) {
+                    return item;
+                }
+            }
+        }
+        throw new ApiException(ApiCode.BANK_CARD_NOT_FOUND);
+    }
+
     public LoginLogSaveResult saveLoginLog(
             long userId,
             String partnerUserId,
@@ -760,6 +802,12 @@ public class ProfileServiceFacade {
     }
 
     public record BankCardDeleteResult(String requestId, boolean deleted) {
+    }
+
+    public record BankCardDefaultCommand(String requestId, long bankCardId) {
+    }
+
+    public record BankCardDefaultResult(String requestId, long bankCardId, boolean defaultFlag) {
     }
 
     public record LoginLogSaveCommand(

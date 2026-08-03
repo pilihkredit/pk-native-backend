@@ -65,6 +65,11 @@ public enum ApiCode {
     BANK_CARD_ALREADY_BOUND("L000339", "Bank card already bound", ApiCodeLayer.UPSTREAM_BUSINESS),
     BANK_CARD_NOT_FOUND("K000340", "Bank card not found", ApiCodeLayer.PLATFORM_VALIDATION),
     BANK_CARD_DEFAULT_CANNOT_DELETE("K000341", "Default bank card cannot be deleted", ApiCodeLayer.PLATFORM_VALIDATION),
+    BANK_CARD_SWITCH_NOT_ALLOWED(
+            "L000181",
+            "Default bank card cannot be changed while a loan application is unfinished",
+            ApiCodeLayer.UPSTREAM_BUSINESS
+    ),
     BANK_CARD_MAX_LIMIT_REACHED(
             "K000342",
             "Jumlah kartu bank yang dapat ditambahkan sudah maksimal",

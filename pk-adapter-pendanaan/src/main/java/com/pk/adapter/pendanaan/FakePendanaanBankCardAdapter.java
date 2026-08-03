@@ -7,4 +7,9 @@ public class FakePendanaanBankCardAdapter implements LenderBankCardPort {
     public void deleteBankCard(DeleteBankCardCommand command) {
         // no-op for local/dev
     }
+
+    @Override
+    public void setDefaultBankCard(SetDefaultBankCardCommand command) {
+        // no-op for local/dev
+    }
 }

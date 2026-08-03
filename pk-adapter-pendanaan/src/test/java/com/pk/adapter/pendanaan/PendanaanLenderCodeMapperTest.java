@@ -9,6 +9,17 @@ import org.junit.jupiter.api.Test;
 
 class PendanaanLenderCodeMapperTest {
     @Test
+    void mapsUnfinishedLoanBankCardSwitchFailure() {
+        ApiException exception = PendanaanLenderCodeMapper.toApiException(
+                "A000181",
+                "Unfinished loan application",
+                null
+        );
+
+        assertThat(exception.apiCode()).isEqualTo(ApiCode.BANK_CARD_SWITCH_NOT_ALLOWED);
+    }
+
+    @Test
     void mapsGenericLenderParameterErrorToL000001() {
         ApiException exception = PendanaanLenderCodeMapper.toApiException(
                 "A000001",

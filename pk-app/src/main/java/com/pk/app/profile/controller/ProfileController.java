@@ -9,6 +9,7 @@ import com.pk.app.profile.application.ProfileApplicationService;
 import com.pk.app.profile.dto.request.ProfileAppsFlyerInstallSaveRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardListAccessRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardDeleteRequest;
+import com.pk.app.profile.dto.request.ProfileBankCardDefaultRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileInfoQueryRequest;
@@ -19,6 +20,7 @@ import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
 import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardListAccessResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardDeleteResponse;
+import com.pk.app.profile.dto.response.ProfileBankCardDefaultResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileEnumsResponse;
@@ -152,6 +154,22 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileApplicationService.deleteBankCard(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Set the user's default bank card. */
+    @PostMapping("/bank-card/default")
+    public ApiResponse<ProfileBankCardDefaultResponse> setDefaultBankCard(
+            @Valid @RequestBody ProfileBankCardDefaultRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.setDefaultBankCard(principal, request),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

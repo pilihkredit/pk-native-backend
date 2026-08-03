@@ -6,6 +6,7 @@ import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.profile.dto.request.ProfileAppsFlyerInstallSaveRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardListAccessRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardDeleteRequest;
+import com.pk.app.profile.dto.request.ProfileBankCardDefaultRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
@@ -15,6 +16,7 @@ import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
 import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardListAccessResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardDeleteResponse;
+import com.pk.app.profile.dto.response.ProfileBankCardDefaultResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
@@ -167,6 +169,25 @@ public class ProfileApplicationService {
                 )
         );
         return new ProfileBankCardDeleteResponse(result.requestId(), result.deleted());
+    }
+
+    public ProfileBankCardDefaultResponse setDefaultBankCard(
+            AuthenticatedPrincipal principal,
+            ProfileBankCardDefaultRequest request
+    ) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        ProfileServiceFacade.BankCardDefaultResult result = profileServiceFacade.setDefaultBankCard(
+                principal.userId(),
+                principal.partnerUserId(),
+                new ProfileServiceFacade.BankCardDefaultCommand(request.requestId(), request.bankCardId())
+        );
+        return new ProfileBankCardDefaultResponse(
+                result.requestId(),
+                result.bankCardId(),
+                result.defaultFlag()
+        );
     }
 
     public ProfileBankCardListAccessResponse checkBankCardListAccess(

@@ -20,6 +20,8 @@ public interface ProfileBankCardRepository {
 
     void clearDefaultByUserId(long userId);
 
+    void setDefaultByUserIdAndCardId(long userId, long cardId);
+
     void softDeleteById(long id, String lastRequestId);
 
     void updateLastLenderInteraction(String lastRequestId, Long externalInteractionId);
