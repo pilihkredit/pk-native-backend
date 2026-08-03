@@ -124,6 +124,38 @@ class LoanTrialFacadeTest {
         assertThat(commandCaptor.getValue().couponId()).isEqualTo(88L);
     }
 
+    @Test
+    void trialContinuesToLenderWhenCreditLimitSnapshotIsMissing() {
+        when(creditApplicationRepository.findByApplyIdAndUserId("APPLY-1", 1L))
+                .thenReturn(Optional.of(approvedRecord()));
+        when(creditLenderStatusQueryRepository.findLatestByApplyIdAndUserId("APPLY-1", 1L))
+                .thenReturn(Optional.empty());
+        ProductListResolver.ResolvedProductList resolved = new ProductListResolver.ResolvedProductList(
+                501L,
+                "APPROVED",
+                "READY",
+                List.of(),
+                Instant.now()
+        );
+        when(loanProductFacade.resolveProductList(1L, "APPLY-1", true)).thenReturn(resolved);
+        when(lenderLoanTrialPort.trial(any())).thenReturn(lenderTrialResult());
+
+        LoanTrialFacade.TrialResult result = facade.trial(
+                1L,
+                new LoanTrialFacade.TrialCommand(
+                        "REQ-1",
+                        "APPLY-1",
+                        new BigDecimal("1500000"),
+                        "PD001",
+                        "RP001",
+                        null
+                )
+        );
+
+        assertThat(result.quote()).isNotNull();
+        verify(lenderLoanTrialPort).trial(any());
+    }
+
     private static CreditApplicationRepository.CreditApplicationRecord approvedRecord() {
         return new CreditApplicationRepository.CreditApplicationRecord(
                 100L,
