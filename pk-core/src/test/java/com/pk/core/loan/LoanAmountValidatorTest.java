@@ -47,4 +47,36 @@ class LoanAmountValidatorTest {
         );
         assertEquals(ApiCode.INVALID_LOAN_AMOUNT, exception.apiCode());
     }
+
+    @Test
+    void skipsCreditLimitValidationWhenAnyLimitIsMissing() {
+        assertDoesNotThrow(() -> LoanAmountValidator.validateAgainstCreditLimits(
+                new BigDecimal("1000000"),
+                null,
+                new BigDecimal("2800000"),
+                new BigDecimal("100000")
+        ));
+        assertDoesNotThrow(() -> LoanAmountValidator.validateAgainstCreditLimits(
+                new BigDecimal("1000000"),
+                new BigDecimal("500000"),
+                null,
+                new BigDecimal("100000")
+        ));
+        assertDoesNotThrow(() -> LoanAmountValidator.validateAgainstCreditLimits(
+                new BigDecimal("1000000"),
+                new BigDecimal("500000"),
+                new BigDecimal("2800000"),
+                null
+        ));
+    }
+
+    @Test
+    void skipsCreditLimitValidationWhenStepSizeIsNotPositive() {
+        assertDoesNotThrow(() -> LoanAmountValidator.validateAgainstCreditLimits(
+                new BigDecimal("1000000"),
+                new BigDecimal("500000"),
+                new BigDecimal("2800000"),
+                BigDecimal.ZERO
+        ));
+    }
 }

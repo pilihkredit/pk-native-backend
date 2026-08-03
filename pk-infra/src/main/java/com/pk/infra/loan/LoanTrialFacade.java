@@ -44,17 +44,14 @@ public class LoanTrialFacade {
                 .findByApplyIdAndUserId(command.applyId(), userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND));
 
-        CreditLenderStatusQueryRepository.CreditLenderStatusQueryData limits = creditLenderStatusQueryRepository
-                .findLatestByApplyIdAndUserId(command.applyId(), userId)
-                .orElseThrow(() -> new ApiException(ApiCode.CREDIT_LIMIT_NOT_AVAILABLE));
-
         BigDecimal applyAmt = LoanAmountValidator.normalize(command.applyAmt());
-        LoanAmountValidator.validateAgainstCreditLimits(
-                applyAmt,
-                limits.riskMinLimit(),
-                limits.fakeCreditLimit(),
-                limits.borrowAmtStepSize()
-        );
+        creditLenderStatusQueryRepository.findLatestByApplyIdAndUserId(command.applyId(), userId)
+                .ifPresent(limits -> LoanAmountValidator.validateAgainstCreditLimits(
+                        applyAmt,
+                        limits.riskMinLimit(),
+                        limits.fakeCreditLimit(),
+                        limits.borrowAmtStepSize()
+                ));
 
         ProductListResolver.ResolvedProductList productList = loanProductFacade.resolveProductList(
                 userId,
