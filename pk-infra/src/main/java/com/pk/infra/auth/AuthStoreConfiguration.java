@@ -1,6 +1,7 @@
 package com.pk.infra.auth;
 
 import com.pk.core.auth.port.OtpChallengeStore;
+import com.pk.core.auth.port.MobileChangeOtpChallengeStore;
 import com.pk.core.auth.port.RefreshTokenStore;
 import com.pk.core.auth.port.SessionStore;
 import com.pk.core.auth.port.TokenIssuer;
@@ -33,6 +34,11 @@ public class AuthStoreConfiguration {
     @Bean
     OtpChallengeStore whatsappOtpChallengeStore(StringRedisTemplate redisTemplate) {
         return new RedisOtpChallengeStore(redisTemplate, "whatsapp");
+    }
+
+    @Bean
+    MobileChangeOtpChallengeStore mobileChangeOtpChallengeStore(StringRedisTemplate redisTemplate) {
+        return new RedisMobileChangeOtpChallengeStore(redisTemplate);
     }
 
     @Bean

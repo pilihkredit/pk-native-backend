@@ -59,7 +59,7 @@ public class SmsConfigLoader {
      * (everyone may use {@code defaultCode}). When SMS is enabled, only {@code userList}
      * mobiles may use {@code defaultCode}.
      */
-    static boolean acceptsConfiguredDefaultCode(SmsConf conf, String mobileNo, String otpCode) {
+    public static boolean acceptsConfiguredDefaultCode(SmsConf conf, String mobileNo, String otpCode) {
         if (conf == null || otpCode == null || otpCode.isBlank()) {
             return false;
         }

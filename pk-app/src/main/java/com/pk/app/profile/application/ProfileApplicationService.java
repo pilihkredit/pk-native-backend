@@ -10,7 +10,9 @@ import com.pk.app.profile.dto.request.ProfileBankCardDefaultRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
-import com.pk.app.profile.dto.request.ProfileMobileChangeRequest;
+import com.pk.app.profile.dto.request.MobileChangeFaceVerifyRequest;
+import com.pk.app.profile.dto.request.MobileChangeOtpSendRequest;
+import com.pk.app.profile.dto.request.MobileChangeOtpVerifyRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
 import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
@@ -20,7 +22,9 @@ import com.pk.app.profile.dto.response.ProfileBankCardDefaultResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
-import com.pk.app.profile.dto.response.ProfileMobileChangeResponse;
+import com.pk.app.profile.dto.response.MobileChangeFaceVerifyResponse;
+import com.pk.app.profile.dto.response.MobileChangeOtpSendResponse;
+import com.pk.app.profile.dto.response.MobileChangeOtpVerifyResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
 import com.pk.app.profile.dto.response.ProfileTongdunDeviceSaveResponse;
 import com.pk.adapter.pendanaan.PendanaanProperties;
@@ -30,6 +34,8 @@ import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.profile.sync.LenderDeviceContext;
 import com.pk.infra.profile.BankCardListAccessFacade;
 import com.pk.infra.profile.MobileChangeFacade;
+import com.pk.infra.profile.MobileChangeFaceFacade;
+import com.pk.infra.profile.MobileChangeOtpFacade;
 import com.pk.infra.profile.ProfileServiceFacade;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
@@ -39,6 +45,8 @@ public class ProfileApplicationService {
     private final ProfileServiceFacade profileServiceFacade;
     private final BankCardListAccessFacade bankCardListAccessFacade;
     private final MobileChangeFacade mobileChangeFacade;
+    private final MobileChangeFaceFacade mobileChangeFaceFacade;
+    private final MobileChangeOtpFacade mobileChangeOtpFacade;
     private final PendanaanProperties pendanaanProperties;
     private final ObjectMapper objectMapper;
 
@@ -46,26 +54,82 @@ public class ProfileApplicationService {
             ProfileServiceFacade profileServiceFacade,
             BankCardListAccessFacade bankCardListAccessFacade,
             MobileChangeFacade mobileChangeFacade,
+            MobileChangeFaceFacade mobileChangeFaceFacade,
+            MobileChangeOtpFacade mobileChangeOtpFacade,
             PendanaanProperties pendanaanProperties,
             ObjectMapper objectMapper
     ) {
         this.profileServiceFacade = profileServiceFacade;
         this.bankCardListAccessFacade = bankCardListAccessFacade;
         this.mobileChangeFacade = mobileChangeFacade;
+        this.mobileChangeFaceFacade = mobileChangeFaceFacade;
+        this.mobileChangeOtpFacade = mobileChangeOtpFacade;
         this.pendanaanProperties = pendanaanProperties;
         this.objectMapper = objectMapper;
     }
 
-    public ProfileMobileChangeResponse changeMobile(
+    public MobileChangeFaceVerifyResponse verifyMobileChangeFace(
             AuthenticatedPrincipal principal,
-            ProfileMobileChangeRequest request
+            MobileChangeFaceVerifyRequest request,
+            String deviceNoHeader,
+            String traceId
     ) {
-        if (principal == null) {
+        requirePrincipal(principal);
+        validateDeviceNo(request.deviceNo(), deviceNoHeader);
+        var result = mobileChangeFaceFacade.verify(
+                principal.userId(),
+                principal.partnerUserId(),
+                principal.mobileNo(),
+                new MobileChangeFaceFacade.FaceVerifyCommand(
+                        request.requestId(), request.livenessId(), request.deviceNo(), traceId));
+        return new MobileChangeFaceVerifyResponse(
+                result.requestId(), result.verified(), result.faceVerifyToken(), result.expiresIn());
+    }
+
+    public MobileChangeOtpSendResponse sendMobileChangeOtp(
+            AuthenticatedPrincipal principal,
+            MobileChangeOtpSendRequest request,
+            String deviceNoHeader
+    ) {
+        requirePrincipal(principal);
+        validateDeviceNo(request.deviceNo(), deviceNoHeader);
+        var result = mobileChangeOtpFacade.send(principal.userId(), new MobileChangeOtpFacade.OtpSendCommand(
+                request.requestId(), request.newMobileNo(), request.faceVerifyToken(), request.deviceNo()));
+        return new MobileChangeOtpSendResponse(
+                result.requestId(), result.otpToken(), result.expiresIn(), result.resendAfter());
+    }
+
+    public MobileChangeOtpVerifyResponse verifyMobileChangeOtp(
+            AuthenticatedPrincipal principal,
+            MobileChangeOtpVerifyRequest request,
+            String deviceNoHeader
+    ) {
+        requirePrincipal(principal);
+        validateDeviceNo(request.deviceNo(), deviceNoHeader);
+        var result = mobileChangeFacade.verifyAndChange(
+                principal.userId(),
+                new MobileChangeFacade.MobileChangeVerifyCommand(
+                        request.requestId(), request.newMobileNo(), request.faceVerifyToken(),
+                        request.otpToken(), request.otpCode(), request.deviceNo()));
+        var token = result.tokenPair();
+        return new MobileChangeOtpVerifyResponse(
+                result.requestId(), result.changed(), result.mobileNo(), token.accessToken(), token.refreshToken(),
+                token.tokenType(), token.accessTokenExpiresInSeconds());
+    }
+
+    private static void requirePrincipal(AuthenticatedPrincipal principal) {
+        if (principal == null || principal.userId() <= 0) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        MobileChangeFacade.MobileChangeResult result =
-                mobileChangeFacade.changeMobile(principal.userId(), request.newMobileNo());
-        return new ProfileMobileChangeResponse(result.changed(), result.mobileNo());
+    }
+
+    private static void validateDeviceNo(String bodyDeviceNo, String headerDeviceNo) {
+        if (headerDeviceNo == null || headerDeviceNo.isBlank()) {
+            throw new ApiException(ApiCode.DEVICE_NO_REQUIRED);
+        }
+        if (!headerDeviceNo.trim().equals(bodyDeviceNo == null ? null : bodyDeviceNo.trim())) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "deviceNo does not match X-Device-No");
+        }
     }
 
     public ProfilePersonalSaveResponse savePersonal(

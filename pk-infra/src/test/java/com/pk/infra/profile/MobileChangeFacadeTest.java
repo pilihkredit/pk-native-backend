@@ -2,10 +2,7 @@ package com.pk.infra.profile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,84 +10,139 @@ import static org.mockito.Mockito.when;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import com.pk.core.auth.MobileChangeOtpChallenge;
+import com.pk.core.auth.TokenPair;
 import com.pk.core.auth.UserProfileSummary;
-import com.pk.core.auth.port.RefreshTokenStore;
-import com.pk.core.auth.port.SessionStore;
+import com.pk.core.auth.port.MobileChangeOtpChallengeStore;
 import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.auth.port.UserMobileChangeLogRepository;
+import com.pk.core.profile.port.MobileChangeFaceVerificationRepository;
+import com.pk.infra.auth.AuthServiceFacade;
+import com.pk.infra.auth.SmsConfigLoader;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class MobileChangeFacadeTest {
     private UserAuthRepository userAuthRepository;
-    private UserMobileChangeLogRepository userMobileChangeLogRepository;
-    private SessionStore sessionStore;
-    private RefreshTokenStore refreshTokenStore;
+    private UserMobileChangeLogRepository changeLogRepository;
+    private MobileChangeFaceVerificationRepository faceRepository;
+    private MobileChangeOtpChallengeStore challengeStore;
+    private AuthServiceFacade authServiceFacade;
     private MobileChangeFacade facade;
 
     @BeforeEach
     void setUp() {
         userAuthRepository = mock(UserAuthRepository.class);
-        userMobileChangeLogRepository = mock(UserMobileChangeLogRepository.class);
-        sessionStore = mock(SessionStore.class);
-        refreshTokenStore = mock(RefreshTokenStore.class);
+        changeLogRepository = mock(UserMobileChangeLogRepository.class);
+        faceRepository = mock(MobileChangeFaceVerificationRepository.class);
+        challengeStore = mock(MobileChangeOtpChallengeStore.class);
+        authServiceFacade = mock(AuthServiceFacade.class);
+        SmsConfigLoader smsConfigLoader = mock(SmsConfigLoader.class);
+        when(smsConfigLoader.loadConf()).thenReturn(new SmsConfigLoader.SmsConf(
+                true, "url", "spid", "pwd", "0062", "code {code}", 300, 10000,
+                "123456", 6, List.of()));
         facade = new MobileChangeFacade(
                 userAuthRepository,
-                userMobileChangeLogRepository,
-                sessionStore,
-                refreshTokenStore
+                changeLogRepository,
+                faceRepository,
+                challengeStore,
+                authServiceFacade,
+                smsConfigLoader
         );
     }
 
     @Test
-    void rejectsWhenNewMobileOwnedByAnotherUser() {
-        when(userAuthRepository.findByUserId(1L)).thenReturn(Optional.of(summary(1L, "U1", "81111111111")));
-        when(userAuthRepository.findActiveByMobileNoExcludingUserId("81222222222", 1L))
-                .thenReturn(Optional.of(summary(2L, "U2", "81222222222")));
-
-        assertThatThrownBy(() -> facade.changeMobile(1L, "81222222222"))
-                .isInstanceOf(ApiException.class)
-                .extracting(ex -> ((ApiException) ex).apiCode())
-                .isEqualTo(ApiCode.MOBILE_ALREADY_REGISTERED);
-    }
-
-    @Test
-    void updatesMasterInsertsLogAndClearsTokens() {
-        when(userAuthRepository.findByUserId(1L)).thenReturn(Optional.of(summary(1L, "U1", "81111111111")));
+    void verifiesOtpChangesMobilePromotesFaceAndReturnsReplacementSession() {
+        Instant expiresAt = Instant.now().plusSeconds(300);
+        when(challengeStore.findByToken("otp-token")).thenReturn(Optional.of(
+                new MobileChangeOtpChallenge(
+                        "otp-token", 1L, "81222222222", "device-1", "face-token", "654321", expiresAt)));
+        when(faceRepository.findVerifiedByToken("face-token")).thenReturn(Optional.of(
+                new MobileChangeFaceVerificationRepository.FaceVerificationData(
+                        10L, "face-token", 1L, "U1", "req-face", "device-1", "live-1",
+                        "IDENTITY", "baseline-ref", "candidate-ref", 88D, "VERIFIED_PENDING",
+                        "otp-token", expiresAt, null)));
+        when(userAuthRepository.findByUserId(1L)).thenReturn(Optional.of(
+                new UserProfileSummary(1L, "U1", "81111111111", false)));
         when(userAuthRepository.findActiveByMobileNoExcludingUserId("81222222222", 1L))
                 .thenReturn(Optional.empty());
+        when(faceRepository.promote(org.mockito.ArgumentMatchers.eq("face-token"),
+                org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        TokenPair replacement = TokenPair.of("new-access", "new-refresh", 900);
+        when(authServiceFacade.openSessionAfterMobileChange(1L, "device-1")).thenReturn(replacement);
 
-        MobileChangeFacade.MobileChangeResult result = facade.changeMobile(1L, "81222222222");
+        MobileChangeFacade.MobileChangeResult result = facade.verifyAndChange(
+                1L,
+                new MobileChangeFacade.MobileChangeVerifyCommand(
+                        "req-1", "81222222222", "face-token", "otp-token", "654321", "device-1"));
 
         assertThat(result.changed()).isTrue();
         assertThat(result.mobileNo()).isEqualTo("81222222222");
+        assertThat(result.tokenPair()).isEqualTo(replacement);
         verify(userAuthRepository).updateMobileNo(1L, "81222222222");
-        verify(userMobileChangeLogRepository).insert(argThat(e ->
-                e.userId() == 1L
-                        && e.oldMobileNo().equals("81111111111")
-                        && e.newMobileNo().equals("81222222222")
-                        && e.status().equals("SUCCESS")
-                        && e.operatorType().equals("USER")));
-        verify(sessionStore).delete(1L);
-        verify(refreshTokenStore).deleteAllForProfile(1L);
-        verify(userAuthRepository).clearSessionTokens(1L);
-        verify(userAuthRepository).updateLastLogoutAt(eq(1L), any());
+        verify(changeLogRepository).insert(argThat(entry ->
+                entry.faceTicketId().equals("face-token") && entry.otpTicketId().equals("otp-token")));
+        verify(faceRepository).promote(org.mockito.ArgumentMatchers.eq("face-token"),
+                org.mockito.ArgumentMatchers.any());
+        verify(challengeStore).delete("otp-token");
+        verify(authServiceFacade).openSessionAfterMobileChange(1L, "device-1");
     }
 
     @Test
-    void sameMobileReturnsChangedFalseWithoutSideEffects() {
-        when(userAuthRepository.findByUserId(1L)).thenReturn(Optional.of(summary(1L, "U1", "81111111111")));
+    void rejectsOtpReuseWhenFaceWasAlreadyPromoted() {
+        Instant expiresAt = Instant.now().plusSeconds(300);
+        when(challengeStore.findByToken("otp-token")).thenReturn(Optional.of(
+                new MobileChangeOtpChallenge(
+                        "otp-token", 1L, "81222222222", "device-1", "face-token", "654321", expiresAt)));
+        when(faceRepository.findVerifiedByToken("face-token")).thenReturn(Optional.of(
+                new MobileChangeFaceVerificationRepository.FaceVerificationData(
+                        10L, "face-token", 1L, "U1", "req-face", "device-1", "live-1",
+                        "IDENTITY", "baseline-ref", "candidate-ref", 88D, "VERIFIED_PENDING",
+                        "otp-token", expiresAt, null)));
+        when(userAuthRepository.findByUserId(1L)).thenReturn(Optional.of(
+                new UserProfileSummary(1L, "U1", "81111111111", false)));
+        when(userAuthRepository.findActiveByMobileNoExcludingUserId("81222222222", 1L))
+                .thenReturn(Optional.empty());
+        when(faceRepository.promote(org.mockito.ArgumentMatchers.eq("face-token"),
+                org.mockito.ArgumentMatchers.any())).thenReturn(false);
 
-        MobileChangeFacade.MobileChangeResult result = facade.changeMobile(1L, "81111111111");
+        assertThatThrownBy(() -> facade.verifyAndChange(
+                1L,
+                new MobileChangeFacade.MobileChangeVerifyCommand(
+                        "req-1", "81222222222", "face-token", "otp-token", "654321", "device-1")))
+                .isInstanceOfSatisfying(ApiException.class, exception ->
+                        assertThat(exception.apiCode()).isEqualTo(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE));
 
-        assertThat(result.changed()).isFalse();
-        verify(userAuthRepository, never()).updateMobileNo(anyLong(), any());
-        verify(userMobileChangeLogRepository, never()).insert(any());
-        verify(userAuthRepository, never()).clearSessionTokens(anyLong());
+        verify(authServiceFacade, never()).openSessionAfterMobileChange(1L, "device-1");
+        verify(challengeStore, never()).delete("otp-token");
     }
 
-    private static UserProfileSummary summary(long userId, String partnerUserId, String mobileNo) {
-        return new UserProfileSummary(userId, partnerUserId, mobileNo, false);
+    @Test
+    void rejectsCurrentMobileNumberBeforeUpdatingAccount() {
+        Instant expiresAt = Instant.now().plusSeconds(300);
+        when(challengeStore.findByToken("otp-token")).thenReturn(Optional.of(
+                new MobileChangeOtpChallenge(
+                        "otp-token", 1L, "81111111111", "device-1", "face-token", "654321", expiresAt)));
+        when(faceRepository.findVerifiedByToken("face-token")).thenReturn(Optional.of(
+                new MobileChangeFaceVerificationRepository.FaceVerificationData(
+                        10L, "face-token", 1L, "U1", "req-face", "device-1", "live-1",
+                        "IDENTITY", "baseline-ref", "candidate-ref", 88D, "VERIFIED_PENDING",
+                        "otp-token", expiresAt, null)));
+        when(userAuthRepository.findByUserId(1L)).thenReturn(Optional.of(
+                new UserProfileSummary(1L, "U1", "81111111111", false)));
+
+        assertThatThrownBy(() -> facade.verifyAndChange(
+                1L,
+                new MobileChangeFacade.MobileChangeVerifyCommand(
+                        "req-1", "81111111111", "face-token", "otp-token", "654321", "device-1")))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Silahkan masukkan nomor baru anda");
+
+        verify(userAuthRepository, never()).updateMobileNo(
+                org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.any());
+        verify(authServiceFacade, never()).openSessionAfterMobileChange(1L, "device-1");
     }
 }

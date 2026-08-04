@@ -24,11 +24,33 @@ abstract class AbstractEncryptedBiometricImageStore implements BiometricImageSto
 
     @Override
     public String store(String mobileNo, BiometricImageKind kind, byte[] imageBytes) {
+        return storeObject(objectKey(mobileNo, kind), imageBytes);
+    }
+
+    @Override
+    public String storeVersioned(
+            String mobileNo,
+            BiometricImageKind kind,
+            String version,
+            byte[] imageBytes
+    ) {
+        if (version == null || version.isBlank()) {
+            throw new IllegalArgumentException("version must not be blank");
+        }
+        String safeVersion = version.trim().replaceAll("[^0-9A-Za-z-]", "");
+        if (safeVersion.isBlank()) {
+            throw new IllegalArgumentException("version must contain a path-safe character");
+        }
+        String objectKey = pathPrefix + "/" + environment + "/mobile/"
+                + sanitizeMobilePathSegment(mobileNo) + "/" + kind.objectName() + "/" + safeVersion + ".enc";
+        return storeObject(objectKey, imageBytes);
+    }
+
+    private String storeObject(String objectKey, byte[] imageBytes) {
         if (imageBytes == null || imageBytes.length == 0) {
             throw new IllegalArgumentException("imageBytes must not be empty");
         }
         byte[] encryptedBlob = EncryptedBiometricImageSupport.pack(sensitiveFieldEncryptor.encryptBytes(imageBytes));
-        String objectKey = objectKey(mobileNo, kind);
         writeEncryptedObject(objectKey, encryptedBlob);
         return buildRef(objectKey);
     }

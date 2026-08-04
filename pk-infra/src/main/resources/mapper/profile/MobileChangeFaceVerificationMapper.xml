@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.profile.mapper.MobileChangeFaceVerificationMapper">
+
+    <resultMap id="verificationMap"
+               type="com.pk.core.profile.port.MobileChangeFaceVerificationRepository$FaceVerificationData">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="face_verify_token" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="partner_user_id" javaType="string"/>
+            <arg column="request_id" javaType="string"/>
+            <arg column="device_no" javaType="string"/>
+            <arg column="liveness_id" javaType="string"/>
+            <arg column="baseline_type" javaType="string"/>
+            <arg column="baseline_face_encrypted_ref" javaType="string"/>
+            <arg column="candidate_face_encrypted_ref" javaType="string"/>
+            <arg column="similarity" javaType="java.lang.Double"/>
+            <arg column="status" javaType="string"/>
+            <arg column="otp_token" javaType="string"/>
+            <arg column="expires_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="promoted_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        id, face_verify_token, user_id, partner_user_id, request_id, device_no,
+        liveness_id, baseline_type, baseline_face_encrypted_ref,
+        candidate_face_encrypted_ref, similarity, status, otp_token,
+        expires_at, promoted_at
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO user_mobile_change_face_verification (
+            face_verify_token, user_id, partner_user_id, request_id, device_no,
+            liveness_id, liveness_result, liveness_sequence_id,
+            baseline_type, baseline_face_encrypted_ref, candidate_face_encrypted_ref,
+            similarity, status, expires_at
+        ) VALUES (
+            #{faceVerifyToken}, #{userId}, #{partnerUserId}, #{requestId}, #{deviceNo},
+            #{livenessId}, #{livenessResult}, #{livenessSequenceId},
+            #{baselineType}, #{baselineFaceEncryptedRef}, #{candidateFaceEncryptedRef},
+            #{similarity}, #{status},
+            #{expiresAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        )
+    </insert>
+
+    <select id="findLatestPromotedByUserId" resultMap="verificationMap">
+        SELECT <include refid="columns"/>
+        FROM user_mobile_change_face_verification
+        WHERE user_id = #{userId}
+          AND status = 'PROMOTED'
+        ORDER BY promoted_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findVerifiedByToken" resultMap="verificationMap">
+        SELECT <include refid="columns"/>
+        FROM user_mobile_change_face_verification
+        WHERE face_verify_token = #{faceVerifyToken}
+        LIMIT 1
+    </select>
+
+    <update id="attachOtpToken">
+        UPDATE user_mobile_change_face_verification
+        SET otp_token = #{otpToken}
+        WHERE face_verify_token = #{faceVerifyToken}
+          AND status = 'VERIFIED_PENDING'
+    </update>
+
+    <update id="promote">
+        UPDATE user_mobile_change_face_verification
+        SET status = 'PROMOTED',
+            promoted_at = #{promotedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE face_verify_token = #{faceVerifyToken}
+          AND status = 'VERIFIED_PENDING'
+    </update>
+</mapper>

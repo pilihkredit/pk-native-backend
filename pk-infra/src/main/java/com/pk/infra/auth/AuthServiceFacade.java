@@ -38,6 +38,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public class AuthServiceFacade {
     private static final Logger log = LoggerFactory.getLogger(AuthServiceFacade.class);
     private static final String LOGIN_CHANNEL_OTP = "OTP";
+    private static final String LOGIN_CHANNEL_MOBILE_CHANGE = "MOBILE_CHANGE";
     private static final String LOGIN_CHANNEL_WHATSAPP = "WHATSAPP";
     private static final String LOGIN_CHANNEL_PASSWORD = "PASSWORD";
     private static final String OTP_PURPOSE = "OTP";
@@ -416,6 +417,13 @@ public class AuthServiceFacade {
         UserProfileSummary profile = userAuthRepository.findByUserId(record.userId())
                 .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
         return issueAccessToken(profile, session.sessionVersion(), session.deviceId());
+    }
+
+    public TokenPair openSessionAfterMobileChange(long userId, String deviceId) {
+        requireDeviceNo(deviceId);
+        UserProfileSummary profile = userAuthRepository.findByUserId(userId)
+                .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
+        return openSession(profile, deviceId, LOGIN_CHANNEL_MOBILE_CHANGE);
     }
 
     public void logout(AuthenticatedPrincipal principal) {

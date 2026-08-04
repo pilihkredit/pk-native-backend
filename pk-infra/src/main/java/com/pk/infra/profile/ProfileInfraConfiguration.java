@@ -239,6 +239,46 @@ public class ProfileInfraConfiguration {
     }
 
     @Bean
+    MobileChangeFaceFacade mobileChangeFaceFacade(
+            com.pk.core.profile.port.TrustDecisionKycPort trustDecisionKycPort,
+            com.pk.core.profile.port.AdvanceAiOcrPort advanceAiOcrPort,
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
+            com.pk.core.profile.port.MobileChangeFaceVerificationRepository verificationRepository,
+            com.pk.core.profile.port.BiometricImageStore biometricImageStore,
+            com.pk.infra.ocr.OcrProviderConfigLoader configLoader
+    ) {
+        return new MobileChangeFaceFacade(
+                trustDecisionKycPort,
+                advanceAiOcrPort,
+                profileIdentityRepository,
+                verificationRepository,
+                biometricImageStore,
+                configLoader
+        );
+    }
+
+    @Bean
+    MobileChangeOtpFacade mobileChangeOtpFacade(
+            com.pk.core.auth.port.UserAuthRepository userAuthRepository,
+            com.pk.core.profile.port.MobileChangeFaceVerificationRepository verificationRepository,
+            com.pk.core.auth.port.MobileChangeOtpChallengeStore challengeStore,
+            com.pk.core.auth.port.SmsSendLogRepository smsSendLogRepository,
+            com.pk.core.auth.port.SmsSender smsSender,
+            com.pk.infra.auth.AuthOtpConfigLoader otpConfigLoader,
+            com.pk.infra.auth.SmsConfigLoader smsConfigLoader
+    ) {
+        return new MobileChangeOtpFacade(
+                userAuthRepository,
+                verificationRepository,
+                challengeStore,
+                smsSendLogRepository,
+                smsSender,
+                otpConfigLoader,
+                smsConfigLoader
+        );
+    }
+
+    @Bean
     ProfileServiceFacade profileServiceFacade(
             com.pk.core.profile.port.ProfilePersonalRepository profilePersonalRepository,
             com.pk.core.profile.port.ProfileContactRepository profileContactRepository,

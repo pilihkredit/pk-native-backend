@@ -10,6 +10,8 @@ public interface BiometricImageStore {
      */
     String store(String mobileNo, BiometricImageKind kind, byte[] imageBytes);
 
+    String storeVersioned(String mobileNo, BiometricImageKind kind, String version, byte[] imageBytes);
+
     byte[] load(String encryptedRef);
 
     void delete(String encryptedRef);

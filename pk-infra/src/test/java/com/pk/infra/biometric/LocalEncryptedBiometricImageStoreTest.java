@@ -39,6 +39,22 @@ class LocalEncryptedBiometricImageStoreTest {
                 .isInstanceOf(IllegalStateException.class);
     }
 
+    @Test
+    void storesVersionedImagesWithoutOverwritingEarlierCapture() {
+        BiometricImageStore store = createStore(tempDir);
+        byte[] first = new byte[] {1, 2, 3};
+        byte[] second = new byte[] {4, 5, 6};
+
+        String firstRef = store.storeVersioned(
+                "81234567890", BiometricImageKind.MOBILE_CHANGE_FACE, "face-token-1", first);
+        String secondRef = store.storeVersioned(
+                "81234567890", BiometricImageKind.MOBILE_CHANGE_FACE, "face-token-2", second);
+
+        assertThat(firstRef).isNotEqualTo(secondRef);
+        assertThat(store.load(firstRef)).isEqualTo(first);
+        assertThat(store.load(secondRef)).isEqualTo(second);
+    }
+
     private static BiometricImageStore createStore(Path tempDir) {
         BiometricStorageProperties properties = new BiometricStorageProperties();
         properties.local().setBaseDir(tempDir.toString());

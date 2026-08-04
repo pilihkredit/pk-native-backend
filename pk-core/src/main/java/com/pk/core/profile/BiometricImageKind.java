@@ -2,7 +2,8 @@ package com.pk.core.profile;
 
 public enum BiometricImageKind {
     ID_CARD("id-card"),
-    FACE("face");
+    FACE("face"),
+    MOBILE_CHANGE_FACE("mobile-change-face");
 
     private final String objectName;
 

@@ -14,7 +14,9 @@ import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileInfoQueryRequest;
 import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
-import com.pk.app.profile.dto.request.ProfileMobileChangeRequest;
+import com.pk.app.profile.dto.request.MobileChangeFaceVerifyRequest;
+import com.pk.app.profile.dto.request.MobileChangeOtpSendRequest;
+import com.pk.app.profile.dto.request.MobileChangeOtpVerifyRequest;
 import com.pk.app.profile.dto.request.ProfilePersonalSaveRequest;
 import com.pk.app.profile.dto.request.ProfileTongdunDeviceSaveRequest;
 import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
@@ -25,7 +27,9 @@ import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileEnumsResponse;
 import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
-import com.pk.app.profile.dto.response.ProfileMobileChangeResponse;
+import com.pk.app.profile.dto.response.MobileChangeFaceVerifyResponse;
+import com.pk.app.profile.dto.response.MobileChangeOtpSendResponse;
+import com.pk.app.profile.dto.response.MobileChangeOtpVerifyResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
 import com.pk.app.profile.dto.response.ProfileTongdunDeviceSaveResponse;
 import com.pk.app.security.SecurityContextSupport;
@@ -38,6 +42,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -236,10 +241,11 @@ public class ProfileController {
         );
     }
 
-    /** Change the authenticated user's mobile number (login rebinding). */
-    @PostMapping("/mobile/change")
-    public ApiResponse<ProfileMobileChangeResponse> changeMobile(
-            @Valid @RequestBody ProfileMobileChangeRequest request,
+    /** Verify a live face before changing the authenticated user's mobile number. */
+    @PostMapping("/mobile/face/verify")
+    public ApiResponse<MobileChangeFaceVerifyResponse> verifyMobileChangeFace(
+            @Valid @RequestBody MobileChangeFaceVerifyRequest request,
+            @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
             HttpServletRequest httpRequest
     ) {
         AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
@@ -247,7 +253,42 @@ public class ProfileController {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                profileApplicationService.changeMobile(principal, request),
+                profileApplicationService.verifyMobileChangeFace(
+                        principal, request, deviceNoHeader, RequestTrace.resolveTraceId(httpRequest)),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Send an SMS OTP to the new mobile number after face verification. */
+    @PostMapping("/mobile/otp/send")
+    public ApiResponse<MobileChangeOtpSendResponse> sendMobileChangeOtp(
+            @Valid @RequestBody MobileChangeOtpSendRequest request,
+            @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.sendMobileChangeOtp(principal, request, deviceNoHeader),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Verify the mobile change OTP, rebind the account, and return a replacement session. */
+    @PostMapping("/mobile/otp/verify")
+    public ApiResponse<MobileChangeOtpVerifyResponse> verifyMobileChangeOtp(
+            @Valid @RequestBody MobileChangeOtpVerifyRequest request,
+            @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.verifyMobileChangeOtp(principal, request, deviceNoHeader),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }
