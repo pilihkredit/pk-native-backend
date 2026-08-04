@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.launch.mapper.AppLaunchMapper">
+    <insert id="insertEvent">
+        INSERT IGNORE INTO app_launch_event (
+            launch_id, device_no, user_id, app_version, platform, app_package,
+            client_started_at, occurred_at
+        ) VALUES (
+            #{launchId}, #{deviceNo}, #{userId}, #{appVersion}, #{platform}, #{appPackage},
+            #{clientStartedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
+            #{occurredAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        )
+    </insert>
+
+    <select id="countEvents" resultType="long">
+        SELECT COUNT(*)
+        FROM app_launch_event
+        WHERE occurred_at &gt;= #{fromInclusive, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+          AND occurred_at &lt; #{toExclusive, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        <if test="deviceNo != null">
+            AND device_no = #{deviceNo}
+        </if>
+    </select>
+
+</mapper>
