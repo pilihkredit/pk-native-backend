@@ -12,32 +12,4 @@
         UPDATE user_profile SET kyc_status = #{kycStatus}, updated_at = CURRENT_TIMESTAMP(3)
         WHERE id = #{userId} AND deleted_at IS NULL
     </update>
-    <update id="closeAccount">
-        UPDATE user_profile
-        SET deleted_at = #{closedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
-            retention_until = #{retentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
-            access_token = NULL,
-            refresh_token = NULL,
-            access_token_expires_at = NULL,
-            updated_at = CURRENT_TIMESTAMP(3)
-        WHERE id = #{userId}
-          AND deleted_at IS NULL
-    </update>
-
-    <select id="findClosure" resultMap="accountClosureMap">
-        SELECT id, deleted_at, retention_until
-        FROM user_profile
-        WHERE id = #{userId}
-        LIMIT 1
-    </select>
-
-    <resultMap id="accountClosureMap" type="com.pk.infra.profile.mapper.UserProfileBindingMapper$AccountClosureRow">
-        <constructor>
-            <arg column="id" javaType="_long"/>
-            <arg column="deleted_at" javaType="java.time.Instant"
-                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
-            <arg column="retention_until" javaType="java.time.Instant"
-                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
-        </constructor>
-    </resultMap>
 </mapper>

@@ -1,7 +1,6 @@
 package com.pk.app.auth.controller;
 
 import com.pk.app.auth.application.AuthApplicationService;
-import com.pk.app.auth.dto.request.AccountCloseRequest;
 import com.pk.app.auth.dto.request.MobileCheckRequest;
 import com.pk.app.auth.dto.request.PasswordLoginRequest;
 import com.pk.app.auth.dto.request.PasswordSetRequest;
@@ -9,7 +8,7 @@ import com.pk.app.auth.dto.request.OtpSendRequest;
 import com.pk.app.auth.dto.request.OtpVerifyRequest;
 import com.pk.app.auth.dto.request.RefreshTokenRequest;
 import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
-import com.pk.app.auth.dto.response.AccountCloseResponse;
+import com.pk.app.auth.dto.response.AccountCloseEligibilityResponse;
 import com.pk.app.auth.dto.response.MobileCheckResponse;
 import com.pk.app.auth.dto.response.PasswordSetResponse;
 import com.pk.app.auth.dto.response.OtpSendResponse;
@@ -122,21 +121,15 @@ public class AuthController {
         return ApiResponse.success(null, RequestTrace.resolveTraceId(httpRequest));
     }
 
-    /**
-     * Close (deregister) the current account.
-     * Sets {@code deleted_at} and {@code retention_until} (= closedAt + 5 years), then invalidates the session.
-     * Client must call this while still logged in (valid access token). Do not call {@code /auth/logout} first —
-     * logout clears the session and causes {@code K000012} on close-account.
-     */
-    @PostMapping("/close-account")
-    public ApiResponse<AccountCloseResponse> closeAccount(
-            @Valid @RequestBody(required = false) AccountCloseRequest request,
+    /** Check whether the current account is eligible for closure. */
+    @PostMapping("/close-account/check")
+    public ApiResponse<AccountCloseEligibilityResponse> checkAccountCloseEligibility(
             HttpServletRequest httpRequest
     ) {
         return ApiResponse.success(
-                authApplicationService.closeAccount(
+                authApplicationService.checkAccountCloseEligibility(
                         SecurityContextSupport.requirePrincipal(),
-                        request == null ? new AccountCloseRequest(null) : request
+                        httpRequest
                 ),
                 RequestTrace.resolveTraceId(httpRequest)
         );

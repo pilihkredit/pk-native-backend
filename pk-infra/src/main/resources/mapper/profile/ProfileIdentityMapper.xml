@@ -88,10 +88,4 @@
         SET external_interaction_id = #{externalInteractionId}
         WHERE user_id = #{userId}
     </update>
-    <update id="scheduleRetentionAfterAccountClosure">
-        UPDATE user_profile_identity
-        SET identity_data_retention_until = #{retentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
-            biometric_image_retention_until = #{retentionUntil, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
-        WHERE user_id = #{userId}
-    </update>
 </mapper>

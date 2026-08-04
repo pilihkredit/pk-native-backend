@@ -34,6 +34,7 @@ class ApiCodeTest {
     @Test
     void resolvesKnownCodeByValue() {
         assertEquals(ApiCode.INVALID_REQUEST_PARAMETERS, ApiCode.fromPublicCode("K000001"));
+        assertEquals(ApiCode.ACCOUNT_CLOSE_NOT_ALLOWED, ApiCode.fromPublicCode("K000344"));
         assertEquals(ApiCode.INTERNAL_SERVER_ERROR, ApiCode.fromPublicCode("999999"));
     }
 }

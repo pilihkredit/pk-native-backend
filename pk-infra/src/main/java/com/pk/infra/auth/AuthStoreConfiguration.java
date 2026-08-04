@@ -12,6 +12,7 @@ import com.pk.core.auth.port.SmsSendLogRepository;
 import com.pk.core.auth.port.SmsSender;
 import com.pk.core.auth.port.WhatsAppSendLogRepository;
 import com.pk.core.auth.port.WhatsAppSender;
+import com.pk.core.home.port.LenderUserStatusPort;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -100,5 +101,10 @@ public class AuthStoreConfiguration {
                 userProfileBindingRepository,
                 appsFlyerS2sReporter
         );
+    }
+
+    @Bean
+    AccountCloseAccessFacade accountCloseAccessFacade(LenderUserStatusPort lenderUserStatusPort) {
+        return new AccountCloseAccessFacade(lenderUserStatusPort);
     }
 }

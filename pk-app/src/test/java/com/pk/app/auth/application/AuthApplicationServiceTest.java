@@ -12,6 +12,7 @@ import com.pk.app.auth.dto.request.OtpVerifyRequest;
 import com.pk.app.auth.dto.request.PasswordLoginRequest;
 import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
 import com.pk.app.home.application.HomeApplicationService;
+import com.pk.app.profile.application.ProfileDeviceResolver;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
@@ -20,8 +21,10 @@ import com.pk.core.auth.UserProfileSummary;
 import com.pk.core.home.HomeUserStage;
 import com.pk.core.profile.AccountCloseResult;
 import com.pk.infra.auth.AuthServiceFacade;
+import com.pk.infra.auth.AccountCloseAccessFacade;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 class AuthApplicationServiceTest {
     @Test
@@ -32,7 +35,7 @@ class AuthApplicationServiceTest {
                 .thenReturn(new AuthServiceFacade.MobileCheckResult(true, "EXISTING", true));
 
         MobileCheckRequest request = new MobileCheckRequest("8123456789", "device-1");
-        var response = new AuthApplicationService(facade, homeApplicationService).checkMobile(request, "device-1");
+        var response = newService(facade, homeApplicationService).checkMobile(request, "device-1");
 
         assertThat(response.registered()).isTrue();
         assertThat(response.accountStatus()).isEqualTo("EXISTING");
@@ -51,7 +54,7 @@ class AuthApplicationServiceTest {
         when(homeApplicationService.resolveUserStage(10L, "U10001"))
                 .thenThrow(new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada"));
 
-        var response = new AuthApplicationService(facade, homeApplicationService).verifyOtp(
+        var response = newService(facade, homeApplicationService).verifyOtp(
                 new OtpVerifyRequest("81234567890", "otp-token", "123456", "device-1"),
                 "device-1",
                 "ios"
@@ -74,7 +77,7 @@ class AuthApplicationServiceTest {
         when(homeApplicationService.resolveUserStage(10L, "U10001"))
                 .thenThrow(new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada"));
 
-        var response = new AuthApplicationService(facade, homeApplicationService).loginWithWhatsApp(
+        var response = newService(facade, homeApplicationService).loginWithWhatsApp(
                 new WhatsAppLoginRequest("81234567890", "123456", "device-1"),
                 "device-1",
                 "android"
@@ -96,7 +99,7 @@ class AuthApplicationServiceTest {
         when(homeApplicationService.resolveUserStage(10L, "U10001"))
                 .thenThrow(new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada"));
 
-        var response = new AuthApplicationService(facade, homeApplicationService).loginByPassword(
+        var response = newService(facade, homeApplicationService).loginByPassword(
                 new PasswordLoginRequest("81234567890", "abc123", "device-1"),
                 "device-1"
         );
@@ -118,7 +121,7 @@ class AuthApplicationServiceTest {
         when(homeApplicationService.resolveUserStage(10L, "U10001"))
                 .thenThrow(new ApiException(ApiCode.SERVICE_UNAVAILABLE));
 
-        assertThatThrownBy(() -> new AuthApplicationService(facade, homeApplicationService).verifyOtp(
+        assertThatThrownBy(() -> newService(facade, homeApplicationService).verifyOtp(
                 new OtpVerifyRequest("81234567890", "otp-token", "123456", "device-1"),
                 "device-1"
         ))
@@ -136,13 +139,46 @@ class AuthApplicationServiceTest {
         Instant dataDeleteAt = Instant.parse("2031-07-21T03:00:00Z");
         when(facade.closeAccount(principal)).thenReturn(new AccountCloseResult(closedAt, dataDeleteAt, false));
 
-        var response = new AuthApplicationService(facade, homeApplicationService).closeAccount(
+        AccountCloseAccessFacade accountCloseAccessFacade = mock(AccountCloseAccessFacade.class);
+        when(accountCloseAccessFacade.checkAccess(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new AccountCloseAccessFacade.AccountCloseAccessResult(true));
+        ProfileDeviceResolver profileDeviceResolver = mock(ProfileDeviceResolver.class);
+        when(profileDeviceResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new com.pk.core.profile.sync.LenderDeviceContext(
+                        "PKApp", "1.0.0", "com.example.pk", "device-1", "android"
+                ));
+
+        MockHttpServletRequest httpRequest = new MockHttpServletRequest();
+        httpRequest.addHeader("X-Device-No", "device-1");
+        httpRequest.addHeader("X-App-Version", "1.0.0");
+        httpRequest.addHeader("X-Platform", "android");
+        httpRequest.addHeader("X-App-Package", "com.example.pk");
+
+        var response = new AuthApplicationService(
+                facade,
+                homeApplicationService,
+                accountCloseAccessFacade,
+                profileDeviceResolver
+        ).closeAccount(
                 principal,
-                new AccountCloseRequest("leaving")
+                new AccountCloseRequest("leaving"),
+                httpRequest
         );
 
         assertThat(response.closedAt()).isEqualTo(closedAt.toEpochMilli());
         assertThat(response.dataDeleteAt()).isEqualTo(dataDeleteAt.toEpochMilli());
         verify(facade).closeAccount(principal);
+    }
+
+    private static AuthApplicationService newService(
+            AuthServiceFacade facade,
+            HomeApplicationService homeApplicationService
+    ) {
+        return new AuthApplicationService(
+                facade,
+                homeApplicationService,
+                mock(AccountCloseAccessFacade.class),
+                mock(ProfileDeviceResolver.class)
+        );
     }
 }

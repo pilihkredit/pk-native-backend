@@ -15,8 +15,4 @@ public interface ProfileIdentityMapper {
             @Param("externalInteractionId") Long externalInteractionId
     );
 
-    int scheduleRetentionAfterAccountClosure(
-            @Param("userId") long userId,
-            @Param("retentionUntil") java.time.Instant retentionUntil
-    );
 }

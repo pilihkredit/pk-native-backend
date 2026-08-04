@@ -89,6 +89,11 @@ public enum ApiCode {
             "Status saat ini tidak memungkinkan modifikasi, silakan coba lagi nanti",
             ApiCodeLayer.PLATFORM_VALIDATION
     ),
+    ACCOUNT_CLOSE_NOT_ALLOWED(
+            "K000344",
+            "Account closure is not allowed while a loan is in progress",
+            ApiCodeLayer.PLATFORM_VALIDATION
+    ),
 
     QUOTE_SNAPSHOT_EXPIRED("B000003", "Quote snapshot expired", ApiCodeLayer.PLATFORM_ORCHESTRATION),
     QUOTE_SNAPSHOT_MISMATCH("B000004", "Quote snapshot mismatch", ApiCodeLayer.PLATFORM_ORCHESTRATION),

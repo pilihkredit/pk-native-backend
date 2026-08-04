@@ -10,5 +10,4 @@ public interface ProfileIdentityRepository {
 
     void updateLastLenderInteraction(long userId, Long externalInteractionId);
 
-    void scheduleRetentionAfterAccountClosure(long userId, java.time.Instant retentionUntil);
 }

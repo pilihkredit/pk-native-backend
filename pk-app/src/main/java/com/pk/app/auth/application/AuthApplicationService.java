@@ -1,6 +1,5 @@
 package com.pk.app.auth.application;
 
-import com.pk.app.auth.dto.request.AccountCloseRequest;
 import com.pk.app.auth.dto.request.PasswordLoginRequest;
 import com.pk.app.auth.dto.request.PasswordSetRequest;
 import com.pk.app.auth.dto.request.OtpSendRequest;
@@ -8,7 +7,9 @@ import com.pk.app.auth.dto.request.OtpVerifyRequest;
 import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
 import com.pk.app.auth.dto.request.RefreshTokenRequest;
 import com.pk.app.auth.dto.request.MobileCheckRequest;
-import com.pk.app.auth.dto.response.AccountCloseResponse;
+import com.pk.app.auth.dto.response.AccountCloseEligibilityResponse;
+import com.pk.app.common.web.ClientRequestHeaders;
+import com.pk.app.profile.application.ProfileDeviceResolver;
 import com.pk.app.auth.dto.response.MobileCheckResponse;
 import com.pk.app.auth.dto.response.OtpSendResponse;
 import com.pk.app.auth.dto.response.OtpVerifyResponse;
@@ -20,9 +21,10 @@ import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.auth.TokenPair;
 import com.pk.core.auth.UserProfileSummary;
 import com.pk.core.home.HomeUserStage;
-import com.pk.core.profile.AccountCloseResult;
 import com.pk.app.home.application.HomeApplicationService;
 import com.pk.infra.auth.AuthServiceFacade;
+import com.pk.infra.auth.AccountCloseAccessFacade;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -32,13 +34,19 @@ public class AuthApplicationService {
     private static final Logger log = LoggerFactory.getLogger(AuthApplicationService.class);
     private final AuthServiceFacade authServiceFacade;
     private final HomeApplicationService homeApplicationService;
+    private final AccountCloseAccessFacade accountCloseAccessFacade;
+    private final ProfileDeviceResolver profileDeviceResolver;
 
     public AuthApplicationService(
             AuthServiceFacade authServiceFacade,
-            HomeApplicationService homeApplicationService
+            HomeApplicationService homeApplicationService,
+            AccountCloseAccessFacade accountCloseAccessFacade,
+            ProfileDeviceResolver profileDeviceResolver
     ) {
         this.authServiceFacade = authServiceFacade;
         this.homeApplicationService = homeApplicationService;
+        this.accountCloseAccessFacade = accountCloseAccessFacade;
+        this.profileDeviceResolver = profileDeviceResolver;
     }
 
     public MobileCheckResponse checkMobile(MobileCheckRequest request, String deviceNoHeader) {
@@ -201,18 +209,19 @@ public class AuthApplicationService {
         authServiceFacade.logout(principal);
     }
 
-    public AccountCloseResponse closeAccount(AuthenticatedPrincipal principal, AccountCloseRequest request) {
+    public AccountCloseEligibilityResponse checkAccountCloseEligibility(
+            AuthenticatedPrincipal principal,
+            HttpServletRequest httpRequest
+    ) {
+        return new AccountCloseEligibilityResponse(checkAccountCloseAccess(principal, httpRequest));
+    }
+
+    private boolean checkAccountCloseAccess(AuthenticatedPrincipal principal, HttpServletRequest httpRequest) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        if (request != null && request.reason() != null && !request.reason().isBlank()) {
-            log.info("Account close requested userId={} reason={}", principal.userId(), request.reason().trim());
-        }
-        AccountCloseResult result = authServiceFacade.closeAccount(principal);
-        return new AccountCloseResponse(
-                result.closedAt().toEpochMilli(),
-                result.dataDeleteAt().toEpochMilli()
-        );
+        var device = profileDeviceResolver.resolve(principal, ClientRequestHeaders.require(httpRequest));
+        return accountCloseAccessFacade.checkAccess(principal, device).canClose();
     }
 
     private static void validateDeviceNoMatchesHeader(String bodyDeviceNo, String headerDeviceNo) {

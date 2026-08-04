@@ -48,11 +48,6 @@ public class ProfileIdentityRepositoryImpl implements ProfileIdentityRepository 
         profileIdentityMapper.updateLastLenderInteraction(userId, externalInteractionId);
     }
 
-    @Override
-    public void scheduleRetentionAfterAccountClosure(long userId, java.time.Instant retentionUntil) {
-        profileIdentityMapper.scheduleRetentionAfterAccountClosure(userId, retentionUntil);
-    }
-
     private ProfileIdentityData toData(ProfileIdentityRow row) {
         return new ProfileIdentityData(
                 row.userId(),

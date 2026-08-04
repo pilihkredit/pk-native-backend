@@ -19,7 +19,6 @@ import com.pk.core.auth.port.TokenIssuer;
 import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.auth.port.WhatsAppSendLogRepository;
 import com.pk.core.auth.port.WhatsAppSender;
-import com.pk.core.profile.AccountCloseResult;
 import com.pk.core.profile.EncryptedField;
 import com.pk.core.profile.port.SensitiveFieldEncryptor;
 import com.pk.core.profile.port.UserProfileBindingRepository;
@@ -431,30 +430,6 @@ public class AuthServiceFacade {
         refreshTokenStore.deleteAllForProfile(principal.userId());
         userAuthRepository.clearSessionTokens(principal.userId());
         userAuthRepository.updateLastLogoutAt(principal.userId(), Instant.now());
-    }
-
-    /**
-     * Soft-close the account and invalidate the current session (SMS / WhatsApp / password).
-     */
-    public AccountCloseResult closeAccount(AuthenticatedPrincipal principal) {
-        if (principal == null) {
-            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
-        }
-        AccountCloseResult result;
-        try {
-            result = userProfileBindingRepository.closeAccount(principal.userId());
-        } catch (ApiException exception) {
-            if (exception.apiCode() == ApiCode.UNAUTHORIZED_REQUEST) {
-                log.warn(
-                        "Close account rejected: profile row missing userId={} mobileNo={}",
-                        principal.userId(),
-                        principal.mobileNo()
-                );
-            }
-            throw exception;
-        }
-        logout(principal);
-        return result;
     }
 
     public AuthenticatedPrincipal validateAccessToken(String accessToken) {
