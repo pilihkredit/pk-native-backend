@@ -3,12 +3,14 @@ package com.pk.app.auth.controller;
 import com.pk.app.auth.application.AuthApplicationService;
 import com.pk.app.auth.dto.request.MobileCheckRequest;
 import com.pk.app.auth.dto.request.PasswordLoginRequest;
+import com.pk.app.auth.dto.request.PasswordChangeRequest;
 import com.pk.app.auth.dto.request.PasswordSetRequest;
 import com.pk.app.auth.dto.request.OtpSendRequest;
 import com.pk.app.auth.dto.request.OtpVerifyRequest;
 import com.pk.app.auth.dto.request.RefreshTokenRequest;
 import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
 import com.pk.app.auth.dto.response.AccountCloseEligibilityResponse;
+import com.pk.app.auth.dto.response.PasswordChangeResponse;
 import com.pk.app.auth.dto.response.MobileCheckResponse;
 import com.pk.app.auth.dto.response.PasswordSetResponse;
 import com.pk.app.auth.dto.response.OtpSendResponse;
@@ -146,6 +148,18 @@ public class AuthController {
     ) {
         return ApiResponse.success(
                 authApplicationService.setPassword(SecurityContextSupport.requirePrincipal(), request),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Change an existing login password and invalidate all active sessions. */
+    @PostMapping("/password/change")
+    public ApiResponse<PasswordChangeResponse> changePassword(
+            @Valid @RequestBody PasswordChangeRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return ApiResponse.success(
+                authApplicationService.changePassword(SecurityContextSupport.requirePrincipal(), request),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

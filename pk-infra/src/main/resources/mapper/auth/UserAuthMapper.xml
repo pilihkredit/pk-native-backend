@@ -161,4 +161,14 @@
         WHERE id = #{userId}
           AND deleted_at IS NULL
     </update>
+
+    <update id="changePassword">
+        UPDATE user_profile
+        SET password_ciphertext = #{passwordCiphertext},
+            password_nonce = #{passwordNonce},
+            password_tag = #{passwordTag},
+            password_changed_at = NOW(3)
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
 </mapper>

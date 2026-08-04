@@ -45,6 +45,8 @@ public interface UserAuthRepository {
 
     void savePassword(long userId, EncryptedField password);
 
+    void changePassword(long userId, EncryptedField password);
+
     record PasswordCredential(
             long userId,
             EncryptedField password

@@ -33,6 +33,12 @@ public enum ApiCode {
     PASSWORD_CONFIRM_MISMATCH("K000212", "Password confirmation does not match", ApiCodeLayer.PLATFORM_VALIDATION),
     PASSWORD_NOT_SET("K000213", "Password not set", ApiCodeLayer.PLATFORM_VALIDATION),
     INVALID_MOBILE_OR_PASSWORD("K000214", "Invalid mobile number or password", ApiCodeLayer.PLATFORM_VALIDATION),
+    CURRENT_PASSWORD_INCORRECT("K000217", "Current password is incorrect", ApiCodeLayer.PLATFORM_VALIDATION),
+    NEW_PASSWORD_UNCHANGED(
+            "K000218",
+            "New password must differ from current password",
+            ApiCodeLayer.PLATFORM_VALIDATION
+    ),
     MOBILE_ALREADY_REGISTERED(
             "K000215",
             "Nomor telepon ini sudah teregister di KTA Kilat. Silahkan masukkan nomor baru anda",

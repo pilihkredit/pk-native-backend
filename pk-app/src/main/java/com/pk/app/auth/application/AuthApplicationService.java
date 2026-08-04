@@ -1,6 +1,7 @@
 package com.pk.app.auth.application;
 
 import com.pk.app.auth.dto.request.PasswordLoginRequest;
+import com.pk.app.auth.dto.request.PasswordChangeRequest;
 import com.pk.app.auth.dto.request.PasswordSetRequest;
 import com.pk.app.auth.dto.request.OtpSendRequest;
 import com.pk.app.auth.dto.request.OtpVerifyRequest;
@@ -8,6 +9,7 @@ import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
 import com.pk.app.auth.dto.request.RefreshTokenRequest;
 import com.pk.app.auth.dto.request.MobileCheckRequest;
 import com.pk.app.auth.dto.response.AccountCloseEligibilityResponse;
+import com.pk.app.auth.dto.response.PasswordChangeResponse;
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.profile.application.ProfileDeviceResolver;
 import com.pk.app.auth.dto.response.MobileCheckResponse;
@@ -168,6 +170,19 @@ public class AuthApplicationService {
         }
         authServiceFacade.setPassword(principal.userId(), request.password(), request.confirmPassword());
         return new PasswordSetResponse(true);
+    }
+
+    public PasswordChangeResponse changePassword(AuthenticatedPrincipal principal, PasswordChangeRequest request) {
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        authServiceFacade.changePassword(
+                principal.userId(),
+                request.currentPassword(),
+                request.newPassword(),
+                request.confirmPassword()
+        );
+        return new PasswordChangeResponse(true);
     }
 
     public OtpVerifyResponse loginByPassword(PasswordLoginRequest request, String deviceNoHeader) {

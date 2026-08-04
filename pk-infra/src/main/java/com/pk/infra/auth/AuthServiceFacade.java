@@ -225,6 +225,25 @@ public class AuthServiceFacade {
         userAuthRepository.savePassword(userId, encryptedPassword);
     }
 
+    public void changePassword(long userId, String currentPassword, String newPassword, String confirmPassword) {
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        validateNewPassword(newPassword, confirmPassword);
+
+        UserAuthRepository.PasswordCredential credential = userAuthRepository.findPasswordCredential(userId)
+                .orElseThrow(() -> new ApiException(ApiCode.PASSWORD_NOT_SET));
+        if (!passwordMatches(currentPassword, credential.password())) {
+            throw new ApiException(ApiCode.CURRENT_PASSWORD_INCORRECT);
+        }
+        if (currentPassword.equals(newPassword)) {
+            throw new ApiException(ApiCode.NEW_PASSWORD_UNCHANGED);
+        }
+
+        userAuthRepository.changePassword(userId, sensitiveFieldEncryptor.encrypt(newPassword));
+        invalidateSessionsAfterPasswordChange(userId);
+    }
+
     public PasswordLoginResult loginByPassword(String mobileNo, String password, String deviceNo) {
         validateMobile(mobileNo);
         if (password == null || password.isBlank()) {
@@ -465,6 +484,24 @@ public class AuthServiceFacade {
                 storedPassword.getBytes(StandardCharsets.UTF_8),
                 rawPassword.getBytes(StandardCharsets.UTF_8)
         );
+    }
+
+    private void validateNewPassword(String password, String confirmPassword) {
+        if (password == null || password.isBlank() || confirmPassword == null || confirmPassword.isBlank()) {
+            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
+        }
+        if (!password.equals(confirmPassword)) {
+            throw new ApiException(ApiCode.PASSWORD_CONFIRM_MISMATCH);
+        }
+        if (!PasswordFormatValidator.isValid(password)) {
+            throw new ApiException(ApiCode.INVALID_PASSWORD_FORMAT);
+        }
+    }
+
+    private void invalidateSessionsAfterPasswordChange(long userId) {
+        sessionStore.delete(userId);
+        refreshTokenStore.deleteAllForProfile(userId);
+        userAuthRepository.clearSessionTokens(userId);
     }
 
     private TokenPair openSession(UserProfileSummary profile, String deviceId, String loginChannel) {

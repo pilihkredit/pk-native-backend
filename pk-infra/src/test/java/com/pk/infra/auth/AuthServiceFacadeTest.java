@@ -3,6 +3,7 @@ package com.pk.infra.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -366,6 +367,42 @@ class AuthServiceFacadeTest {
         verify(refreshTokenStore).deleteAllForProfile(11L);
         verify(userAuthRepository).clearSessionTokens(11L);
         verify(userAuthRepository).updateLastLogoutAt(eq(11L), any(Instant.class));
+    }
+
+    @Test
+    void changePasswordReplacesEncryptedCredentialAndInvalidatesSessions() {
+        AuthProperties properties = new AuthProperties();
+        SessionStore sessionStore = mock(SessionStore.class);
+        RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
+        AuthServiceFacade passwordFacade = newFacade(properties, sessionStore, refreshTokenStore, mock(TokenIssuer.class));
+        EncryptedField currentCredential = new EncryptedField("current-ciphertext", new byte[12], new byte[16]);
+        EncryptedField newCredential = new EncryptedField("new-ciphertext", new byte[12], new byte[16]);
+        when(userAuthRepository.findPasswordCredential(12L))
+                .thenReturn(Optional.of(new UserAuthRepository.PasswordCredential(12L, currentCredential)));
+        when(sensitiveFieldEncryptor.decrypt(currentCredential)).thenReturn("OldPassword123");
+        when(sensitiveFieldEncryptor.encrypt("NewPassword456")).thenReturn(newCredential);
+
+        passwordFacade.changePassword(12L, "OldPassword123", "NewPassword456", "NewPassword456");
+
+        verify(userAuthRepository).changePassword(12L, newCredential);
+        verify(sessionStore).delete(12L);
+        verify(refreshTokenStore).deleteAllForProfile(12L);
+        verify(userAuthRepository).clearSessionTokens(12L);
+    }
+
+    @Test
+    void changePasswordRejectsIncorrectCurrentPassword() {
+        EncryptedField currentCredential = new EncryptedField("current-ciphertext", new byte[12], new byte[16]);
+        when(userAuthRepository.findPasswordCredential(12L))
+                .thenReturn(Optional.of(new UserAuthRepository.PasswordCredential(12L, currentCredential)));
+        when(sensitiveFieldEncryptor.decrypt(currentCredential)).thenReturn("OldPassword123");
+
+        assertThatThrownBy(() -> facade.changePassword(12L, "WrongPassword123", "NewPassword456", "NewPassword456"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.CURRENT_PASSWORD_INCORRECT);
+
+        verify(userAuthRepository, never()).changePassword(anyLong(), any());
     }
 
     @Test

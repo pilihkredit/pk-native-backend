@@ -68,4 +68,11 @@ public interface UserAuthMapper {
             @Param("passwordNonce") byte[] passwordNonce,
             @Param("passwordTag") byte[] passwordTag
     );
+
+    int changePassword(
+            @Param("userId") long userId,
+            @Param("passwordCiphertext") String passwordCiphertext,
+            @Param("passwordNonce") byte[] passwordNonce,
+            @Param("passwordTag") byte[] passwordTag
+    );
 }

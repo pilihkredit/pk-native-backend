@@ -142,6 +142,16 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
         );
     }
 
+    @Override
+    public void changePassword(long userId, EncryptedField password) {
+        userAuthMapper.changePassword(
+                userId,
+                password.ciphertextBase64(),
+                password.nonce(),
+                password.tag()
+        );
+    }
+
     private PasswordCredential toCredential(PasswordCredentialRow row) {
         return new PasswordCredential(
                 row.userId(),
