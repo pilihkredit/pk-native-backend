@@ -24,6 +24,7 @@ import com.pk.core.home.HomeUserStage;
 import com.pk.app.home.application.HomeApplicationService;
 import com.pk.infra.auth.AuthServiceFacade;
 import com.pk.infra.auth.AccountCloseAccessFacade;
+import com.pk.infra.push.PushDeviceFacade;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,17 +37,20 @@ public class AuthApplicationService {
     private final HomeApplicationService homeApplicationService;
     private final AccountCloseAccessFacade accountCloseAccessFacade;
     private final ProfileDeviceResolver profileDeviceResolver;
+    private final PushDeviceFacade pushDeviceFacade;
 
     public AuthApplicationService(
             AuthServiceFacade authServiceFacade,
             HomeApplicationService homeApplicationService,
             AccountCloseAccessFacade accountCloseAccessFacade,
-            ProfileDeviceResolver profileDeviceResolver
+            ProfileDeviceResolver profileDeviceResolver,
+            PushDeviceFacade pushDeviceFacade
     ) {
         this.authServiceFacade = authServiceFacade;
         this.homeApplicationService = homeApplicationService;
         this.accountCloseAccessFacade = accountCloseAccessFacade;
         this.profileDeviceResolver = profileDeviceResolver;
+        this.pushDeviceFacade = pushDeviceFacade;
     }
 
     public MobileCheckResponse checkMobile(MobileCheckRequest request, String deviceNoHeader) {
@@ -81,7 +85,7 @@ public class AuthApplicationService {
                 request.otpCode(),
                 request.deviceNo()
         );
-        return toOtpSessionResponse(result);
+        return toOtpSessionResponse(result, request.deviceNo());
     }
 
     public OtpVerifyResponse verifyOtp(
@@ -97,7 +101,7 @@ public class AuthApplicationService {
                 request.deviceNo(),
                 platformHeader
         );
-        return toOtpSessionResponse(result);
+        return toOtpSessionResponse(result, request.deviceNo());
     }
 
     public OtpVerifyResponse loginWithWhatsApp(WhatsAppLoginRequest request, String deviceNoHeader) {
@@ -107,7 +111,7 @@ public class AuthApplicationService {
                 request.otpCode(),
                 request.deviceNo()
         );
-        return toOtpSessionResponse(result);
+        return toOtpSessionResponse(result, request.deviceNo());
     }
 
     public OtpVerifyResponse loginWithWhatsApp(
@@ -122,12 +126,13 @@ public class AuthApplicationService {
                 request.deviceNo(),
                 platformHeader
         );
-        return toOtpSessionResponse(result);
+        return toOtpSessionResponse(result, request.deviceNo());
     }
 
-    private OtpVerifyResponse toOtpSessionResponse(AuthServiceFacade.OtpVerifyResult result) {
+    private OtpVerifyResponse toOtpSessionResponse(AuthServiceFacade.OtpVerifyResult result, String deviceNo) {
         UserProfileSummary profile = result.profile();
         TokenPair tokenPair = result.tokenPair();
+        pushDeviceFacade.bindUser(profile.userId(), deviceNo);
         return new OtpVerifyResponse(
                 profile.partnerUserId(),
                 tokenPair.accessToken(),
@@ -172,14 +177,16 @@ public class AuthApplicationService {
                 request.password(),
                 request.deviceNo()
         );
-        return toSessionResponse(result.profile(), result.tokenPair(), result.passwordSet());
+        return toSessionResponse(result.profile(), result.tokenPair(), result.passwordSet(), request.deviceNo());
     }
 
     private OtpVerifyResponse toSessionResponse(
             UserProfileSummary profile,
             TokenPair tokenPair,
-            boolean passwordSet
+            boolean passwordSet,
+            String deviceNo
     ) {
+        pushDeviceFacade.bindUser(profile.userId(), deviceNo);
         return new OtpVerifyResponse(
                 profile.partnerUserId(),
                 tokenPair.accessToken(),
@@ -202,11 +209,12 @@ public class AuthApplicationService {
         );
     }
 
-    public void logout(AuthenticatedPrincipal principal) {
+    public void logout(AuthenticatedPrincipal principal, String deviceNo) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         authServiceFacade.logout(principal);
+        pushDeviceFacade.unbindUser(principal.userId(), deviceNo);
     }
 
     public AccountCloseEligibilityResponse checkAccountCloseEligibility(

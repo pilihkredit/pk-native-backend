@@ -6,25 +6,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.pk.app.auth.dto.request.AccountCloseRequest;
 import com.pk.app.auth.dto.request.MobileCheckRequest;
 import com.pk.app.auth.dto.request.OtpVerifyRequest;
 import com.pk.app.auth.dto.request.PasswordLoginRequest;
 import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
 import com.pk.app.home.application.HomeApplicationService;
-import com.pk.app.profile.application.ProfileDeviceResolver;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.auth.TokenPair;
 import com.pk.core.auth.UserProfileSummary;
 import com.pk.core.home.HomeUserStage;
-import com.pk.core.profile.AccountCloseResult;
 import com.pk.infra.auth.AuthServiceFacade;
 import com.pk.infra.auth.AccountCloseAccessFacade;
-import java.time.Instant;
+import com.pk.infra.push.PushDeviceFacade;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockHttpServletRequest;
 
 class AuthApplicationServiceTest {
     @Test
@@ -131,43 +127,21 @@ class AuthApplicationServiceTest {
     }
 
     @Test
-    void closeAccountReturnsClosedAndDataDeleteEpochMillis() {
+    void logoutUnbindsCurrentDeviceAfterInvalidatingSession() {
         AuthServiceFacade facade = mock(AuthServiceFacade.class);
-        HomeApplicationService homeApplicationService = mock(HomeApplicationService.class);
+        PushDeviceFacade pushDeviceFacade = mock(PushDeviceFacade.class);
         AuthenticatedPrincipal principal = new AuthenticatedPrincipal(10L, "U10001", "81234567890", 1L);
-        Instant closedAt = Instant.parse("2026-07-21T03:00:00Z");
-        Instant dataDeleteAt = Instant.parse("2031-07-21T03:00:00Z");
-        when(facade.closeAccount(principal)).thenReturn(new AccountCloseResult(closedAt, dataDeleteAt, false));
 
-        AccountCloseAccessFacade accountCloseAccessFacade = mock(AccountCloseAccessFacade.class);
-        when(accountCloseAccessFacade.checkAccess(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
-                .thenReturn(new AccountCloseAccessFacade.AccountCloseAccessResult(true));
-        ProfileDeviceResolver profileDeviceResolver = mock(ProfileDeviceResolver.class);
-        when(profileDeviceResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
-                .thenReturn(new com.pk.core.profile.sync.LenderDeviceContext(
-                        "PKApp", "1.0.0", "com.example.pk", "device-1", "android"
-                ));
-
-        MockHttpServletRequest httpRequest = new MockHttpServletRequest();
-        httpRequest.addHeader("X-Device-No", "device-1");
-        httpRequest.addHeader("X-App-Version", "1.0.0");
-        httpRequest.addHeader("X-Platform", "android");
-        httpRequest.addHeader("X-App-Package", "com.example.pk");
-
-        var response = new AuthApplicationService(
+        new AuthApplicationService(
                 facade,
-                homeApplicationService,
-                accountCloseAccessFacade,
-                profileDeviceResolver
-        ).closeAccount(
-                principal,
-                new AccountCloseRequest("leaving"),
-                httpRequest
-        );
+                mock(HomeApplicationService.class),
+                mock(AccountCloseAccessFacade.class),
+                mock(com.pk.app.profile.application.ProfileDeviceResolver.class),
+                pushDeviceFacade
+        ).logout(principal, "device-1");
 
-        assertThat(response.closedAt()).isEqualTo(closedAt.toEpochMilli());
-        assertThat(response.dataDeleteAt()).isEqualTo(dataDeleteAt.toEpochMilli());
-        verify(facade).closeAccount(principal);
+        verify(facade).logout(principal);
+        verify(pushDeviceFacade).unbindUser(10L, "device-1");
     }
 
     private static AuthApplicationService newService(
@@ -178,7 +152,8 @@ class AuthApplicationServiceTest {
                 facade,
                 homeApplicationService,
                 mock(AccountCloseAccessFacade.class),
-                mock(ProfileDeviceResolver.class)
+                mock(com.pk.app.profile.application.ProfileDeviceResolver.class),
+                mock(PushDeviceFacade.class)
         );
     }
 }

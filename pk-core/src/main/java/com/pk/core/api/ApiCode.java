@@ -94,6 +94,7 @@ public enum ApiCode {
             "Account closure is not allowed while a loan is in progress",
             ApiCodeLayer.PLATFORM_VALIDATION
     ),
+    INBOX_MESSAGE_NOT_FOUND("K000345", "Inbox message not found", ApiCodeLayer.PLATFORM_VALIDATION),
 
     QUOTE_SNAPSHOT_EXPIRED("B000003", "Quote snapshot expired", ApiCodeLayer.PLATFORM_ORCHESTRATION),
     QUOTE_SNAPSHOT_MISMATCH("B000004", "Quote snapshot mismatch", ApiCodeLayer.PLATFORM_ORCHESTRATION),

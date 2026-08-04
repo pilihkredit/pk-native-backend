@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.push.mapper.PushDeviceMapper">
+    <insert id="register">
+        INSERT INTO push_device (
+            user_id, device_no, app_version, platform, app_package, fcm_token, permission_status, last_seen_at
+        ) VALUES (
+            #{userId}, #{deviceNo}, #{appVersion}, #{platform}, #{appPackage}, #{fcmToken},
+            #{permissionStatus}, CURRENT_TIMESTAMP(3)
+        )
+        ON DUPLICATE KEY UPDATE
+            user_id = VALUES(user_id),
+            app_version = VALUES(app_version),
+            platform = VALUES(platform),
+            permission_status = VALUES(permission_status),
+            last_seen_at = VALUES(last_seen_at)
+    </insert>
+
+    <update id="bindUser">
+        UPDATE push_device
+        SET user_id = #{userId}, bound_at = CURRENT_TIMESTAMP(3), unbound_at = NULL
+        WHERE device_no = #{deviceNo}
+    </update>
+
+    <update id="unbindUser">
+        UPDATE push_device
+        SET user_id = NULL, unbound_at = CURRENT_TIMESTAMP(3)
+        WHERE device_no = #{deviceNo}
+          AND user_id = #{userId}
+    </update>
+</mapper>

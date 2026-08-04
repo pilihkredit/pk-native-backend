@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.push.mapper.InboxMessageMapper">
+    <resultMap id="inboxMessageMap" type="com.pk.infra.push.repository.InboxMessageRow">
+        <constructor>
+            <arg column="message_id" javaType="_long"/>
+            <arg column="type" javaType="string"/>
+            <arg column="title" javaType="string"/>
+            <arg column="summary" javaType="string"/>
+            <arg column="content" javaType="string"/>
+            <arg column="read_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="sent_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="deeplink" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="messageColumns">
+        uim.message_id, im.type, im.title, im.summary, im.content, uim.read_at, im.sent_at, im.deeplink
+    </sql>
+
+    <select id="countUnread" resultType="long">
+        SELECT COUNT(*)
+        FROM inbox_user_message
+        WHERE user_id = #{userId}
+          AND read_at IS NULL
+    </select>
+
+    <select id="findPage" resultMap="inboxMessageMap">
+        SELECT <include refid="messageColumns"/>
+        FROM inbox_user_message uim
+        INNER JOIN inbox_message im ON im.id = uim.message_id
+        WHERE uim.user_id = #{userId}
+        <if test="cursor != null">
+            AND uim.message_id &lt; #{cursor}
+        </if>
+        ORDER BY uim.message_id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findByUserIdAndMessageId" resultMap="inboxMessageMap">
+        SELECT <include refid="messageColumns"/>
+        FROM inbox_user_message uim
+        INNER JOIN inbox_message im ON im.id = uim.message_id
+        WHERE uim.user_id = #{userId}
+          AND uim.message_id = #{messageId}
+    </select>
+
+    <update id="markRead">
+        UPDATE inbox_user_message
+        SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP(3))
+        WHERE user_id = #{userId}
+          AND message_id = #{messageId}
+    </update>
+</mapper>

@@ -117,7 +117,10 @@ public class AuthController {
     /** Logout. */
     @PostMapping("/logout")
     public ApiResponse<Void> logout(HttpServletRequest httpRequest) {
-        authApplicationService.logout(SecurityContextSupport.requirePrincipal());
+        authApplicationService.logout(
+                SecurityContextSupport.requirePrincipal(),
+                httpRequest.getHeader("X-Device-No")
+        );
         return ApiResponse.success(null, RequestTrace.resolveTraceId(httpRequest));
     }
 
