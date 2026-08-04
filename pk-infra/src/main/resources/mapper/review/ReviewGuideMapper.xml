@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.review.mapper.ReviewGuideMapper">
+
+    <resultMap id="userStateMap" type="com.pk.infra.review.repository.ReviewGuideUserStateRow">
+        <constructor>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="real_review_clicked_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="exposureMap" type="com.pk.infra.review.repository.ReviewGuideExposureRow">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="guide_type" javaType="string"/>
+            <arg column="clicked_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="ensureUserState">
+        INSERT IGNORE INTO review_guide_user_state (user_id)
+        VALUES (#{userId})
+    </insert>
+
+    <select id="findUserStateForUpdate" resultMap="userStateMap">
+        SELECT user_id, real_review_clicked_at
+        FROM review_guide_user_state
+        WHERE user_id = #{userId}
+        FOR UPDATE
+    </select>
+
+    <select id="findByUserIdAndScene" resultMap="exposureMap">
+        SELECT id, guide_type, clicked_at
+        FROM review_guide_exposure
+        WHERE user_id = #{userId}
+          AND scene = #{scene}
+    </select>
+
+    <insert id="insertExposure" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO review_guide_exposure (user_id, scene, guide_type, shown_at)
+        VALUES (#{userId}, #{scene}, #{guideType}, CURRENT_TIMESTAMP(3))
+    </insert>
+
+    <select id="findByIdAndUserIdForUpdate" resultMap="exposureMap">
+        SELECT id, guide_type, clicked_at
+        FROM review_guide_exposure
+        WHERE id = #{id}
+          AND user_id = #{userId}
+        FOR UPDATE
+    </select>
+
+    <update id="markExposureClicked">
+        UPDATE review_guide_exposure
+        SET clicked_at = COALESCE(clicked_at, CURRENT_TIMESTAMP(3))
+        WHERE id = #{id}
+    </update>
+
+    <update id="markRealReviewClicked">
+        UPDATE review_guide_user_state
+        SET real_review_clicked_at = CURRENT_TIMESTAMP(3)
+        WHERE user_id = #{userId}
+          AND real_review_clicked_at IS NULL
+    </update>
+
+    <update id="saveRatingIfAbsent">
+        UPDATE review_guide_exposure
+        SET in_app_rating = COALESCE(in_app_rating, #{rating}),
+            feedback_at = COALESCE(feedback_at, CURRENT_TIMESTAMP(3))
+        WHERE id = #{id}
+    </update>
+</mapper>
