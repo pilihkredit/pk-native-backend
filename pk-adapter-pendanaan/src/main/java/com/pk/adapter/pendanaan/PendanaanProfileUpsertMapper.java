@@ -17,6 +17,9 @@ final class PendanaanProfileUpsertMapper {
 
     static void applyModule(ObjectNode userInfo, ProfileSyncModule module, ProfileSyncPayload payload) {
         switch (module) {
+            case MOBILE -> {
+                // Mobile number and device are added by the request-level mapper.
+            }
             case PERSONAL -> applyPersonal(userInfo, (ProfileSyncPayload.PersonalProfilePayload) payload);
             case CONTACT -> applyContact(userInfo, (ProfileSyncPayload.ContactProfilePayload) payload);
             case BANK_CARD -> applyBankCard(userInfo, (ProfileSyncPayload.BankCardProfilePayload) payload);

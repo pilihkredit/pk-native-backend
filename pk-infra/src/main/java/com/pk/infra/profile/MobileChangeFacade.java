@@ -10,9 +10,13 @@ import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.auth.port.UserMobileChangeLogRepository;
 import com.pk.core.auth.port.UserMobileChangeLogRepository.UserMobileChangeLogEntry;
 import com.pk.core.profile.port.MobileChangeFaceVerificationRepository;
+import com.pk.core.profile.sync.LenderDeviceContext;
+import com.pk.core.profile.sync.ProfileSyncModule;
+import com.pk.core.profile.sync.ProfileSyncPayload;
 import com.pk.infra.auth.AuthServiceFacade;
 import com.pk.infra.auth.MobileNumberValidator;
 import com.pk.infra.auth.SmsConfigLoader;
+import com.pk.infra.auth.WhatsAppConfigLoader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
@@ -27,6 +31,9 @@ public class MobileChangeFacade {
     private final MobileChangeOtpChallengeStore challengeStore;
     private final AuthServiceFacade authServiceFacade;
     private final SmsConfigLoader smsConfigLoader;
+    private final WhatsAppConfigLoader whatsAppConfigLoader;
+    private final ProfileSyncOrchestrator profileSyncOrchestrator;
+    private final UserDeviceWriter userDeviceWriter;
 
     public MobileChangeFacade(
             UserAuthRepository userAuthRepository,
@@ -34,7 +41,10 @@ public class MobileChangeFacade {
             MobileChangeFaceVerificationRepository faceRepository,
             MobileChangeOtpChallengeStore challengeStore,
             AuthServiceFacade authServiceFacade,
-            SmsConfigLoader smsConfigLoader
+            SmsConfigLoader smsConfigLoader,
+            WhatsAppConfigLoader whatsAppConfigLoader,
+            ProfileSyncOrchestrator profileSyncOrchestrator,
+            UserDeviceWriter userDeviceWriter
     ) {
         this.userAuthRepository = userAuthRepository;
         this.changeLogRepository = changeLogRepository;
@@ -42,6 +52,9 @@ public class MobileChangeFacade {
         this.challengeStore = challengeStore;
         this.authServiceFacade = authServiceFacade;
         this.smsConfigLoader = smsConfigLoader;
+        this.whatsAppConfigLoader = whatsAppConfigLoader;
+        this.profileSyncOrchestrator = profileSyncOrchestrator;
+        this.userDeviceWriter = userDeviceWriter;
     }
 
     @Transactional
@@ -62,8 +75,11 @@ public class MobileChangeFacade {
                 || !challenge.faceVerifyToken().equals(command.faceVerifyToken())) {
             throw new ApiException(ApiCode.OTP_TOKEN_MISMATCH);
         }
-        boolean configuredDefault = SmsConfigLoader.acceptsConfiguredDefaultCode(
-                smsConfigLoader.loadConf(), newMobileNo, command.otpCode());
+        boolean configuredDefault = "WHATSAPP".equalsIgnoreCase(challenge.channel())
+                ? WhatsAppConfigLoader.acceptsConfiguredDefaultCode(
+                        whatsAppConfigLoader.loadConf(), newMobileNo, command.otpCode())
+                : SmsConfigLoader.acceptsConfiguredDefaultCode(
+                        smsConfigLoader.loadConf(), newMobileNo, command.otpCode());
         if (!configuredDefault && !secureEquals(challenge.otpCode(), command.otpCode())) {
             throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
         }
@@ -97,6 +113,17 @@ public class MobileChangeFacade {
         if (!faceRepository.promote(face.faceVerifyToken(), Instant.now())) {
             throw new ApiException(ApiCode.INVALID_OR_EXPIRED_VERIFICATION_CODE);
         }
+        userDeviceWriter.upsertFromRequest(
+                userId, current.partnerUserId(), command.requestId(), command.device());
+        profileSyncOrchestrator.syncNow(new ProfileSyncJob(
+                userId,
+                current.partnerUserId(),
+                newMobileNo,
+                command.requestId(),
+                ProfileSyncModule.MOBILE,
+                command.device(),
+                new ProfileSyncPayload.MobilePayload()
+        ));
         TokenPair tokenPair = authServiceFacade.openSessionAfterMobileChange(userId, command.deviceNo());
         challengeStore.delete(command.otpToken());
         return new MobileChangeResult(command.requestId(), true, newMobileNo, tokenPair);
@@ -121,7 +148,8 @@ public class MobileChangeFacade {
             String faceVerifyToken,
             String otpToken,
             String otpCode,
-            String deviceNo
+            String deviceNo,
+            LenderDeviceContext device
     ) {
     }
 

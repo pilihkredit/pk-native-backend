@@ -133,6 +133,9 @@ public class ProfileSyncHandler {
             Long externalInteractionId
     ) {
         switch (module) {
+            case MOBILE -> {
+                // The mobile change log is persisted by MobileChangeFacade.
+            }
             case PERSONAL -> profilePersonalRepository.updateLastLenderInteraction(
                     userId,
                     externalInteractionId

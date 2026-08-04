@@ -1,6 +1,8 @@
 package com.pk.app.profile.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record MobileChangeOtpVerifyRequest(
@@ -9,6 +11,7 @@ public record MobileChangeOtpVerifyRequest(
         @NotBlank @Size(max = 64) String faceVerifyToken,
         @NotBlank @Size(max = 128) String otpToken,
         @NotBlank @Size(max = 16) String otpCode,
-        @NotBlank @Size(max = 128) String deviceNo
+        @NotBlank @Size(max = 128) String deviceNo,
+        @NotNull @Valid ProfileDeviceRequest device
 ) {
 }

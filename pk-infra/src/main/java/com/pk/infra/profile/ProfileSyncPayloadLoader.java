@@ -30,6 +30,7 @@ public class ProfileSyncPayloadLoader {
 
     public ProfileSyncPayload load(long userId, ProfileSyncModule module) {
         return switch (module) {
+            case MOBILE -> throw new IllegalStateException("Mobile payload must be supplied explicitly");
             case PERSONAL -> loadPersonal(userId);
             case CONTACT -> loadContacts(userId);
             case BANK_CARD -> throw new IllegalStateException("Bank card payload must be supplied explicitly");

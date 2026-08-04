@@ -66,7 +66,7 @@ public class WhatsAppConfigLoader {
      * Same rules as SMS / pk-credit-core WhatsApp verify:
      * whitelist + defaultCode, or defaultCode for everyone when enableWhatsApp=false.
      */
-    static boolean acceptsConfiguredDefaultCode(WhatsAppConf conf, String mobileNo, String otpCode) {
+    public static boolean acceptsConfiguredDefaultCode(WhatsAppConf conf, String mobileNo, String otpCode) {
         if (conf == null || otpCode == null || otpCode.isBlank()) {
             return false;
         }

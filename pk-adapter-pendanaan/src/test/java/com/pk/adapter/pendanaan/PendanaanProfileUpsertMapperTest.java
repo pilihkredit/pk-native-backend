@@ -23,6 +23,19 @@ class PendanaanProfileUpsertMapperTest {
     }
 
     @Test
+    void mobileModuleDoesNotAddUnrelatedProfileFields() {
+        ObjectNode userInfo = objectMapper.createObjectNode();
+        PendanaanProfileUpsertMapper.applyMobileNo(userInfo, "81234567890");
+        PendanaanProfileUpsertMapper.applyModule(
+                userInfo,
+                ProfileSyncModule.MOBILE,
+                new ProfileSyncPayload.MobilePayload()
+        );
+
+        assertThat(userInfo.fieldNames()).toIterable().containsExactly("mobileNo");
+    }
+
+    @Test
     void mapsPersonalModuleToLenderProfileShape() {
         ObjectNode userInfo = objectMapper.createObjectNode();
         PendanaanProfileUpsertMapper.applyModule(

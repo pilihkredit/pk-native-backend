@@ -86,15 +86,33 @@ public class ProfileApplicationService {
                 result.requestId(), result.verified(), result.faceVerifyToken(), result.expiresIn());
     }
 
-    public MobileChangeOtpSendResponse sendMobileChangeOtp(
+    public MobileChangeOtpSendResponse sendMobileChangeSmsOtp(
             AuthenticatedPrincipal principal,
             MobileChangeOtpSendRequest request,
             String deviceNoHeader
     ) {
+        return sendMobileChangeOtp(principal, request, deviceNoHeader, "SMS");
+    }
+
+    public MobileChangeOtpSendResponse sendMobileChangeWhatsAppOtp(
+            AuthenticatedPrincipal principal,
+            MobileChangeOtpSendRequest request,
+            String deviceNoHeader
+    ) {
+        return sendMobileChangeOtp(principal, request, deviceNoHeader, "WHATSAPP");
+    }
+
+    private MobileChangeOtpSendResponse sendMobileChangeOtp(
+            AuthenticatedPrincipal principal,
+            MobileChangeOtpSendRequest request,
+            String deviceNoHeader,
+            String channel
+    ) {
         requirePrincipal(principal);
         validateDeviceNo(request.deviceNo(), deviceNoHeader);
         var result = mobileChangeOtpFacade.send(principal.userId(), new MobileChangeOtpFacade.OtpSendCommand(
-                request.requestId(), request.newMobileNo(), request.faceVerifyToken(), request.deviceNo()));
+                request.requestId(), request.newMobileNo(), request.faceVerifyToken(), request.deviceNo(),
+                channel));
         return new MobileChangeOtpSendResponse(
                 result.requestId(), result.otpToken(), result.expiresIn(), result.resendAfter());
     }
@@ -102,15 +120,18 @@ public class ProfileApplicationService {
     public MobileChangeOtpVerifyResponse verifyMobileChangeOtp(
             AuthenticatedPrincipal principal,
             MobileChangeOtpVerifyRequest request,
-            String deviceNoHeader
+            String deviceNoHeader,
+            HttpServletRequest httpRequest
     ) {
         requirePrincipal(principal);
         validateDeviceNo(request.deviceNo(), deviceNoHeader);
+        validateDeviceNo(request.device().deviceNo(), deviceNoHeader);
         var result = mobileChangeFacade.verifyAndChange(
                 principal.userId(),
                 new MobileChangeFacade.MobileChangeVerifyCommand(
                         request.requestId(), request.newMobileNo(), request.faceVerifyToken(),
-                        request.otpToken(), request.otpCode(), request.deviceNo()));
+                        request.otpToken(), request.otpCode(), request.deviceNo(),
+                        resolveDevice(request.device(), httpRequest)));
         var token = result.tokenPair();
         return new MobileChangeOtpVerifyResponse(
                 result.requestId(), result.changed(), result.mobileNo(), token.accessToken(), token.refreshToken(),

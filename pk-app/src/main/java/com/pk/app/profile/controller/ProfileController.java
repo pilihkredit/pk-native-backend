@@ -271,7 +271,24 @@ public class ProfileController {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                profileApplicationService.sendMobileChangeOtp(principal, request, deviceNoHeader),
+                profileApplicationService.sendMobileChangeSmsOtp(principal, request, deviceNoHeader),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Send a WhatsApp OTP to the new mobile number after face verification. */
+    @PostMapping("/mobile/otp/whatsapp/send")
+    public ApiResponse<MobileChangeOtpSendResponse> sendMobileChangeWhatsAppOtp(
+            @Valid @RequestBody MobileChangeOtpSendRequest request,
+            @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.sendMobileChangeWhatsAppOtp(principal, request, deviceNoHeader),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }
@@ -288,7 +305,7 @@ public class ProfileController {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         return ApiResponse.success(
-                profileApplicationService.verifyMobileChangeOtp(principal, request, deviceNoHeader),
+                profileApplicationService.verifyMobileChangeOtp(principal, request, deviceNoHeader, httpRequest),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

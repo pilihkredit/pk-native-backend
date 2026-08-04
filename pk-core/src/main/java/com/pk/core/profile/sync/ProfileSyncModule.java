@@ -1,6 +1,7 @@
 package com.pk.core.profile.sync;
 
 public enum ProfileSyncModule {
+    MOBILE,
     PERSONAL,
     CONTACT,
     BANK_CARD,

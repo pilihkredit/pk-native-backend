@@ -22,8 +22,8 @@ public class RedisMobileChangeOtpChallengeStore implements MobileChangeOtpChalle
         if (raw == null || raw.isBlank()) {
             return Optional.empty();
         }
-        String[] parts = raw.split("\\|", 6);
-        if (parts.length != 6) {
+        String[] parts = raw.split("\\|", 7);
+        if (parts.length != 6 && parts.length != 7) {
             return Optional.empty();
         }
         try {
@@ -34,7 +34,8 @@ public class RedisMobileChangeOtpChallengeStore implements MobileChangeOtpChalle
                     parts[2],
                     parts[3],
                     parts[4],
-                    Instant.parse(parts[5])
+                    Instant.parse(parts[5]),
+                    parts.length == 7 ? parts[6] : "SMS"
             ));
         } catch (RuntimeException exception) {
             return Optional.empty();
@@ -48,7 +49,8 @@ public class RedisMobileChangeOtpChallengeStore implements MobileChangeOtpChalle
                 + "|" + challenge.deviceNo()
                 + "|" + challenge.faceVerifyToken()
                 + "|" + challenge.otpCode()
-                + "|" + challenge.expiresAt();
+                + "|" + challenge.expiresAt()
+                + "|" + challenge.channel();
         redisTemplate.opsForValue().set(TOKEN_PREFIX + challenge.otpToken(), value, ttl);
     }
 

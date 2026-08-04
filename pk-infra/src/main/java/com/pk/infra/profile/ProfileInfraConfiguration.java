@@ -264,8 +264,11 @@ public class ProfileInfraConfiguration {
             com.pk.core.auth.port.MobileChangeOtpChallengeStore challengeStore,
             com.pk.core.auth.port.SmsSendLogRepository smsSendLogRepository,
             com.pk.core.auth.port.SmsSender smsSender,
+            com.pk.core.auth.port.WhatsAppSendLogRepository whatsAppSendLogRepository,
+            com.pk.core.auth.port.WhatsAppSender whatsAppSender,
             com.pk.infra.auth.AuthOtpConfigLoader otpConfigLoader,
-            com.pk.infra.auth.SmsConfigLoader smsConfigLoader
+            com.pk.infra.auth.SmsConfigLoader smsConfigLoader,
+            com.pk.infra.auth.WhatsAppConfigLoader whatsAppConfigLoader
     ) {
         return new MobileChangeOtpFacade(
                 userAuthRepository,
@@ -273,8 +276,11 @@ public class ProfileInfraConfiguration {
                 challengeStore,
                 smsSendLogRepository,
                 smsSender,
+                whatsAppSendLogRepository,
+                whatsAppSender,
                 otpConfigLoader,
-                smsConfigLoader
+                smsConfigLoader,
+                whatsAppConfigLoader
         );
     }
 

@@ -3,6 +3,9 @@ package com.pk.core.profile.sync;
 import java.util.List;
 
 public sealed interface ProfileSyncPayload {
+    record MobilePayload() implements ProfileSyncPayload {
+    }
+
     record PersonalProfilePayload(
             int educationDegree,
             int industry,
