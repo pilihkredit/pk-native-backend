@@ -14,7 +14,7 @@
     <resultMap id="exposureMap" type="com.pk.infra.review.repository.ReviewGuideExposureRow">
         <constructor>
             <arg column="id" javaType="_long"/>
-            <arg column="guide_type" javaType="string"/>
+            <arg column="scene" javaType="string"/>
             <arg column="clicked_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
         </constructor>
@@ -33,7 +33,7 @@
     </select>
 
     <select id="findByUserIdAndScene" resultMap="exposureMap">
-        SELECT id, guide_type, clicked_at
+        SELECT id, scene, clicked_at
         FROM review_guide_exposure
         WHERE user_id = #{userId}
           AND scene = #{scene}
@@ -45,20 +45,14 @@
     </insert>
 
     <select id="findByIdAndUserIdForUpdate" resultMap="exposureMap">
-        SELECT id, guide_type, clicked_at
+        SELECT id, scene, clicked_at
         FROM review_guide_exposure
         WHERE id = #{id}
           AND user_id = #{userId}
         FOR UPDATE
     </select>
 
-    <update id="markExposureClicked">
-        UPDATE review_guide_exposure
-        SET clicked_at = COALESCE(clicked_at, CURRENT_TIMESTAMP(3))
-        WHERE id = #{id}
-    </update>
-
-    <update id="markRealReviewClicked">
+    <update id="markStoreJumpIfAbsent">
         UPDATE review_guide_user_state
         SET real_review_clicked_at = CURRENT_TIMESTAMP(3)
         WHERE user_id = #{userId}

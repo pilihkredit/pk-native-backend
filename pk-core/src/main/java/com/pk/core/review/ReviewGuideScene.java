@@ -1,17 +1,15 @@
 package com.pk.core.review;
 
 public enum ReviewGuideScene {
-    CREDIT_FAILED(ReviewGuideType.FAKE),
-    ORDER_CREATED(ReviewGuideType.REAL),
-    LOAN_PAID(ReviewGuideType.REAL);
+    CREDIT_FAILED,
+    ORDER_CREATED,
+    LOAN_PAID;
 
-    private final ReviewGuideType guideType;
-
-    ReviewGuideScene(ReviewGuideType guideType) {
-        this.guideType = guideType;
+    public boolean isStoreJumpScene() {
+        return this == ORDER_CREATED || this == LOAN_PAID;
     }
 
-    public ReviewGuideType guideType() {
-        return guideType;
+    public static ReviewGuideScene fromName(String value) {
+        return ReviewGuideScene.valueOf(value);
     }
 }

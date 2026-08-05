@@ -4,7 +4,7 @@ import java.time.Instant;
 
 public record ReviewGuideExposureRow(
         long id,
-        String guideType,
+        String scene,
         Instant clickedAt
 ) {
 }

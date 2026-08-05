@@ -4,6 +4,6 @@ import java.time.Instant;
 
 public record ReviewGuideUserStateRow(
         long userId,
-        Instant realReviewClickedAt
+        Instant storeJumpAt
 ) {
 }

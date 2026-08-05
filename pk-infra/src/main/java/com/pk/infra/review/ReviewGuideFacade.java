@@ -2,16 +2,19 @@ package com.pk.infra.review;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
-import com.pk.core.review.ReviewGuideAction;
 import com.pk.core.review.ReviewGuideScene;
-import com.pk.core.review.ReviewGuideType;
 import com.pk.core.review.port.ReviewGuideRepository;
 
 public class ReviewGuideFacade {
     private final ReviewGuideRepository reviewGuideRepository;
+    private final ReviewGuideMinJumpRatingLoader minJumpRatingLoader;
 
-    public ReviewGuideFacade(ReviewGuideRepository reviewGuideRepository) {
+    public ReviewGuideFacade(
+            ReviewGuideRepository reviewGuideRepository,
+            ReviewGuideMinJumpRatingLoader minJumpRatingLoader
+    ) {
         this.reviewGuideRepository = reviewGuideRepository;
+        this.minJumpRatingLoader = minJumpRatingLoader;
     }
 
     public ReviewGuideRepository.ClaimResult claim(long userId, ReviewGuideScene scene) {
@@ -19,15 +22,7 @@ public class ReviewGuideFacade {
         if (scene == null) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        return reviewGuideRepository.claim(userId, scene, scene.guideType());
-    }
-
-    public ReviewGuideRepository.ClickResult recordClick(long userId, long guideId, ReviewGuideAction action) {
-        requireUserId(userId);
-        if (guideId <= 0L || action == null) {
-            throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
-        }
-        return reviewGuideRepository.recordClick(userId, guideId, action);
+        return reviewGuideRepository.claim(userId, scene);
     }
 
     public void recordFeedback(long userId, long guideId, int rating) {
@@ -35,7 +30,7 @@ public class ReviewGuideFacade {
         if (guideId <= 0L || rating < 1 || rating > 5) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
-        reviewGuideRepository.recordFeedback(userId, guideId, rating);
+        reviewGuideRepository.recordFeedback(userId, guideId, rating, minJumpRatingLoader.load());
     }
 
     private static void requireUserId(long userId) {

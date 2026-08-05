@@ -24,9 +24,7 @@ public interface ReviewGuideMapper {
             @Param("userId") long userId
     );
 
-    int markExposureClicked(@Param("id") long id);
-
-    int markRealReviewClicked(@Param("userId") long userId);
+    int markStoreJumpIfAbsent(@Param("userId") long userId);
 
     int saveRatingIfAbsent(@Param("id") long id, @Param("rating") int rating);
 }

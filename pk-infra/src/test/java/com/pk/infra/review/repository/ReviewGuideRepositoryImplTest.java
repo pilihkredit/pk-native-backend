@@ -3,23 +3,23 @@ package com.pk.infra.review.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
-import com.pk.core.review.ReviewGuideAction;
 import com.pk.core.review.ReviewGuideScene;
-import com.pk.core.review.ReviewGuideType;
 import com.pk.infra.review.mapper.ReviewGuideMapper;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ReviewGuideRepositoryImplTest {
+    private static final int MIN_JUMP_RATING = 4;
+
     private ReviewGuideMapper mapper;
     private ReviewGuideRepositoryImpl repository;
 
@@ -38,60 +38,81 @@ class ReviewGuideRepositoryImplTest {
             return 1;
         }).when(mapper).insertExposure(any(ReviewGuideExposureInsertParam.class));
 
-        var result = repository.claim(10L, ReviewGuideScene.CREDIT_FAILED, ReviewGuideType.FAKE);
+        var result = repository.claim(10L, ReviewGuideScene.CREDIT_FAILED);
 
         assertThat(result.shouldShow()).isTrue();
         assertThat(result.guideId()).isEqualTo(25L);
-        assertThat(result.guideType()).isEqualTo(ReviewGuideType.FAKE);
         verify(mapper).ensureUserState(10L);
         verify(mapper).findByUserIdAndScene(10L, "CREDIT_FAILED");
+        verify(mapper).insertExposure(any(ReviewGuideExposureInsertParam.class));
     }
 
     @Test
-    void claimDoesNotShowAfterARealReviewClick() {
+    void claimDoesNotShowAfterStoreJumpMarked() {
         when(mapper.findUserStateForUpdate(10L)).thenReturn(
                 new ReviewGuideUserStateRow(10L, Instant.parse("2026-08-05T01:00:00Z"))
         );
 
-        var result = repository.claim(10L, ReviewGuideScene.LOAN_PAID, ReviewGuideType.REAL);
+        var result = repository.claim(10L, ReviewGuideScene.CREDIT_FAILED);
 
         assertThat(result.shouldShow()).isFalse();
-        verify(mapper, org.mockito.Mockito.never()).insertExposure(any());
+        verify(mapper, never()).insertExposure(any());
     }
 
     @Test
-    void realClickClaimsTheGlobalRealReviewSlot() {
+    void feedbackIsStoredForAnyScene() {
         when(mapper.findByIdAndUserIdForUpdate(25L, 10L)).thenReturn(
-                new ReviewGuideExposureRow(25L, "REAL", null)
+                new ReviewGuideExposureRow(25L, "ORDER_CREATED", null)
         );
-        when(mapper.markRealReviewClicked(10L)).thenReturn(1);
 
-        var result = repository.recordClick(10L, 25L, ReviewGuideAction.RATE);
+        repository.recordFeedback(10L, 25L, 3, MIN_JUMP_RATING);
 
-        assertThat(result.shouldOpenStore()).isTrue();
-        verify(mapper).markExposureClicked(25L);
+        verify(mapper).saveRatingIfAbsent(25L, 3);
+        verify(mapper, never()).markStoreJumpIfAbsent(10L);
     }
 
     @Test
-    void rejectsAnActionThatDoesNotMatchTheGuideType() {
+    void highRatingOnOrderCreatedMarksStoreJumpAndSuppressesFutureClaims() {
         when(mapper.findByIdAndUserIdForUpdate(25L, 10L)).thenReturn(
-                new ReviewGuideExposureRow(25L, "FAKE", null)
+                new ReviewGuideExposureRow(25L, "ORDER_CREATED", null)
         );
 
-        assertThatThrownBy(() -> repository.recordClick(10L, 25L, ReviewGuideAction.RATE))
+        repository.recordFeedback(10L, 25L, MIN_JUMP_RATING, MIN_JUMP_RATING);
+
+        verify(mapper).saveRatingIfAbsent(25L, MIN_JUMP_RATING);
+        verify(mapper).markStoreJumpIfAbsent(10L);
+    }
+
+    @Test
+    void highRatingOnLoanPaidMarksStoreJump() {
+        when(mapper.findByIdAndUserIdForUpdate(26L, 10L)).thenReturn(
+                new ReviewGuideExposureRow(26L, "LOAN_PAID", null)
+        );
+
+        repository.recordFeedback(10L, 26L, 5, MIN_JUMP_RATING);
+
+        verify(mapper).markStoreJumpIfAbsent(10L);
+    }
+
+    @Test
+    void highRatingOnCreditFailedDoesNotMarkStoreJump() {
+        when(mapper.findByIdAndUserIdForUpdate(25L, 10L)).thenReturn(
+                new ReviewGuideExposureRow(25L, "CREDIT_FAILED", null)
+        );
+
+        repository.recordFeedback(10L, 25L, 5, MIN_JUMP_RATING);
+
+        verify(mapper).saveRatingIfAbsent(25L, 5);
+        verify(mapper, never()).markStoreJumpIfAbsent(10L);
+    }
+
+    @Test
+    void feedbackRejectsMissingExposure() {
+        when(mapper.findByIdAndUserIdForUpdate(25L, 10L)).thenReturn(null);
+
+        assertThatThrownBy(() -> repository.recordFeedback(10L, 25L, 5, MIN_JUMP_RATING))
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.INVALID_REQUEST_PARAMETERS);
-    }
-
-    @Test
-    void feedbackIsStoredOnlyForFakeGuides() {
-        when(mapper.findByIdAndUserIdForUpdate(25L, 10L)).thenReturn(
-                new ReviewGuideExposureRow(25L, "FAKE", null)
-        );
-
-        repository.recordFeedback(10L, 25L, 5);
-
-        verify(mapper).saveRatingIfAbsent(25L, 5);
     }
 }

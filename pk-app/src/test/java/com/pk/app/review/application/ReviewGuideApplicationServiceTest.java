@@ -9,22 +9,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pk.app.review.dto.request.ReviewGuideClaimRequest;
-import com.pk.app.review.dto.request.ReviewGuideClickRequest;
+import com.pk.app.review.dto.request.ReviewGuideFeedbackRequest;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
-import com.pk.core.review.ReviewGuideAction;
-import com.pk.core.review.ReviewGuideType;
 import com.pk.core.review.port.ReviewGuideRepository;
 import com.pk.infra.review.ReviewGuideFacade;
 import org.junit.jupiter.api.Test;
 
 class ReviewGuideApplicationServiceTest {
     @Test
-    void claimReturnsTheGuideIdentifierAndType() {
+    void claimReturnsTheGuideIdentifier() {
         ReviewGuideFacade facade = mock(ReviewGuideFacade.class);
         when(facade.claim(anyLong(), any())).thenReturn(
-                new ReviewGuideRepository.ClaimResult(true, 25L, ReviewGuideType.FAKE)
+                new ReviewGuideRepository.ClaimResult(true, 25L)
         );
         ReviewGuideApplicationService service = new ReviewGuideApplicationService(facade);
 
@@ -32,21 +30,16 @@ class ReviewGuideApplicationServiceTest {
 
         assertThat(response.shouldShow()).isTrue();
         assertThat(response.guideId()).isEqualTo(25L);
-        assertThat(response.guideType()).isEqualTo("FAKE");
     }
 
     @Test
-    void clickPassesTheGuideIdentifierAndActionToTheFacade() {
+    void feedbackPassesGuideIdAndRatingToTheFacade() {
         ReviewGuideFacade facade = mock(ReviewGuideFacade.class);
-        when(facade.recordClick(10L, 25L, ReviewGuideAction.RATE)).thenReturn(
-                new ReviewGuideRepository.ClickResult(true)
-        );
         ReviewGuideApplicationService service = new ReviewGuideApplicationService(facade);
 
-        var response = service.click(principal(), new ReviewGuideClickRequest(25L, "RATE"));
+        service.feedback(principal(), new ReviewGuideFeedbackRequest(25L, 4));
 
-        assertThat(response.shouldOpenStore()).isTrue();
-        verify(facade).recordClick(10L, 25L, ReviewGuideAction.RATE);
+        verify(facade).recordFeedback(10L, 25L, 4);
     }
 
     @Test

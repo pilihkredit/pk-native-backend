@@ -4,10 +4,8 @@ import com.pk.app.common.web.ApiResponse;
 import com.pk.app.common.web.RequestTrace;
 import com.pk.app.review.application.ReviewGuideApplicationService;
 import com.pk.app.review.dto.request.ReviewGuideClaimRequest;
-import com.pk.app.review.dto.request.ReviewGuideClickRequest;
 import com.pk.app.review.dto.request.ReviewGuideFeedbackRequest;
 import com.pk.app.review.dto.response.ReviewGuideClaimResponse;
-import com.pk.app.review.dto.response.ReviewGuideClickResponse;
 import com.pk.app.security.SecurityContextSupport;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -43,16 +41,5 @@ public class ReviewGuideController {
     ) {
         reviewGuideApplicationService.feedback(SecurityContextSupport.requirePrincipal(), request);
         return ApiResponse.success(null, RequestTrace.resolveTraceId(httpRequest));
-    }
-
-    @PostMapping("/click")
-    public ApiResponse<ReviewGuideClickResponse> click(
-            @Valid @RequestBody ReviewGuideClickRequest request,
-            HttpServletRequest httpRequest
-    ) {
-        return ApiResponse.success(
-                reviewGuideApplicationService.click(SecurityContextSupport.requirePrincipal(), request),
-                RequestTrace.resolveTraceId(httpRequest)
-        );
     }
 }

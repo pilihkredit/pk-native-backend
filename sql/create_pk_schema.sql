@@ -109,6 +109,14 @@ VALUES (
 ON DUPLICATE KEY UPDATE
     `value` = VALUES(`value`);
 
+INSERT INTO app_config (`key`, `value`)
+VALUES (
+    'reviewGuide.minJumpRating',
+    CAST('4' AS JSON)
+)
+ON DUPLICATE KEY UPDATE
+    `value` = VALUES(`value`);
+
 CREATE TABLE ref_bank (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     bank_code VARCHAR(64) NOT NULL COMMENT 'Bank code',
@@ -1774,7 +1782,7 @@ CREATE TABLE user_profile_personal (
 
 CREATE TABLE review_guide_user_state (
     user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
-    real_review_clicked_at DATETIME(3) NULL COMMENT 'First real app store review click time',
+    real_review_clicked_at DATETIME(3) NULL COMMENT 'Set when ORDER_CREATED/LOAN_PAID rating >= minJumpRating; suppresses all scenes',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)
         COMMENT 'Record update time',
@@ -1785,11 +1793,11 @@ CREATE TABLE review_guide_exposure (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
     user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     scene VARCHAR(32) NOT NULL COMMENT 'CREDIT_FAILED, ORDER_CREATED, or LOAN_PAID',
-    guide_type VARCHAR(16) NOT NULL COMMENT 'FAKE or REAL',
+    guide_type VARCHAR(16) NOT NULL COMMENT 'IN_APP (legacy FAKE/REAL ignored)',
     shown_at DATETIME(3) NOT NULL COMMENT 'Time the display eligibility was claimed',
-    in_app_rating TINYINT UNSIGNED NULL COMMENT 'In-app rating from 1 to 5 for fake guides',
+    in_app_rating TINYINT UNSIGNED NULL COMMENT 'In-app rating from 1 to 5',
     feedback_at DATETIME(3) NULL COMMENT 'In-app rating submission time',
-    clicked_at DATETIME(3) NULL COMMENT 'Guide button click time',
+    clicked_at DATETIME(3) NULL COMMENT 'Unused after store-jump redesign',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)
         COMMENT 'Record update time',
