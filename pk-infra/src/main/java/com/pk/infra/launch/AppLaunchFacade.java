@@ -7,6 +7,8 @@ import com.pk.core.launch.port.AppLaunchRepository;
 import java.time.Instant;
 
 public class AppLaunchFacade {
+    private static final int MAX_IDFV_LENGTH = 128;
+
     private final AppLaunchRepository appLaunchRepository;
 
     public AppLaunchFacade(AppLaunchRepository appLaunchRepository) {
@@ -21,6 +23,7 @@ public class AppLaunchFacade {
                 || isBlank(record.appVersion())
                 || isBlank(record.platform())
                 || isBlank(record.appPackage())
+                || !isValidOptionalIdfv(record.idfv())
                 || record.occurredAt() == null) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
@@ -36,6 +39,10 @@ public class AppLaunchFacade {
 
     private static String normalizeDeviceNo(String deviceNo) {
         return isBlank(deviceNo) ? null : deviceNo.trim();
+    }
+
+    private static boolean isValidOptionalIdfv(String idfv) {
+        return idfv == null || (!idfv.isBlank() && idfv.length() <= MAX_IDFV_LENGTH);
     }
 
     private static boolean isBlank(String value) {

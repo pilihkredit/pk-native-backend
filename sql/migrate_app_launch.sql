@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS app_launch_event (
     app_version VARCHAR(64) NOT NULL COMMENT 'Client application version',
     platform VARCHAR(32) NOT NULL COMMENT 'Client platform',
     app_package VARCHAR(255) NOT NULL COMMENT 'Client application package',
+    idfv VARCHAR(128) NULL COMMENT 'iOS IDFV',
     client_started_at DATETIME(3) NULL COMMENT 'Client-reported cold start time',
     occurred_at DATETIME(3) NOT NULL COMMENT 'Server-recorded launch time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',

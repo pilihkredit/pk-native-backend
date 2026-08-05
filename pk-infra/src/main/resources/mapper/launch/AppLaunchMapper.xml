@@ -4,10 +4,10 @@
 <mapper namespace="com.pk.infra.launch.mapper.AppLaunchMapper">
     <insert id="insertEvent">
         INSERT IGNORE INTO app_launch_event (
-            launch_id, device_no, user_id, app_version, platform, app_package,
+            launch_id, device_no, user_id, app_version, platform, app_package, idfv,
             client_started_at, occurred_at
         ) VALUES (
-            #{launchId}, #{deviceNo}, #{userId}, #{appVersion}, #{platform}, #{appPackage},
+            #{launchId}, #{deviceNo}, #{userId}, #{appVersion}, #{platform}, #{appPackage}, #{idfv},
             #{clientStartedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler},
             #{occurredAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )

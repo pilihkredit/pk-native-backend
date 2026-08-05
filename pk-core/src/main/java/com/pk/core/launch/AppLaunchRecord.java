@@ -9,6 +9,7 @@ public record AppLaunchRecord(
         String appVersion,
         String platform,
         String appPackage,
+        String idfv,
         Instant clientStartedAt,
         Instant occurredAt
 ) {

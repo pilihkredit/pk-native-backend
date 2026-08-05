@@ -41,6 +41,7 @@ class AppLaunchRepositoryImplTest {
                 "1.0.0",
                 "android",
                 "com.example.app",
+                "idfv-1",
                 occurredAt,
                 occurredAt
         );

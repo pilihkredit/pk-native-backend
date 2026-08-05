@@ -32,6 +32,7 @@ public class AppLaunchApplicationService {
                 headers.appVersion(),
                 headers.platform(),
                 headers.appPackage(),
+                normalizeOptional(request.idfv()),
                 clientStartedAt,
                 occurredAt
         ));
@@ -47,5 +48,13 @@ public class AppLaunchApplicationService {
         } catch (RuntimeException exception) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
+    }
+
+    private static String normalizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
