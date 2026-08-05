@@ -241,7 +241,6 @@ public class AuthServiceFacade {
         }
 
         userAuthRepository.changePassword(userId, sensitiveFieldEncryptor.encrypt(newPassword));
-        invalidateSessionsAfterPasswordChange(userId);
     }
 
     public PasswordLoginResult loginByPassword(String mobileNo, String password, String deviceNo) {
@@ -496,12 +495,6 @@ public class AuthServiceFacade {
         if (!PasswordFormatValidator.isValid(password)) {
             throw new ApiException(ApiCode.INVALID_PASSWORD_FORMAT);
         }
-    }
-
-    private void invalidateSessionsAfterPasswordChange(long userId) {
-        sessionStore.delete(userId);
-        refreshTokenStore.deleteAllForProfile(userId);
-        userAuthRepository.clearSessionTokens(userId);
     }
 
     private TokenPair openSession(UserProfileSummary profile, String deviceId, String loginChannel) {

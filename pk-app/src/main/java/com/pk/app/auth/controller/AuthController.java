@@ -152,7 +152,7 @@ public class AuthController {
         );
     }
 
-    /** Change an existing login password and invalidate all active sessions. */
+    /** Change an existing login password. Active sessions are kept. */
     @PostMapping("/password/change")
     public ApiResponse<PasswordChangeResponse> changePassword(
             @Valid @RequestBody PasswordChangeRequest request,

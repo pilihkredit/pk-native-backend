@@ -370,7 +370,7 @@ class AuthServiceFacadeTest {
     }
 
     @Test
-    void changePasswordReplacesEncryptedCredentialAndInvalidatesSessions() {
+    void changePasswordReplacesEncryptedCredentialAndKeepsSessions() {
         AuthProperties properties = new AuthProperties();
         SessionStore sessionStore = mock(SessionStore.class);
         RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
@@ -385,9 +385,9 @@ class AuthServiceFacadeTest {
         passwordFacade.changePassword(12L, "OldPassword123", "NewPassword456", "NewPassword456");
 
         verify(userAuthRepository).changePassword(12L, newCredential);
-        verify(sessionStore).delete(12L);
-        verify(refreshTokenStore).deleteAllForProfile(12L);
-        verify(userAuthRepository).clearSessionTokens(12L);
+        verify(sessionStore, never()).delete(12L);
+        verify(refreshTokenStore, never()).deleteAllForProfile(12L);
+        verify(userAuthRepository, never()).clearSessionTokens(12L);
     }
 
     @Test
