@@ -50,8 +50,9 @@ pk:
   fcm:
     enabled: ${PK_FCM_ENABLED:false}
     project-id: ${PK_FCM_PROJECT_ID:}
-    credentials-path: ${PK_FCM_CREDENTIALS_PATH:}
-    credentials-json: ${PK_FCM_CREDENTIALS_JSON:}
+    credentials-path: "${PK_FCM_CREDENTIALS_PATH:}"
+    credentials-json: "${PK_FCM_CREDENTIALS_JSON:}"
+    credentials-json-base64: "${PK_FCM_CREDENTIALS_JSON_BASE64:}"
   auth:
     access-token-ttl: ${PK_AUTH_ACCESS_TOKEN_TTL:15m}
     refresh-token-ttl: ${PK_AUTH_REFRESH_TOKEN_TTL:30d}

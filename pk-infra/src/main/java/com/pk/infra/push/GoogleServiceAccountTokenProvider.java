@@ -94,7 +94,16 @@ public class GoogleServiceAccountTokenProvider {
                         "Google OAuth token exchange failed HTTP " + response.statusCode() + ": " + truncate(responseBody)
                 );
             }
-            JsonNode json = objectMapper.readTree(responseBody);
+            JsonNode json;
+            try {
+                json = objectMapper.readTree(responseBody);
+            } catch (IOException parseException) {
+                throw new ApiException(
+                        ApiCode.SERVICE_UNAVAILABLE,
+                        "Google OAuth response JSON parse failed (len=" + responseBody.length()
+                                + "): " + rootMessage(parseException)
+                );
+            }
             String accessToken = text(json, "access_token");
             if (accessToken.isBlank()) {
                 throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, "Google OAuth response missing access_token");
@@ -121,23 +130,62 @@ public class GoogleServiceAccountTokenProvider {
     }
 
     private JsonNode loadCredentials() throws IOException {
-        if (properties.credentialsJson() != null && !properties.credentialsJson().isBlank()) {
-            String raw = properties.credentialsJson().trim();
+        // Prefer path, then base64, then raw JSON (raw JSON is often truncated in deploy env/YAML).
+        if (properties.credentialsPath() != null && !properties.credentialsPath().isBlank()) {
+            Path path = Path.of(properties.credentialsPath().trim());
             try {
-                return objectMapper.readTree(raw);
-            } catch (IOException first) {
-                // Some hosts store the env value with surrounding quotes.
-                if ((raw.startsWith("'") && raw.endsWith("'")) || (raw.startsWith("\"") && raw.endsWith("\""))) {
-                    return objectMapper.readTree(raw.substring(1, raw.length() - 1));
-                }
-                throw first;
+                return objectMapper.readTree(Files.readString(path));
+            } catch (IOException exception) {
+                throw new ApiException(
+                        ApiCode.SERVICE_UNAVAILABLE,
+                        "FCM credentials-path JSON parse failed (" + path + "): " + rootMessage(exception)
+                );
             }
         }
-        if (properties.credentialsPath() == null || properties.credentialsPath().isBlank()) {
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, "FCM credentials-path and credentials-json are both empty");
+        if (properties.credentialsJsonBase64() != null && !properties.credentialsJsonBase64().isBlank()) {
+            String compact = properties.credentialsJsonBase64().replaceAll("\\s+", "");
+            byte[] decoded;
+            try {
+                decoded = Base64.getDecoder().decode(compact);
+            } catch (IllegalArgumentException exception) {
+                throw new ApiException(
+                        ApiCode.SERVICE_UNAVAILABLE,
+                        "FCM credentials-json-base64 is not valid Base64 (len=" + compact.length() + ")"
+                );
+            }
+            String json = new String(decoded, StandardCharsets.UTF_8).trim();
+            try {
+                return objectMapper.readTree(json);
+            } catch (IOException exception) {
+                throw new ApiException(
+                        ApiCode.SERVICE_UNAVAILABLE,
+                        "FCM credentials-json-base64 decoded JSON parse failed (decodedLen="
+                                + json.length() + ", prefix=" + safePrefix(json) + "): "
+                                + rootMessage(exception)
+                );
+            }
         }
-        Path path = Path.of(properties.credentialsPath().trim());
-        return objectMapper.readTree(Files.readString(path));
+        if (properties.credentialsJson() != null && !properties.credentialsJson().isBlank()) {
+            String raw = properties.credentialsJson().trim();
+            if ((raw.startsWith("'") && raw.endsWith("'")) || (raw.startsWith("\"") && raw.endsWith("\""))) {
+                raw = raw.substring(1, raw.length() - 1);
+            }
+            try {
+                return objectMapper.readTree(raw);
+            } catch (IOException exception) {
+                throw new ApiException(
+                        ApiCode.SERVICE_UNAVAILABLE,
+                        "FCM credentials-json parse failed (len=" + raw.length()
+                                + ", prefix=" + safePrefix(raw)
+                                + "). Prefer PK_FCM_CREDENTIALS_JSON_BASE64 or PK_FCM_CREDENTIALS_PATH: "
+                                + rootMessage(exception)
+                );
+            }
+        }
+        throw new ApiException(
+                ApiCode.SERVICE_UNAVAILABLE,
+                "FCM credentials missing: set PK_FCM_CREDENTIALS_PATH, PK_FCM_CREDENTIALS_JSON_BASE64, or PK_FCM_CREDENTIALS_JSON"
+        );
     }
 
     private static String signJwt(String clientEmail, String privateKeyPem, String tokenUri)
@@ -188,6 +236,14 @@ public class GoogleServiceAccountTokenProvider {
         }
         String trimmed = value.trim().replaceAll("\\s+", " ");
         return trimmed.length() <= 300 ? trimmed : trimmed.substring(0, 300) + "...";
+    }
+
+    private static String safePrefix(String value) {
+        if (value == null || value.isBlank()) {
+            return "<empty>";
+        }
+        String compact = value.replaceAll("\\s+", " ").trim();
+        return compact.length() <= 24 ? compact : compact.substring(0, 24) + "...";
     }
 
     private static String rootMessage(Throwable throwable) {

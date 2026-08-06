@@ -8,8 +8,10 @@ public class FcmProperties {
     private String projectId;
     /** Absolute/relative path to Firebase service-account JSON. */
     private String credentialsPath;
-    /** Inline service-account JSON (takes precedence over credentialsPath when non-blank). */
+    /** Inline service-account JSON. Prefer base64 or path in deploy environments. */
     private String credentialsJson;
+    /** Base64 of the service-account JSON (avoids YAML/env truncation of raw JSON). */
+    private String credentialsJsonBase64;
 
     public boolean enabled() {
         return enabled;
@@ -43,9 +45,18 @@ public class FcmProperties {
         this.credentialsJson = credentialsJson;
     }
 
+    public String credentialsJsonBase64() {
+        return credentialsJsonBase64;
+    }
+
+    public void setCredentialsJsonBase64(String credentialsJsonBase64) {
+        this.credentialsJsonBase64 = credentialsJsonBase64;
+    }
+
     public boolean configured() {
         return projectId != null && !projectId.isBlank()
-                && ((credentialsJson != null && !credentialsJson.isBlank())
-                || (credentialsPath != null && !credentialsPath.isBlank()));
+                && ((credentialsPath != null && !credentialsPath.isBlank())
+                || (credentialsJsonBase64 != null && !credentialsJsonBase64.isBlank())
+                || (credentialsJson != null && !credentialsJson.isBlank()));
     }
 }
