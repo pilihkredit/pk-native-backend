@@ -236,15 +236,12 @@ public class AuthApplicationService {
             AuthenticatedPrincipal principal,
             HttpServletRequest httpRequest
     ) {
-        return new AccountCloseEligibilityResponse(checkAccountCloseAccess(principal, httpRequest));
-    }
-
-    private boolean checkAccountCloseAccess(AuthenticatedPrincipal principal, HttpServletRequest httpRequest) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
         var device = profileDeviceResolver.resolve(principal, ClientRequestHeaders.require(httpRequest));
-        return accountCloseAccessFacade.checkAccess(principal, device).canClose();
+        var result = accountCloseAccessFacade.checkAccess(principal, device);
+        return new AccountCloseEligibilityResponse(result.canClose(), result.prompt(), result.reason());
     }
 
     private static void validateDeviceNoMatchesHeader(String bodyDeviceNo, String headerDeviceNo) {
