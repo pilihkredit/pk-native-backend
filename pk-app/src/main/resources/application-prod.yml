@@ -16,6 +16,11 @@ pk:
     user-progress:
       enabled: ${PK_DEBUG_USER_PROGRESS_ENABLED}
       token: ${PK_DEBUG_USER_PROGRESS_TOKEN}
+  fcm:
+    enabled: ${PK_FCM_ENABLED:false}
+    project-id: ${PK_FCM_PROJECT_ID:}
+    credentials-path: ${PK_FCM_CREDENTIALS_PATH:}
+    credentials-json: ${PK_FCM_CREDENTIALS_JSON:}
   lender:
     config:
       source: db

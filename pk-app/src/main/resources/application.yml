@@ -47,6 +47,11 @@ pk:
     user-progress:
       enabled: ${PK_DEBUG_USER_PROGRESS_ENABLED:false}
       token: ${PK_DEBUG_USER_PROGRESS_TOKEN:}
+  fcm:
+    enabled: ${PK_FCM_ENABLED:false}
+    project-id: ${PK_FCM_PROJECT_ID:}
+    credentials-path: ${PK_FCM_CREDENTIALS_PATH:}
+    credentials-json: ${PK_FCM_CREDENTIALS_JSON:}
   auth:
     access-token-ttl: ${PK_AUTH_ACCESS_TOKEN_TTL:15m}
     refresh-token-ttl: ${PK_AUTH_REFRESH_TOKEN_TTL:30d}
