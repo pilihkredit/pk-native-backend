@@ -16,6 +16,15 @@ final class PendanaanProfileUpsertMapper {
     }
 
     static void applyModule(ObjectNode userInfo, ProfileSyncModule module, ProfileSyncPayload payload) {
+        applyModule(userInfo, module, payload, null);
+    }
+
+    static void applyModule(
+            ObjectNode userInfo,
+            ProfileSyncModule module,
+            ProfileSyncPayload payload,
+            com.pk.core.profile.sync.LenderDeviceContext device
+    ) {
         switch (module) {
             case MOBILE -> {
                 // Mobile number and device are added by the request-level mapper.
@@ -25,7 +34,11 @@ final class PendanaanProfileUpsertMapper {
             case BANK_CARD -> applyBankCard(userInfo, (ProfileSyncPayload.BankCardProfilePayload) payload);
             case IDENTITY -> applyIdentity(userInfo, (ProfileSyncPayload.IdentityProfilePayload) payload);
             case LOGIN_LOG -> applyLoginLog(userInfo, (ProfileSyncPayload.LoginLogProfilePayload) payload);
-            case APPSFLYER_INSTALL -> applyAppsFlyer(userInfo, (ProfileSyncPayload.AppsFlyerInstallPayload) payload);
+            case APPSFLYER_INSTALL -> applyAppsFlyer(
+                    userInfo,
+                    (ProfileSyncPayload.AppsFlyerInstallPayload) payload,
+                    device
+            );
             case TONGDUN_DEVICE -> applyTongdun(userInfo, (ProfileSyncPayload.TongdunDevicePayload) payload);
         }
     }
@@ -97,11 +110,22 @@ final class PendanaanProfileUpsertMapper {
         }
     }
 
-    private static void applyAppsFlyer(ObjectNode userInfo, ProfileSyncPayload.AppsFlyerInstallPayload payload) {
+    private static void applyAppsFlyer(
+            ObjectNode userInfo,
+            ProfileSyncPayload.AppsFlyerInstallPayload payload,
+            com.pk.core.profile.sync.LenderDeviceContext device
+    ) {
         ObjectNode appsFlyer = userInfo.putObject("appsFlyerInstall");
         putIfPresent(appsFlyer, "appsflyerId", payload.appsflyerId());
-        putIfPresent(appsFlyer, "advertisingId", payload.advertisingId());
-        putIfPresent(appsFlyer, "androidId", payload.androidId());
+        String advertisingId = payload.advertisingId();
+        String androidId = payload.androidId();
+        if (isIos(device) && device.deviceNo() != null && !device.deviceNo().isBlank()) {
+            // iOS has no GAID/androidId; lender expects these fields filled with deviceNo.
+            advertisingId = device.deviceNo().trim();
+            androidId = device.deviceNo().trim();
+        }
+        putIfPresent(appsFlyer, "advertisingId", advertisingId);
+        putIfPresent(appsFlyer, "androidId", androidId);
         putIfPresent(appsFlyer, "attributedTouchTime", payload.attributedTouchTime());
         putIfPresent(appsFlyer, "gpClickTime", payload.gpClickTime());
         putIfPresent(appsFlyer, "installTime", payload.installTime());
@@ -139,6 +163,14 @@ final class PendanaanProfileUpsertMapper {
         putIfPresent(appsFlyer, "bundleId", payload.bundleId());
         putIfPresent(appsFlyer, "matchType", payload.matchType());
         putIfPresent(appsFlyer, "gpInstallBegin", payload.gpInstallBegin());
+    }
+
+    private static boolean isIos(com.pk.core.profile.sync.LenderDeviceContext device) {
+        if (device == null || device.systemPlatform() == null || device.systemPlatform().isBlank()) {
+            return false;
+        }
+        String platform = device.systemPlatform().trim();
+        return "ios".equalsIgnoreCase(platform) || "iphone".equalsIgnoreCase(platform);
     }
 
     private static void applyTongdun(ObjectNode userInfo, ProfileSyncPayload.TongdunDevicePayload payload) {

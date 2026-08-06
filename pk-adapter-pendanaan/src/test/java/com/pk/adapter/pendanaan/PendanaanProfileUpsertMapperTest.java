@@ -226,6 +226,29 @@ class PendanaanProfileUpsertMapperTest {
     }
 
     @Test
+    void applyAppsFlyerInstallOnIosUsesDeviceNoForAndroidIdAndAdvertisingId() {
+        ObjectNode userInfo = objectMapper.createObjectNode();
+        PendanaanProfileUpsertMapper.applyModule(
+                userInfo,
+                ProfileSyncModule.APPSFLYER_INSTALL,
+                new ProfileSyncPayload.AppsFlyerInstallPayload(
+                        "AF1", "IDFA-OR-BLANK", null, null, null, "2026-07-08 10:00:00",
+                        "media", null, null, null, null, null, "camp",
+                        null, null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null
+                ),
+                new com.pk.core.profile.sync.LenderDeviceContext(
+                        "App", "1.0", "com.pk", "IOS-DEVICE-NO-1", "ios"
+                )
+        );
+        assertThat(userInfo.path("appsFlyerInstall").path("advertisingId").asText())
+                .isEqualTo("IOS-DEVICE-NO-1");
+        assertThat(userInfo.path("appsFlyerInstall").path("androidId").asText())
+                .isEqualTo("IOS-DEVICE-NO-1");
+    }
+
+    @Test
     void applyTongdunDevice() {
         ObjectNode userInfo = objectMapper.createObjectNode();
         PendanaanProfileUpsertMapper.applyModule(

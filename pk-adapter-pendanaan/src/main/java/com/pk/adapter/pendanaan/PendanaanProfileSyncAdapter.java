@@ -67,9 +67,13 @@ public class PendanaanProfileSyncAdapter implements LenderProfileSyncPort {
             root.put("partnerUserId", command.partnerUserId());
             ObjectNode userInfo = objectMapper.createObjectNode();
             PendanaanProfileUpsertMapper.applyMobileNo(userInfo, command.mobileNo());
-            PendanaanProfileUpsertMapper.applyModule(userInfo, command.module(), command.payload());
+            PendanaanProfileUpsertMapper.applyModule(
+                    userInfo, command.module(), command.payload(), command.device()
+            );
             for (LenderProfileSyncPort.SyncCompanion companion : command.companions()) {
-                PendanaanProfileUpsertMapper.applyModule(userInfo, companion.module(), companion.payload());
+                PendanaanProfileUpsertMapper.applyModule(
+                        userInfo, companion.module(), companion.payload(), command.device()
+                );
             }
             PendanaanProfileUpsertMapper.applyDevice(userInfo, command.device());
             root.set("userInfo", userInfo);
