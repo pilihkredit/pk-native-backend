@@ -27,9 +27,12 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Exchanges a Firebase service-account JSON for a short-lived Google OAuth access token. */
 public class GoogleServiceAccountTokenProvider {
+    private static final Logger log = LoggerFactory.getLogger(GoogleServiceAccountTokenProvider.class);
     private static final String TOKEN_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
     private static final Duration TOKEN_TTL = Duration.ofMinutes(55);
 
@@ -66,10 +69,13 @@ public class GoogleServiceAccountTokenProvider {
         try {
             JsonNode credentials = loadCredentials();
             String clientEmail = text(credentials, "client_email");
-            String privateKeyPem = text(credentials, "private_key");
+            String privateKeyPem = normalizePrivateKeyPem(text(credentials, "private_key"));
             String tokenUri = text(credentials, "token_uri");
             if (clientEmail.isBlank() || privateKeyPem.isBlank() || tokenUri.isBlank()) {
-                throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+                throw new ApiException(
+                        ApiCode.SERVICE_UNAVAILABLE,
+                        "FCM credentials incomplete: need client_email, private_key, token_uri"
+                );
             }
             String assertion = signJwt(clientEmail, privateKeyPem, tokenUri);
             String body = "grant_type=" + URLEncoder.encode("urn:ietf:params:oauth:grant-type:jwt-bearer", StandardCharsets.UTF_8)
@@ -80,25 +86,55 @@ public class GoogleServiceAccountTokenProvider {
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            String responseBody = response.body() == null ? "" : response.body();
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+                log.warn("Google OAuth token exchange failed status={} body={}", response.statusCode(), truncate(responseBody));
+                throw new ApiException(
+                        ApiCode.SERVICE_UNAVAILABLE,
+                        "Google OAuth token exchange failed HTTP " + response.statusCode() + ": " + truncate(responseBody)
+                );
             }
-            JsonNode json = objectMapper.readTree(response.body());
+            JsonNode json = objectMapper.readTree(responseBody);
             String accessToken = text(json, "access_token");
             if (accessToken.isBlank()) {
-                throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+                throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, "Google OAuth response missing access_token");
             }
             return new CachedToken(accessToken, Instant.now().plus(TOKEN_TTL));
         } catch (ApiException exception) {
             throw exception;
+        } catch (java.net.http.HttpTimeoutException exception) {
+            log.warn("Google OAuth token exchange timed out", exception);
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, "Google OAuth token exchange timed out");
+        } catch (IOException exception) {
+            log.warn("Google OAuth token exchange I/O failed", exception);
+            throw new ApiException(
+                    ApiCode.SERVICE_UNAVAILABLE,
+                    "Google OAuth token exchange I/O failed: " + rootMessage(exception)
+            );
         } catch (Exception exception) {
-            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
+            log.warn("Google OAuth token exchange failed", exception);
+            throw new ApiException(
+                    ApiCode.SERVICE_UNAVAILABLE,
+                    "Google OAuth token exchange failed: " + rootMessage(exception)
+            );
         }
     }
 
     private JsonNode loadCredentials() throws IOException {
         if (properties.credentialsJson() != null && !properties.credentialsJson().isBlank()) {
-            return objectMapper.readTree(properties.credentialsJson());
+            String raw = properties.credentialsJson().trim();
+            try {
+                return objectMapper.readTree(raw);
+            } catch (IOException first) {
+                // Some hosts store the env value with surrounding quotes.
+                if ((raw.startsWith("'") && raw.endsWith("'")) || (raw.startsWith("\"") && raw.endsWith("\""))) {
+                    return objectMapper.readTree(raw.substring(1, raw.length() - 1));
+                }
+                throw first;
+            }
+        }
+        if (properties.credentialsPath() == null || properties.credentialsPath().isBlank()) {
+            throw new ApiException(ApiCode.SERVICE_UNAVAILABLE, "FCM credentials-path and credentials-json are both empty");
         }
         Path path = Path.of(properties.credentialsPath().trim());
         return objectMapper.readTree(Files.readString(path));
@@ -120,6 +156,17 @@ public class GoogleServiceAccountTokenProvider {
         return jwt.serialize();
     }
 
+    private static String normalizePrivateKeyPem(String pem) {
+        if (pem == null || pem.isBlank()) {
+            return "";
+        }
+        // Fix env values where "\\n" survived as literal backslash-n instead of newlines.
+        if (pem.contains("\\n") && !pem.contains("\n")) {
+            return pem.replace("\\n", "\n");
+        }
+        return pem;
+    }
+
     private static RSAPrivateKey parsePrivateKey(String pem) throws java.security.GeneralSecurityException {
         String normalized = pem
                 .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -133,6 +180,26 @@ public class GoogleServiceAccountTokenProvider {
     private static String text(JsonNode node, String field) {
         JsonNode value = node == null ? null : node.get(field);
         return value == null || value.isNull() ? "" : value.asText("").trim();
+    }
+
+    private static String truncate(String value) {
+        if (value == null) {
+            return "";
+        }
+        String trimmed = value.trim().replaceAll("\\s+", " ");
+        return trimmed.length() <= 300 ? trimmed : trimmed.substring(0, 300) + "...";
+    }
+
+    private static String rootMessage(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        String message = current.getMessage();
+        if (message == null || message.isBlank()) {
+            return current.getClass().getSimpleName();
+        }
+        return truncate(message);
     }
 
     private record CachedToken(String token, Instant expiresAt) {
