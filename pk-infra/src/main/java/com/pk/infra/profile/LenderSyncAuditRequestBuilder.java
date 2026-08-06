@@ -71,10 +71,10 @@ public class LenderSyncAuditRequestBuilder {
             if (mobileNo != null && !mobileNo.isBlank()) {
                 userInfo.put("mobileNo", mobileNo.trim());
             }
-            applyModuleAudit(userInfo, module, payload, userId, requestId);
+            applyModuleAudit(userInfo, module, payload, userId, requestId, device);
             if (companions != null) {
                 for (com.pk.core.profile.port.LenderProfileSyncPort.SyncCompanion companion : companions) {
-                    applyModuleAudit(userInfo, companion.module(), companion.payload(), userId, requestId);
+                    applyModuleAudit(userInfo, companion.module(), companion.payload(), userId, requestId, device);
                 }
             }
             userInfo.set("device", buildLenderDeviceNode(device));
@@ -92,7 +92,8 @@ public class LenderSyncAuditRequestBuilder {
             ProfileSyncModule module,
             ProfileSyncPayload payload,
             long userId,
-            String requestId
+            String requestId,
+            LenderDeviceContext device
     ) {
         switch (module) {
             case PERSONAL -> applyPersonalAudit(userInfo, userId);
@@ -102,7 +103,8 @@ public class LenderSyncAuditRequestBuilder {
             case LOGIN_LOG -> applyLoginLogAudit(userInfo, userId);
             case APPSFLYER_INSTALL -> applyAppsFlyerAudit(
                     userInfo,
-                    (ProfileSyncPayload.AppsFlyerInstallPayload) payload
+                    (ProfileSyncPayload.AppsFlyerInstallPayload) payload,
+                    device
             );
             case TONGDUN_DEVICE -> applyTongdunAudit(
                     userInfo,
@@ -111,11 +113,21 @@ public class LenderSyncAuditRequestBuilder {
         }
     }
 
-    private void applyAppsFlyerAudit(ObjectNode userInfo, ProfileSyncPayload.AppsFlyerInstallPayload payload) {
+    private void applyAppsFlyerAudit(
+            ObjectNode userInfo,
+            ProfileSyncPayload.AppsFlyerInstallPayload payload,
+            LenderDeviceContext device
+    ) {
         ObjectNode appsFlyer = userInfo.putObject("appsFlyerInstall");
         putIfPresent(appsFlyer, "appsflyerId", payload.appsflyerId());
-        putIfPresent(appsFlyer, "advertisingId", payload.advertisingId());
-        putIfPresent(appsFlyer, "androidId", payload.androidId());
+        String advertisingId = payload.advertisingId();
+        String androidId = payload.androidId();
+        if (isIos(device) && device.deviceNo() != null && !device.deviceNo().isBlank()) {
+            advertisingId = device.deviceNo().trim();
+            androidId = device.deviceNo().trim();
+        }
+        putIfPresent(appsFlyer, "advertisingId", advertisingId);
+        putIfPresent(appsFlyer, "androidId", androidId);
         putIfPresent(appsFlyer, "attributedTouchTime", payload.attributedTouchTime());
         putIfPresent(appsFlyer, "gpClickTime", payload.gpClickTime());
         putIfPresent(appsFlyer, "installTime", payload.installTime());
@@ -302,5 +314,13 @@ public class LenderSyncAuditRequestBuilder {
             return;
         }
         node.putPOJO(key, value);
+    }
+
+    private static boolean isIos(LenderDeviceContext device) {
+        if (device == null || device.systemPlatform() == null || device.systemPlatform().isBlank()) {
+            return false;
+        }
+        String platform = device.systemPlatform().trim();
+        return "ios".equalsIgnoreCase(platform) || "iphone".equalsIgnoreCase(platform);
     }
 }
