@@ -13,6 +13,7 @@
             user_id = VALUES(user_id),
             app_version = VALUES(app_version),
             platform = VALUES(platform),
+            fcm_token = VALUES(fcm_token),
             permission_status = VALUES(permission_status),
             last_seen_at = VALUES(last_seen_at)
     </insert>
