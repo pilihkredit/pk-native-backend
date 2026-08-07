@@ -22,7 +22,8 @@ public interface CreditApplicationMapper {
 
     List<CreditApplicationRecord> findDueForStatusBackfill(
             @Param("afterId") long afterId,
-            @Param("limit") int limit
+            @Param("limit") int limit,
+            @Param("createdFromInclusive") java.time.Instant createdFromInclusive
     );
 
     int insert(com.pk.infra.credit.repository.CreditApplicationRepositoryImpl.CreditApplicationInsertParam param);

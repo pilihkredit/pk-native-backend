@@ -1,5 +1,6 @@
 package com.pk.core.credit.port;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,7 +15,7 @@ public interface CreditApplicationRepository {
 
     Optional<CreditApplicationRecord> findByApplyId(String applyId);
 
-    List<CreditApplicationRecord> findDueForStatusBackfill(long afterId, int limit);
+    List<CreditApplicationRecord> findDueForStatusBackfill(long afterId, int limit, Instant createdFromInclusive);
 
     long insert(CreditApplicationInsert insert);
 

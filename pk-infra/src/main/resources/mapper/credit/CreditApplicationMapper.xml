@@ -75,6 +75,9 @@
         WHERE ca.id &gt; #{afterId}
           AND ca.apply_no IS NOT NULL
           AND TRIM(ca.apply_no) &lt;&gt; ''
+          <if test="createdFromInclusive != null">
+          AND ca.created_at &gt;= #{createdFromInclusive, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+          </if>
           AND (
                 latest.id IS NULL
                 OR latest.external_status IS NULL

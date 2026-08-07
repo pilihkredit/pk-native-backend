@@ -5,16 +5,21 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pk.core.credit.port.CreditApplicationRepository;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -32,6 +37,8 @@ class CreditStatusBackfillServiceTest {
     void setUp() {
         properties = new CreditStatusBackfillProperties();
         properties.setBatchSize(2);
+        properties.setLookbackDays(1);
+        properties.setZoneId("Asia/Jakarta");
         service = new CreditStatusBackfillService(
                 creditApplicationRepository,
                 creditStatusPollHandler,
@@ -40,13 +47,16 @@ class CreditStatusBackfillServiceTest {
     }
 
     @Test
-    void drainsAllPagesWithIdCursorUsingConfiguredBatchSize() {
+    void drainsPagesUsingConfiguredLookbackWindow() {
         CreditApplicationRepository.CreditApplicationRecord first = record(1L, "A1");
         CreditApplicationRepository.CreditApplicationRecord second = record(2L, "A2");
         CreditApplicationRepository.CreditApplicationRecord third = record(3L, "A3");
-        when(creditApplicationRepository.findDueForStatusBackfill(0L, 2))
+        Instant expectedFrom = LocalDate.now(ZoneId.of("Asia/Jakarta"))
+                .atStartOfDay(ZoneId.of("Asia/Jakarta"))
+                .toInstant();
+        when(creditApplicationRepository.findDueForStatusBackfill(eq(0L), eq(2), any()))
                 .thenReturn(List.of(first, second));
-        when(creditApplicationRepository.findDueForStatusBackfill(2L, 2))
+        when(creditApplicationRepository.findDueForStatusBackfill(eq(2L), eq(2), any()))
                 .thenReturn(List.of(third));
         doAnswer(invocation -> {
             CreditApplicationRepository.CreditApplicationRecord record = invocation.getArgument(0);
@@ -63,10 +73,25 @@ class CreditStatusBackfillServiceTest {
         assertThat(result.failed()).isEqualTo(1);
         assertThat(result.pages()).isEqualTo(2);
         assertThat(result.pageSize()).isEqualTo(2);
-        verify(creditApplicationRepository).findDueForStatusBackfill(eq(0L), eq(2));
-        verify(creditApplicationRepository).findDueForStatusBackfill(eq(2L), eq(2));
+        assertThat(result.createdFromInclusive()).isEqualTo(expectedFrom);
+        ArgumentCaptor<Instant> fromCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(creditApplicationRepository, times(2))
+                .findDueForStatusBackfill(anyLong(), anyInt(), fromCaptor.capture());
+        assertThat(fromCaptor.getAllValues()).containsOnly(expectedFrom);
         verify(creditStatusPollHandler, times(3)).syncFromLenderForJob(any());
-        verify(creditApplicationRepository, times(2)).findDueForStatusBackfill(anyLong(), anyInt());
+    }
+
+    @Test
+    void lookbackDaysNonPositiveMeansAllHistory() {
+        properties.setLookbackDays(0);
+        when(creditApplicationRepository.findDueForStatusBackfill(0L, 2, null))
+                .thenReturn(List.of());
+
+        CreditStatusBackfillService.BackfillResult result = service.run();
+
+        assertThat(result.candidates()).isZero();
+        assertThat(result.createdFromInclusive()).isNull();
+        verify(creditApplicationRepository).findDueForStatusBackfill(eq(0L), eq(2), isNull());
     }
 
     private static CreditApplicationRepository.CreditApplicationRecord record(long id, String applyId) {

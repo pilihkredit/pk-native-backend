@@ -2,6 +2,7 @@ package com.pk.infra.credit.repository;
 
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.infra.credit.mapper.CreditApplicationMapper;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
@@ -40,8 +41,12 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
     }
 
     @Override
-    public List<CreditApplicationRecord> findDueForStatusBackfill(long afterId, int limit) {
-        return creditApplicationMapper.findDueForStatusBackfill(afterId, limit);
+    public List<CreditApplicationRecord> findDueForStatusBackfill(
+            long afterId,
+            int limit,
+            Instant createdFromInclusive
+    ) {
+        return creditApplicationMapper.findDueForStatusBackfill(afterId, limit, createdFromInclusive);
     }
 
     @Override
