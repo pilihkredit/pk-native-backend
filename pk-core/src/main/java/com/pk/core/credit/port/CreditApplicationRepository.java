@@ -14,7 +14,7 @@ public interface CreditApplicationRepository {
 
     Optional<CreditApplicationRecord> findByApplyId(String applyId);
 
-    List<CreditApplicationRecord> findDueForStatusBackfill(int limit);
+    List<CreditApplicationRecord> findDueForStatusBackfill(long afterId, int limit);
 
     long insert(CreditApplicationInsert insert);
 

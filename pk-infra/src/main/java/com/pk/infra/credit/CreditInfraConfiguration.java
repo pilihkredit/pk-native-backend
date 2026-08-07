@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(CreditApplyProperties.class)
+@EnableConfigurationProperties({CreditApplyProperties.class, CreditStatusBackfillProperties.class})
 public class CreditInfraConfiguration {
     @Bean
     CreditApplyOutboxPublisher creditApplyOutboxPublisher(
@@ -91,8 +91,13 @@ public class CreditInfraConfiguration {
     @Bean
     CreditStatusBackfillService creditStatusBackfillService(
             CreditApplicationRepository creditApplicationRepository,
-            CreditStatusPollHandler creditStatusPollHandler
+            CreditStatusPollHandler creditStatusPollHandler,
+            CreditStatusBackfillProperties creditStatusBackfillProperties
     ) {
-        return new CreditStatusBackfillService(creditApplicationRepository, creditStatusPollHandler);
+        return new CreditStatusBackfillService(
+                creditApplicationRepository,
+                creditStatusPollHandler,
+                creditStatusBackfillProperties
+        );
     }
 }

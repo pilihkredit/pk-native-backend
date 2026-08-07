@@ -40,8 +40,8 @@ public class CreditApplicationRepositoryImpl implements CreditApplicationReposit
     }
 
     @Override
-    public List<CreditApplicationRecord> findDueForStatusBackfill(int limit) {
-        return creditApplicationMapper.findDueForStatusBackfill(limit);
+    public List<CreditApplicationRecord> findDueForStatusBackfill(long afterId, int limit) {
+        return creditApplicationMapper.findDueForStatusBackfill(afterId, limit);
     }
 
     @Override

@@ -72,7 +72,8 @@
                 ORDER BY q.id DESC
                 LIMIT 1
             )
-        WHERE ca.apply_no IS NOT NULL
+        WHERE ca.id &gt; #{afterId}
+          AND ca.apply_no IS NOT NULL
           AND TRIM(ca.apply_no) &lt;&gt; ''
           AND (
                 latest.id IS NULL

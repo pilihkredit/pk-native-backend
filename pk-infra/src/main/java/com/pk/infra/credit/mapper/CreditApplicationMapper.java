@@ -20,7 +20,10 @@ public interface CreditApplicationMapper {
 
     CreditApplicationRecord findByApplyId(@Param("applyId") String applyId);
 
-    List<CreditApplicationRecord> findDueForStatusBackfill(@Param("limit") int limit);
+    List<CreditApplicationRecord> findDueForStatusBackfill(
+            @Param("afterId") long afterId,
+            @Param("limit") int limit
+    );
 
     int insert(com.pk.infra.credit.repository.CreditApplicationRepositoryImpl.CreditApplicationInsertParam param);
 
