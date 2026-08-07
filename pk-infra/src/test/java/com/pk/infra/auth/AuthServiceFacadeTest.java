@@ -94,7 +94,7 @@ class AuthServiceFacadeTest {
                 "",
                 "",
                 "",
-                "otp_pilihkredit",
+                "group_otp_test",
                 "id",
                 "62",
                 Duration.ofSeconds(10),
