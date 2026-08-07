@@ -3,9 +3,9 @@
 <mapper namespace="com.pk.infra.external.mapper.LenderInteractionLogMapper">
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO external_interaction (provider_code, interaction_no, business_type, business_id, mobile_no, http_method,
-            endpoint, request_id, request_hash, request_ref, response_code, response_msg, response_ref, success, duration_ms)
+            endpoint, request_id, request_hash, request_ref, response_code, response_msg, response_ref, success, duration_ms, source)
         VALUES (#{providerCode}, #{interactionNo}, #{businessType}, #{businessId}, #{mobileNo}, #{httpMethod},
             #{endpoint}, #{requestId}, #{requestHash}, #{requestRef}, #{responseCode}, #{responseMsg},
-            #{responseRef}, #{success, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler}, #{durationMs})
+            #{responseRef}, #{success, typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler}, #{durationMs}, #{source})
     </insert>
 </mapper>

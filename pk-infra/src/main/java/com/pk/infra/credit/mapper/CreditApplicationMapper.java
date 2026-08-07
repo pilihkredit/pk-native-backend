@@ -1,6 +1,7 @@
 package com.pk.infra.credit.mapper;
 
 import com.pk.core.credit.port.CreditApplicationRepository.CreditApplicationRecord;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -18,6 +19,8 @@ public interface CreditApplicationMapper {
     CreditApplicationRecord findLatestByUserId(@Param("userId") long userId);
 
     CreditApplicationRecord findByApplyId(@Param("applyId") String applyId);
+
+    List<CreditApplicationRecord> findDueForStatusBackfill(@Param("limit") int limit);
 
     int insert(com.pk.infra.credit.repository.CreditApplicationRepositoryImpl.CreditApplicationInsertParam param);
 

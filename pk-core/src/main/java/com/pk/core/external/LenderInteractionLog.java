@@ -17,6 +17,7 @@ public class LenderInteractionLog {
     private final String responseRef;
     private final boolean success;
     private final int durationMs;
+    private final String source;
 
     public LenderInteractionLog(
             String providerCode,
@@ -33,7 +34,8 @@ public class LenderInteractionLog {
             String responseMsg,
             String responseRef,
             boolean success,
-            int durationMs
+            int durationMs,
+            String source
     ) {
         this.providerCode = providerCode;
         this.interactionNo = interactionNo;
@@ -50,6 +52,7 @@ public class LenderInteractionLog {
         this.responseRef = responseRef;
         this.success = success;
         this.durationMs = durationMs;
+        this.source = source;
     }
 
     public Long getId() {
@@ -118,5 +121,9 @@ public class LenderInteractionLog {
 
     public int getDurationMs() {
         return durationMs;
+    }
+
+    public String getSource() {
+        return source;
     }
 }

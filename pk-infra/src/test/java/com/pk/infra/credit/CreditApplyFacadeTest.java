@@ -181,6 +181,7 @@ class CreditApplyFacadeTest {
                         BigDecimal.ONE,
                         null,
                         null,
+                        "APP",
                         Instant.now()
                 )));
 

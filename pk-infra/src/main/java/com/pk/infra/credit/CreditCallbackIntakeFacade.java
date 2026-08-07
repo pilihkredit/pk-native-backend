@@ -7,6 +7,7 @@ import com.pk.core.callback.port.CreditCallbackParser;
 import com.pk.core.credit.CreditProviderCode;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.LenderCreditPort;
+import com.pk.core.external.DataWriteSource;
 import com.pk.core.external.ExternalInteractionCallbackLog;
 import com.pk.core.external.port.ExternalInteractionCallbackLogRepository;
 import com.pk.infra.external.ExternalInteractionCallbackSupport;
@@ -18,8 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 public class CreditCallbackIntakeFacade {
     private static final Logger log = LoggerFactory.getLogger(CreditCallbackIntakeFacade.class);
-    private static final String SOURCE = "CREDIT_CALLBACK";
-    private static final String LIMIT_SOURCE = "LENDER_CALLBACK";
+    private static final String SOURCE = DataWriteSource.CALLBACK;
     private static final String HTTP_METHOD = "POST";
     private static final String ENDPOINT = "/callback/credit/result";
     private static final String SUCCESS_RESPONSE = "{\"code\":\"000000\",\"msg\":\"success\"}";
@@ -106,7 +106,7 @@ public class CreditCallbackIntakeFacade {
                 callback.borrowAmtStepSize(),
                 null
         );
-        creditLenderStatusApplier.apply(record, status, SOURCE, LIMIT_SOURCE, interactionCallbackId);
+        creditLenderStatusApplier.apply(record, status, SOURCE, interactionCallbackId);
         String mobileNo = userAuthRepository.findByUserId(record.userId())
                 .map(profile -> profile.mobileNo())
                 .orElse(null);

@@ -101,7 +101,8 @@ final class PendanaanInteractionSupport {
                 responseMsg,
                 PendanaanHttpSupport.truncate(redactedResponse),
                 success,
-                durationMs
+                durationMs,
+                LenderInteractionContext.source()
         ));
     }
 

@@ -27,6 +27,7 @@ public interface CreditLenderStatusQueryRepository {
             BigDecimal borrowAmtStepSize,
             Long externalInteractionId,
             Long externalInteractionCallbackId,
+            String source,
             Instant queriedAt
     ) {
     }

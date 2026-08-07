@@ -55,6 +55,35 @@
         WHERE apply_id = #{applyId}
     </select>
 
+    <select id="findDueForStatusBackfill" resultMap="creditApplicationRecordMap">
+        SELECT ca.id,
+               ca.apply_id,
+               ca.request_id,
+               ca.provider_code,
+               ca.user_id,
+               (SELECT up.partner_user_id FROM user_profile up WHERE up.id = ca.user_id) AS partner_user_id,
+               ca.apply_no
+        FROM credit_application ca
+        LEFT JOIN credit_lender_status_query latest
+            ON latest.id = (
+                SELECT q.id
+                FROM credit_lender_status_query q
+                WHERE q.apply_id = ca.apply_id
+                ORDER BY q.id DESC
+                LIMIT 1
+            )
+        WHERE ca.apply_no IS NOT NULL
+          AND TRIM(ca.apply_no) &lt;&gt; ''
+          AND (
+                latest.id IS NULL
+                OR latest.external_status IS NULL
+                OR TRIM(latest.external_status) = ''
+                OR UPPER(TRIM(latest.external_status)) NOT IN ('SUCCESS', 'REFUSED', 'FAIL', 'CANCEL')
+              )
+        ORDER BY ca.id ASC
+        LIMIT #{limit}
+    </select>
+
     <insert id="insert">
         INSERT INTO credit_application (
             apply_id,

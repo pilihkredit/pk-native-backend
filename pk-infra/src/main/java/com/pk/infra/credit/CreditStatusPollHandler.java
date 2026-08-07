@@ -3,12 +3,10 @@ package com.pk.infra.credit;
 import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.LenderCreditPort;
+import com.pk.core.external.DataWriteSource;
 import com.pk.core.external.LenderInteractionContext;
 
 public class CreditStatusPollHandler {
-    private static final String API_SOURCE = "CREDIT_STATUS_API";
-    private static final String API_LIMIT_SOURCE = "LENDER_API";
-
     private final LenderCreditPort lenderCreditPort;
     private final CreditLenderStatusApplier creditLenderStatusApplier;
     private final UserAuthRepository userAuthRepository;
@@ -24,13 +22,22 @@ public class CreditStatusPollHandler {
     }
 
     public void syncFromLenderForApi(CreditApplicationRepository.CreditApplicationRecord record) {
+        syncFromLender(record, DataWriteSource.APP);
+    }
+
+    public void syncFromLenderForJob(CreditApplicationRepository.CreditApplicationRecord record) {
+        syncFromLender(record, DataWriteSource.JOB);
+    }
+
+    private void syncFromLender(CreditApplicationRepository.CreditApplicationRecord record, String source) {
         String mobileNo = userAuthRepository.findByUserId(record.userId())
                 .map(profile -> profile.mobileNo())
                 .orElse(null);
-        LenderCreditPort.LenderCreditStatusResult status = LenderInteractionContext.runWithMobileNo(
+        LenderCreditPort.LenderCreditStatusResult status = LenderInteractionContext.runWith(
                 mobileNo,
+                source,
                 () -> lenderCreditPort.queryStatus(record.applyId())
         );
-        creditLenderStatusApplier.apply(record, status, API_SOURCE, API_LIMIT_SOURCE);
+        creditLenderStatusApplier.apply(record, status, source);
     }
 }

@@ -75,8 +75,7 @@ class CreditCallbackIntakeFacadeTest {
         verify(creditLenderStatusApplier).apply(
                 eq(record),
                 any(LenderCreditPort.LenderCreditStatusResult.class),
-                eq("CREDIT_CALLBACK"),
-                eq("LENDER_CALLBACK"),
+                eq("CALLBACK"),
                 eq(99L)
         );
         verify(externalInteractionCallbackLogRepository).updateResponse(
@@ -101,7 +100,7 @@ class CreditCallbackIntakeFacadeTest {
         assertThat(result.externalInteractionCallbackId()).isEqualTo(7L);
         assertThat(result.duplicate()).isTrue();
         verify(externalInteractionCallbackLogRepository, never()).insert(any());
-        verify(creditLenderStatusApplier, never()).apply(any(), any(), any(), any(), any());
+        verify(creditLenderStatusApplier, never()).apply(any(), any(), any(), any());
     }
 
     @Test
@@ -118,7 +117,7 @@ class CreditCallbackIntakeFacadeTest {
         CreditCallbackIntakeFacade.IntakeResult result = facade.intake("{}");
 
         assertThat(result.ignored()).isTrue();
-        verify(creditLenderStatusApplier, never()).apply(any(), any(), any(), any(), any());
+        verify(creditLenderStatusApplier, never()).apply(any(), any(), any(), any());
         verify(externalInteractionCallbackLogRepository).updateResponse(
                 eq(55L),
                 isNull(),

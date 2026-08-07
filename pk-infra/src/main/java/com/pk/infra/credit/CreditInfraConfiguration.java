@@ -87,4 +87,12 @@ public class CreditInfraConfiguration {
                 userAuthRepository
         );
     }
+
+    @Bean
+    CreditStatusBackfillService creditStatusBackfillService(
+            CreditApplicationRepository creditApplicationRepository,
+            CreditStatusPollHandler creditStatusPollHandler
+    ) {
+        return new CreditStatusBackfillService(creditApplicationRepository, creditStatusPollHandler);
+    }
 }

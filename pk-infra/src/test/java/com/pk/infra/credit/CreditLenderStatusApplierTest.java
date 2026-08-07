@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.pk.core.credit.port.CreditApplicationRepository;
 import com.pk.core.credit.port.CreditLenderStatusQueryRepository;
 import com.pk.core.credit.port.LenderCreditPort;
+import com.pk.core.external.DataWriteSource;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
@@ -35,7 +36,7 @@ class CreditLenderStatusApplierTest {
         CreditApplicationRepository.CreditApplicationRecord record = applicationRecord();
         when(creditLenderStatusQueryRepository.findLatestByApplyId("APPLY-1")).thenReturn(Optional.empty());
 
-        applier.apply(record, lenderStatus("SUCCESS", 101L), "CREDIT_STATUS_API", "LENDER_API");
+        applier.apply(record, lenderStatus("SUCCESS", 101L), DataWriteSource.APP);
 
         ArgumentCaptor<CreditLenderStatusQueryRepository.CreditLenderStatusQueryData> captor =
                 ArgumentCaptor.forClass(CreditLenderStatusQueryRepository.CreditLenderStatusQueryData.class);
@@ -43,6 +44,7 @@ class CreditLenderStatusApplierTest {
         org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionId()).isEqualTo(101L);
         org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionCallbackId()).isNull();
         org.assertj.core.api.Assertions.assertThat(captor.getValue().externalStatus()).isEqualTo("SUCCESS");
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().source()).isEqualTo(DataWriteSource.APP);
     }
 
     @Test
@@ -51,7 +53,7 @@ class CreditLenderStatusApplierTest {
         when(creditLenderStatusQueryRepository.findLatestByApplyId("APPLY-1"))
                 .thenReturn(Optional.of(existingQuery("SUCCESS")));
 
-        applier.apply(record, lenderStatus("SUCCESS", 102L), "CREDIT_STATUS_API", "LENDER_API");
+        applier.apply(record, lenderStatus("SUCCESS", 102L), DataWriteSource.APP);
 
         verify(creditLenderStatusQueryRepository, never()).insert(any());
     }
@@ -62,12 +64,13 @@ class CreditLenderStatusApplierTest {
         when(creditLenderStatusQueryRepository.findLatestByApplyId("APPLY-1"))
                 .thenReturn(Optional.of(existingQuery("SUCCESS")));
 
-        applier.apply(record, lenderStatus("REFUSED", null), "CREDIT_CALLBACK", "LENDER_CALLBACK");
+        applier.apply(record, lenderStatus("REFUSED", null), DataWriteSource.CALLBACK);
 
         ArgumentCaptor<CreditLenderStatusQueryRepository.CreditLenderStatusQueryData> captor =
                 ArgumentCaptor.forClass(CreditLenderStatusQueryRepository.CreditLenderStatusQueryData.class);
         verify(creditLenderStatusQueryRepository).insert(captor.capture());
         org.assertj.core.api.Assertions.assertThat(captor.getValue().externalStatus()).isEqualTo("REFUSED");
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().source()).isEqualTo(DataWriteSource.CALLBACK);
         org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionId()).isNull();
         org.assertj.core.api.Assertions.assertThat(captor.getValue().externalInteractionCallbackId()).isNull();
     }
@@ -77,7 +80,7 @@ class CreditLenderStatusApplierTest {
         CreditApplicationRepository.CreditApplicationRecord record = applicationRecord();
         when(creditLenderStatusQueryRepository.findLatestByApplyId("APPLY-1")).thenReturn(Optional.empty());
 
-        applier.apply(record, lenderStatus("SUCCESS", null), "CREDIT_CALLBACK", "LENDER_CALLBACK", 77L);
+        applier.apply(record, lenderStatus("SUCCESS", null), DataWriteSource.CALLBACK, 77L);
 
         ArgumentCaptor<CreditLenderStatusQueryRepository.CreditLenderStatusQueryData> captor =
                 ArgumentCaptor.forClass(CreditLenderStatusQueryRepository.CreditLenderStatusQueryData.class);
@@ -107,11 +110,13 @@ class CreditLenderStatusApplierTest {
                         BigDecimal.ONE,
                         55L
                 ),
-                "CREDIT_STATUS_API",
-                "LENDER_API"
+                DataWriteSource.JOB
         );
 
-        verify(creditLenderStatusQueryRepository).insert(any());
+        ArgumentCaptor<CreditLenderStatusQueryRepository.CreditLenderStatusQueryData> captor =
+                ArgumentCaptor.forClass(CreditLenderStatusQueryRepository.CreditLenderStatusQueryData.class);
+        verify(creditLenderStatusQueryRepository).insert(captor.capture());
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().source()).isEqualTo(DataWriteSource.JOB);
     }
 
     private static CreditApplicationRepository.CreditApplicationRecord applicationRecord() {
@@ -143,6 +148,7 @@ class CreditLenderStatusApplierTest {
                 BigDecimal.ONE,
                 9L,
                 null,
+                DataWriteSource.APP,
                 Instant.now()
         );
     }
