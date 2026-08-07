@@ -52,6 +52,7 @@ class RepayTrialFacadeTest {
         when(lenderRepayTrialPort.trial(any())).thenReturn(lenderTrialResult());
         when(repaymentTrialSnapshotRepository.replace(any(), any())).thenAnswer(invocation -> {
             RepaymentTrialSnapshotRepository.TrialSnapshotInsert insert = invocation.getArgument(0);
+            assertThat(insert.source()).isEqualTo("APP");
             return new RepaymentTrialSnapshotRepository.TrialSnapshotRecord(
                     10L,
                     insert.trialNo(),
@@ -117,6 +118,7 @@ class RepayTrialFacadeTest {
         when(repaymentTrialSnapshotRepository.replace(any(), any())).thenAnswer(invocation -> {
             RepaymentTrialSnapshotRepository.TrialSnapshotInsert insert = invocation.getArgument(0);
             assertThat(insert.trialType()).isEqualTo("BATCH");
+            assertThat(insert.source()).isEqualTo("APP");
             return new RepaymentTrialSnapshotRepository.TrialSnapshotRecord(
                     11L,
                     insert.trialNo(),

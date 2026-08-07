@@ -1261,6 +1261,7 @@ CREATE TABLE repayment_trial_snapshot (
     disabled_default_va_disabled TINYINT(1) NULL COMMENT 'Disabled default VA disabled flag',
     disabled_default_va_show TINYINT(1) NULL COMMENT 'Disabled default VA show flag',
     external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id',
+    source VARCHAR(32) NULL COMMENT 'Write source: APP / JOB / CALLBACK',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',
     PRIMARY KEY (id),

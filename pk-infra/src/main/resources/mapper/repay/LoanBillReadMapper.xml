@@ -15,4 +15,33 @@ SELECT <include refid="billCols"/> FROM loan_application la WHERE la.user_id=#{u
 </otherwise></choose> ORDER BY la.id DESC</select>
 <select id="findByUserIdAndLoanApplyId" resultMap="billMap">SELECT <include refid="billCols"/> FROM loan_application la WHERE la.user_id=#{userId} AND la.loan_apply_id=#{loanApplyId}</select>
 <select id="findPendingByUserId" resultMap="billMap">SELECT DISTINCT <include refid="billCols"/> FROM loan_application la INNER JOIN repayment_plan_term rpt ON rpt.loan_application_id=la.id WHERE la.user_id=#{userId} AND rpt.term_status IN ('UNPAID','OVERDUE') ORDER BY la.id DESC</select>
+
+<resultMap id="trialBackfillCandidateMap"
+           type="com.pk.core.repay.port.LoanBillReadRepository$TrialBackfillCandidate">
+    <constructor>
+        <arg column="loan_application_id" javaType="_long"/>
+        <arg column="user_id" javaType="_long"/>
+        <arg column="loan_apply_id" javaType="string"/>
+    </constructor>
+</resultMap>
+
+<select id="findDueForTrialBackfill" resultMap="trialBackfillCandidateMap">
+    SELECT la.id AS loan_application_id,
+           la.user_id,
+           la.loan_apply_id
+    FROM loan_application la
+    WHERE la.id &gt; #{afterLoanApplicationId}
+      AND la.status = 'DISBURSED'
+      AND EXISTS (
+          SELECT 1
+          FROM repayment_plan_term rpt
+          WHERE rpt.loan_application_id = la.id
+            AND rpt.term_status IN ('UNPAID', 'OVERDUE')
+      )
+      <if test="createdFromInclusive != null">
+      AND la.created_at &gt;= #{createdFromInclusive, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+      </if>
+    ORDER BY la.id ASC
+    LIMIT #{limit}
+</select>
 </mapper>

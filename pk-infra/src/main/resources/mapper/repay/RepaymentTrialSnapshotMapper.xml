@@ -47,7 +47,8 @@ disabled_default_va_icon,
 disabled_default_va_default_flag,
 disabled_default_va_disabled,
 disabled_default_va_show,
-external_interaction_id)
+external_interaction_id,
+source)
 VALUES (#{trialNo},
 #{userId},
 #{trialType},
@@ -79,7 +80,8 @@ VALUES (#{trialNo},
 #{disabledDefaultVaDefaultFlag,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
 #{disabledDefaultVaDisabled,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
 #{disabledDefaultVaShow,typeHandler=com.pk.infra.mybatis.typehandler.BooleanTinyintTypeHandler},
-#{externalInteractionId})</insert>
+#{externalInteractionId},
+#{source})</insert>
 <insert id="insertOrder" useGeneratedKeys="true" keyProperty="id" keyColumn="id">INSERT INTO repayment_trial_order
 (trial_id,
 loan_application_id,

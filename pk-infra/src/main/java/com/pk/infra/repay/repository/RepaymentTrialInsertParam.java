@@ -36,6 +36,7 @@ public class RepaymentTrialInsertParam {
     private Boolean disabledDefaultVaDisabled;
     private Boolean disabledDefaultVaShow;
     private Long externalInteractionId;
+    private String source;
 
     public long getId() {
         return id;
@@ -299,5 +300,13 @@ public class RepaymentTrialInsertParam {
 
     public void setExternalInteractionId(Long externalInteractionId) {
         this.externalInteractionId = externalInteractionId;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 }

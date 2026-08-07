@@ -29,7 +29,8 @@ public interface RepaymentTrialSnapshotRepository {
             LenderRepayVa defaultVa,
             LenderRepayVa spareVa,
             LenderRepayVa disabledDefaultVa,
-            Long externalInteractionId
+            Long externalInteractionId,
+            String source
     ) {
     }
 

@@ -16,7 +16,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@org.springframework.boot.context.properties.EnableConfigurationProperties(RepayTrialProperties.class)
+@org.springframework.boot.context.properties.EnableConfigurationProperties({
+        RepayTrialProperties.class,
+        RepayTrialBackfillProperties.class
+})
 public class RepayInfraConfiguration {
     @Bean
     LoanBillsFacade loanBillsFacade(
@@ -58,6 +61,23 @@ public class RepayInfraConfiguration {
                 repaymentTrialSnapshotRepository,
                 repayTrialProperties,
                 objectMapper
+        );
+    }
+
+    @Bean
+    RepayTrialBackfillService repayTrialBackfillService(
+            LoanBillReadRepository loanBillReadRepository,
+            RepaymentPlanTermRepository repaymentPlanTermRepository,
+            RepayTrialFacade repayTrialFacade,
+            com.pk.core.auth.port.UserAuthRepository userAuthRepository,
+            RepayTrialBackfillProperties repayTrialBackfillProperties
+    ) {
+        return new RepayTrialBackfillService(
+                loanBillReadRepository,
+                repaymentPlanTermRepository,
+                repayTrialFacade,
+                userAuthRepository,
+                repayTrialBackfillProperties
         );
     }
 

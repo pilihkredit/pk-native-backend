@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.display.DisplayFormatters;
+import com.pk.core.external.DataWriteSource;
+import com.pk.core.external.LenderInteractionContext;
 import com.pk.core.repay.LenderRepayTrialResult;
 import com.pk.core.repay.LenderRepayVa;
 import com.pk.core.repay.port.LenderRepayTrialPort;
@@ -38,6 +40,22 @@ public class RepayTrialFacade {
     }
 
     public TrialResult trial(long userId, TrialCommand command) {
+        return doTrial(userId, command, DataWriteSource.APP);
+    }
+
+    public TrialResult syncFromLenderForJob(long userId, String mobileNo, TrialCommand command) {
+        return LenderInteractionContext.runWith(
+                mobileNo,
+                DataWriteSource.JOB,
+                () -> doTrial(userId, command, DataWriteSource.JOB)
+        );
+    }
+
+    public BatchTrialResult trialBatch(long userId, BatchTrialCommand command) {
+        return doTrialBatch(userId, command, DataWriteSource.APP);
+    }
+
+    private TrialResult doTrial(long userId, TrialCommand command, String source) {
         validateTrialCommand(command);
         requireLoan(userId, command.loanApplyId());
         boolean settle = isEarlySettle(command.repayType(), command.termNos());
@@ -54,11 +72,11 @@ public class RepayTrialFacade {
         Instant createdAt = Instant.now();
         String trialNo = RepayNoGenerator.trialNo();
         long expiresAt = createdAt.plus(repayTrialProperties.ttl()).toEpochMilli();
-        persistSingleTrial(userId, trialNo, settle, command.termNos(), lenderResult, createdAt);
+        persistSingleTrial(userId, trialNo, settle, command.termNos(), lenderResult, source);
         return toTrialResult(trialNo, expiresAt, lenderResult);
     }
 
-    public BatchTrialResult trialBatch(long userId, BatchTrialCommand command) {
+    private BatchTrialResult doTrialBatch(long userId, BatchTrialCommand command, String source) {
         validateBatchCommand(command);
         Set<String> loanApplyIds = new HashSet<>();
         List<LenderRepayTrialPort.LenderRepayTrialCommand> lenderCommands = new ArrayList<>();
@@ -82,7 +100,7 @@ public class RepayTrialFacade {
         );
         Instant createdAt = Instant.now();
         String batchTrialNo = RepayNoGenerator.batchTrialNo();
-        persistBatchTrial(userId, batchTrialNo, command.repayOrders(), lenderResult, createdAt);
+        persistBatchTrial(userId, batchTrialNo, command.repayOrders(), lenderResult, source);
         return new BatchTrialResult(
                 batchTrialNo,
                 lenderResult.totalShouldAmount(),
@@ -105,7 +123,7 @@ public class RepayTrialFacade {
             boolean settle,
             List<Integer> termNos,
             LenderRepayTrialResult lenderResult,
-            Instant createdAt
+            String source
     ) {
         LoanBillReadRepository.LoanBillRecord loan = loanBillReadRepository
                 .findByUserIdAndLoanApplyId(userId, lenderResult.loanApplyId())
@@ -122,7 +140,8 @@ public class RepayTrialFacade {
                         lenderResult.defaultVa(),
                         lenderResult.spareVa(),
                         lenderResult.disabledDefaultVa(),
-                        lenderResult.externalInteractionId()
+                        lenderResult.externalInteractionId(),
+                        source
                 ),
                 List.of(new RepaymentTrialSnapshotRepository.TrialOrderInsert(
                         loan.loanApplicationId(),
@@ -138,7 +157,7 @@ public class RepayTrialFacade {
             String batchTrialNo,
             List<BatchOrderCommand> orders,
             LenderRepayTrialPort.LenderRepayTrialBatchResult lenderResult,
-            Instant createdAt
+            String source
     ) {
         List<RepaymentTrialSnapshotRepository.TrialOrderInsert> orderInserts = new ArrayList<>();
         for (LenderRepayTrialResult billTrial : lenderResult.billTrials()) {
@@ -168,7 +187,8 @@ public class RepayTrialFacade {
                         lenderResult.defaultVa(),
                         lenderResult.spareVa(),
                         lenderResult.disabledDefaultVa(),
-                        lenderResult.externalInteractionId()
+                        lenderResult.externalInteractionId(),
+                        source
                 ),
                 orderInserts
         );

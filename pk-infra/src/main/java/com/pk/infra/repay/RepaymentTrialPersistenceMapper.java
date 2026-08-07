@@ -30,6 +30,7 @@ public final class RepaymentTrialPersistenceMapper {
         param.setTotalPaidAmount(insert.totalPaidAmount());
         fillSnapshotVaFields(param, insert.defaultVa(), insert.spareVa(), insert.disabledDefaultVa());
         param.setExternalInteractionId(insert.externalInteractionId());
+        param.setSource(insert.source());
     }
 
     public static void fillOrderInsertParam(long trialId, RepaymentTrialOrderInsertParam param, TrialOrderInsert order) {
