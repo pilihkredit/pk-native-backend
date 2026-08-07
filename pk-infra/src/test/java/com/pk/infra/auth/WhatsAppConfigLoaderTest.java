@@ -29,7 +29,7 @@ class WhatsAppConfigLoaderTest {
                           "authorization": "a1",
                           "wabaId": "w1",
                           "sendNumber": "86123",
-                          "templateName": "otp_x",
+                          "templateGroupId": "group_otp_x",
                           "language": "en",
                           "countryDialCode": "62",
                           "timeout": 8000,
@@ -48,6 +48,7 @@ class WhatsAppConfigLoaderTest {
         assertThat(conf.enableWhatsApp()).isTrue();
         assertThat(conf.url()).isEqualTo("https://example.com/v3");
         assertThat(conf.appKey()).isEqualTo("k1");
+        assertThat(conf.templateGroupId()).isEqualTo("group_otp_x");
         assertThat(conf.minInterval()).isEqualTo(Duration.ofSeconds(90));
         assertThat(conf.expireTime()).isEqualTo(Duration.ofSeconds(180));
         assertThat(conf.timeout()).isEqualTo(Duration.ofMillis(8000));

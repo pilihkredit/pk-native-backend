@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * Chuanglan (创蓝云智) WhatsApp API V3 sender.
+ * Chuanglan (InnoPaaS) WhatsApp API V3 sender.
  * Credentials and enable flag come from {@code app_config.whatsappConf}.
  */
 @Component
@@ -66,7 +66,7 @@ public class ChuanglanWhatsAppSender implements WhatsAppSender {
         }
     }
 
-    private Map<String, Object> buildPayload(
+    static Map<String, Object> buildPayload(
             WhatsAppConfigLoader.WhatsAppConf conf,
             String mobileNo,
             String otpCode
@@ -77,7 +77,7 @@ public class ChuanglanWhatsAppSender implements WhatsAppSender {
         payload.put("bodyParams", List.of(otpCode));
         payload.put("recipientNumber", conf.countryDialCode() + mobileNo);
         payload.put("sendNumber", conf.sendNumber());
-        payload.put("templateName", conf.templateName());
+        payload.put("templateGroupId", conf.templateGroupId());
         payload.put("language", conf.language());
 
         Map<String, String> button = new HashMap<>();

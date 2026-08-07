@@ -58,7 +58,7 @@ VALUES (
         'authorization', '',
         'wabaId', '',
         'sendNumber', '',
-        'templateName', 'otp_pilihkredit',
+        'templateGroupId', '',
         'language', 'id',
         'countryDialCode', '62',
         'timeout', 10000,
