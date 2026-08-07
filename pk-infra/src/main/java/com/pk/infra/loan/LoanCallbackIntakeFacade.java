@@ -5,6 +5,7 @@ import com.pk.core.auth.port.UserAuthRepository;
 import com.pk.core.callback.CallbackTypes;
 import com.pk.core.callback.port.LoanCallbackParser;
 import com.pk.core.credit.CreditProviderCode;
+import com.pk.core.external.DataWriteSource;
 import com.pk.core.external.ExternalInteractionCallbackLog;
 import com.pk.core.external.port.ExternalInteractionCallbackLogRepository;
 import com.pk.core.loan.port.LenderLoanStatusPort;
@@ -18,7 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 public class LoanCallbackIntakeFacade {
     private static final Logger log = LoggerFactory.getLogger(LoanCallbackIntakeFacade.class);
-    private static final String SOURCE = "LOAN_CALLBACK";
+    private static final String SOURCE = DataWriteSource.CALLBACK;
     private static final String HTTP_METHOD = "POST";
     private static final String ENDPOINT = "/callback/loan/result";
     private static final String SUCCESS_RESPONSE = "{\"code\":\"000000\",\"msg\":\"success\"}";

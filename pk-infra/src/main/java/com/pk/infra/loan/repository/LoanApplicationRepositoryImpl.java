@@ -32,4 +32,7 @@ public class LoanApplicationRepositoryImpl implements LoanApplicationRepository 
     }
     @Override public void scheduleNextPoll(long id, Instant nextPollAt) { mapper.scheduleNextPoll(id, nextPollAt); }
     @Override public List<LoanApplicationRecord> findPendingPoll(int limit) { return mapper.findPendingPoll(limit); }
+    @Override public List<LoanApplicationRecord> findDueForStatusBackfill(long afterId, int limit, Instant createdFromInclusive) {
+        return mapper.findDueForStatusBackfill(afterId, limit, createdFromInclusive);
+    }
 }

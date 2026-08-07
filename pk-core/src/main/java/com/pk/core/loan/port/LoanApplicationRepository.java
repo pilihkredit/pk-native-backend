@@ -34,6 +34,8 @@ public interface LoanApplicationRepository {
 
     List<LoanApplicationRecord> findPendingPoll(int limit);
 
+    List<LoanApplicationRecord> findDueForStatusBackfill(long afterId, int limit, Instant createdFromInclusive);
+
     record LoanApplicationInsert(
             String loanApplyId,
             String requestId,

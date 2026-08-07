@@ -22,4 +22,10 @@ public interface LoanApplicationMapper {
         @Param("payAmount") BigDecimal payAmount, @Param("payTime") Instant payTime);
     int scheduleNextPoll(@Param("id") long id, @Param("nextPollAt") Instant nextPollAt);
     List<LoanApplicationRecord> findPendingPoll(@Param("limit") int limit);
+
+    List<LoanApplicationRecord> findDueForStatusBackfill(
+            @Param("afterId") long afterId,
+            @Param("limit") int limit,
+            @Param("createdFromInclusive") Instant createdFromInclusive
+    );
 }

@@ -76,7 +76,7 @@ class LoanCallbackIntakeFacadeTest {
         verify(loanLenderStatusApplier).apply(
                 eq(record),
                 any(LenderLoanStatusPort.LenderLoanStatusResult.class),
-                eq("LOAN_CALLBACK"),
+                eq("CALLBACK"),
                 eq(99L)
         );
         verify(externalInteractionCallbackLogRepository).updateResponse(

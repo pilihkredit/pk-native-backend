@@ -45,7 +45,7 @@ public class LoanLenderStatusApplier {
         if (LoanApplicationStatus.isTerminal(record.status())) {
             return;
         }
-        persistStatusQuerySnapshot(record, status, externalInteractionCallbackId);
+        persistStatusQuerySnapshot(record, status, externalInteractionCallbackId, source);
         applyMainRecordInternal(record, status, source);
     }
 
@@ -108,7 +108,8 @@ public class LoanLenderStatusApplier {
     private void persistStatusQuerySnapshot(
             LoanApplicationRepository.LoanApplicationRecord record,
             LenderLoanStatusPort.LenderLoanStatusResult status,
-            Long externalInteractionCallbackId
+            Long externalInteractionCallbackId,
+            String source
     ) {
         Optional<LoanLenderStatusQueryRepository.LoanLenderStatusQueryData> latest =
                 loanLenderStatusQueryRepository.findLatestByLoanApplyId(record.loanApplyId());
@@ -127,6 +128,7 @@ public class LoanLenderStatusApplier {
                         status.freezeEndTime(),
                         status.externalInteractionId(),
                         externalInteractionCallbackId,
+                        source,
                         Instant.now()
                 );
 

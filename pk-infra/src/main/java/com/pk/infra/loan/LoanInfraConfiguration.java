@@ -28,7 +28,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @org.springframework.boot.context.properties.EnableConfigurationProperties({
         LoanProductProperties.class,
         LoanQuoteProperties.class,
-        LoanApplyProperties.class
+        LoanApplyProperties.class,
+        LoanStatusBackfillProperties.class
 })
 public class LoanInfraConfiguration {
     @Bean
@@ -96,6 +97,19 @@ public class LoanInfraConfiguration {
             com.pk.core.auth.port.UserAuthRepository userAuthRepository
     ) {
         return new LoanStatusPollHandler(lenderLoanStatusPort, loanLenderStatusApplier, userAuthRepository);
+    }
+
+    @Bean
+    LoanStatusBackfillService loanStatusBackfillService(
+            LoanApplicationRepository loanApplicationRepository,
+            LoanStatusPollHandler loanStatusPollHandler,
+            LoanStatusBackfillProperties loanStatusBackfillProperties
+    ) {
+        return new LoanStatusBackfillService(
+                loanApplicationRepository,
+                loanStatusPollHandler,
+                loanStatusBackfillProperties
+        );
     }
 
     @Bean

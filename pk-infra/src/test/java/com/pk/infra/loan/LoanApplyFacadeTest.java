@@ -123,6 +123,7 @@ class LoanApplyFacadeTest {
                         null,
                         99L,
                         null,
+                        "APP",
                         Instant.parse("2026-07-01T00:00:00Z")
                 )));
 

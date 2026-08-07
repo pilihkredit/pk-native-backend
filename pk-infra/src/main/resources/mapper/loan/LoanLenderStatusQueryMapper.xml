@@ -19,6 +19,7 @@
             <arg column="freeze_end_time" javaType="java.lang.Long"/>
             <arg column="external_interaction_id" javaType="java.lang.Long"/>
             <arg column="external_interaction_callback_id" javaType="java.lang.Long"/>
+            <arg column="source" javaType="string"/>
             <arg column="queried_at" javaType="java.time.Instant"
                  typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
         </constructor>
@@ -27,7 +28,7 @@
     <sql id="loanLenderStatusQueryColumns">
         loan_apply_id, user_id, lender_user_id, external_loan_apply_no, external_status,
         bill_no, apply_amt, pay_amount, pay_time, freeze_end_time, external_interaction_id,
-        external_interaction_callback_id, queried_at
+        external_interaction_callback_id, source, queried_at
     </sql>
 
     <insert id="insert">
@@ -44,6 +45,7 @@
             freeze_end_time,
             external_interaction_id,
             external_interaction_callback_id,
+            source,
             queried_at
         ) VALUES (
             #{loanApplyId},
@@ -58,6 +60,7 @@
             #{freezeEndTime},
             #{externalInteractionId},
             #{externalInteractionCallbackId},
+            #{source},
             #{queriedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
         )
     </insert>

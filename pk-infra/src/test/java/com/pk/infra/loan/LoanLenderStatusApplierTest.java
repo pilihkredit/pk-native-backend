@@ -49,7 +49,7 @@ class LoanLenderStatusApplierTest {
         LoanApplicationRepository.LoanApplicationRecord record = processingRecord();
         when(loanLenderStatusQueryRepository.findLatestByLoanApplyId("LOAN-1")).thenReturn(Optional.empty());
 
-        applier.apply(record, lenderStatus("PROCESSING"), "LOAN_STATUS_API");
+        applier.apply(record, lenderStatus("PROCESSING"), "APP");
 
         ArgumentCaptor<LoanLenderStatusQueryRepository.LoanLenderStatusQueryData> captor =
                 ArgumentCaptor.forClass(LoanLenderStatusQueryRepository.LoanLenderStatusQueryData.class);
@@ -67,7 +67,7 @@ class LoanLenderStatusApplierTest {
         when(loanLenderStatusQueryRepository.findLatestByLoanApplyId("LOAN-1"))
                 .thenReturn(Optional.of(existingQuery("PROCESSING")));
 
-        applier.apply(record, lenderStatus("PROCESSING"), "LOAN_STATUS_API");
+        applier.apply(record, lenderStatus("PROCESSING"), "APP");
 
         verify(loanLenderStatusQueryRepository, never()).insert(any());
     }
@@ -78,7 +78,7 @@ class LoanLenderStatusApplierTest {
         when(loanLenderStatusQueryRepository.findLatestByLoanApplyId("LOAN-1"))
                 .thenReturn(Optional.of(existingQuery("PROCESSING")));
 
-        applier.apply(record, lenderStatus("SUCCESS"), "LOAN_STATUS_API");
+        applier.apply(record, lenderStatus("SUCCESS"), "APP");
 
         ArgumentCaptor<LoanLenderStatusQueryRepository.LoanLenderStatusQueryData> captor =
                 ArgumentCaptor.forClass(LoanLenderStatusQueryRepository.LoanLenderStatusQueryData.class);
@@ -92,7 +92,7 @@ class LoanLenderStatusApplierTest {
         LoanApplicationRepository.LoanApplicationRecord record = processingRecord();
         when(loanLenderStatusQueryRepository.findLatestByLoanApplyId("LOAN-1")).thenReturn(Optional.empty());
 
-        applier.apply(record, callbackStatus("SUCCESS"), "LOAN_CALLBACK", 77L);
+        applier.apply(record, callbackStatus("SUCCESS"), "CALLBACK", 77L);
 
         ArgumentCaptor<LoanLenderStatusQueryRepository.LoanLenderStatusQueryData> captor =
                 ArgumentCaptor.forClass(LoanLenderStatusQueryRepository.LoanLenderStatusQueryData.class);
@@ -105,7 +105,7 @@ class LoanLenderStatusApplierTest {
     void applyMainRecordSkipsStatusQuerySnapshot() {
         LoanApplicationRepository.LoanApplicationRecord record = processingRecord();
 
-        applier.applyMainRecord(record, callbackStatus("SUCCESS"), "LOAN_CALLBACK");
+        applier.applyMainRecord(record, callbackStatus("SUCCESS"), "CALLBACK");
 
         verify(loanLenderStatusQueryRepository, never()).insert(any());
         verify(loanLenderStatusQueryRepository, never()).findLatestByLoanApplyId(any());
@@ -148,6 +148,7 @@ class LoanLenderStatusApplierTest {
                 null,
                 99L,
                 null,
+                "APP",
                 Instant.now()
         );
     }

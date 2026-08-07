@@ -1003,6 +1003,7 @@ CREATE TABLE loan_lender_status_query (
     freeze_end_time BIGINT NULL COMMENT 'User freeze end time (epoch millis, only for REFUSED)',
     external_interaction_id BIGINT UNSIGNED NULL COMMENT 'external_interaction.id for status query',
     external_interaction_callback_id BIGINT UNSIGNED NULL COMMENT 'external_interaction_callback.id for callback-driven updates',
+    source VARCHAR(32) NULL COMMENT 'Write source: APP / JOB / CALLBACK',
     queried_at DATETIME(3) NOT NULL COMMENT 'Last lender status query time',
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Record creation time',
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Record update time',

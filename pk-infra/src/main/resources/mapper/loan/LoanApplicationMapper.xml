@@ -64,4 +64,17 @@
         SELECT <include refid="cols"/> FROM loan_application WHERE status = 'PROCESSING' AND next_poll_at IS NOT NULL
         AND next_poll_at &lt;= CURRENT_TIMESTAMP(3) ORDER BY next_poll_at LIMIT #{limit}
     </select>
+    <select id="findDueForStatusBackfill" resultMap="loanApplicationRecordMap">
+        SELECT <include refid="cols"/>
+        FROM loan_application
+        WHERE id &gt; #{afterId}
+          AND external_loan_apply_no IS NOT NULL
+          AND TRIM(external_loan_apply_no) &lt;&gt; ''
+          AND status NOT IN ('DISBURSED', 'REJECTED', 'FAILED', 'CANCEL')
+          <if test="createdFromInclusive != null">
+          AND created_at &gt;= #{createdFromInclusive, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+          </if>
+        ORDER BY id ASC
+        LIMIT #{limit}
+    </select>
 </mapper>
