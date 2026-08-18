@@ -12,6 +12,8 @@ spring:
       port: ${PK_REDIS_PORT}
 
 pk:
+  security:
+    field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY:local-dev-field-encryption-key-32b}
   debug:
     user-progress:
       enabled: ${PK_DEBUG_USER_PROGRESS_ENABLED}
