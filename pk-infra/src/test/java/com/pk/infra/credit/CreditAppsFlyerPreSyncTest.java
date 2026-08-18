@@ -98,7 +98,7 @@ class CreditAppsFlyerPreSyncTest {
                 9L,
                 "APPLY-1",
                 "req-1",
-                "pendanaan",
+                "apipartner",
                 42L,
                 "partner-1",
                 null

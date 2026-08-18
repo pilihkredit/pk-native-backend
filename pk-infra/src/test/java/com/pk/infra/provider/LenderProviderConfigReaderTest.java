@@ -9,8 +9,8 @@ class LenderProviderConfigReaderTest {
     @Test
     void mapsProviderRowToSpringProperties() {
         LenderProviderConfigRecord record = new LenderProviderConfigRecord(
-                "pendanaan",
-                "Pendanaan Test",
+                "apipartner",
+                "ApiPartner Test",
                 "http://gateway.test.ptnadmin.com/ktaid",
                 "https://api.example.com/api/v1",
                 """
@@ -26,12 +26,12 @@ class LenderProviderConfigReaderTest {
         Map<String, Object> properties = LenderProviderConfigReader.toSpringProperties(record);
 
         assertThat(properties)
-                .containsEntry("pk.lender.config.provider-name", "Pendanaan Test")
-                .containsEntry("pk.lender.pendanaan.mode", "http")
-                .containsEntry("pk.lender.pendanaan.base-url", "http://gateway.test.ptnadmin.com/ktaid")
-                .containsEntry("pk.lender.pendanaan.client-id", "client-id")
-                .containsEntry("pk.lender.pendanaan.client-secret", "client-secret")
-                .containsEntry("pk.lender.pendanaan.app-name", "PilihKredit")
+                .containsEntry("pk.lender.config.provider-name", "ApiPartner Test")
+                .containsEntry("pk.lender.apipartner.mode", "http")
+                .containsEntry("pk.lender.apipartner.base-url", "http://gateway.test.ptnadmin.com/ktaid")
+                .containsEntry("pk.lender.apipartner.client-id", "client-id")
+                .containsEntry("pk.lender.apipartner.client-secret", "client-secret")
+                .containsEntry("pk.lender.apipartner.app-name", "PilihKredit")
                 .containsEntry("pk.callback.oauth.client-id", "callback-client")
                 .containsEntry("pk.callback.oauth.client-secret", "callback-secret");
     }
@@ -39,8 +39,8 @@ class LenderProviderConfigReaderTest {
     @Test
     void defaultsModeToHttpWhenConfigJsonOmitsMode() {
         LenderProviderConfigRecord record = new LenderProviderConfigRecord(
-                "pendanaan",
-                "Pendanaan Test",
+                "apipartner",
+                "ApiPartner Test",
                 "http://example.com",
                 "https://api.example.com/api/v1",
                 "{\"app_name\":\"KtaKilatPlus\"}",
@@ -54,8 +54,8 @@ class LenderProviderConfigReaderTest {
         Map<String, Object> properties = LenderProviderConfigReader.toSpringProperties(record);
 
         assertThat(properties)
-                .containsEntry("pk.lender.pendanaan.mode", "http")
-                .doesNotContainKey("pk.lender.pendanaan.app-name")
+                .containsEntry("pk.lender.apipartner.mode", "http")
+                .doesNotContainKey("pk.lender.apipartner.app-name")
                 .doesNotContainKey("pk.callback.oauth.client-id");
     }
 }

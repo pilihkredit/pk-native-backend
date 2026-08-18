@@ -27,7 +27,7 @@ import com.pk.app.profile.dto.response.MobileChangeOtpSendResponse;
 import com.pk.app.profile.dto.response.MobileChangeOtpVerifyResponse;
 import com.pk.app.profile.dto.response.ProfilePersonalSaveResponse;
 import com.pk.app.profile.dto.response.ProfileTongdunDeviceSaveResponse;
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
@@ -47,7 +47,7 @@ public class ProfileApplicationService {
     private final MobileChangeFacade mobileChangeFacade;
     private final MobileChangeFaceFacade mobileChangeFaceFacade;
     private final MobileChangeOtpFacade mobileChangeOtpFacade;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
     private final ObjectMapper objectMapper;
 
     public ProfileApplicationService(
@@ -56,7 +56,7 @@ public class ProfileApplicationService {
             MobileChangeFacade mobileChangeFacade,
             MobileChangeFaceFacade mobileChangeFaceFacade,
             MobileChangeOtpFacade mobileChangeOtpFacade,
-            PendanaanProperties pendanaanProperties,
+            ApiPartnerProperties apiPartnerProperties,
             ObjectMapper objectMapper
     ) {
         this.profileServiceFacade = profileServiceFacade;
@@ -64,7 +64,7 @@ public class ProfileApplicationService {
         this.mobileChangeFacade = mobileChangeFacade;
         this.mobileChangeFaceFacade = mobileChangeFaceFacade;
         this.mobileChangeOtpFacade = mobileChangeOtpFacade;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
         this.objectMapper = objectMapper;
     }
 
@@ -413,7 +413,7 @@ public class ProfileApplicationService {
             HttpServletRequest httpRequest
     ) {
         ClientRequestHeaders.ResolvedClientHeaders headers = ClientRequestHeaders.require(httpRequest);
-        return ProfileDeviceSupport.resolveLenderDevice(deviceRequest, headers, pendanaanProperties);
+        return ProfileDeviceSupport.resolveLenderDevice(deviceRequest, headers, apiPartnerProperties);
     }
 
     private JsonNode parseLenderResponse(String lenderResponseJson) {

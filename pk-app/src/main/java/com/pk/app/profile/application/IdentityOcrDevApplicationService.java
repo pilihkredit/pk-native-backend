@@ -5,7 +5,7 @@ import com.pk.app.common.web.RequestTrace;
 import com.pk.app.profile.dto.request.IdentityOcrDevLenderSyncRequest;
 import com.pk.app.profile.dto.response.IdentityOcrDevLenderSyncResponse;
 import com.pk.app.profile.support.DevIdentityOcrDefaults;
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
@@ -18,14 +18,14 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(prefix = "pk.ocr", name = "dev-lender-sync-enabled", havingValue = "true")
 public class IdentityOcrDevApplicationService {
     private final IdentityOcrFacade identityOcrFacade;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
 
     public IdentityOcrDevApplicationService(
             IdentityOcrFacade identityOcrFacade,
-            PendanaanProperties pendanaanProperties
+            ApiPartnerProperties apiPartnerProperties
     ) {
         this.identityOcrFacade = identityOcrFacade;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
     }
 
     public IdentityOcrDevLenderSyncResponse syncToLender(
@@ -96,7 +96,7 @@ public class IdentityOcrDevApplicationService {
                         captureOcrFromIdCard
                                 ? request.district()
                                 : DevIdentityOcrDefaults.orDefault(request.district(), DevIdentityOcrDefaults.DISTRICT),
-                        ProfileDeviceSupport.resolveLenderDevice(request.device(), headers, pendanaanProperties)
+                        ProfileDeviceSupport.resolveLenderDevice(request.device(), headers, apiPartnerProperties)
                 )
         );
         return new IdentityOcrDevLenderSyncResponse(result.requestId(), result.lenderResponse());

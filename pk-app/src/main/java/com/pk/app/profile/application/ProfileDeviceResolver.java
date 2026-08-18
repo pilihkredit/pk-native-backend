@@ -1,7 +1,7 @@
 package com.pk.app.profile.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -14,16 +14,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProfileDeviceResolver {
     private final ProfileDeviceRepository profileDeviceRepository;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
     private final ObjectMapper objectMapper;
 
     public ProfileDeviceResolver(
             ProfileDeviceRepository profileDeviceRepository,
-            PendanaanProperties pendanaanProperties,
+            ApiPartnerProperties apiPartnerProperties,
             ObjectMapper objectMapper
     ) {
         this.profileDeviceRepository = profileDeviceRepository;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
         this.objectMapper = objectMapper;
     }
 
@@ -40,7 +40,7 @@ public class ProfileDeviceResolver {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "device does not belong to current user");
         }
         validateAgainstHeaders(stored, headers);
-        return StoredDevicePayloadReader.toLenderDevice(stored, pendanaanProperties.appName(), objectMapper);
+        return StoredDevicePayloadReader.toLenderDevice(stored, apiPartnerProperties.appName(), objectMapper);
     }
 
     private static void validateAgainstHeaders(

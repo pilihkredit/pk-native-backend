@@ -148,9 +148,9 @@ class LoanCallbackIntakeFacadeTest {
                 ArgumentCaptor.forClass(ExternalInteractionCallbackLog.class);
         verify(externalInteractionCallbackLogRepository).insert(captor.capture());
         assertThat(captor.getValue().getIdempotencyKey())
-                .isEqualTo("pendanaan:LOAN_RESULT:LOAN-001:SUCCESS:LN-001");
+                .isEqualTo("apipartner:LOAN_RESULT:LOAN-001:SUCCESS:LN-001");
         assertThat(captor.getValue().getBusinessType()).isEqualTo(CallbackTypes.LOAN_RESULT);
-        assertThat(captor.getValue().getProviderCode()).isEqualTo(CreditProviderCode.PENDANAAN);
+        assertThat(captor.getValue().getProviderCode()).isEqualTo(CreditProviderCode.API_PARTNER);
     }
 
     private static LoanApplicationRepository.LoanApplicationRecord applicationRecord() {

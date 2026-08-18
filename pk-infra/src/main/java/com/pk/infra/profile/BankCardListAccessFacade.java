@@ -13,10 +13,10 @@ import java.util.Set;
  */
 public class BankCardListAccessFacade {
     private static final Set<Integer> BLOCKED_LIFE_TIME_STATUSES = Set.of(
-            3, // 预审核处理中
-            5, // 提现处理中
-            6, // 待打款
-            7  // 打款中
+            3,
+            5,
+            6,
+            7
     );
 
     private final ProfileQueryFacade profileQueryFacade;

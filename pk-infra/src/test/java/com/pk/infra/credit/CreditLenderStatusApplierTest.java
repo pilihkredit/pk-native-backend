@@ -124,7 +124,7 @@ class CreditLenderStatusApplierTest {
                 1L,
                 "APPLY-1",
                 "req-1",
-                "pendanaan",
+                "apipartner",
                 1L,
                 "partner-1",
                 "CA-1"

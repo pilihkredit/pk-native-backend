@@ -34,7 +34,7 @@ public class CreditInfraConfiguration {
             CreditApplyHandler creditApplyHandler,
             CreditApplyOutboxPublisher creditApplyOutboxPublisher,
             CreditStatusPollHandler creditStatusPollHandler,
-            @Value("${pk.lender.config.provider-code:pendanaan}") String configuredProviderCode
+            @Value("${pk.lender.config.provider-code:apipartner}") String configuredProviderCode
     ) {
         return new CreditApplyFacade(
                 onboardingProgressFacade,

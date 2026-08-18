@@ -43,12 +43,12 @@ class ApiResponseTest {
     @Test
     void withLenderProviderCopiesEnvelopeFields() {
         ApiResponse<String> enriched = ApiResponse.success("ok", "trace-1")
-                .withLenderProvider("pendanaan", "Pendanaan Test");
+                .withLenderProvider("apipartner", "ApiPartner Test");
 
         assertThat(enriched.code()).isEqualTo(ApiCode.SUCCESS.code());
         assertThat(enriched.data()).isEqualTo("ok");
         assertThat(enriched.traceId()).isEqualTo("trace-1");
-        assertThat(enriched.lenderProvider()).isEqualTo("pendanaan");
-        assertThat(enriched.lenderProviderName()).isEqualTo("Pendanaan Test");
+        assertThat(enriched.lenderProvider()).isEqualTo("apipartner");
+        assertThat(enriched.lenderProviderName()).isEqualTo("ApiPartner Test");
     }
 }

@@ -23,7 +23,7 @@
         </dependency>
         <dependency>
             <groupId>com.pk</groupId>
-            <artifactId>pk-adapter-pendanaan</artifactId>
+            <artifactId>pk-adapter-apipartner</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

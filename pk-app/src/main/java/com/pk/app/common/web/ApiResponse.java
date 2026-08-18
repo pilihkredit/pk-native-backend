@@ -10,7 +10,7 @@ import java.util.Objects;
  * @param msg                human-readable message in English
  * @param data               payload on success; null on failure
  * @param traceId            request trace id; echoes X-Trace-Id header when provided
- * @param lenderProvider     active lender provider code (e.g. pendanaan)
+ * @param lenderProvider     active lender provider code (e.g. apipartner)
  * @param lenderProviderName active lender provider display name from pk_provider.provider_name
  */
 public record ApiResponse<T>(

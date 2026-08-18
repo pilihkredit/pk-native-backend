@@ -2,7 +2,7 @@ package com.pk.app.profile.application;
 
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.profile.dto.request.ProfileDeviceRequest;
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.profile.sync.DeviceExtendedAttributes;
@@ -15,30 +15,30 @@ public final class ProfileDeviceSupport {
     public static LenderDeviceContext resolveLenderDevice(
             ProfileDeviceRequest deviceRequest,
             ClientRequestHeaders.ResolvedClientHeaders headers,
-            PendanaanProperties pendanaanProperties
+            ApiPartnerProperties apiPartnerProperties
     ) {
-        return resolveLenderDevice(deviceRequest, headers, pendanaanProperties, false);
+        return resolveLenderDevice(deviceRequest, headers, apiPartnerProperties, false);
     }
 
     public static LenderDeviceContext resolveRiskLenderDevice(
             ProfileDeviceRequest deviceRequest,
             ClientRequestHeaders.ResolvedClientHeaders headers,
-            PendanaanProperties pendanaanProperties
+            ApiPartnerProperties apiPartnerProperties
     ) {
-        return resolveLenderDevice(deviceRequest, headers, pendanaanProperties, true);
+        return resolveLenderDevice(deviceRequest, headers, apiPartnerProperties, true);
     }
 
     private static LenderDeviceContext resolveLenderDevice(
             ProfileDeviceRequest deviceRequest,
             ClientRequestHeaders.ResolvedClientHeaders headers,
-            PendanaanProperties pendanaanProperties,
+            ApiPartnerProperties apiPartnerProperties,
             boolean requireDeviceOtherInfo
     ) {
         validateAgainstHeaders(deviceRequest, headers);
         if (requireDeviceOtherInfo && deviceRequest.deviceOtherInfo() == null) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS, "device.deviceOtherInfo is required");
         }
-        String lenderAppName = pendanaanProperties.appName();
+        String lenderAppName = apiPartnerProperties.appName();
         if (lenderAppName == null || lenderAppName.isBlank()) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }

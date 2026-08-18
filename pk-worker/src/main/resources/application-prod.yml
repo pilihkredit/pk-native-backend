@@ -27,9 +27,9 @@ pk:
   lender:
     config:
       source: db
-      provider-code: pendanaan
-    pendanaan:
-      read-timeout-ms: ${PK_LENDER_PENDANAAN_READ_TIMEOUT_MS}
+      provider-code: apipartner
+    apipartner:
+      read-timeout-ms: ${PK_LENDER_APIPARTNER_READ_TIMEOUT_MS}
   worker:
     reference:
       enabled: true

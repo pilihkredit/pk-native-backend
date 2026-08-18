@@ -1,7 +1,7 @@
 package com.pk.app.profile.application;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.app.profile.dto.request.ProfileInfoQueryRequest;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -12,14 +12,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProfileQueryApplicationService {
     private final ProfileQueryFacade profileQueryFacade;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
 
     public ProfileQueryApplicationService(
             ProfileQueryFacade profileQueryFacade,
-            PendanaanProperties pendanaanProperties
+            ApiPartnerProperties apiPartnerProperties
     ) {
         this.profileQueryFacade = profileQueryFacade;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
     }
 
     public JsonNode query(AuthenticatedPrincipal principal, ProfileInfoQueryRequest request) {
@@ -34,7 +34,7 @@ public class ProfileQueryApplicationService {
     }
 
     private void requireLenderHttp() {
-        if (!pendanaanProperties.httpEnabled() || !pendanaanProperties.httpCredentialsPresent()) {
+        if (!apiPartnerProperties.httpEnabled() || !apiPartnerProperties.httpCredentialsPresent()) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
     }

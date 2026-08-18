@@ -147,9 +147,9 @@ class CreditCallbackIntakeFacadeTest {
                 ArgumentCaptor.forClass(ExternalInteractionCallbackLog.class);
         verify(externalInteractionCallbackLogRepository).insert(captor.capture());
         assertThat(captor.getValue().getIdempotencyKey())
-                .isEqualTo("pendanaan:CREDIT_RESULT:AP-001:SUCCESS:CA-001");
+                .isEqualTo("apipartner:CREDIT_RESULT:AP-001:SUCCESS:CA-001");
         assertThat(captor.getValue().getBusinessType()).isEqualTo(CallbackTypes.CREDIT_RESULT);
-        assertThat(captor.getValue().getProviderCode()).isEqualTo(CreditProviderCode.PENDANAAN);
+        assertThat(captor.getValue().getProviderCode()).isEqualTo(CreditProviderCode.API_PARTNER);
     }
 
     private static CreditApplicationRepository.CreditApplicationRecord applicationRecord() {
@@ -157,7 +157,7 @@ class CreditCallbackIntakeFacadeTest {
                 10L,
                 "AP-001",
                 "req-1",
-                CreditProviderCode.PENDANAAN,
+                CreditProviderCode.API_PARTNER,
                 1L,
                 "partner-1",
                 null

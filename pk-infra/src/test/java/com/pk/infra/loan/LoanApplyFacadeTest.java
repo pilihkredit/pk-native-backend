@@ -360,7 +360,7 @@ class LoanApplyFacadeTest {
                 100L,
                 applyId,
                 "req-1",
-                "pendanaan",
+                "apipartner",
                 1L,
                 "partner-1",
                 "CA-1"

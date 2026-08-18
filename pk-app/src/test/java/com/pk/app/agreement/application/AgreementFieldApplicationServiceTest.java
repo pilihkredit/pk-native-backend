@@ -49,7 +49,7 @@ class AgreementFieldApplicationServiceTest {
     void returnsProductSummaryFieldsFromConfiguration() {
         var response = service.productSummary(PRINCIPAL);
 
-        assertThat(response.publisherName()).isEqualTo("PT Pendanaan Teknologi Nusa");
+        assertThat(response.publisherName()).isEqualTo("PT ApiPartner Teknologi Nusa");
         assertThat(response.productType()).isEqualTo("Unsecured cash loan");
         assertThat(response.productDescription()).isEqualTo("Approved product description");
         assertThat(response.provisionFeeDisplay()).isEqualTo("Rp 0");
@@ -166,7 +166,7 @@ class AgreementFieldApplicationServiceTest {
                 "Configured Address",
                 "Authorized Representative",
                 "Director",
-                "PT Pendanaan Teknologi Nusa",
+                "PT ApiPartner Teknologi Nusa",
                 "Unsecured cash loan",
                 "Approved product description",
                 "konsumtif multiguna",

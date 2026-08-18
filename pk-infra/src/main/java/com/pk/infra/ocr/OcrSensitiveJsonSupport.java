@@ -16,7 +16,7 @@ import java.util.Set;
 
 /**
  * Field-level encryption for persisted OCR/identity JSON payloads.
- * Compliant fields from 「数据存储分类与合规建议」:
+ * Compliant fields from "Data Storage Classification and Compliance Recommendations":
  * id_card, mother_name must be AES-256-GCM; images use BiometricImageStore refs.
  */
 public class OcrSensitiveJsonSupport {
@@ -29,6 +29,7 @@ public class OcrSensitiveJsonSupport {
             "ktpidnumber",
             "id_card_number",
             "idcardnumber",
+            "nik",
             "mother_name",
             "mothername",
             "mothersurname"

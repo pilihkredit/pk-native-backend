@@ -69,12 +69,12 @@ public final class LenderProviderConfigReader {
         String mode = LenderProviderConfigJson.readText(record.configJson(), "mode")
                 .orElse("http");
         putIfPresent(properties, "pk.lender.config.provider-name", record.providerName());
-        properties.put("pk.lender.pendanaan.mode", mode);
-        putIfPresent(properties, "pk.lender.pendanaan.base-url", record.baseUrl());
-        putIfPresent(properties, "pk.lender.pendanaan.client-id", record.clientId());
-        putIfPresent(properties, "pk.lender.pendanaan.client-secret", record.clientSecret());
+        properties.put("pk.lender.apipartner.mode", mode);
+        putIfPresent(properties, "pk.lender.apipartner.base-url", record.baseUrl());
+        putIfPresent(properties, "pk.lender.apipartner.client-id", record.clientId());
+        putIfPresent(properties, "pk.lender.apipartner.client-secret", record.clientSecret());
         LenderProviderConfigJson.readText(record.lenderDeviceConfigJson(), "appName", "app_name")
-                .ifPresent(value -> properties.put("pk.lender.pendanaan.app-name", value));
+                .ifPresent(value -> properties.put("pk.lender.apipartner.app-name", value));
         putIfPresent(properties, "pk.callback.oauth.client-id", record.callbackClientId());
         putIfPresent(properties, "pk.callback.oauth.client-secret", record.callbackClientSecret());
         return properties;

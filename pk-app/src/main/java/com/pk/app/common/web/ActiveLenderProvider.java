@@ -12,7 +12,7 @@ public class ActiveLenderProvider {
     private final String providerName;
 
     public ActiveLenderProvider(
-            @Value("${pk.lender.config.provider-code:pendanaan}") String providerCode,
+            @Value("${pk.lender.config.provider-code:apipartner}") String providerCode,
             @Value("${pk.lender.config.provider-name:}") String providerName
     ) {
         this.providerCode = blankToNull(providerCode);

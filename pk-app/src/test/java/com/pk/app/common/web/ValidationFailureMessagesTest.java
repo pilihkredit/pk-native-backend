@@ -30,10 +30,10 @@ class ValidationFailureMessagesTest {
     void usesLenderDetailForUpstreamBusinessCodes() {
         ApiException exception = new ApiException(
                 ApiCode.LENDER_INVALID_OCR_RAW_DETAIL,
-                "advanceAi OCR原始报文格式错误"
+                "advanceAi OCR raw payload format error"
         );
 
         assertThat(ValidationFailureMessages.forApiException(exception))
-                .isEqualTo("advanceAi OCR原始报文格式错误");
+                .isEqualTo("advanceAi OCR raw payload format error");
     }
 }

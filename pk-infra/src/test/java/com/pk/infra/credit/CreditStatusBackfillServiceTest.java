@@ -99,7 +99,7 @@ class CreditStatusBackfillServiceTest {
                 id,
                 applyId,
                 "req-" + id,
-                "pendanaan",
+                "apipartner",
                 id,
                 "partner-" + id,
                 "CA-" + id

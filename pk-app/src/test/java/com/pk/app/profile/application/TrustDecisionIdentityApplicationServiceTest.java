@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.app.profile.dto.request.ProfileDeviceRequest;
 import com.pk.app.profile.dto.request.TrustDecisionLivenessLicenseRequest;
 import com.pk.app.profile.dto.request.TrustDecisionLivenessResultRequest;
@@ -28,9 +28,9 @@ class TrustDecisionIdentityApplicationServiceTest {
     @BeforeEach
     void setUp() {
         facade = mock(TrustDecisionIdentityFacade.class);
-        PendanaanProperties pendanaanProperties = new PendanaanProperties();
-        pendanaanProperties.setAppName("lender-app");
-        service = new TrustDecisionIdentityApplicationService(facade, pendanaanProperties);
+        ApiPartnerProperties apiPartnerProperties = new ApiPartnerProperties();
+        apiPartnerProperties.setAppName("lender-app");
+        service = new TrustDecisionIdentityApplicationService(facade, apiPartnerProperties);
         principal = new AuthenticatedPrincipal(10L, "partner-user", "81234567890", 1L);
         request = new MockHttpServletRequest();
         request.addHeader("X-Trace-Id", "trace-1");

@@ -45,7 +45,7 @@ class DebugUserProgressApplicationServiceTest {
         when(readMapper.findInteractionsByMobileNo("801234567", List.of("U10001", "801234567", "AP-1", "LN-1")))
                 .thenReturn(List.of(new DebugUserProgressReadMapper.InteractionRecord(
                         1L,
-                        "pendanaan",
+                        "apipartner",
                         "NO-1",
                         "USER_STATUS",
                         "U10001",

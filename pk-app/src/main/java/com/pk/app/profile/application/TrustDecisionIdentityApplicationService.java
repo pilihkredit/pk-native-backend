@@ -1,6 +1,6 @@
 package com.pk.app.profile.application;
 
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.common.web.RequestTrace;
 import com.pk.app.profile.dto.request.TrustDecisionLivenessLicenseRequest;
@@ -19,14 +19,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class TrustDecisionIdentityApplicationService {
     private final TrustDecisionIdentityFacade facade;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
 
     public TrustDecisionIdentityApplicationService(
             TrustDecisionIdentityFacade facade,
-            PendanaanProperties pendanaanProperties
+            ApiPartnerProperties apiPartnerProperties
     ) {
         this.facade = facade;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
     }
 
     public TrustDecisionOcrCheckResponse ocrCheck(
@@ -72,7 +72,7 @@ public class TrustDecisionIdentityApplicationService {
         var result = facade.completeInteractiveLiveness(
                 principal.userId(), principal.partnerUserId(), principal.mobileNo(),
                 request.requestId(), request.livenessId(),
-                ProfileDeviceSupport.resolveLenderDevice(request.device(), headers, pendanaanProperties), traceId);
+                ProfileDeviceSupport.resolveLenderDevice(request.device(), headers, apiPartnerProperties), traceId);
         return new TrustDecisionLivenessResultResponse(
                 result.requestId(), result.result(), result.sequenceId(),
                 result.moduleStatus(), result.lenderResponse());

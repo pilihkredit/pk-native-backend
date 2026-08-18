@@ -7,7 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.app.home.dto.request.HomeSummaryRequest;
 import com.pk.app.profile.dto.request.ProfileDeviceRequest;
 import com.pk.core.auth.AuthenticatedPrincipal;
@@ -23,11 +23,11 @@ class HomeApplicationServiceTest {
     void getSummaryUsesSubmittedDeviceAndPersistsIt() {
         HomeSummaryFacade homeSummaryFacade = mock(HomeSummaryFacade.class);
         UserDeviceWriter userDeviceWriter = mock(UserDeviceWriter.class);
-        PendanaanProperties pendanaanProperties = new PendanaanProperties();
-        pendanaanProperties.setAppName("PendanaanApp");
+        ApiPartnerProperties apiPartnerProperties = new ApiPartnerProperties();
+        apiPartnerProperties.setAppName("ApiPartnerApp");
         HomeApplicationService service = new HomeApplicationService(
                 homeSummaryFacade,
-                pendanaanProperties,
+                apiPartnerProperties,
                 userDeviceWriter
         );
         HttpServletRequest httpRequest = mock(HttpServletRequest.class);

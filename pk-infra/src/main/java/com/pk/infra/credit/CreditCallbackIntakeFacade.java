@@ -58,7 +58,7 @@ public class CreditCallbackIntakeFacade {
         long interactionCallbackId;
         try {
             interactionCallbackId = externalInteractionCallbackLogRepository.insert(new ExternalInteractionCallbackLog(
-                    CreditProviderCode.PENDANAAN,
+                    CreditProviderCode.API_PARTNER,
                     interactionNo,
                     idempotencyKey,
                     CallbackTypes.CREDIT_RESULT,
@@ -134,7 +134,7 @@ public class CreditCallbackIntakeFacade {
     }
 
     private static String buildIdempotencyKey(CreditCallbackParser.ParsedCreditCallback callback) {
-        return CreditProviderCode.PENDANAAN
+        return CreditProviderCode.API_PARTNER
                 + ":"
                 + CallbackTypes.CREDIT_RESULT
                 + ":"

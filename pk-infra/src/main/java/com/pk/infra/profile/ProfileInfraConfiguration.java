@@ -24,12 +24,12 @@ import org.springframework.context.annotation.Configuration;
 public class ProfileInfraConfiguration {
     @Bean
     ProfileEnumCatalog profileEnumCatalog() {
-        return new PendanaanProfileEnumCatalog();
+        return new ApiPartnerProfileEnumCatalog();
     }
 
     @Bean
     LenderEnumMapper lenderEnumMapper(ProfileEnumCatalog profileEnumCatalog) {
-        return new PendanaanLenderEnumMapper(profileEnumCatalog);
+        return new ApiPartnerLenderEnumMapper(profileEnumCatalog);
     }
 
     @Bean

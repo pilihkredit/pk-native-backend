@@ -78,15 +78,15 @@ pk:
   lender:
     config:
       source: ${PK_LENDER_CONFIG_SOURCE:db}
-      provider-code: ${PK_LENDER_CONFIG_PROVIDER_CODE:pendanaan}
+      provider-code: ${PK_LENDER_CONFIG_PROVIDER_CODE:apipartner}
       provider-name: ${PK_LENDER_CONFIG_PROVIDER_NAME:}
-    pendanaan:
-      connect-timeout-ms: ${PK_LENDER_PENDANAAN_CONNECT_TIMEOUT_MS:10000}
-      read-timeout-ms: ${PK_LENDER_PENDANAAN_READ_TIMEOUT_MS:30000}
-      tracking-url: ${PK_LENDER_PENDANAAN_TRACKING_URL:https://logcus.pendanaan.com}
+    apipartner:
+      connect-timeout-ms: ${PK_LENDER_APIPARTNER_CONNECT_TIMEOUT_MS:10000}
+      read-timeout-ms: ${PK_LENDER_APIPARTNER_READ_TIMEOUT_MS:30000}
+      tracking-url: ${PK_LENDER_APIPARTNER_TRACKING_URL:https://logcus.pendanaan.com}
       logging:
-        enabled: ${PK_LENDER_PENDANAAN_LOGGING_ENABLED:true}
-        max-body-bytes: ${PK_LENDER_PENDANAAN_LOGGING_MAX_BODY_BYTES:65536}
+        enabled: ${PK_LENDER_APIPARTNER_LOGGING_ENABLED:true}
+        max-body-bytes: ${PK_LENDER_APIPARTNER_LOGGING_MAX_BODY_BYTES:65536}
   profile:
     sync:
       mode: ${PK_PROFILE_SYNC_MODE:inline}

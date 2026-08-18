@@ -5,7 +5,7 @@ import java.util.OptionalInt;
 
 /**
  * Maps canonical app enum values to lender-specific values during profile sync.
- * Pendanaan uses the same integer codes today; future lenders may differ.
+ * ApiPartner uses the same integer codes today; future lenders may differ.
  */
 public interface LenderEnumMapper {
     String providerCode();

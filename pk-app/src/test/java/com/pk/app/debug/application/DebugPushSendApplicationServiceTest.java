@@ -37,8 +37,8 @@ class DebugPushSendApplicationServiceTest {
 
         var response = service.send("debug-token", new DebugPushSendRequest(
                 "device-token",
-                "标题",
-                "内容",
+                "Title",
+                "Body",
                 Map.of("type", "LOAN_STATUS", "messageId", "10025")
         ));
 

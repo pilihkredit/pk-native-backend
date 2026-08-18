@@ -6,7 +6,7 @@ import com.pk.app.loan.dto.request.LoanApplyRequest;
 import com.pk.app.loan.dto.response.LoanApplyResponse;
 import com.pk.app.loan.dto.response.LoanStatusResponse;
 import com.pk.app.profile.application.ProfileDeviceSupport;
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
@@ -21,16 +21,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class LoanApplyApplicationService {
     private final LoanApplyFacade loanApplyFacade;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
     private final UserDeviceWriter userDeviceWriter;
 
     public LoanApplyApplicationService(
             LoanApplyFacade loanApplyFacade,
-            PendanaanProperties pendanaanProperties,
+            ApiPartnerProperties apiPartnerProperties,
             UserDeviceWriter userDeviceWriter
     ) {
         this.loanApplyFacade = loanApplyFacade;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
         this.userDeviceWriter = userDeviceWriter;
     }
 
@@ -42,13 +42,13 @@ public class LoanApplyApplicationService {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        if (!pendanaanProperties.httpEnabled() || !pendanaanProperties.httpCredentialsPresent()) {
+        if (!apiPartnerProperties.httpEnabled() || !apiPartnerProperties.httpCredentialsPresent()) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
         LenderDeviceContext device = ProfileDeviceSupport.resolveRiskLenderDevice(
                 request.riskDataInfo().openUserDevice(),
                 ClientRequestHeaders.require(httpRequest),
-                pendanaanProperties
+                apiPartnerProperties
         );
         userDeviceWriter.upsertFromRequest(
                 principal.userId(),

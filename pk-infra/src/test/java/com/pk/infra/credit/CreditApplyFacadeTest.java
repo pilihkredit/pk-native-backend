@@ -59,7 +59,7 @@ class CreditApplyFacadeTest {
                 creditApplyHandler,
                 creditApplyOutboxPublisher,
                 creditStatusPollHandler,
-                "pendanaan"
+                "apipartner"
         );
     }
 
@@ -106,7 +106,7 @@ class CreditApplyFacadeTest {
                         List.of()
                 )
         );
-        when(pkProviderRepository.findActiveProviderCode("pendanaan")).thenReturn(Optional.empty());
+        when(pkProviderRepository.findActiveProviderCode("apipartner")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> facade.apply(1L, "partner-1", "81234567890", sampleCommand("req-1")))
                 .isInstanceOf(ApiException.class)
@@ -126,7 +126,7 @@ class CreditApplyFacadeTest {
                         List.of()
                 )
         );
-        when(pkProviderRepository.findActiveProviderCode("pendanaan")).thenReturn(Optional.of("pendanaan"));
+        when(pkProviderRepository.findActiveProviderCode("apipartner")).thenReturn(Optional.of("apipartner"));
         when(creditApplicationRepository.insert(any())).thenReturn(100L);
         when(creditApplyProperties.inlineEnabled()).thenReturn(true);
         when(creditApplyHandler.submit(any(CreditApplyJob.class))).thenReturn("CA-NEW");
@@ -139,7 +139,7 @@ class CreditApplyFacadeTest {
         ArgumentCaptor<CreditApplicationRepository.CreditApplicationInsert> insertCaptor =
                 ArgumentCaptor.forClass(CreditApplicationRepository.CreditApplicationInsert.class);
         verify(creditApplicationRepository).insert(insertCaptor.capture());
-        assertThat(insertCaptor.getValue().providerCode()).isEqualTo("pendanaan");
+        assertThat(insertCaptor.getValue().providerCode()).isEqualTo("apipartner");
         verify(creditApplyHandler).submit(any(CreditApplyJob.class));
         verify(creditApplyOutboxPublisher, never()).publish(any());
     }
@@ -212,7 +212,7 @@ class CreditApplyFacadeTest {
                         List.of()
                 )
         );
-        when(pkProviderRepository.findActiveProviderCode("pendanaan")).thenReturn(Optional.of("pendanaan"));
+        when(pkProviderRepository.findActiveProviderCode("apipartner")).thenReturn(Optional.of("apipartner"));
         when(creditApplicationRepository.insert(any())).thenReturn(100L);
         when(creditApplyProperties.inlineEnabled()).thenReturn(false);
 
@@ -230,7 +230,7 @@ class CreditApplyFacadeTest {
                 1L,
                 "APPLY-1",
                 "req-1",
-                "pendanaan",
+                "apipartner",
                 1L,
                 "partner-1",
                 "CA-1"

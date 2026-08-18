@@ -25,7 +25,7 @@ final class LenderProviderPropertySourceContributor {
         if ("env".equalsIgnoreCase(source)) {
             return false;
         }
-        String providerCode = environment.getProperty(PROVIDER_CODE_KEY, LenderProviderCodes.PENDANAAN);
+        String providerCode = environment.getProperty(PROVIDER_CODE_KEY, LenderProviderCodes.API_PARTNER);
         String jdbcUrl = environment.getProperty("spring.datasource.url");
         String username = environment.getProperty("spring.datasource.username");
         String password = environment.getProperty("spring.datasource.password");

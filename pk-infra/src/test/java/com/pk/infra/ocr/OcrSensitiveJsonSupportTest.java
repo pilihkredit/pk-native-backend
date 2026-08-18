@@ -58,4 +58,37 @@ class OcrSensitiveJsonSupportTest {
         assertThat(root.path("face_photo_image").path("encryptedRef").asText()).isEqualTo("enc://face/81234567890");
         assertThat(root.path("image").path("encryptedRef").asText()).isEqualTo("enc://face/81234567890");
     }
+
+    @Test
+    void encryptsTrustDecisionNikInCardInfo() throws Exception {
+        SensitiveFieldEncryptor encryptor = mock(SensitiveFieldEncryptor.class);
+        when(encryptor.encrypt(any())).thenAnswer(invocation -> {
+            String plaintext = invocation.getArgument(0);
+            return new EncryptedField("cipher-" + plaintext, new byte[12], new byte[16]);
+        });
+        OcrSensitiveJsonSupport support = new OcrSensitiveJsonSupport(
+                new ObjectMapper(),
+                encryptor,
+                mock(BiometricImageStore.class)
+        );
+
+        String input = """
+                {
+                  "code": 200,
+                  "message": "success",
+                  "card_info": {
+                    "nik": "3173040903960004",
+                    "name": "KEVIN ACIYANTO",
+                    "city": "JAKARTA BARAT"
+                  }
+                }
+                """;
+        JsonNode root = new ObjectMapper().readTree(support.sanitizeForStorage(input, "8166478289"));
+
+        assertThat(root.path("card_info").path("nik").path("enc").asText()).isEqualTo("AES-256-GCM");
+        assertThat(root.path("card_info").path("nik").path("ciphertext").asText())
+                .isEqualTo("cipher-3173040903960004");
+        assertThat(root.path("card_info").path("name").asText()).isEqualTo("KEVIN ACIYANTO");
+        assertThat(root.path("card_info").path("city").asText()).isEqualTo("JAKARTA BARAT");
+    }
 }

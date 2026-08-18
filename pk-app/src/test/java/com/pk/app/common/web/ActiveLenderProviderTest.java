@@ -7,17 +7,17 @@ import org.junit.jupiter.api.Test;
 class ActiveLenderProviderTest {
     @Test
     void enrichFillsBlankProviderFields() {
-        ActiveLenderProvider provider = new ActiveLenderProvider("pendanaan", "Pendanaan Test");
+        ActiveLenderProvider provider = new ActiveLenderProvider("apipartner", "ApiPartner Test");
         ApiResponse<String> enriched = provider.enrich(ApiResponse.success("ok", "t1"));
 
-        assertThat(enriched.lenderProvider()).isEqualTo("pendanaan");
-        assertThat(enriched.lenderProviderName()).isEqualTo("Pendanaan Test");
+        assertThat(enriched.lenderProvider()).isEqualTo("apipartner");
+        assertThat(enriched.lenderProviderName()).isEqualTo("ApiPartner Test");
         assertThat(enriched.data()).isEqualTo("ok");
     }
 
     @Test
     void enrichKeepsExistingProviderFields() {
-        ActiveLenderProvider provider = new ActiveLenderProvider("pendanaan", "Pendanaan Test");
+        ActiveLenderProvider provider = new ActiveLenderProvider("apipartner", "ApiPartner Test");
         ApiResponse<String> source = ApiResponse.success("ok", "t1")
                 .withLenderProvider("other", "Other Name");
 
@@ -29,10 +29,10 @@ class ActiveLenderProviderTest {
 
     @Test
     void treatsBlankProviderNameAsNull() {
-        ActiveLenderProvider provider = new ActiveLenderProvider("pendanaan", "  ");
+        ActiveLenderProvider provider = new ActiveLenderProvider("apipartner", "  ");
         ApiResponse<Void> enriched = provider.enrich(ApiResponse.success(null, "t1"));
 
-        assertThat(enriched.lenderProvider()).isEqualTo("pendanaan");
+        assertThat(enriched.lenderProvider()).isEqualTo("apipartner");
         assertThat(enriched.lenderProviderName()).isNull();
     }
 }

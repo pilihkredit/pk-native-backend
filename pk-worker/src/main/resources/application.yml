@@ -41,13 +41,13 @@ pk:
   lender:
     config:
       source: ${PK_LENDER_CONFIG_SOURCE:db}
-      provider-code: ${PK_LENDER_CONFIG_PROVIDER_CODE:pendanaan}
-    pendanaan:
-      connect-timeout-ms: ${PK_LENDER_PENDANAAN_CONNECT_TIMEOUT_MS:10000}
-      read-timeout-ms: ${PK_LENDER_PENDANAAN_READ_TIMEOUT_MS:30000}
+      provider-code: ${PK_LENDER_CONFIG_PROVIDER_CODE:apipartner}
+    apipartner:
+      connect-timeout-ms: ${PK_LENDER_APIPARTNER_CONNECT_TIMEOUT_MS:10000}
+      read-timeout-ms: ${PK_LENDER_APIPARTNER_READ_TIMEOUT_MS:30000}
       logging:
-        enabled: ${PK_LENDER_PENDANAAN_LOGGING_ENABLED:true}
-        max-body-bytes: ${PK_LENDER_PENDANAAN_LOGGING_MAX_BODY_BYTES:65536}
+        enabled: ${PK_LENDER_APIPARTNER_LOGGING_ENABLED:true}
+        max-body-bytes: ${PK_LENDER_APIPARTNER_LOGGING_MAX_BODY_BYTES:65536}
   reference:
     bank-cache-ttl: ${PK_REFERENCE_BANK_CACHE_TTL:24h}
     area-cache-ttl: ${PK_REFERENCE_AREA_CACHE_TTL:24h}

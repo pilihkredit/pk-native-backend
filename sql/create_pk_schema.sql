@@ -1878,7 +1878,7 @@ CREATE TABLE app_launch_event (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Raw application cold launch events';
 
 -- ---------------------------------------------------------------------------
--- Seed data (local / test Pendanaan provider; idempotent)
+-- Seed data (local / test ApiPartner provider; idempotent)
 -- ---------------------------------------------------------------------------
 
 INSERT INTO pk_provider (
@@ -1889,8 +1889,8 @@ INSERT INTO pk_provider (
     callback_base_url,
     config_json
 ) VALUES (
-    'pendanaan',
-    'Pendanaan Test',
+    'apipartner',
+    'ApiPartner Test',
     'ACTIVE',
     'http://gateway.test.ptnadmin.com/ktaid',
     'https://api-test.pilihkredit.id/api/v1',
@@ -1902,7 +1902,7 @@ INSERT INTO pk_provider (
     callback_base_url = VALUES(callback_base_url),
     config_json = VALUES(config_json);
 
-DELETE FROM pk_api_credential WHERE provider_code = 'pendanaan';
+DELETE FROM pk_api_credential WHERE provider_code = 'apipartner';
 
 INSERT INTO pk_api_credential (
     provider_code,
@@ -1913,7 +1913,7 @@ INSERT INTO pk_api_credential (
     effective_at,
     status
 ) VALUES (
-    'pendanaan',
+    'apipartner',
     'oc_ybmk9xvr8hockw5j1zexx3q5',
     'vEgB3NcR5x9wx9ZBB4ufCcPbSKcF6i6P',
     NULL,

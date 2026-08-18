@@ -2,21 +2,21 @@ package com.pk.app.profile.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.pk.infra.profile.PendanaanLenderEnumMapper;
-import com.pk.infra.profile.PendanaanProfileEnumCatalog;
+import com.pk.infra.profile.ApiPartnerLenderEnumMapper;
+import com.pk.infra.profile.ApiPartnerProfileEnumCatalog;
 import org.junit.jupiter.api.Test;
 
 class ProfileEnumApplicationServiceTest {
     private final ProfileEnumApplicationService service = new ProfileEnumApplicationService(
-            new PendanaanProfileEnumCatalog(),
-            new PendanaanLenderEnumMapper(new PendanaanProfileEnumCatalog())
+            new ApiPartnerProfileEnumCatalog(),
+            new ApiPartnerLenderEnumMapper(new ApiPartnerProfileEnumCatalog())
     );
 
     @Test
     void returnsPersonalEnumsWhenModuleFiltered() {
         var response = service.listEnums("personal");
 
-        assertThat(response.lenderProvider()).isEqualTo("pendanaan");
+        assertThat(response.lenderProvider()).isEqualTo("apipartner");
         assertThat(response.fields())
                 .extracting(field -> field.fieldKey())
                 .containsExactly("educationDegree", "industry");

@@ -97,7 +97,7 @@ class ProfileServiceFacadeAfTongdunTest {
                 profileTongdunRepository,
                 userDeviceWriter,
                 encryptor,
-                new ProfileEnumValidator(new PendanaanProfileEnumCatalog()),
+                new ProfileEnumValidator(new ApiPartnerProfileEnumCatalog()),
                 mock(BankReferenceFacade.class),
                 profileSyncOrchestrator,
                 onboardingProgressFacade,

@@ -164,7 +164,7 @@ public class AdvanceAiOcrClient implements AdvanceAiOcrPort {
         return refreshAccessToken();
     }
 
-    /** license-token 每次前端请求都向 Advance.ai 重新申请 access token 与 license。 */
+    /** license-token: request a new Advance.ai access token and license on every frontend call. */
     private String refreshAccessToken() {
         redisTemplate.delete(properties.tokenKeyPrefix());
         String token = generateToken();

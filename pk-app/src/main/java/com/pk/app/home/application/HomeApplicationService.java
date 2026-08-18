@@ -4,7 +4,7 @@ import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.home.dto.request.HomeSummaryRequest;
 import com.pk.app.home.dto.response.HomeSummaryResponse;
 import com.pk.app.profile.application.ProfileDeviceSupport;
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
@@ -18,16 +18,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class HomeApplicationService {
     private final HomeSummaryFacade homeSummaryFacade;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
     private final UserDeviceWriter userDeviceWriter;
 
     public HomeApplicationService(
             HomeSummaryFacade homeSummaryFacade,
-            PendanaanProperties pendanaanProperties,
+            ApiPartnerProperties apiPartnerProperties,
             UserDeviceWriter userDeviceWriter
     ) {
         this.homeSummaryFacade = homeSummaryFacade;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
         this.userDeviceWriter = userDeviceWriter;
     }
 
@@ -42,7 +42,7 @@ public class HomeApplicationService {
         LenderDeviceContext device = ProfileDeviceSupport.resolveLenderDevice(
                 request.device(),
                 ClientRequestHeaders.require(httpRequest),
-                pendanaanProperties
+                apiPartnerProperties
         );
         userDeviceWriter.upsertFromRequest(
                 principal.userId(),

@@ -14,7 +14,7 @@
     <modules>
         <module>pk-core</module>
         <module>pk-infra</module>
-        <module>pk-adapter-pendanaan</module>
+        <module>pk-adapter-apipartner</module>
         <module>pk-app</module>
         <module>pk-worker</module>
         <module>pk-quality</module>

@@ -1,6 +1,6 @@
 package com.pk.app.repay.application;
 
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.app.repay.dto.request.RepayCurrentOrderRequest;
 import com.pk.app.repay.dto.request.RepayTrialBatchRequest;
 import com.pk.app.repay.dto.request.RepayTrialRequest;
@@ -28,20 +28,20 @@ public class RepayApplicationService {
     private final RepayVaFacade repayVaFacade;
     private final RepayTrialFacade repayTrialFacade;
     private final RepayCurrentOrderFacade repayCurrentOrderFacade;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
 
     public RepayApplicationService(
             RepayPlanFacade repayPlanFacade,
             RepayVaFacade repayVaFacade,
             RepayTrialFacade repayTrialFacade,
             RepayCurrentOrderFacade repayCurrentOrderFacade,
-            PendanaanProperties pendanaanProperties
+            ApiPartnerProperties apiPartnerProperties
     ) {
         this.repayPlanFacade = repayPlanFacade;
         this.repayVaFacade = repayVaFacade;
         this.repayTrialFacade = repayTrialFacade;
         this.repayCurrentOrderFacade = repayCurrentOrderFacade;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
     }
 
     public RepayPlanListResponse getPlan(AuthenticatedPrincipal principal, String loanApplyId) {
@@ -134,7 +134,7 @@ public class RepayApplicationService {
     }
 
     private void requireLenderHttp() {
-        if (!pendanaanProperties.httpEnabled() || !pendanaanProperties.httpCredentialsPresent()) {
+        if (!apiPartnerProperties.httpEnabled() || !apiPartnerProperties.httpCredentialsPresent()) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
     }

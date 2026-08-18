@@ -6,7 +6,7 @@ import com.pk.app.credit.dto.request.CreditApplyRequest;
 import com.pk.app.credit.dto.response.CreditApplyResponse;
 import com.pk.app.credit.dto.response.CreditStatusResponse;
 import com.pk.app.profile.application.ProfileDeviceSupport;
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
@@ -21,16 +21,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class CreditApplicationService {
     private final CreditApplyFacade creditApplyFacade;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
     private final UserDeviceWriter userDeviceWriter;
 
     public CreditApplicationService(
             CreditApplyFacade creditApplyFacade,
-            PendanaanProperties pendanaanProperties,
+            ApiPartnerProperties apiPartnerProperties,
             UserDeviceWriter userDeviceWriter
     ) {
         this.creditApplyFacade = creditApplyFacade;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
         this.userDeviceWriter = userDeviceWriter;
     }
 
@@ -45,7 +45,7 @@ public class CreditApplicationService {
         LenderDeviceContext device = ProfileDeviceSupport.resolveRiskLenderDevice(
                 request.riskDataInfo().openUserDevice(),
                 ClientRequestHeaders.require(httpRequest),
-                pendanaanProperties
+                apiPartnerProperties
         );
         userDeviceWriter.upsertFromRequest(
                 principal.userId(),

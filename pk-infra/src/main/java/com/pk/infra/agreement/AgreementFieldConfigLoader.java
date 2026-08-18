@@ -56,7 +56,7 @@ public class AgreementFieldConfigLoader {
                     "",
                     "",
                     "",
-                    "PT Pendanaan Teknologi Nusa",
+                    "PT ApiPartner Teknologi Nusa",
                     "Unsecured cash loan",
                     "",
                     "konsumtif multiguna",

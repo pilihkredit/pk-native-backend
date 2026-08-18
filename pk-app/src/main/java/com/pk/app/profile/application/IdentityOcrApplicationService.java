@@ -12,7 +12,7 @@ import com.pk.app.profile.dto.response.IdentityOcrCheckResponse;
 import com.pk.app.profile.dto.response.IdentityOcrFaceRecognitionResponse;
 import com.pk.app.profile.dto.response.IdentityOcrLicenseTokenResponse;
 import com.pk.app.profile.dto.response.IdentityOcrLivenessCheckResponse;
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
@@ -23,14 +23,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class IdentityOcrApplicationService {
     private final IdentityOcrFacade identityOcrFacade;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
 
     public IdentityOcrApplicationService(
             IdentityOcrFacade identityOcrFacade,
-            PendanaanProperties pendanaanProperties
+            ApiPartnerProperties apiPartnerProperties
     ) {
         this.identityOcrFacade = identityOcrFacade;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
     }
 
     public IdentityOcrLicenseTokenResponse getLicenseToken(
@@ -146,7 +146,7 @@ public class IdentityOcrApplicationService {
                         request.requestId(),
                         request.faceImageBase64(),
                         request.idCardImageBase64(),
-                        ProfileDeviceSupport.resolveLenderDevice(request.device(), headers, pendanaanProperties)
+                        ProfileDeviceSupport.resolveLenderDevice(request.device(), headers, apiPartnerProperties)
                 ),
                 traceId
         );

@@ -1,6 +1,6 @@
 package com.pk.app.loan.application;
 
-import com.pk.adapter.pendanaan.PendanaanProperties;
+import com.pk.adapter.apipartner.ApiPartnerProperties;
 import com.pk.app.loan.dto.response.LoanContractsResponse;
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
@@ -11,21 +11,21 @@ import org.springframework.stereotype.Service;
 @Service
 public class LoanContractApplicationService {
     private final LoanContractFacade loanContractFacade;
-    private final PendanaanProperties pendanaanProperties;
+    private final ApiPartnerProperties apiPartnerProperties;
 
     public LoanContractApplicationService(
             LoanContractFacade loanContractFacade,
-            PendanaanProperties pendanaanProperties
+            ApiPartnerProperties apiPartnerProperties
     ) {
         this.loanContractFacade = loanContractFacade;
-        this.pendanaanProperties = pendanaanProperties;
+        this.apiPartnerProperties = apiPartnerProperties;
     }
 
     public LoanContractsResponse listContracts(AuthenticatedPrincipal principal, String loanApplyId) {
         if (principal == null) {
             throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
         }
-        if (!pendanaanProperties.httpEnabled() || !pendanaanProperties.httpCredentialsPresent()) {
+        if (!apiPartnerProperties.httpEnabled() || !apiPartnerProperties.httpCredentialsPresent()) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
         return LoanContractsResponse.from(
