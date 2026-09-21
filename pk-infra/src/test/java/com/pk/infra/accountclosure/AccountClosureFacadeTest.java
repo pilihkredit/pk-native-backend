@@ -13,25 +13,31 @@ import com.pk.core.api.ApiException;
 import com.pk.core.auth.UserProfileSummary;
 import com.pk.core.auth.port.LenderUserDisablePort;
 import com.pk.infra.accountclosure.mapper.AccountClosureMapper;
-import com.pk.infra.auth.mapper.UserAuthMapper;
 import org.junit.jupiter.api.Test;
 
 class AccountClosureFacadeTest {
     @Test
     void submitClosureDisablesLenderThenEnqueuesAndMarksProfileClosed() {
-        UserAuthMapper userAuthMapper = mock(UserAuthMapper.class);
         AccountClosureMapper accountClosureMapper = mock(AccountClosureMapper.class);
         LenderUserDisablePort lenderUserDisablePort = mock(LenderUserDisablePort.class);
+        AccountClosureLocalWriter localWriter = mock(AccountClosureLocalWriter.class);
 
         when(accountClosureMapper.countActiveDeletionQueue(10L)).thenReturn(0);
-        when(accountClosureMapper.insertDeletionQueue(10L, "U10", "81234567890", "operator=cs1"))
-                .thenReturn(1);
-        when(userAuthMapper.markAccountClosed(10L)).thenReturn(1);
+        when(localWriter.persistClosureLocally(
+                new UserProfileSummary(10L, "U10", "81234567890", false),
+                "cs1",
+                null
+        )).thenReturn(new AccountClosureFacade.AccountClosureSubmitResult(
+                10L,
+                "U10",
+                "81234567890",
+                "pending"
+        ));
 
         var facade = new AccountClosureFacade(
-                userAuthMapper,
                 accountClosureMapper,
-                lenderUserDisablePort
+                lenderUserDisablePort,
+                localWriter
         );
 
         var result = facade.submitClosureForUser(
@@ -41,6 +47,11 @@ class AccountClosureFacadeTest {
         );
 
         verify(lenderUserDisablePort).disableUser("U10");
+        verify(localWriter).persistClosureLocally(
+                new UserProfileSummary(10L, "U10", "81234567890", false),
+                "cs1",
+                null
+        );
         assertThat(result.userId()).isEqualTo(10L);
         assertThat(result.queueStatus()).isEqualTo("pending");
     }
@@ -52,9 +63,9 @@ class AccountClosureFacadeTest {
         when(accountClosureMapper.countActiveDeletionQueue(10L)).thenReturn(1);
 
         var facade = new AccountClosureFacade(
-                mock(UserAuthMapper.class),
                 accountClosureMapper,
-                lenderUserDisablePort
+                lenderUserDisablePort,
+                mock(AccountClosureLocalWriter.class)
         );
 
         assertThatThrownBy(() -> facade.submitClosureForUser(

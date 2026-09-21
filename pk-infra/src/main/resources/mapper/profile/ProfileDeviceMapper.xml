@@ -37,6 +37,16 @@
                device_json, last_request_id
         FROM user_device WHERE device_no = #{deviceNo}
     </select>
+    <select id="findLatestByUserId" resultMap="deviceMap">
+        SELECT user_id, partner_user_id, device_no, system_platform, app_name, app_version,
+               package_name, phone_brand, phone_brand_model, mac, system_version, delivery_platform,
+               cpu_cores, memory_total, sd_card_total, ad_id, idfv, idfa, ext_param, ip,
+               device_json, last_request_id
+        FROM user_device
+        WHERE user_id = #{userId}
+        ORDER BY updated_at DESC, id DESC
+        LIMIT 1
+    </select>
     <insert id="upsertByDeviceNo">
         INSERT INTO user_device (
             user_id, partner_user_id, device_no, system_platform, app_name, app_version, package_name,

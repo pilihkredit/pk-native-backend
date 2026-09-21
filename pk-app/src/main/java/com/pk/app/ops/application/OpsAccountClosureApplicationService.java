@@ -78,7 +78,10 @@ public class OpsAccountClosureApplicationService {
         AuthenticatedPrincipal principal = toPrincipal(user);
         AccountCloseAccessFacade.AccountCloseAccessResult eligibility = accountCloseAccessFacade.checkAccess(
                 principal,
-                opsStatusDeviceProvider.create()
+                opsStatusDeviceProvider.create(
+                        user.userId(),
+                        OpsBackofficeAuthSupport.resolveClientIp(httpRequest)
+                )
         );
         return new OpsAccountClosureEligibilityResponse(
                 user.userId(),
