@@ -13,5 +13,13 @@ public class ProfileDeviceRepositoryImpl implements ProfileDeviceRepository {
         return Optional.ofNullable(mapper.findByDeviceNo(deviceNo.trim()));
     }
 
+    @Override
+    public Optional<ProfileDeviceData> findLatestByUserId(long userId) {
+        if (userId <= 0) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(mapper.findLatestByUserId(userId));
+    }
+
     @Override public void upsertByDeviceNo(ProfileDeviceData data) { mapper.upsertByDeviceNo(data); }
 }

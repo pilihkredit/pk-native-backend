@@ -50,7 +50,7 @@ public class OpsBackofficeAuthSupport {
                 .anyMatch(clientIp::equals);
     }
 
-    static String resolveClientIp(HttpServletRequest request) {
+    public static String resolveClientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
             int comma = forwarded.indexOf(',');

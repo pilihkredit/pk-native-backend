@@ -8,5 +8,8 @@ public interface ProfileDeviceRepository {
 
     Optional<ProfileDeviceData> findByDeviceNo(String deviceNo);
 
+    /** Most recently updated device row for the user (for lender openUserDevice). */
+    Optional<ProfileDeviceData> findLatestByUserId(long userId);
+
     void upsertByDeviceNo(ProfileDeviceData data);
 }
