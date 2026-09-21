@@ -16,6 +16,7 @@ final class ApiPartnerOpenApiPaths {
     static final String USER_BANK_CARD_DEFAULT = PREFIX + "/user/bank-card/default";
     static final String USER_BANK_CARD_DELETE = PREFIX + "/user/bank-card/delete";
     static final String USER_STATUS = PREFIX + "/user/status";
+    static final String USER_DISABLE = PREFIX + "/user/disable";
     static final String CREDIT_APPLY = PREFIX + "/credit/apply";
     static final String CREDIT_APPLY_STATUS = PREFIX + "/credit/applyStatus";
     static final String PRODUCT_LIST = PREFIX + "/product/list";

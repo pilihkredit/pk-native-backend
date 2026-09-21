@@ -1882,7 +1882,7 @@ CREATE TABLE user_deleted (
     user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id',
     partner_user_id VARCHAR(64) NULL COMMENT 'Snapshot of partner_user_id at delete request',
     mobile_no VARCHAR(32) NULL COMMENT 'Snapshot of mobile_no at delete request',
-    reason VARCHAR(128) NULL COMMENT 'Close/delete reason',
+    reason VARCHAR(200) NULL COMMENT 'Close/delete reason',
     requested_at DATETIME(3) NOT NULL COMMENT 'User requested close/delete time',
     status VARCHAR(32) NOT NULL DEFAULT 'pending' COMMENT 'pending|marked|purged|failed',
     retention_until DATETIME(3) NULL COMMENT 'Copied from user_profile after mark job',
@@ -1898,6 +1898,19 @@ CREATE TABLE user_deleted (
     KEY idx_user_deleted_retention_until (retention_until)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Account deletion queue for retention mark and physical purge';
+
+CREATE TABLE account_closure_operation_log (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'user_profile.id at cancellation',
+    username VARCHAR(64) NOT NULL COMMENT 'Display username snapshot',
+    operator VARCHAR(64) NOT NULL COMMENT 'Backoffice operator login name',
+    reason VARCHAR(200) NULL COMMENT 'Cancellation reason from CS',
+    operated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Operation time',
+    PRIMARY KEY (id),
+    KEY idx_account_closure_op_log_time (operated_at),
+    KEY idx_account_closure_op_log_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='CS account cancellation audit log';
 
 -- ---------------------------------------------------------------------------
 -- Seed data (local / test ApiPartner provider; idempotent)

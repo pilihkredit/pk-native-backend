@@ -75,4 +75,6 @@ public interface UserAuthMapper {
             @Param("passwordNonce") byte[] passwordNonce,
             @Param("passwordTag") byte[] passwordTag
     );
+
+    int markAccountClosed(@Param("userId") long userId);
 }

@@ -47,6 +47,12 @@ pk:
     user-progress:
       enabled: ${PK_DEBUG_USER_PROGRESS_ENABLED:false}
       token: ${PK_DEBUG_USER_PROGRESS_TOKEN:}
+  ops:
+    backoffice:
+      enabled: ${PK_OPS_BACKOFFICE_ENABLED:false}
+      token: ${PK_OPS_BACKOFFICE_TOKEN:}
+      # Comma-free list; set in env-specific YAML (e.g. 10.0.0.1). Empty = no IP restriction.
+      allowed-client-ips: ${PK_OPS_BACKOFFICE_ALLOWED_CLIENT_IPS:}
   fcm:
     enabled: ${PK_FCM_ENABLED:false}
     project-id: ${PK_FCM_PROJECT_ID:}
