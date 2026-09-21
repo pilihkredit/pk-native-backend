@@ -75,6 +75,8 @@ final class ApiPartnerLenderCodeMapper {
             case "A000409" -> ApiCode.LENDER_INVALID_MOTHER_SURNAME_FORMAT;
             case "A000075" -> ApiCode.LENDER_INVALID_EMAIL;
             case "A000144" -> ApiCode.LENDER_DUPLICATE_SUBMISSION_IN_PROGRESS;
+            case "A000330", "A000331", "A000332" -> ApiCode.ACCOUNT_CLOSE_NOT_ALLOWED;
+            case "A000036" -> ApiCode.UPSTREAM_APPLICATION_NOT_FOUND;
             case "A000001", "A000012", "A000017", "A000024" -> ApiCode.LENDER_INVALID_REQUEST_PARAMETERS;
             case "A000466", "A000467", "A000468" -> ApiCode.LENDER_INVALID_REQUEST_PARAMETERS;
             default -> null;

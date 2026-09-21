@@ -101,6 +101,12 @@ public enum ApiCode {
             ApiCodeLayer.PLATFORM_VALIDATION
     ),
     INBOX_MESSAGE_NOT_FOUND("K000345", "Inbox message not found", ApiCodeLayer.PLATFORM_VALIDATION),
+    ACCOUNT_CLOSURE_ALREADY_REQUESTED(
+            "K000346",
+            "Account closure has already been requested for this user",
+            ApiCodeLayer.PLATFORM_VALIDATION
+    ),
+    OPS_API_DISABLED("K000347", "Operations API is disabled", ApiCodeLayer.PLATFORM_VALIDATION),
 
     QUOTE_SNAPSHOT_EXPIRED("B000003", "Quote snapshot expired", ApiCodeLayer.PLATFORM_ORCHESTRATION),
     QUOTE_SNAPSHOT_MISMATCH("B000004", "Quote snapshot mismatch", ApiCodeLayer.PLATFORM_ORCHESTRATION),

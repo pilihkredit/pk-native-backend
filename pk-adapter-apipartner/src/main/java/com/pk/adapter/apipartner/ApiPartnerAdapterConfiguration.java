@@ -7,6 +7,7 @@ import com.pk.core.callback.port.ServerEventCallbackParser;
 import com.pk.core.credit.port.LenderCreditPort;
 import com.pk.core.logging.PlatformStructuredLogger;
 import com.pk.core.external.port.LenderInteractionLogRepository;
+import com.pk.core.auth.port.LenderUserDisablePort;
 import com.pk.core.home.port.LenderUserStatusPort;
 import com.pk.core.loan.port.LenderLoanApplyPort;
 import com.pk.core.loan.port.LenderLoanContractPort;
@@ -116,6 +117,14 @@ public class ApiPartnerAdapterConfiguration {
             return new ApiPartnerUserStatusAdapter(httpStack.requireHttpClient(), objectMapper);
         }
         return new FakeApiPartnerUserStatusAdapter();
+    }
+
+    @Bean
+    LenderUserDisablePort lenderUserDisablePort(ApiPartnerHttpStack httpStack, ObjectMapper objectMapper) {
+        if (httpStack.enabled()) {
+            return new ApiPartnerUserDisableAdapter(httpStack.requireHttpClient(), objectMapper);
+        }
+        return new FakeApiPartnerUserDisableAdapter();
     }
 
     @Bean

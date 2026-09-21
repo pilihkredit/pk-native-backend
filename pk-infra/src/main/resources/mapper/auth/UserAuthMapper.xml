@@ -102,6 +102,17 @@
           AND deleted_at IS NULL
     </update>
 
+    <update id="markAccountClosed">
+        UPDATE user_profile
+        SET deleted_at = CURRENT_TIMESTAMP(3),
+            access_token = NULL,
+            refresh_token = NULL,
+            access_token_expires_at = NULL,
+            last_logout_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
     <update id="clearSessionTokens">
         UPDATE user_profile
         SET access_token = NULL,

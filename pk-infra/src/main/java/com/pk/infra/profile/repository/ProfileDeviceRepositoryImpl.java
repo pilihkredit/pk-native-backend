@@ -12,5 +12,6 @@ public class ProfileDeviceRepositoryImpl implements ProfileDeviceRepository {
     @Override public Optional<ProfileDeviceData> findByDeviceNo(String deviceNo) {
         return Optional.ofNullable(mapper.findByDeviceNo(deviceNo.trim()));
     }
+
     @Override public void upsertByDeviceNo(ProfileDeviceData data) { mapper.upsertByDeviceNo(data); }
 }
