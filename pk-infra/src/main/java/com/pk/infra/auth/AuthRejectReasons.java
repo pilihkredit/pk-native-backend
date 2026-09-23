@@ -8,6 +8,7 @@ public final class AuthRejectReasons {
     public static final String TOKEN_EXPIRED = "token_expired";
     public static final String SESSION_NOT_FOUND = "session_not_found";
     public static final String SESSION_VERSION_MISMATCH = "session_version_mismatch";
+    public static final String ACCOUNT_CLOSED = "account_closed";
     public static final String TOKEN_REJECTED = "token_rejected";
 
     private static final ThreadLocal<String> REASON = new ThreadLocal<>();

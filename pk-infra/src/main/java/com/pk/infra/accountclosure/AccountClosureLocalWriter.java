@@ -4,6 +4,7 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.UserProfileSummary;
 import com.pk.infra.accountclosure.mapper.AccountClosureMapper;
+import com.pk.infra.auth.UserSessionInvalidator;
 import com.pk.infra.auth.mapper.UserAuthMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,13 +16,16 @@ public class AccountClosureLocalWriter {
 
     private final UserAuthMapper userAuthMapper;
     private final AccountClosureMapper accountClosureMapper;
+    private final UserSessionInvalidator userSessionInvalidator;
 
     public AccountClosureLocalWriter(
             UserAuthMapper userAuthMapper,
-            AccountClosureMapper accountClosureMapper
+            AccountClosureMapper accountClosureMapper,
+            UserSessionInvalidator userSessionInvalidator
     ) {
         this.userAuthMapper = userAuthMapper;
         this.accountClosureMapper = accountClosureMapper;
+        this.userSessionInvalidator = userSessionInvalidator;
     }
 
     @Transactional
@@ -44,6 +48,7 @@ public class AccountClosureLocalWriter {
         if (closed != 1) {
             throw new ApiException(ApiCode.INTERNAL_SERVER_ERROR, "Failed to mark user profile closed");
         }
+        userSessionInvalidator.invalidateAll(user.userId());
         return new AccountClosureFacade.AccountClosureSubmitResult(
                 user.userId(),
                 user.partnerUserId(),

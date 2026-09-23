@@ -452,6 +452,15 @@ public class AuthServiceFacade {
 
     public AuthenticatedPrincipal validateAccessToken(String accessToken) {
         AuthenticatedPrincipal principal = tokenIssuer.parseAccessToken(accessToken);
+        if (userAuthRepository.findByUserId(principal.userId()).isEmpty()) {
+            AuthRejectReasons.set(AuthRejectReasons.ACCOUNT_CLOSED);
+            log.warn(
+                    "Access token rejected for closed or missing user userId={} mobileNo={}",
+                    principal.userId(),
+                    principal.mobileNo()
+            );
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
         AuthSession session = sessionStore.findByUserId(principal.userId()).orElse(null);
         if (session == null) {
             AuthRejectReasons.set(AuthRejectReasons.SESSION_NOT_FOUND);
