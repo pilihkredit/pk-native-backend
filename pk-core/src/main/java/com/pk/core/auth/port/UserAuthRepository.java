@@ -17,8 +17,8 @@ public interface UserAuthRepository {
     UserProfileSummary createByMobileNo(String mobileNo);
 
     /**
-     * Active profile by mobile, or create one. If only a soft-closed profile exists,
-     * insert a new row reusing that profile's {@code partner_user_id} after renaming the closed row.
+     * Active profile by mobile, or create one with a new {@code partner_user_id}.
+     * If only a soft-closed profile exists, locks that row for concurrency then inserts a fresh profile.
      */
     UserProfileSummary findOrCreateActiveByMobileNo(String mobileNo);
 

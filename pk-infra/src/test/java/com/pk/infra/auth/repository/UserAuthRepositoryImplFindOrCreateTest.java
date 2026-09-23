@@ -41,21 +41,20 @@ class UserAuthRepositoryImplFindOrCreateTest {
     }
 
     @Test
-    void reusesPartnerUserIdFromClosedProfile() {
+    void createsFreshPartnerUserIdWhenOnlyClosedProfileExists() {
         when(mapper.findByMobileNo("81234567815"))
-                .thenReturn(null, null, new UserProfileSummary(200L, "UABC", "81234567815", false));
+                .thenReturn(null, null, new UserProfileSummary(200L, "UNEW123456789", "81234567815", false));
         when(mapper.findLatestClosedByMobileNoForUpdate("81234567815"))
                 .thenReturn(new UserProfileSummary(174L, "UABC", "81234567815", false));
-        when(mapper.relinquishPartnerUserId(174L, "UABC_closed_174")).thenReturn(1);
-        when(mapper.insertProfile("UABC", "81234567815")).thenReturn(1);
+        when(mapper.insertProfile(anyString(), org.mockito.ArgumentMatchers.eq("81234567815"))).thenReturn(1);
 
         UserProfileSummary result = repository.findOrCreateActiveByMobileNo("81234567815");
 
         assertThat(result.newlyCreated()).isTrue();
         assertThat(result.userId()).isEqualTo(200L);
-        assertThat(result.partnerUserId()).isEqualTo("UABC");
-        verify(mapper).relinquishPartnerUserId(174L, "UABC_closed_174");
-        verify(mapper).insertProfile("UABC", "81234567815");
+        assertThat(result.partnerUserId()).isEqualTo("UNEW123456789");
+        verify(mapper, never()).relinquishPartnerUserId(org.mockito.ArgumentMatchers.anyLong(), anyString());
+        verify(mapper).insertProfile(anyString(), org.mockito.ArgumentMatchers.eq("81234567815"));
     }
 
     @Test
