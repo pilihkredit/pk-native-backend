@@ -370,6 +370,26 @@ class AuthServiceFacadeTest {
     }
 
     @Test
+    void validateAccessTokenRejectsClosedOrMissingProfile() {
+        AuthProperties properties = new AuthProperties();
+        TokenIssuer tokenIssuer = mock(TokenIssuer.class);
+        SessionStore sessionStore = mock(SessionStore.class);
+        RefreshTokenStore refreshTokenStore = mock(RefreshTokenStore.class);
+        AuthServiceFacade facade = newFacade(properties, sessionStore, refreshTokenStore, tokenIssuer);
+
+        AuthenticatedPrincipal principal = new AuthenticatedPrincipal(11L, "UP11", "8123456789", 3L);
+        when(tokenIssuer.parseAccessToken("access-token")).thenReturn(principal);
+        when(userAuthRepository.findByUserId(11L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> facade.validateAccessToken("access-token"))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.UNAUTHORIZED_REQUEST);
+
+        verify(sessionStore, never()).findByUserId(anyLong());
+    }
+
+    @Test
     void changePasswordReplacesEncryptedCredentialAndKeepsSessions() {
         AuthProperties properties = new AuthProperties();
         SessionStore sessionStore = mock(SessionStore.class);
