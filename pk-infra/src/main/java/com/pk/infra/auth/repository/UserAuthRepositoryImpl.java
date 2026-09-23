@@ -60,31 +60,12 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
             return active.get();
         }
 
-        UserProfileSummary closed = userAuthMapper.findLatestClosedByMobileNoForUpdate(mobileNo);
+        userAuthMapper.findLatestClosedByMobileNoForUpdate(mobileNo);
         active = findByMobileNo(mobileNo);
         if (active.isPresent()) {
             return active.get();
         }
-        if (closed == null) {
-            return createByMobileNo(mobileNo);
-        }
-
-        String originalPartnerUserId = closed.partnerUserId();
-        String relinquished = originalPartnerUserId + "_closed_" + closed.userId();
-        int updated = userAuthMapper.relinquishPartnerUserId(closed.userId(), relinquished);
-        if (updated != 1) {
-            return findByMobileNo(mobileNo).orElseGet(() -> createByMobileNo(mobileNo));
-        }
-
-        userAuthMapper.insertProfile(originalPartnerUserId, mobileNo);
-        return findByMobileNo(mobileNo)
-                .map(profile -> new UserProfileSummary(
-                        profile.userId(),
-                        profile.partnerUserId(),
-                        profile.mobileNo(),
-                        true
-                ))
-                .orElseThrow(() -> new IllegalStateException("Failed to load re-created user profile"));
+        return createByMobileNo(mobileNo);
     }
 
     @Override
