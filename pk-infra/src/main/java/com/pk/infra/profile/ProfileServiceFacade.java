@@ -226,16 +226,19 @@ public class ProfileServiceFacade {
         boolean sameProfileActiveCard = boundByHash.isPresent()
                 && boundByHash.get().userId() == userId
                 && !boundByHash.get().deletedFlag();
+        int activeCount = profileBankCardRepository.countActiveByUserId(userId);
         // New card (or revive soft-deleted): block at/above configured max — do not insert.
         if (!sameProfileActiveCard) {
             int maxCount = bankCardMaxConfigLoader.loadMaxCount();
-            int activeCount = profileBankCardRepository.countActiveByUserId(userId);
             if (activeCount >= maxCount) {
                 throw new ApiException(ApiCode.BANK_CARD_MAX_LIMIT_REACHED);
             }
         }
 
-        bankCardAddFaceGateService.consumeBeforeSave(userId, deviceNo, command.faceVerifyToken());
+        // PRD: face verification required when adding a card after the user already has at least one active card.
+        if (activeCount > 0) {
+            bankCardAddFaceGateService.consumeBeforeSave(userId, deviceNo, command.faceVerifyToken());
+        }
 
         EncryptedField encryptedCardNumber = sensitiveFieldEncryptor.encrypt(normalizedCardNumber);
         profileBankCardRepository.clearDefaultByUserId(userId);

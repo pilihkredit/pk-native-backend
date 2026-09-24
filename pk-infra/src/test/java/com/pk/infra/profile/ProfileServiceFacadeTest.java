@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doThrow;
@@ -314,6 +315,16 @@ class ProfileServiceFacadeTest {
         verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
         verify(profileBankCardRepository).clearDefaultByUserId(10L);
         verify(profileBankCardRepository).insert(any());
+        verify(bankCardAddFaceGateService, never()).consumeBeforeSave(anyLong(), anyString(), any());
+    }
+
+    @Test
+    void requiresFaceBeforeSavingSecondBankCard() {
+        when(profileBankCardRepository.countActiveByUserId(10L)).thenReturn(1);
+
+        facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-2"));
+
+        verify(bankCardAddFaceGateService).consumeBeforeSave(10L, "device-1", null);
     }
 
     @Test
