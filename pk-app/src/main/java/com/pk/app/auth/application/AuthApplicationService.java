@@ -7,11 +7,13 @@ import com.pk.app.auth.dto.request.OtpSendRequest;
 import com.pk.app.auth.dto.request.OtpVerifyRequest;
 import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
 import com.pk.app.auth.dto.request.RefreshTokenRequest;
+import com.pk.app.auth.dto.request.DeviceSwitchFaceVerifyRequest;
 import com.pk.app.auth.dto.request.MobileCheckRequest;
 import com.pk.app.auth.dto.response.AccountCloseEligibilityResponse;
 import com.pk.app.auth.dto.response.PasswordChangeResponse;
 import com.pk.app.common.web.ClientRequestHeaders;
 import com.pk.app.profile.application.ProfileDeviceResolver;
+import com.pk.app.auth.dto.response.DeviceSwitchFaceVerifyResponse;
 import com.pk.app.auth.dto.response.MobileCheckResponse;
 import com.pk.app.auth.dto.response.OtpSendResponse;
 import com.pk.app.auth.dto.response.OtpVerifyResponse;
@@ -26,6 +28,7 @@ import com.pk.core.home.HomeUserStage;
 import com.pk.app.home.application.HomeApplicationService;
 import com.pk.infra.auth.AuthServiceFacade;
 import com.pk.infra.auth.AccountCloseAccessFacade;
+import com.pk.infra.auth.DeviceSwitchLoginFaceFacade;
 import com.pk.infra.push.PushDeviceFacade;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -40,19 +43,43 @@ public class AuthApplicationService {
     private final AccountCloseAccessFacade accountCloseAccessFacade;
     private final ProfileDeviceResolver profileDeviceResolver;
     private final PushDeviceFacade pushDeviceFacade;
+    private final DeviceSwitchLoginFaceFacade deviceSwitchLoginFaceFacade;
 
     public AuthApplicationService(
             AuthServiceFacade authServiceFacade,
             HomeApplicationService homeApplicationService,
             AccountCloseAccessFacade accountCloseAccessFacade,
             ProfileDeviceResolver profileDeviceResolver,
-            PushDeviceFacade pushDeviceFacade
+            PushDeviceFacade pushDeviceFacade,
+            DeviceSwitchLoginFaceFacade deviceSwitchLoginFaceFacade
     ) {
         this.authServiceFacade = authServiceFacade;
         this.homeApplicationService = homeApplicationService;
         this.accountCloseAccessFacade = accountCloseAccessFacade;
         this.profileDeviceResolver = profileDeviceResolver;
         this.pushDeviceFacade = pushDeviceFacade;
+        this.deviceSwitchLoginFaceFacade = deviceSwitchLoginFaceFacade;
+    }
+
+    public DeviceSwitchFaceVerifyResponse verifyDeviceSwitchFace(
+            DeviceSwitchFaceVerifyRequest request,
+            String deviceNoHeader
+    ) {
+        validateDeviceNoMatchesHeader(request.deviceNo(), deviceNoHeader);
+        DeviceSwitchLoginFaceFacade.FaceVerifyResult result = deviceSwitchLoginFaceFacade.verify(
+                request.mobileNo(),
+                new DeviceSwitchLoginFaceFacade.FaceVerifyCommand(
+                        request.requestId(),
+                        request.livenessId(),
+                        request.deviceNo()
+                )
+        );
+        return new DeviceSwitchFaceVerifyResponse(
+                result.requestId(),
+                result.verified(),
+                result.faceVerifyToken(),
+                result.expiresIn()
+        );
     }
 
     public MobileCheckResponse checkMobile(MobileCheckRequest request, String deviceNoHeader) {
@@ -61,7 +88,12 @@ public class AuthApplicationService {
                 request.mobileNo(),
                 request.deviceNo()
         );
-        return new MobileCheckResponse(result.registered(), result.accountStatus(), result.passwordSet());
+        return new MobileCheckResponse(
+                result.registered(),
+                result.accountStatus(),
+                result.passwordSet(),
+                result.faceRequired()
+        );
     }
 
     public OtpSendResponse sendOtp(OtpSendRequest request, String deviceNoHeader) {
@@ -85,7 +117,9 @@ public class AuthApplicationService {
                 request.mobileNo(),
                 request.otpToken(),
                 request.otpCode(),
-                request.deviceNo()
+                request.deviceNo(),
+                null,
+                request.faceVerifyToken()
         );
         return toOtpSessionResponse(result, request.deviceNo());
     }
@@ -101,7 +135,8 @@ public class AuthApplicationService {
                 request.otpToken(),
                 request.otpCode(),
                 request.deviceNo(),
-                platformHeader
+                platformHeader,
+                request.faceVerifyToken()
         );
         return toOtpSessionResponse(result, request.deviceNo());
     }
@@ -111,7 +146,9 @@ public class AuthApplicationService {
         AuthServiceFacade.OtpVerifyResult result = authServiceFacade.loginWithWhatsApp(
                 request.mobileNo(),
                 request.otpCode(),
-                request.deviceNo()
+                request.deviceNo(),
+                null,
+                request.faceVerifyToken()
         );
         return toOtpSessionResponse(result, request.deviceNo());
     }
@@ -126,7 +163,8 @@ public class AuthApplicationService {
                 request.mobileNo(),
                 request.otpCode(),
                 request.deviceNo(),
-                platformHeader
+                platformHeader,
+                request.faceVerifyToken()
         );
         return toOtpSessionResponse(result, request.deviceNo());
     }
@@ -190,7 +228,8 @@ public class AuthApplicationService {
         AuthServiceFacade.PasswordLoginResult result = authServiceFacade.loginByPassword(
                 request.mobileNo(),
                 request.password(),
-                request.deviceNo()
+                request.deviceNo(),
+                request.faceVerifyToken()
         );
         return toSessionResponse(result.profile(), result.tokenPair(), result.passwordSet(), request.deviceNo());
     }
@@ -245,7 +284,12 @@ public class AuthApplicationService {
     }
 
     private static void validateDeviceNoMatchesHeader(String bodyDeviceNo, String headerDeviceNo) {
-        if (headerDeviceNo != null && !headerDeviceNo.isBlank() && !headerDeviceNo.equals(bodyDeviceNo)) {
+        if (headerDeviceNo == null || headerDeviceNo.isBlank()) {
+            return;
+        }
+        String header = headerDeviceNo.trim();
+        String body = bodyDeviceNo == null ? "" : bodyDeviceNo.trim();
+        if (!header.equals(body)) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
         }
     }

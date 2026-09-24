@@ -52,6 +52,7 @@ class ProfileServiceFacadeTest {
     private UserProfileBindingRepository userProfileBindingRepository;
     private ProfileQueryFacade profileQueryFacade;
     private LenderBankCardPort lenderBankCardPort;
+    private BankCardAddFaceGateService bankCardAddFaceGateService;
     private ProfileServiceFacade facade;
 
     @BeforeEach
@@ -73,6 +74,7 @@ class ProfileServiceFacadeTest {
         userProfileBindingRepository = mock(UserProfileBindingRepository.class);
         profileQueryFacade = mock(ProfileQueryFacade.class);
         lenderBankCardPort = mock(LenderBankCardPort.class);
+        bankCardAddFaceGateService = mock(BankCardAddFaceGateService.class);
         BankCardMaxConfigLoader bankCardMaxConfigLoader = mock(BankCardMaxConfigLoader.class);
         when(bankCardMaxConfigLoader.loadMaxCount()).thenReturn(5);
         SensitiveFieldEncryptor encryptor = new SensitiveFieldEncryptor() {
@@ -114,7 +116,8 @@ class ProfileServiceFacadeTest {
                 lenderBankCardPort,
                 bankCardMaxConfigLoader,
                 mock(com.pk.core.callback.port.AppsFlyerCallbackRepository.class),
-                profileSyncUserLock
+                profileSyncUserLock,
+                bankCardAddFaceGateService
         );
         when(onboardingProgressFacade.getProgress(anyLong(), any()))
                 .thenReturn(new OnboardingProgressFacade.OnboardingProgressResult(
@@ -365,7 +368,8 @@ class ProfileServiceFacadeTest {
                         "req-bank-2",
                         "INVALID",
                         "1234567890",
-                        sampleDevice()
+                        sampleDevice(),
+                        null
                 )
         ))
                 .isInstanceOf(ApiException.class)
@@ -638,7 +642,8 @@ class ProfileServiceFacadeTest {
     }
 
     private static ProfileServiceFacade.BankCardSaveCommand sampleBankCardCommand(String requestId) {
-        return new ProfileServiceFacade.BankCardSaveCommand(requestId, "BCA", "1234567890", sampleDevice());
+        return new ProfileServiceFacade.BankCardSaveCommand(
+                requestId, "BCA", "1234567890", sampleDevice(), null);
     }
 
     private static LenderDeviceContext sampleDevice() {

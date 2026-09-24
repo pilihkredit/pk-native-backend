@@ -239,10 +239,44 @@ public class ProfileInfraConfiguration {
     }
 
     @Bean
+    FaceComparisonBaselineResolver faceComparisonBaselineResolver(
+            com.pk.infra.profile.mapper.FaceBaselineMapper faceBaselineMapper,
+            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository
+    ) {
+        return new FaceComparisonBaselineResolver(faceBaselineMapper, profileIdentityRepository);
+    }
+
+    @Bean
+    BankCardAddFaceGateService bankCardAddFaceGateService(
+            com.pk.core.profile.port.BankCardAddFaceVerificationRepository bankCardAddFaceVerificationRepository
+    ) {
+        return new BankCardAddFaceGateService(bankCardAddFaceVerificationRepository);
+    }
+
+    @Bean
+    BankCardAddFaceFacade bankCardAddFaceFacade(
+            com.pk.core.profile.port.TrustDecisionKycPort trustDecisionKycPort,
+            com.pk.core.profile.port.AdvanceAiOcrPort advanceAiOcrPort,
+            FaceComparisonBaselineResolver faceComparisonBaselineResolver,
+            com.pk.core.profile.port.BankCardAddFaceVerificationRepository bankCardAddFaceVerificationRepository,
+            com.pk.core.profile.port.BiometricImageStore biometricImageStore,
+            com.pk.infra.ocr.OcrProviderConfigLoader configLoader
+    ) {
+        return new BankCardAddFaceFacade(
+                trustDecisionKycPort,
+                advanceAiOcrPort,
+                faceComparisonBaselineResolver,
+                bankCardAddFaceVerificationRepository,
+                biometricImageStore,
+                configLoader
+        );
+    }
+
+    @Bean
     MobileChangeFaceFacade mobileChangeFaceFacade(
             com.pk.core.profile.port.TrustDecisionKycPort trustDecisionKycPort,
             com.pk.core.profile.port.AdvanceAiOcrPort advanceAiOcrPort,
-            com.pk.core.profile.port.ProfileIdentityRepository profileIdentityRepository,
+            FaceComparisonBaselineResolver faceComparisonBaselineResolver,
             com.pk.core.profile.port.MobileChangeFaceVerificationRepository verificationRepository,
             com.pk.core.profile.port.BiometricImageStore biometricImageStore,
             com.pk.infra.ocr.OcrProviderConfigLoader configLoader
@@ -250,7 +284,7 @@ public class ProfileInfraConfiguration {
         return new MobileChangeFaceFacade(
                 trustDecisionKycPort,
                 advanceAiOcrPort,
-                profileIdentityRepository,
+                faceComparisonBaselineResolver,
                 verificationRepository,
                 biometricImageStore,
                 configLoader
@@ -303,7 +337,8 @@ public class ProfileInfraConfiguration {
             com.pk.core.profile.port.LenderBankCardPort lenderBankCardPort,
             BankCardMaxConfigLoader bankCardMaxConfigLoader,
             com.pk.core.callback.port.AppsFlyerCallbackRepository appsFlyerCallbackRepository,
-            RedisProfileSyncUserLock profileSyncUserLock
+            RedisProfileSyncUserLock profileSyncUserLock,
+            BankCardAddFaceGateService bankCardAddFaceGateService
     ) {
         return new ProfileServiceFacade(
                 profilePersonalRepository,
@@ -323,7 +358,8 @@ public class ProfileInfraConfiguration {
                 lenderBankCardPort,
                 bankCardMaxConfigLoader,
                 appsFlyerCallbackRepository,
-                profileSyncUserLock
+                profileSyncUserLock,
+                bankCardAddFaceGateService
         );
     }
 }

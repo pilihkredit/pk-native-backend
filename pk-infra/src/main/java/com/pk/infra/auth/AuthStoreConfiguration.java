@@ -80,7 +80,8 @@ public class AuthStoreConfiguration {
             WhatsAppSender whatsAppSender,
             WhatsAppConfigLoader whatsAppConfigLoader,
             UserProfileBindingRepository userProfileBindingRepository,
-            com.pk.core.attribution.port.AppsFlyerS2sReporter appsFlyerS2sReporter
+            com.pk.core.attribution.port.AppsFlyerS2sReporter appsFlyerS2sReporter,
+            LoginDeviceSwitchGateService loginDeviceSwitchGateService
     ) {
         return new AuthServiceFacade(
                 authProperties,
@@ -99,7 +100,8 @@ public class AuthStoreConfiguration {
                 whatsAppSender,
                 whatsAppConfigLoader,
                 userProfileBindingRepository,
-                appsFlyerS2sReporter
+                appsFlyerS2sReporter,
+                loginDeviceSwitchGateService
         );
     }
 

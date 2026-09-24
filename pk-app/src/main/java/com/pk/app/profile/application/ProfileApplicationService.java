@@ -7,6 +7,7 @@ import com.pk.app.profile.dto.request.ProfileAppsFlyerInstallSaveRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardListAccessRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardDeleteRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardDefaultRequest;
+import com.pk.app.profile.dto.request.BankCardAddFaceVerifyRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileLoginLogSaveRequest;
@@ -19,6 +20,7 @@ import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardListAccessResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardDeleteResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardDefaultResponse;
+import com.pk.app.profile.dto.response.BankCardAddFaceVerifyResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileLoginLogSaveResponse;
@@ -32,6 +34,7 @@ import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
 import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.profile.sync.LenderDeviceContext;
+import com.pk.infra.profile.BankCardAddFaceFacade;
 import com.pk.infra.profile.BankCardListAccessFacade;
 import com.pk.infra.profile.MobileChangeFacade;
 import com.pk.infra.profile.MobileChangeFaceFacade;
@@ -47,6 +50,7 @@ public class ProfileApplicationService {
     private final MobileChangeFacade mobileChangeFacade;
     private final MobileChangeFaceFacade mobileChangeFaceFacade;
     private final MobileChangeOtpFacade mobileChangeOtpFacade;
+    private final BankCardAddFaceFacade bankCardAddFaceFacade;
     private final ApiPartnerProperties apiPartnerProperties;
     private final ObjectMapper objectMapper;
 
@@ -56,6 +60,7 @@ public class ProfileApplicationService {
             MobileChangeFacade mobileChangeFacade,
             MobileChangeFaceFacade mobileChangeFaceFacade,
             MobileChangeOtpFacade mobileChangeOtpFacade,
+            BankCardAddFaceFacade bankCardAddFaceFacade,
             ApiPartnerProperties apiPartnerProperties,
             ObjectMapper objectMapper
     ) {
@@ -64,6 +69,7 @@ public class ProfileApplicationService {
         this.mobileChangeFacade = mobileChangeFacade;
         this.mobileChangeFaceFacade = mobileChangeFaceFacade;
         this.mobileChangeOtpFacade = mobileChangeOtpFacade;
+        this.bankCardAddFaceFacade = bankCardAddFaceFacade;
         this.apiPartnerProperties = apiPartnerProperties;
         this.objectMapper = objectMapper;
     }
@@ -209,6 +215,31 @@ public class ProfileApplicationService {
         return new ProfileContactsSaveResponse(result.requestId(), result.moduleStatus());
     }
 
+    public BankCardAddFaceVerifyResponse verifyBankCardAddFace(
+            AuthenticatedPrincipal principal,
+            BankCardAddFaceVerifyRequest request,
+            String deviceNoHeader
+    ) {
+        requirePrincipal(principal);
+        validateDeviceNo(request.deviceNo(), deviceNoHeader);
+        var result = bankCardAddFaceFacade.verify(
+                principal.userId(),
+                principal.partnerUserId(),
+                principal.mobileNo(),
+                new BankCardAddFaceFacade.FaceVerifyCommand(
+                        request.requestId(),
+                        request.livenessId(),
+                        request.deviceNo()
+                )
+        );
+        return new BankCardAddFaceVerifyResponse(
+                result.requestId(),
+                result.verified(),
+                result.faceVerifyToken(),
+                result.expiresIn()
+        );
+    }
+
     public ProfileBankCardSaveResponse saveBankCard(
             AuthenticatedPrincipal principal,
             ProfileBankCardSaveRequest request,
@@ -225,7 +256,8 @@ public class ProfileApplicationService {
                         request.requestId(),
                         request.bankCode(),
                         request.cardNumber(),
-                        resolveDevice(request.device(), httpRequest)
+                        resolveDevice(request.device(), httpRequest),
+                        request.faceVerifyToken()
                 )
         );
         return new ProfileBankCardSaveResponse(

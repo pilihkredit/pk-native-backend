@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Size;
 public record WhatsAppLoginRequest(
         @NotBlank @Size(max = 32) String mobileNo,
         @NotBlank @Size(min = 4, max = 8) String otpCode,
-        @NotBlank @Size(max = 128) String deviceNo
+        @NotBlank @Size(max = 128) String deviceNo,
+        @Size(max = 64) String faceVerifyToken
 ) {
 }

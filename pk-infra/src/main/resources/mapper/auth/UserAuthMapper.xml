@@ -136,6 +136,21 @@
           AND deleted_at IS NULL
     </update>
 
+    <select id="findLastLoginDeviceNo" resultType="string">
+        SELECT last_login_device_no
+        FROM user_profile
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <update id="updateLastLoginDeviceNo">
+        UPDATE user_profile
+        SET last_login_device_no = #{deviceNo}
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
     <update id="updateLastLogoutAt">
         UPDATE user_profile
         SET last_logout_at = #{lastLogoutAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}

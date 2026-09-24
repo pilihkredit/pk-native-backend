@@ -5,7 +5,13 @@ package com.pk.app.auth.dto.response;
  *
  * @param registered    true when the mobile number already has a user profile
  * @param accountStatus EXISTING when registered, NEW otherwise
- * @param passwordSet   true when the user has set a login password; false for new or OTP-only users
+ * @param passwordSet  true when the user has set a login password; false for new or OTP-only users
+ * @param faceRequired true when the client must complete device-switch face verify before password/OTP login
  */
-public record MobileCheckResponse(boolean registered, String accountStatus, boolean passwordSet) {
+public record MobileCheckResponse(
+        boolean registered,
+        String accountStatus,
+        boolean passwordSet,
+        boolean faceRequired
+) {
 }

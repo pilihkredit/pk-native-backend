@@ -106,7 +106,8 @@ class ProfileServiceFacadeAfTongdunTest {
                 mock(com.pk.core.profile.port.LenderBankCardPort.class),
                 mock(BankCardMaxConfigLoader.class),
                 appsFlyerCallbackRepository,
-                profileSyncUserLock
+                profileSyncUserLock,
+                mock(BankCardAddFaceGateService.class)
         );
     }
 

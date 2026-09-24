@@ -57,6 +57,7 @@ public class ProfileServiceFacade {
     private final BankCardMaxConfigLoader bankCardMaxConfigLoader;
     private final AppsFlyerCallbackRepository appsFlyerCallbackRepository;
     private final RedisProfileSyncUserLock profileSyncUserLock;
+    private final BankCardAddFaceGateService bankCardAddFaceGateService;
 
     public ProfileServiceFacade(
             ProfilePersonalRepository profilePersonalRepository,
@@ -76,7 +77,8 @@ public class ProfileServiceFacade {
             LenderBankCardPort lenderBankCardPort,
             BankCardMaxConfigLoader bankCardMaxConfigLoader,
             AppsFlyerCallbackRepository appsFlyerCallbackRepository,
-            RedisProfileSyncUserLock profileSyncUserLock
+            RedisProfileSyncUserLock profileSyncUserLock,
+            BankCardAddFaceGateService bankCardAddFaceGateService
     ) {
         this.profilePersonalRepository = profilePersonalRepository;
         this.profileContactRepository = profileContactRepository;
@@ -96,6 +98,7 @@ public class ProfileServiceFacade {
         this.bankCardMaxConfigLoader = bankCardMaxConfigLoader;
         this.appsFlyerCallbackRepository = appsFlyerCallbackRepository;
         this.profileSyncUserLock = profileSyncUserLock;
+        this.bankCardAddFaceGateService = bankCardAddFaceGateService;
     }
 
     public PersonalSaveResult savePersonal(
@@ -211,6 +214,8 @@ public class ProfileServiceFacade {
             return toBankCardSaveResult(command.requestId(), command.cardNumber());
         }
 
+        String deviceNo = command.device() == null ? null : command.device().deviceNo();
+
         String normalizedCardNumber = CardNumberSupport.normalize(command.cardNumber());
         String cardNoHash = CardNumberSupport.sha256Hex(normalizedCardNumber);
         var boundByHash = profileBankCardRepository.findByCardNoHash(cardNoHash);
@@ -229,6 +234,8 @@ public class ProfileServiceFacade {
                 throw new ApiException(ApiCode.BANK_CARD_MAX_LIMIT_REACHED);
             }
         }
+
+        bankCardAddFaceGateService.consumeBeforeSave(userId, deviceNo, command.faceVerifyToken());
 
         EncryptedField encryptedCardNumber = sensitiveFieldEncryptor.encrypt(normalizedCardNumber);
         profileBankCardRepository.clearDefaultByUserId(userId);
@@ -787,7 +794,8 @@ public class ProfileServiceFacade {
             String requestId,
             String bankCode,
             String cardNumber,
-            LenderDeviceContext device
+            LenderDeviceContext device,
+            String faceVerifyToken
     ) {
     }
 

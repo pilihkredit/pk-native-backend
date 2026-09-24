@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.infra.auth.mapper.DeviceSwitchFaceVerificationMapper">
+
+    <resultMap id="verificationMap"
+               type="com.pk.core.auth.port.DeviceSwitchFaceVerificationRepository$FaceVerificationData">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="face_verify_token" javaType="string"/>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="partner_user_id" javaType="string"/>
+            <arg column="request_id" javaType="string"/>
+            <arg column="device_no" javaType="string"/>
+            <arg column="liveness_id" javaType="string"/>
+            <arg column="baseline_type" javaType="string"/>
+            <arg column="similarity" javaType="java.lang.Double"/>
+            <arg column="status" javaType="string"/>
+            <arg column="expires_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+            <arg column="consumed_at" javaType="java.time.Instant"
+                 typeHandler="com.pk.infra.mybatis.typehandler.InstantTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO user_device_switch_face_verification (
+            face_verify_token, user_id, partner_user_id, request_id, device_no,
+            liveness_id, liveness_result, liveness_sequence_id,
+            baseline_type, baseline_face_encrypted_ref, candidate_face_encrypted_ref,
+            similarity, status, expires_at
+        ) VALUES (
+            #{faceVerifyToken}, #{userId}, #{partnerUserId}, #{requestId}, #{deviceNo},
+            #{livenessId}, #{livenessResult}, #{livenessSequenceId},
+            #{baselineType}, #{baselineFaceEncryptedRef}, #{candidateFaceEncryptedRef},
+            #{similarity}, #{status},
+            #{expiresAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        )
+    </insert>
+
+    <select id="findByToken" resultMap="verificationMap">
+        SELECT id, face_verify_token, user_id, partner_user_id, request_id, device_no,
+               liveness_id, baseline_type, similarity, status, expires_at, consumed_at
+        FROM user_device_switch_face_verification
+        WHERE face_verify_token = #{faceVerifyToken}
+        LIMIT 1
+    </select>
+
+    <select id="findReusablePendingByUserIdAndRequestId" resultMap="verificationMap">
+        SELECT id, face_verify_token, user_id, partner_user_id, request_id, device_no,
+               liveness_id, baseline_type, similarity, status, expires_at, consumed_at
+        FROM user_device_switch_face_verification
+        WHERE user_id = #{userId}
+          AND request_id = #{requestId}
+          AND status = 'VERIFIED_PENDING'
+          AND expires_at &gt; CURRENT_TIMESTAMP(3)
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <update id="consume">
+        UPDATE user_device_switch_face_verification
+        SET status = 'CONSUMED',
+            consumed_at = #{consumedAt, typeHandler=com.pk.infra.mybatis.typehandler.InstantTypeHandler}
+        WHERE face_verify_token = #{faceVerifyToken}
+          AND status = 'VERIFIED_PENDING'
+    </update>
+</mapper>

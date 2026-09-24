@@ -55,6 +55,7 @@ class AuthServiceFacadeTest {
     private AppsFlyerS2sReporter appsFlyerS2sReporter;
     private AuthOtpConfigLoader authOtpConfigLoader;
     private SmsConfigLoader smsConfigLoader;
+    private LoginDeviceSwitchGateService loginDeviceSwitchGateService;
     private AuthServiceFacade facade;
 
     @BeforeEach
@@ -74,6 +75,9 @@ class AuthServiceFacadeTest {
                 .thenReturn(AppsFlyerS2sReporter.ReportResult.recorded(1L, "OK"));
         authOtpConfigLoader = defaultOtpConfigLoader();
         smsConfigLoader = defaultSmsConfigLoader(true, "1234", List.of());
+        loginDeviceSwitchGateService = mock(LoginDeviceSwitchGateService.class);
+        when(loginDeviceSwitchGateService.evaluateFaceRequiredForMobileCheck(anyLong(), any()))
+                .thenReturn(false);
         AuthProperties properties = new AuthProperties();
         properties.setOtpTtl(Duration.ofMinutes(5));
         facade = newFacade(properties, mock(SessionStore.class), mock(RefreshTokenStore.class), mock(TokenIssuer.class));
@@ -129,7 +133,8 @@ class AuthServiceFacadeTest {
                 whatsAppSender,
                 whatsAppConfigLoader,
                 userProfileBindingRepository,
-                appsFlyerS2sReporter
+                appsFlyerS2sReporter,
+                loginDeviceSwitchGateService
         );
     }
 

@@ -19,6 +19,7 @@ import com.pk.core.auth.UserProfileSummary;
 import com.pk.core.home.HomeUserStage;
 import com.pk.infra.auth.AuthServiceFacade;
 import com.pk.infra.auth.AccountCloseAccessFacade;
+import com.pk.infra.auth.DeviceSwitchLoginFaceFacade;
 import com.pk.infra.push.PushDeviceFacade;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +29,7 @@ class AuthApplicationServiceTest {
         AuthServiceFacade facade = mock(AuthServiceFacade.class);
         HomeApplicationService homeApplicationService = mock(HomeApplicationService.class);
         when(facade.checkMobileRegistration("8123456789", "device-1"))
-                .thenReturn(new AuthServiceFacade.MobileCheckResult(true, "EXISTING", true));
+                .thenReturn(new AuthServiceFacade.MobileCheckResult(true, "EXISTING", true, false));
 
         MobileCheckRequest request = new MobileCheckRequest("8123456789", "device-1");
         var response = newService(facade, homeApplicationService).checkMobile(request, "device-1");
@@ -45,13 +46,13 @@ class AuthApplicationServiceTest {
         HomeApplicationService homeApplicationService = mock(HomeApplicationService.class);
         UserProfileSummary profile = new UserProfileSummary(10L, "U10001", "81234567890", true);
         TokenPair tokenPair = new TokenPair("access", "refresh", 900, "Bearer");
-        when(facade.verifyOtp("81234567890", "otp-token", "123456", "device-1", "ios"))
+        when(facade.verifyOtp("81234567890", "otp-token", "123456", "device-1", "ios", null))
                 .thenReturn(new AuthServiceFacade.OtpVerifyResult(profile, tokenPair, false));
         when(homeApplicationService.resolveUserStage(10L, "U10001"))
                 .thenThrow(new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada"));
 
         var response = newService(facade, homeApplicationService).verifyOtp(
-                new OtpVerifyRequest("81234567890", "otp-token", "123456", "device-1"),
+                new OtpVerifyRequest("81234567890", "otp-token", "123456", "device-1", null),
                 "device-1",
                 "ios"
         );
@@ -59,7 +60,7 @@ class AuthApplicationServiceTest {
         assertThat(response.userStage()).isEqualTo(HomeUserStage.ONBOARDING);
         assertThat(response.accessToken()).isEqualTo("access");
         assertThat(response.newUser()).isTrue();
-        verify(facade).verifyOtp("81234567890", "otp-token", "123456", "device-1", "ios");
+        verify(facade).verifyOtp("81234567890", "otp-token", "123456", "device-1", "ios", null);
     }
 
     @Test
@@ -68,20 +69,20 @@ class AuthApplicationServiceTest {
         HomeApplicationService homeApplicationService = mock(HomeApplicationService.class);
         UserProfileSummary profile = new UserProfileSummary(10L, "U10001", "81234567890", true);
         TokenPair tokenPair = new TokenPair("access", "refresh", 900, "Bearer");
-        when(facade.loginWithWhatsApp("81234567890", "123456", "device-1", "android"))
+        when(facade.loginWithWhatsApp("81234567890", "123456", "device-1", "android", null))
                 .thenReturn(new AuthServiceFacade.OtpVerifyResult(profile, tokenPair, false));
         when(homeApplicationService.resolveUserStage(10L, "U10001"))
                 .thenThrow(new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada"));
 
         var response = newService(facade, homeApplicationService).loginWithWhatsApp(
-                new WhatsAppLoginRequest("81234567890", "123456", "device-1"),
+                new WhatsAppLoginRequest("81234567890", "123456", "device-1", null),
                 "device-1",
                 "android"
         );
 
         assertThat(response.userStage()).isEqualTo(HomeUserStage.ONBOARDING);
         assertThat(response.authAction()).isEqualTo("REGISTER");
-        verify(facade).loginWithWhatsApp("81234567890", "123456", "device-1", "android");
+        verify(facade).loginWithWhatsApp("81234567890", "123456", "device-1", "android", null);
     }
 
     @Test
@@ -90,13 +91,13 @@ class AuthApplicationServiceTest {
         HomeApplicationService homeApplicationService = mock(HomeApplicationService.class);
         UserProfileSummary profile = new UserProfileSummary(10L, "U10001", "81234567890", false);
         TokenPair tokenPair = new TokenPair("access", "refresh", 900, "Bearer");
-        when(facade.loginByPassword("81234567890", "abc123", "device-1"))
+        when(facade.loginByPassword("81234567890", "abc123", "device-1", null))
                 .thenReturn(new AuthServiceFacade.PasswordLoginResult(profile, tokenPair, true));
         when(homeApplicationService.resolveUserStage(10L, "U10001"))
                 .thenThrow(new ApiException(ApiCode.UPSTREAM_APPLICATION_NOT_FOUND, "data tidak ada"));
 
         var response = newService(facade, homeApplicationService).loginByPassword(
-                new PasswordLoginRequest("81234567890", "abc123", "device-1"),
+                new PasswordLoginRequest("81234567890", "abc123", "device-1", null),
                 "device-1"
         );
 
@@ -112,13 +113,13 @@ class AuthApplicationServiceTest {
         HomeApplicationService homeApplicationService = mock(HomeApplicationService.class);
         UserProfileSummary profile = new UserProfileSummary(10L, "U10001", "81234567890", false);
         TokenPair tokenPair = new TokenPair("access", "refresh", 900, "Bearer");
-        when(facade.verifyOtp("81234567890", "otp-token", "123456", "device-1"))
+        when(facade.verifyOtp("81234567890", "otp-token", "123456", "device-1", null, null))
                 .thenReturn(new AuthServiceFacade.OtpVerifyResult(profile, tokenPair, true));
         when(homeApplicationService.resolveUserStage(10L, "U10001"))
                 .thenThrow(new ApiException(ApiCode.SERVICE_UNAVAILABLE));
 
         assertThatThrownBy(() -> newService(facade, homeApplicationService).verifyOtp(
-                new OtpVerifyRequest("81234567890", "otp-token", "123456", "device-1"),
+                new OtpVerifyRequest("81234567890", "otp-token", "123456", "device-1", null),
                 "device-1"
         ))
                 .isInstanceOf(ApiException.class)
@@ -137,7 +138,8 @@ class AuthApplicationServiceTest {
                 mock(HomeApplicationService.class),
                 mock(AccountCloseAccessFacade.class),
                 mock(com.pk.app.profile.application.ProfileDeviceResolver.class),
-                pushDeviceFacade
+                pushDeviceFacade,
+                mock(DeviceSwitchLoginFaceFacade.class)
         ).logout(principal, "device-1");
 
         verify(facade).logout(principal);
@@ -153,7 +155,8 @@ class AuthApplicationServiceTest {
                 homeApplicationService,
                 mock(AccountCloseAccessFacade.class),
                 mock(com.pk.app.profile.application.ProfileDeviceResolver.class),
-                mock(PushDeviceFacade.class)
+                mock(PushDeviceFacade.class),
+                mock(DeviceSwitchLoginFaceFacade.class)
         );
     }
 }

@@ -12,6 +12,7 @@ public record ProfileBankCardSaveRequest(
         @NotBlank @Size(max = 64) String requestId,
         @NotBlank @Size(max = 64) String bankCode,
         @NotBlank @Size(max = 32) String cardNumber,
-        @NotNull @Valid ProfileDeviceRequest device
+        @NotNull @Valid ProfileDeviceRequest device,
+        @Size(max = 64) String faceVerifyToken
 ) {
 }

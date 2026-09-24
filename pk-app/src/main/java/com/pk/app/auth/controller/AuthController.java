@@ -11,6 +11,8 @@ import com.pk.app.auth.dto.request.RefreshTokenRequest;
 import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
 import com.pk.app.auth.dto.response.AccountCloseEligibilityResponse;
 import com.pk.app.auth.dto.response.PasswordChangeResponse;
+import com.pk.app.auth.dto.request.DeviceSwitchFaceVerifyRequest;
+import com.pk.app.auth.dto.response.DeviceSwitchFaceVerifyResponse;
 import com.pk.app.auth.dto.response.MobileCheckResponse;
 import com.pk.app.auth.dto.response.PasswordSetResponse;
 import com.pk.app.auth.dto.response.OtpSendResponse;
@@ -41,6 +43,21 @@ public class AuthController {
 
     public AuthController(AuthApplicationService authApplicationService) {
         this.authApplicationService = authApplicationService;
+    }
+
+    /** Device-switch login face verify (unauthenticated). */
+    @PublicApi
+    @PostMapping("/face/verify")
+    public ApiResponse<DeviceSwitchFaceVerifyResponse> verifyDeviceSwitchFace(
+            @Valid @RequestBody DeviceSwitchFaceVerifyRequest request,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String ignoredAuthorization,
+            @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
+            HttpServletRequest httpRequest
+    ) {
+        return ApiResponse.success(
+                authApplicationService.verifyDeviceSwitchFace(request, deviceNoHeader),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
     }
 
     /** Check mobile registration. */

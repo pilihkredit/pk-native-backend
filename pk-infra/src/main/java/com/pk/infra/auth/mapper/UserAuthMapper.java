@@ -53,6 +53,13 @@ public interface UserAuthMapper {
             @Param("lastLoginAt") Instant lastLoginAt
     );
 
+    String findLastLoginDeviceNo(@Param("userId") long userId);
+
+    int updateLastLoginDeviceNo(
+            @Param("userId") long userId,
+            @Param("deviceNo") String deviceNo
+    );
+
     int updateLastLogoutAt(
             @Param("userId") long userId,
             @Param("lastLogoutAt") Instant lastLogoutAt

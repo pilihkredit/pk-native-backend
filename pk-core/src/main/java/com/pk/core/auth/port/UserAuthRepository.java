@@ -37,6 +37,10 @@ public interface UserAuthRepository {
 
     void updateLastLoginAt(long userId, Instant lastLoginAt);
 
+    Optional<String> findLastLoginDeviceNo(long userId);
+
+    void updateLastLoginDeviceNo(long userId, String deviceNo);
+
     void updateLastLogoutAt(long userId, Instant lastLogoutAt);
 
     boolean isPasswordSet(long userId);

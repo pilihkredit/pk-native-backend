@@ -99,6 +99,16 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
     }
 
     @Override
+    public Optional<String> findLastLoginDeviceNo(long userId) {
+        return Optional.ofNullable(userAuthMapper.findLastLoginDeviceNo(userId));
+    }
+
+    @Override
+    public void updateLastLoginDeviceNo(long userId, String deviceNo) {
+        userAuthMapper.updateLastLoginDeviceNo(userId, deviceNo);
+    }
+
+    @Override
     public void updateLastLogoutAt(long userId, Instant lastLogoutAt) {
         userAuthMapper.updateLastLogoutAt(userId, lastLogoutAt);
     }

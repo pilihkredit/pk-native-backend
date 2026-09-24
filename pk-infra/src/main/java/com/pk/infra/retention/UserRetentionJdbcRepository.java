@@ -226,6 +226,8 @@ public class UserRetentionJdbcRepository {
         deleteIgnoreMissing("DELETE FROM whatsapp_send_log WHERE user_id = ?", userId);
         deleteIgnoreMissing("DELETE FROM ocr_vendor_call_log WHERE user_id = ?", userId);
         deleteIgnoreMissing("DELETE FROM user_mobile_change_face_verification WHERE user_id = ?", userId);
+        deleteIgnoreMissing("DELETE FROM user_device_switch_face_verification WHERE user_id = ?", userId);
+        deleteIgnoreMissing("DELETE FROM user_bank_card_add_face_verification WHERE user_id = ?", userId);
         deleteIgnoreMissing("DELETE FROM user_mobile_change_log WHERE user_id = ?", userId);
 
         // ---- profile satellites ----

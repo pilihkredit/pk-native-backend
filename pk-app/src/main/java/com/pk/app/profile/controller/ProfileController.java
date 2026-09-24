@@ -10,6 +10,7 @@ import com.pk.app.profile.dto.request.ProfileAppsFlyerInstallSaveRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardListAccessRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardDeleteRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardDefaultRequest;
+import com.pk.app.profile.dto.request.BankCardAddFaceVerifyRequest;
 import com.pk.app.profile.dto.request.ProfileBankCardSaveRequest;
 import com.pk.app.profile.dto.request.ProfileContactsSaveRequest;
 import com.pk.app.profile.dto.request.ProfileInfoQueryRequest;
@@ -23,6 +24,7 @@ import com.pk.app.profile.dto.response.ProfileAppsFlyerInstallSaveResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardListAccessResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardDeleteResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardDefaultResponse;
+import com.pk.app.profile.dto.response.BankCardAddFaceVerifyResponse;
 import com.pk.app.profile.dto.response.ProfileBankCardSaveResponse;
 import com.pk.app.profile.dto.response.ProfileContactsSaveResponse;
 import com.pk.app.profile.dto.response.ProfileEnumsResponse;
@@ -127,6 +129,23 @@ public class ProfileController {
         }
         return ApiResponse.success(
                 profileApplicationService.saveContacts(principal, request, httpRequest),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+    }
+
+    /** Face verify before add-bank-card form (authenticated). */
+    @PostMapping("/bank-card/add/face/verify")
+    public ApiResponse<BankCardAddFaceVerifyResponse> verifyBankCardAddFace(
+            @Valid @RequestBody BankCardAddFaceVerifyRequest request,
+            @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
+            HttpServletRequest httpRequest
+    ) {
+        AuthenticatedPrincipal principal = SecurityContextSupport.requirePrincipal();
+        if (principal == null) {
+            throw new ApiException(ApiCode.UNAUTHORIZED_REQUEST);
+        }
+        return ApiResponse.success(
+                profileApplicationService.verifyBankCardAddFace(principal, request, deviceNoHeader),
                 RequestTrace.resolveTraceId(httpRequest)
         );
     }

@@ -59,6 +59,7 @@ public class AuthServiceFacade {
     private final WhatsAppConfigLoader whatsAppConfigLoader;
     private final UserProfileBindingRepository userProfileBindingRepository;
     private final AppsFlyerS2sReporter appsFlyerS2sReporter;
+    private final LoginDeviceSwitchGateService loginDeviceSwitchGateService;
 
     public AuthServiceFacade(
             AuthProperties authProperties,
@@ -77,7 +78,8 @@ public class AuthServiceFacade {
             WhatsAppSender whatsAppSender,
             WhatsAppConfigLoader whatsAppConfigLoader,
             UserProfileBindingRepository userProfileBindingRepository,
-            AppsFlyerS2sReporter appsFlyerS2sReporter
+            AppsFlyerS2sReporter appsFlyerS2sReporter,
+            LoginDeviceSwitchGateService loginDeviceSwitchGateService
     ) {
         this.authProperties = authProperties;
         this.authOtpConfigLoader = authOtpConfigLoader;
@@ -96,6 +98,7 @@ public class AuthServiceFacade {
         this.whatsAppConfigLoader = whatsAppConfigLoader;
         this.userProfileBindingRepository = userProfileBindingRepository;
         this.appsFlyerS2sReporter = appsFlyerS2sReporter;
+        this.loginDeviceSwitchGateService = loginDeviceSwitchGateService;
     }
 
     public OtpSendResult sendOtp(String mobileNo, String deviceNo) {
@@ -201,11 +204,23 @@ public class AuthServiceFacade {
         validateMobile(mobileNo);
         requireDeviceNo(deviceNo);
 
-        boolean registered = userAuthRepository.findByMobileNo(mobileNo).isPresent();
-        boolean passwordSet = userAuthRepository.findByMobileNo(mobileNo)
-                .map(profile -> userAuthRepository.isPasswordSet(profile.userId()))
+        Optional<UserProfileSummary> profile = userAuthRepository.findByMobileNo(mobileNo);
+        boolean registered = profile.isPresent();
+        boolean passwordSet = profile
+                .map(value -> userAuthRepository.isPasswordSet(value.userId()))
                 .orElse(false);
-        return new MobileCheckResult(registered, registered ? "EXISTING" : "NEW", passwordSet);
+        boolean faceRequired = profile
+                .map(value -> loginDeviceSwitchGateService.evaluateFaceRequiredForMobileCheck(
+                        value.userId(),
+                        deviceNo
+                ))
+                .orElse(false);
+        return new MobileCheckResult(
+                registered,
+                registered ? "EXISTING" : "NEW",
+                passwordSet,
+                faceRequired
+        );
     }
 
     public void setPassword(long userId, String password, String confirmPassword) {
@@ -244,6 +259,15 @@ public class AuthServiceFacade {
     }
 
     public PasswordLoginResult loginByPassword(String mobileNo, String password, String deviceNo) {
+        return loginByPassword(mobileNo, password, deviceNo, null);
+    }
+
+    public PasswordLoginResult loginByPassword(
+            String mobileNo,
+            String password,
+            String deviceNo,
+            String faceVerifyToken
+    ) {
         validateMobile(mobileNo);
         if (password == null || password.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -262,7 +286,9 @@ public class AuthServiceFacade {
             throw new ApiException(ApiCode.INVALID_MOBILE_OR_PASSWORD);
         }
 
+        consumeDeviceSwitchFaceIfRequired(profile.userId(), deviceNo, faceVerifyToken);
         TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_PASSWORD);
+        loginDeviceSwitchGateService.updateLastLoginDeviceNo(profile.userId(), deviceNo);
         return new PasswordLoginResult(profile, tokenPair, true);
     }
 
@@ -271,7 +297,7 @@ public class AuthServiceFacade {
     }
 
     public OtpVerifyResult verifyOtp(String mobileNo, String otpToken, String otpCode, String deviceNo) {
-        return verifyOtp(mobileNo, otpToken, otpCode, deviceNo, null);
+        return verifyOtp(mobileNo, otpToken, otpCode, deviceNo, null, null);
     }
 
     public OtpVerifyResult verifyOtp(
@@ -281,6 +307,17 @@ public class AuthServiceFacade {
             String deviceNo,
             String systemPlatform
     ) {
+        return verifyOtp(mobileNo, otpToken, otpCode, deviceNo, systemPlatform, null);
+    }
+
+    public OtpVerifyResult verifyOtp(
+            String mobileNo,
+            String otpToken,
+            String otpCode,
+            String deviceNo,
+            String systemPlatform,
+            String faceVerifyToken
+    ) {
         return verifyChallengeAndLogin(
                 otpChallengeStore,
                 mobileNo,
@@ -288,7 +325,8 @@ public class AuthServiceFacade {
                 otpCode,
                 deviceNo,
                 LOGIN_CHANNEL_OTP,
-                systemPlatform
+                systemPlatform,
+                faceVerifyToken
         );
     }
 
@@ -302,6 +340,16 @@ public class AuthServiceFacade {
             String deviceNo,
             String systemPlatform
     ) {
+        return loginWithWhatsApp(mobileNo, otpCode, deviceNo, systemPlatform, null);
+    }
+
+    public OtpVerifyResult loginWithWhatsApp(
+            String mobileNo,
+            String otpCode,
+            String deviceNo,
+            String systemPlatform,
+            String faceVerifyToken
+    ) {
         validateMobile(mobileNo);
         if (otpCode == null || otpCode.isBlank()) {
             throw new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS);
@@ -314,7 +362,9 @@ public class AuthServiceFacade {
             whatsappOtpChallengeStore.findTokenByMobile(mobileNo)
                     .ifPresent(whatsappOtpChallengeStore::delete);
             UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
+            consumeDeviceSwitchFaceIfRequired(profile.userId(), deviceNo, faceVerifyToken);
             TokenPair tokenPair = openSession(profile, deviceNo, LOGIN_CHANNEL_WHATSAPP);
+            loginDeviceSwitchGateService.updateLastLoginDeviceNo(profile.userId(), deviceNo);
             reportRegisterSuccessIfNeeded(profile, deviceNo, systemPlatform);
             boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
             return new OtpVerifyResult(profile, tokenPair, passwordSet);
@@ -328,7 +378,8 @@ public class AuthServiceFacade {
                 otpCode,
                 deviceNo,
                 LOGIN_CHANNEL_WHATSAPP,
-                systemPlatform
+                systemPlatform,
+                faceVerifyToken
         );
     }
 
@@ -339,7 +390,8 @@ public class AuthServiceFacade {
             String otpCode,
             String deviceNo,
             String loginChannel,
-            String systemPlatform
+            String systemPlatform,
+            String faceVerifyToken
     ) {
         validateMobile(mobileNo);
         if (otpToken == null || otpToken.isBlank() || otpCode == null || otpCode.isBlank()) {
@@ -379,7 +431,9 @@ public class AuthServiceFacade {
         }
 
         UserProfileSummary profile = userAuthRepository.findOrCreateActiveByMobileNo(mobileNo);
+        consumeDeviceSwitchFaceIfRequired(profile.userId(), deviceNo, faceVerifyToken);
         TokenPair tokenPair = openSession(profile, deviceNo, loginChannel);
+        loginDeviceSwitchGateService.updateLastLoginDeviceNo(profile.userId(), deviceNo);
         reportRegisterSuccessIfNeeded(profile, deviceNo, systemPlatform);
         boolean passwordSet = userAuthRepository.isPasswordSet(profile.userId());
         return new OtpVerifyResult(profile, tokenPair, passwordSet);
@@ -440,7 +494,9 @@ public class AuthServiceFacade {
         requireDeviceNo(deviceId);
         UserProfileSummary profile = userAuthRepository.findByUserId(userId)
                 .orElseThrow(() -> new ApiException(ApiCode.UNAUTHORIZED_REQUEST));
-        return openSession(profile, deviceId, LOGIN_CHANNEL_MOBILE_CHANGE);
+        TokenPair tokenPair = openSession(profile, deviceId, LOGIN_CHANNEL_MOBILE_CHANGE);
+        loginDeviceSwitchGateService.updateLastLoginDeviceNo(userId, deviceId);
+        return tokenPair;
     }
 
     public void logout(AuthenticatedPrincipal principal) {
@@ -647,7 +703,17 @@ public class AuthServiceFacade {
     public record OtpSendResult(String otpToken, long expireIn, long resendAfter, String otpCodeForLocalDev) {
     }
 
-    public record MobileCheckResult(boolean registered, String accountStatus, boolean passwordSet) {
+    public record MobileCheckResult(
+            boolean registered,
+            String accountStatus,
+            boolean passwordSet,
+            boolean faceRequired
+    ) {
+    }
+
+    private void consumeDeviceSwitchFaceIfRequired(long userId, String deviceNo, String faceVerifyToken) {
+        loginDeviceSwitchGateService.assertLoginAllowed(userId, deviceNo, faceVerifyToken);
+        loginDeviceSwitchGateService.consumeFaceTokenIfRequired(userId, deviceNo, faceVerifyToken);
     }
 
     public record OtpVerifyResult(UserProfileSummary profile, TokenPair tokenPair, boolean passwordSet) {

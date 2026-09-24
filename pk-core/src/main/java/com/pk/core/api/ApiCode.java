@@ -12,6 +12,16 @@ public enum ApiCode {
     UNAUTHORIZED_REQUEST("K000012", "Unauthorized request", ApiCodeLayer.PLATFORM_VALIDATION),
     DEVICE_NO_REQUIRED("K000017", "deviceNo is required", ApiCodeLayer.PLATFORM_VALIDATION),
     FACE_RECOGNITION_FAILED("K000052", "Face recognition failed", ApiCodeLayer.PLATFORM_VALIDATION),
+    LOGIN_FACE_VERIFICATION_REQUIRED(
+            "K000219",
+            "Face verification required before login",
+            ApiCodeLayer.PLATFORM_VALIDATION
+    ),
+    BANK_CARD_FACE_VERIFICATION_REQUIRED(
+            "K000220",
+            "Face verification required before adding bank card",
+            ApiCodeLayer.PLATFORM_VALIDATION
+    ),
     INVALID_EKTP_FORMAT("K000053", "Invalid EKTP format", ApiCodeLayer.PLATFORM_VALIDATION),
     INVALID_EDUCATION_DEGREE("K000056", "Invalid education degree", ApiCodeLayer.PLATFORM_VALIDATION),
     INDUSTRY_REQUIRED("K000063", "Industry is required", ApiCodeLayer.PLATFORM_VALIDATION),
