@@ -64,6 +64,10 @@ pk:
     refresh-token-ttl: ${PK_AUTH_REFRESH_TOKEN_TTL:30d}
     otp-ttl: ${PK_AUTH_OTP_TTL:5m}
     jwt-secret: ${PK_AUTH_JWT_SECRET:local-dev-secret-change-in-prod-min-32-chars}
+    device-switch-liveness-license-rate-limit:
+      max-invocations-per-ip: ${PK_AUTH_DEVICE_SWITCH_LIVENESS_LICENSE_MAX_PER_IP:5}
+      max-invocations-per-device: ${PK_AUTH_DEVICE_SWITCH_LIVENESS_LICENSE_MAX_PER_DEVICE:5}
+      window-minutes: ${PK_AUTH_DEVICE_SWITCH_LIVENESS_LICENSE_WINDOW_MINUTES:5}
   security:
     field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY:local-dev-field-encryption-key-32b}
   biometric-storage:

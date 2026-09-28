@@ -8,7 +8,10 @@ import com.pk.app.auth.dto.request.OtpVerifyRequest;
 import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
 import com.pk.app.auth.dto.request.RefreshTokenRequest;
 import com.pk.app.auth.dto.request.DeviceSwitchFaceVerifyRequest;
+import com.pk.app.auth.dto.request.DeviceSwitchLivenessLicenseRequest;
 import com.pk.app.auth.dto.request.MobileCheckRequest;
+import com.pk.app.common.web.RequestTrace;
+import com.pk.app.profile.dto.response.TrustDecisionLivenessLicenseResponse;
 import com.pk.app.auth.dto.response.AccountCloseEligibilityResponse;
 import com.pk.app.auth.dto.response.PasswordChangeResponse;
 import com.pk.app.common.web.ClientRequestHeaders;
@@ -28,6 +31,7 @@ import com.pk.core.home.HomeUserStage;
 import com.pk.app.home.application.HomeApplicationService;
 import com.pk.infra.auth.AuthServiceFacade;
 import com.pk.infra.auth.AccountCloseAccessFacade;
+import com.pk.infra.auth.DeviceSwitchLivenessLicenseFacade;
 import com.pk.infra.auth.DeviceSwitchLoginFaceFacade;
 import com.pk.infra.push.PushDeviceFacade;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +48,7 @@ public class AuthApplicationService {
     private final ProfileDeviceResolver profileDeviceResolver;
     private final PushDeviceFacade pushDeviceFacade;
     private final DeviceSwitchLoginFaceFacade deviceSwitchLoginFaceFacade;
+    private final DeviceSwitchLivenessLicenseFacade deviceSwitchLivenessLicenseFacade;
 
     public AuthApplicationService(
             AuthServiceFacade authServiceFacade,
@@ -51,7 +56,8 @@ public class AuthApplicationService {
             AccountCloseAccessFacade accountCloseAccessFacade,
             ProfileDeviceResolver profileDeviceResolver,
             PushDeviceFacade pushDeviceFacade,
-            DeviceSwitchLoginFaceFacade deviceSwitchLoginFaceFacade
+            DeviceSwitchLoginFaceFacade deviceSwitchLoginFaceFacade,
+            DeviceSwitchLivenessLicenseFacade deviceSwitchLivenessLicenseFacade
     ) {
         this.authServiceFacade = authServiceFacade;
         this.homeApplicationService = homeApplicationService;
@@ -59,6 +65,30 @@ public class AuthApplicationService {
         this.profileDeviceResolver = profileDeviceResolver;
         this.pushDeviceFacade = pushDeviceFacade;
         this.deviceSwitchLoginFaceFacade = deviceSwitchLoginFaceFacade;
+        this.deviceSwitchLivenessLicenseFacade = deviceSwitchLivenessLicenseFacade;
+    }
+
+    public TrustDecisionLivenessLicenseResponse obtainDeviceSwitchLivenessLicense(
+            DeviceSwitchLivenessLicenseRequest request,
+            String deviceNoHeader,
+            String clientIp,
+            HttpServletRequest httpRequest
+    ) {
+        validateDeviceNoMatchesHeader(request.deviceNo(), deviceNoHeader);
+        int duration = request.sessionDurationSeconds() == null ? 600 : request.sessionDurationSeconds();
+        var result = deviceSwitchLivenessLicenseFacade.obtainLicense(
+                request.mobileNo(),
+                request.deviceNo(),
+                duration,
+                clientIp,
+                RequestTrace.resolveClientRequestId(httpRequest, null),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
+        return new TrustDecisionLivenessLicenseResponse(
+                result.license(),
+                result.expiryTimestamp(),
+                result.sequenceId()
+        );
     }
 
     public DeviceSwitchFaceVerifyResponse verifyDeviceSwitchFace(

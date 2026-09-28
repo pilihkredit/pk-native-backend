@@ -12,7 +12,9 @@ import com.pk.app.auth.dto.request.WhatsAppLoginRequest;
 import com.pk.app.auth.dto.response.AccountCloseEligibilityResponse;
 import com.pk.app.auth.dto.response.PasswordChangeResponse;
 import com.pk.app.auth.dto.request.DeviceSwitchFaceVerifyRequest;
+import com.pk.app.auth.dto.request.DeviceSwitchLivenessLicenseRequest;
 import com.pk.app.auth.dto.response.DeviceSwitchFaceVerifyResponse;
+import com.pk.app.profile.dto.response.TrustDecisionLivenessLicenseResponse;
 import com.pk.app.auth.dto.response.MobileCheckResponse;
 import com.pk.app.auth.dto.response.PasswordSetResponse;
 import com.pk.app.auth.dto.response.OtpSendResponse;
@@ -43,6 +45,26 @@ public class AuthController {
 
     public AuthController(AuthApplicationService authApplicationService) {
         this.authApplicationService = authApplicationService;
+    }
+
+    /** TrustDecision liveness SDK license before device-switch login (unauthenticated). */
+    @PublicApi
+    @PostMapping("/face/liveness-license")
+    public ApiResponse<TrustDecisionLivenessLicenseResponse> deviceSwitchLivenessLicense(
+            @Valid @RequestBody DeviceSwitchLivenessLicenseRequest request,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String ignoredAuthorization,
+            @RequestHeader(value = "X-Device-No", required = false) String deviceNoHeader,
+            HttpServletRequest httpRequest
+    ) {
+        return ApiResponse.success(
+                authApplicationService.obtainDeviceSwitchLivenessLicense(
+                        request,
+                        deviceNoHeader,
+                        resolveClientIp(httpRequest),
+                        httpRequest
+                ),
+                RequestTrace.resolveTraceId(httpRequest)
+        );
     }
 
     /** Device-switch login face verify (unauthenticated). */
@@ -193,5 +215,18 @@ public class AuthController {
                 authApplicationService.loginByPassword(request, deviceNoHeader),
                 RequestTrace.resolveTraceId(httpRequest)
         );
+    }
+
+    private static String resolveClientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            int commaIndex = forwardedFor.indexOf(',');
+            return commaIndex < 0 ? forwardedFor.trim() : forwardedFor.substring(0, commaIndex).trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return request.getRemoteAddr();
     }
 }

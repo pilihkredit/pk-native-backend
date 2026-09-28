@@ -19,6 +19,7 @@ import com.pk.core.auth.UserProfileSummary;
 import com.pk.core.home.HomeUserStage;
 import com.pk.infra.auth.AuthServiceFacade;
 import com.pk.infra.auth.AccountCloseAccessFacade;
+import com.pk.infra.auth.DeviceSwitchLivenessLicenseFacade;
 import com.pk.infra.auth.DeviceSwitchLoginFaceFacade;
 import com.pk.infra.push.PushDeviceFacade;
 import org.junit.jupiter.api.Test;
@@ -139,7 +140,8 @@ class AuthApplicationServiceTest {
                 mock(AccountCloseAccessFacade.class),
                 mock(com.pk.app.profile.application.ProfileDeviceResolver.class),
                 pushDeviceFacade,
-                mock(DeviceSwitchLoginFaceFacade.class)
+                mock(DeviceSwitchLoginFaceFacade.class),
+                mock(DeviceSwitchLivenessLicenseFacade.class)
         ).logout(principal, "device-1");
 
         verify(facade).logout(principal);
@@ -156,7 +158,8 @@ class AuthApplicationServiceTest {
                 mock(AccountCloseAccessFacade.class),
                 mock(com.pk.app.profile.application.ProfileDeviceResolver.class),
                 mock(PushDeviceFacade.class),
-                mock(DeviceSwitchLoginFaceFacade.class)
+                mock(DeviceSwitchLoginFaceFacade.class),
+                mock(DeviceSwitchLivenessLicenseFacade.class)
         );
     }
 }
