@@ -58,9 +58,10 @@ public class AuthProperties {
 
     /** Rate limit for public {@code POST /auth/face/liveness-license}. */
     public static class DeviceSwitchLivenessLicenseRateLimit {
-        private int maxInvocationsPerIp = 5;
+        private int maxInvocationsPerIp = 100;
         private int maxInvocationsPerDevice = 5;
-        private int windowMinutes = 5;
+        private int windowMinutes = 10;
+        private int blockMinutes = 15;
 
         public int maxInvocationsPerIp() {
             return maxInvocationsPerIp;
@@ -86,8 +87,20 @@ public class AuthProperties {
             this.windowMinutes = windowMinutes;
         }
 
+        public int blockMinutes() {
+            return blockMinutes;
+        }
+
+        public void setBlockMinutes(int blockMinutes) {
+            this.blockMinutes = blockMinutes;
+        }
+
         public Duration window() {
             return Duration.ofMinutes(Math.max(1, windowMinutes));
+        }
+
+        public Duration block() {
+            return Duration.ofMinutes(Math.max(1, blockMinutes));
         }
     }
 }

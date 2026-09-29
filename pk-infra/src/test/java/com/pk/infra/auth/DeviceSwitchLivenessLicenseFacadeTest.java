@@ -66,8 +66,7 @@ class DeviceSwitchLivenessLicenseFacadeTest {
         );
 
         assertThat(result.license()).isEqualTo("lic");
-        verify(rateLimiter).assertAllowed("1.2.3.4", "device-1");
-        verify(rateLimiter).recordInvocation("1.2.3.4", "device-1");
+        verify(rateLimiter).checkAndRecord("1.2.3.4", "device-1");
     }
 
     @Test
@@ -89,7 +88,7 @@ class DeviceSwitchLivenessLicenseFacadeTest {
                 .extracting(ex -> ((ApiException) ex).apiCode())
                 .isEqualTo(ApiCode.INVALID_REQUEST_PARAMETERS);
 
-        verify(rateLimiter, never()).recordInvocation(anyString(), anyString());
+        verify(rateLimiter, never()).checkAndRecord(anyString(), anyString());
         verify(trustDecisionIdentityFacade, never()).obtainLivenessLicense(
                 anyLong(),
                 anyString(),

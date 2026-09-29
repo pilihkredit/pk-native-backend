@@ -50,8 +50,7 @@ public class DeviceSwitchLivenessLicenseFacade {
                     "device-switch face verification is not required");
         }
         String normalizedIp = DeviceSwitchLivenessLicenseRateLimiter.normalizeClientIp(clientIp);
-        rateLimiter.assertAllowed(normalizedIp, normalizedDevice);
-        rateLimiter.recordInvocation(normalizedIp, normalizedDevice);
+        rateLimiter.checkAndRecord(normalizedIp, normalizedDevice);
         return trustDecisionIdentityFacade.obtainLivenessLicense(
                 profile.userId(),
                 profile.partnerUserId(),

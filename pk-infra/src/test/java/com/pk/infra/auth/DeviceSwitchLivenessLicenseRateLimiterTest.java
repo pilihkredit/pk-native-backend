@@ -1,90 +1,115 @@
 package com.pk.infra.auth;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.pk.core.api.ApiCode;
 import com.pk.core.api.ApiException;
+import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.springframework.data.redis.core.ZSetOperations;
 
 class DeviceSwitchLivenessLicenseRateLimiterTest {
     private StringRedisTemplate redisTemplate;
     private ValueOperations<String, String> valueOperations;
+    private ZSetOperations<String, String> zSetOperations;
     private DeviceSwitchLivenessLicenseRateLimiter limiter;
 
     @BeforeEach
     void setUp() {
         redisTemplate = mock(StringRedisTemplate.class);
         valueOperations = mock(ValueOperations.class);
+        zSetOperations = mock(ZSetOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
         AuthProperties authProperties = new AuthProperties();
         limiter = new DeviceSwitchLivenessLicenseRateLimiter(redisTemplate, authProperties);
     }
 
     @Test
-    void rejectsWhenIpLimitReached() {
-        when(valueOperations.get("pk:auth:device-switch-liveness-license:ip:1.2.3.4")).thenReturn("5");
-        when(valueOperations.get("pk:auth:device-switch-liveness-license:device:device-1")).thenReturn("0");
-
-        assertThatThrownBy(() -> limiter.assertAllowed("1.2.3.4", "device-1"))
-                .isInstanceOf(ApiException.class)
-                .extracting(ex -> ((ApiException) ex).apiCode())
-                .isEqualTo(ApiCode.TOO_MANY_REQUESTS);
-    }
-
-    @Test
-    void rejectsWhenDeviceLimitReached() {
-        when(valueOperations.get("pk:auth:device-switch-liveness-license:ip:1.2.3.4")).thenReturn("1");
-        when(valueOperations.get("pk:auth:device-switch-liveness-license:device:device-1")).thenReturn("5");
-
-        assertThatThrownBy(() -> limiter.assertAllowed("1.2.3.4", "device-1"))
-                .isInstanceOf(ApiException.class)
-                .extracting(ex -> ((ApiException) ex).apiCode())
-                .isEqualTo(ApiCode.TOO_MANY_REQUESTS);
-    }
-
-    @Test
-    void allowsWhenBelowLimit() {
+    void rejectsWhenDeviceSlidingWindowFull() {
         when(valueOperations.get(anyString())).thenReturn(null);
+        when(zSetOperations.size("pk:auth:device-switch-liveness-license:device:device-1:events"))
+                .thenReturn(5L);
+        when(zSetOperations.size("pk:auth:device-switch-liveness-license:ip:1.2.3.4:events"))
+                .thenReturn(0L);
 
-        assertThatCode(() -> limiter.assertAllowed("1.2.3.4", "device-1"))
+        assertThatThrownBy(() -> limiter.checkAndRecord("1.2.3.4", "device-1"))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    ApiException api = (ApiException) ex;
+                    assertThat(api.apiCode()).isEqualTo(ApiCode.TOO_MANY_REQUESTS);
+                    assertThat(api.detail()).isEqualTo(DeviceSwitchLivenessLicenseRateLimiter.CLIENT_MESSAGE);
+                });
+
+        verify(valueOperations).set(
+                eq("pk:auth:device-switch-liveness-license:device:device-1:blocked-until"),
+                anyString(),
+                eq(Duration.ofMinutes(15))
+        );
+        verify(redisTemplate).delete("pk:auth:device-switch-liveness-license:device:device-1:events");
+    }
+
+    @Test
+    void rejectsWhenDimensionStillBlocked() {
+        long future = Instant.now().plus(Duration.ofMinutes(10)).toEpochMilli();
+        when(valueOperations.get("pk:auth:device-switch-liveness-license:ip:1.2.3.4:blocked-until"))
+                .thenReturn(Long.toString(future));
+
+        assertThatThrownBy(() -> limiter.checkAndRecord("1.2.3.4", "device-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).detail())
+                .isEqualTo(DeviceSwitchLivenessLicenseRateLimiter.CLIENT_MESSAGE);
+
+        verify(zSetOperations, never()).add(anyString(), anyString(), anyDouble());
+    }
+
+    @Test
+    void recordsWhenBelowLimit() {
+        when(valueOperations.get(anyString())).thenReturn(null);
+        when(zSetOperations.size(anyString())).thenReturn(0L);
+
+        assertThatCode(() -> limiter.checkAndRecord("1.2.3.4", "device-1"))
                 .doesNotThrowAnyException();
+
+        verify(zSetOperations).add(
+                eq("pk:auth:device-switch-liveness-license:device:device-1:events"),
+                anyString(),
+                anyDouble()
+        );
+        verify(zSetOperations).add(
+                eq("pk:auth:device-switch-liveness-license:ip:1.2.3.4:events"),
+                anyString(),
+                anyDouble()
+        );
     }
 
     @Test
-    void recordInvocationIncrementsBothKeys() {
-        when(valueOperations.increment(anyString())).thenReturn(1L);
+    void clearsExpiredBlockBeforeCounting() {
+        long past = Instant.now().minus(Duration.ofMinutes(1)).toEpochMilli();
+        when(valueOperations.get("pk:auth:device-switch-liveness-license:ip:1.2.3.4:blocked-until"))
+                .thenReturn(Long.toString(past));
+        when(valueOperations.get("pk:auth:device-switch-liveness-license:device:device-1:blocked-until"))
+                .thenReturn(null);
+        when(zSetOperations.size(anyString())).thenReturn(0L);
 
-        limiter.recordInvocation("1.2.3.4", "device-1");
+        assertThatCode(() -> limiter.checkAndRecord("1.2.3.4", "device-1"))
+                .doesNotThrowAnyException();
 
-        org.mockito.Mockito.verify(valueOperations).increment(
-                eq("pk:auth:device-switch-liveness-license:ip:1.2.3.4"));
-        org.mockito.Mockito.verify(valueOperations).increment(
-                eq("pk:auth:device-switch-liveness-license:device:device-1"));
-        org.mockito.Mockito.verify(redisTemplate, org.mockito.Mockito.times(2))
-                .expire(anyString(), eq(java.time.Duration.ofMinutes(5)));
-    }
-
-    @Test
-    void usesConfiguredLimits() {
-        AuthProperties authProperties = new AuthProperties();
-        authProperties.deviceSwitchLivenessLicenseRateLimit().setMaxInvocationsPerIp(3);
-        authProperties.deviceSwitchLivenessLicenseRateLimit().setMaxInvocationsPerDevice(4);
-        limiter = new DeviceSwitchLivenessLicenseRateLimiter(redisTemplate, authProperties);
-
-        when(valueOperations.get("pk:auth:device-switch-liveness-license:ip:1.2.3.4")).thenReturn("3");
-        when(valueOperations.get("pk:auth:device-switch-liveness-license:device:device-1")).thenReturn("0");
-
-        assertThatThrownBy(() -> limiter.assertAllowed("1.2.3.4", "device-1"))
-                .isInstanceOf(ApiException.class);
+        verify(redisTemplate).delete("pk:auth:device-switch-liveness-license:ip:1.2.3.4:blocked-until");
     }
 }
