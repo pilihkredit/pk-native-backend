@@ -53,7 +53,7 @@ class BankCardAddFaceGateServiceTest {
                 .isEqualTo(ApiCode.BANK_CARD_FACE_VERIFICATION_REQUIRED);
         assertThatThrownBy(() -> gate.consumeBeforeSave(1L, "device-1", "expired"))
                 .extracting("apiCode")
-                .isEqualTo(ApiCode.BANK_CARD_FACE_VERIFICATION_REQUIRED);
+                .isEqualTo(ApiCode.BANK_CARD_FACE_VERIFICATION_EXPIRED);
     }
 
     @Test

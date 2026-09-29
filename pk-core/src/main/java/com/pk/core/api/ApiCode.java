@@ -22,6 +22,11 @@ public enum ApiCode {
             "Face verification required before adding bank card",
             ApiCodeLayer.PLATFORM_VALIDATION
     ),
+    BANK_CARD_FACE_VERIFICATION_EXPIRED(
+            "K000221",
+            "Face verification has expired. Please verify again before adding a bank card.",
+            ApiCodeLayer.PLATFORM_VALIDATION
+    ),
     INVALID_EKTP_FORMAT("K000053", "Invalid EKTP format", ApiCodeLayer.PLATFORM_VALIDATION),
     INVALID_EDUCATION_DEGREE("K000056", "Invalid education degree", ApiCodeLayer.PLATFORM_VALIDATION),
     INDUSTRY_REQUIRED("K000063", "Industry is required", ApiCodeLayer.PLATFORM_VALIDATION),
