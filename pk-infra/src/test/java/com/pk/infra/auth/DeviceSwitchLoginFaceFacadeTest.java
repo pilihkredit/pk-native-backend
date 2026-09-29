@@ -21,6 +21,7 @@ import com.pk.core.profile.port.TrustDecisionKycPort;
 import com.pk.infra.ocr.OcrProviderConfigLoader;
 import com.pk.infra.ocr.OcrProperties;
 import com.pk.infra.profile.FaceComparisonBaselineResolver;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +53,7 @@ class DeviceSwitchLoginFaceFacadeTest {
         properties.setFaceThreshold(60);
         when(configLoader.loadAdvanceAi()).thenReturn(properties);
         facade = new DeviceSwitchLoginFaceFacade(
+                Duration.ofMinutes(5),
                 userAuthRepository,
                 trustDecisionKycPort,
                 advanceAiOcrPort,

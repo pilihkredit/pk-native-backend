@@ -13,6 +13,7 @@ import com.pk.core.profile.port.MobileChangeFaceVerificationRepository;
 import com.pk.core.profile.port.TrustDecisionKycPort;
 import com.pk.infra.ocr.OcrProviderConfigLoader;
 import com.pk.infra.ocr.OcrProperties;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,7 @@ class MobileChangeFaceFacadeTest {
         properties.setFaceThreshold(60);
         when(configLoader.loadAdvanceAi()).thenReturn(properties);
         facade = new MobileChangeFaceFacade(
+                Duration.ofMinutes(5),
                 trustDecisionKycPort,
                 advanceAiOcrPort,
                 baselineResolver,

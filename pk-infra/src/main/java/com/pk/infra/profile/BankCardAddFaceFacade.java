@@ -15,8 +15,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public class BankCardAddFaceFacade {
-    private static final Duration TICKET_TTL = Duration.ofMinutes(5);
-
+    private final Duration ticketTtl;
     private final TrustDecisionKycPort trustDecisionKycPort;
     private final AdvanceAiOcrPort advanceAiOcrPort;
     private final FaceComparisonBaselineResolver baselineResolver;
@@ -25,6 +24,7 @@ public class BankCardAddFaceFacade {
     private final OcrProviderConfigLoader configLoader;
 
     public BankCardAddFaceFacade(
+            Duration ticketTtl,
             TrustDecisionKycPort trustDecisionKycPort,
             AdvanceAiOcrPort advanceAiOcrPort,
             FaceComparisonBaselineResolver baselineResolver,
@@ -32,6 +32,7 @@ public class BankCardAddFaceFacade {
             BiometricImageStore biometricImageStore,
             OcrProviderConfigLoader configLoader
     ) {
+        this.ticketTtl = ticketTtl;
         this.trustDecisionKycPort = trustDecisionKycPort;
         this.advanceAiOcrPort = advanceAiOcrPort;
         this.baselineResolver = baselineResolver;
@@ -69,7 +70,7 @@ public class BankCardAddFaceFacade {
         );
         double similarity = advanceAiOcrPort.compareFaces(baselineImage, liveness.faceImage()).similarity();
         boolean verified = similarity >= configLoader.loadAdvanceAi().faceThreshold();
-        Instant expiresAt = now.plus(TICKET_TTL);
+        Instant expiresAt = now.plus(ticketTtl);
         bankCardAddFaceRepository.insert(new BankCardAddFaceVerificationRepository.FaceVerificationInsert(
                 token,
                 userId,

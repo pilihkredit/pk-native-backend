@@ -56,6 +56,7 @@ public class AuthDeviceSwitchConfiguration {
 
     @Bean
     DeviceSwitchLoginFaceFacade deviceSwitchLoginFaceFacade(
+            AuthProperties authProperties,
             UserAuthRepository userAuthRepository,
             TrustDecisionKycPort trustDecisionKycPort,
             AdvanceAiOcrPort advanceAiOcrPort,
@@ -66,6 +67,7 @@ public class AuthDeviceSwitchConfiguration {
             DeviceSwitchLoginFaceAttemptLimiter deviceSwitchLoginFaceAttemptLimiter
     ) {
         return new DeviceSwitchLoginFaceFacade(
+                authProperties.faceVerifyTicket().deviceSwitchLoginTtl(),
                 userAuthRepository,
                 trustDecisionKycPort,
                 advanceAiOcrPort,

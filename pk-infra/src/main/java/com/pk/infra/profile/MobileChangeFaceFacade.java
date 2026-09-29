@@ -14,8 +14,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public class MobileChangeFaceFacade {
-    private static final Duration TICKET_TTL = Duration.ofMinutes(5);
-
+    private final Duration ticketTtl;
     private final TrustDecisionKycPort trustDecisionKycPort;
     private final AdvanceAiOcrPort advanceAiOcrPort;
     private final FaceComparisonBaselineResolver baselineResolver;
@@ -24,6 +23,7 @@ public class MobileChangeFaceFacade {
     private final OcrProviderConfigLoader configLoader;
 
     public MobileChangeFaceFacade(
+            Duration ticketTtl,
             TrustDecisionKycPort trustDecisionKycPort,
             AdvanceAiOcrPort advanceAiOcrPort,
             FaceComparisonBaselineResolver baselineResolver,
@@ -31,6 +31,7 @@ public class MobileChangeFaceFacade {
             BiometricImageStore biometricImageStore,
             OcrProviderConfigLoader configLoader
     ) {
+        this.ticketTtl = ticketTtl;
         this.trustDecisionKycPort = trustDecisionKycPort;
         this.advanceAiOcrPort = advanceAiOcrPort;
         this.baselineResolver = baselineResolver;
@@ -67,7 +68,8 @@ public class MobileChangeFaceFacade {
         );
         double similarity = advanceAiOcrPort.compareFaces(baselineImage, liveness.faceImage()).similarity();
         boolean verified = similarity >= configLoader.loadAdvanceAi().faceThreshold();
-        Instant expiresAt = Instant.now().plus(TICKET_TTL);
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(ticketTtl);
         verificationRepository.insert(new MobileChangeFaceVerificationRepository.FaceVerificationInsert(
                 token,
                 userId,
@@ -87,7 +89,12 @@ public class MobileChangeFaceFacade {
         if (!verified) {
             throw new ApiException(ApiCode.FACE_RECOGNITION_FAILED);
         }
-        return new FaceVerifyResult(command.requestId().trim(), true, token, TICKET_TTL.toSeconds());
+        return new FaceVerifyResult(
+                command.requestId().trim(),
+                true,
+                token,
+                FaceVerifyTicketSupport.expiresInSeconds(expiresAt, now)
+        );
     }
 
     private static void requireText(String value) {

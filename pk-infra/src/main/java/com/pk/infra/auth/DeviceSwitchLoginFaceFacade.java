@@ -23,8 +23,7 @@ import java.util.UUID;
  * Unauthenticated face verify for device-switch login. Does not modify mobile-change face APIs.
  */
 public class DeviceSwitchLoginFaceFacade {
-    private static final Duration TICKET_TTL = Duration.ofMinutes(5);
-
+    private final Duration ticketTtl;
     private final UserAuthRepository userAuthRepository;
     private final TrustDecisionKycPort trustDecisionKycPort;
     private final AdvanceAiOcrPort advanceAiOcrPort;
@@ -35,6 +34,7 @@ public class DeviceSwitchLoginFaceFacade {
     private final DeviceSwitchLoginFaceAttemptLimiter attemptLimiter;
 
     public DeviceSwitchLoginFaceFacade(
+            Duration ticketTtl,
             UserAuthRepository userAuthRepository,
             TrustDecisionKycPort trustDecisionKycPort,
             AdvanceAiOcrPort advanceAiOcrPort,
@@ -44,6 +44,7 @@ public class DeviceSwitchLoginFaceFacade {
             OcrProviderConfigLoader configLoader,
             DeviceSwitchLoginFaceAttemptLimiter attemptLimiter
     ) {
+        this.ticketTtl = ticketTtl;
         this.userAuthRepository = userAuthRepository;
         this.trustDecisionKycPort = trustDecisionKycPort;
         this.advanceAiOcrPort = advanceAiOcrPort;
@@ -109,7 +110,7 @@ public class DeviceSwitchLoginFaceFacade {
             );
             double similarity = advanceAiOcrPort.compareFaces(baselineImage, liveness.faceImage()).similarity();
             boolean verified = similarity >= configLoader.loadAdvanceAi().faceThreshold();
-            Instant expiresAt = now.plus(TICKET_TTL);
+            Instant expiresAt = now.plus(ticketTtl);
             deviceSwitchFaceRepository.insert(new DeviceSwitchFaceVerificationRepository.FaceVerificationInsert(
                     token,
                     profile.userId(),
