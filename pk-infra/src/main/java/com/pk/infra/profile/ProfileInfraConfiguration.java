@@ -255,7 +255,7 @@ public class ProfileInfraConfiguration {
 
     @Bean
     BankCardAddFaceFacade bankCardAddFaceFacade(
-            com.pk.infra.auth.AuthProperties authProperties,
+            com.pk.infra.auth.FaceVerifyTicketTtlConfigLoader faceVerifyTicketTtlConfigLoader,
             com.pk.core.profile.port.TrustDecisionKycPort trustDecisionKycPort,
             com.pk.core.profile.port.AdvanceAiOcrPort advanceAiOcrPort,
             FaceComparisonBaselineResolver faceComparisonBaselineResolver,
@@ -264,7 +264,7 @@ public class ProfileInfraConfiguration {
             com.pk.infra.ocr.OcrProviderConfigLoader configLoader
     ) {
         return new BankCardAddFaceFacade(
-                authProperties.faceVerifyTicket().bankCardAddTtl(),
+                faceVerifyTicketTtlConfigLoader,
                 trustDecisionKycPort,
                 advanceAiOcrPort,
                 faceComparisonBaselineResolver,
@@ -276,7 +276,7 @@ public class ProfileInfraConfiguration {
 
     @Bean
     MobileChangeFaceFacade mobileChangeFaceFacade(
-            com.pk.infra.auth.AuthProperties authProperties,
+            com.pk.infra.auth.FaceVerifyTicketTtlConfigLoader faceVerifyTicketTtlConfigLoader,
             com.pk.core.profile.port.TrustDecisionKycPort trustDecisionKycPort,
             com.pk.core.profile.port.AdvanceAiOcrPort advanceAiOcrPort,
             FaceComparisonBaselineResolver faceComparisonBaselineResolver,
@@ -285,7 +285,7 @@ public class ProfileInfraConfiguration {
             com.pk.infra.ocr.OcrProviderConfigLoader configLoader
     ) {
         return new MobileChangeFaceFacade(
-                authProperties.faceVerifyTicket().mobileChangeTtl(),
+                faceVerifyTicketTtlConfigLoader,
                 trustDecisionKycPort,
                 advanceAiOcrPort,
                 faceComparisonBaselineResolver,

@@ -9,13 +9,14 @@ import com.pk.core.profile.port.BankCardAddFaceVerificationRepository;
 import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.TrustDecisionKycPort;
 import com.pk.infra.auth.AuthDeviceNoNormalizer;
+import com.pk.infra.auth.FaceVerifyTicketTtlConfigLoader;
 import com.pk.infra.ocr.OcrProviderConfigLoader;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
 public class BankCardAddFaceFacade {
-    private final Duration ticketTtl;
+    private final FaceVerifyTicketTtlConfigLoader ticketTtlLoader;
     private final TrustDecisionKycPort trustDecisionKycPort;
     private final AdvanceAiOcrPort advanceAiOcrPort;
     private final FaceComparisonBaselineResolver baselineResolver;
@@ -24,7 +25,7 @@ public class BankCardAddFaceFacade {
     private final OcrProviderConfigLoader configLoader;
 
     public BankCardAddFaceFacade(
-            Duration ticketTtl,
+            FaceVerifyTicketTtlConfigLoader ticketTtlLoader,
             TrustDecisionKycPort trustDecisionKycPort,
             AdvanceAiOcrPort advanceAiOcrPort,
             FaceComparisonBaselineResolver baselineResolver,
@@ -32,7 +33,7 @@ public class BankCardAddFaceFacade {
             BiometricImageStore biometricImageStore,
             OcrProviderConfigLoader configLoader
     ) {
-        this.ticketTtl = ticketTtl;
+        this.ticketTtlLoader = ticketTtlLoader;
         this.trustDecisionKycPort = trustDecisionKycPort;
         this.advanceAiOcrPort = advanceAiOcrPort;
         this.baselineResolver = baselineResolver;
@@ -70,6 +71,7 @@ public class BankCardAddFaceFacade {
         );
         double similarity = advanceAiOcrPort.compareFaces(baselineImage, liveness.faceImage()).similarity();
         boolean verified = similarity >= configLoader.loadAdvanceAi().faceThreshold();
+        Duration ticketTtl = ticketTtlLoader.bankCardAddTtl();
         Instant expiresAt = now.plus(ticketTtl);
         bankCardAddFaceRepository.insert(new BankCardAddFaceVerificationRepository.FaceVerificationInsert(
                 token,

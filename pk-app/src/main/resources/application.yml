@@ -69,10 +69,6 @@ pk:
       max-invocations-per-device: ${PK_AUTH_DEVICE_SWITCH_LIVENESS_LICENSE_MAX_PER_DEVICE:5}
       window-minutes: ${PK_AUTH_DEVICE_SWITCH_LIVENESS_LICENSE_WINDOW_MINUTES:10}
       block-minutes: ${PK_AUTH_DEVICE_SWITCH_LIVENESS_LICENSE_BLOCK_MINUTES:15}
-    # Optional per-scene overrides (env only, fall back to ttl): PK_AUTH_FACE_VERIFY_TICKET_DEVICE_SWITCH_LOGIN_TTL,
-    # PK_AUTH_FACE_VERIFY_TICKET_BANK_CARD_ADD_TTL, PK_AUTH_FACE_VERIFY_TICKET_MOBILE_CHANGE_TTL
-    face-verify-ticket:
-      ttl: ${PK_AUTH_FACE_VERIFY_TICKET_TTL:5m}
   security:
     field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY:local-dev-field-encryption-key-32b}
   biometric-storage:

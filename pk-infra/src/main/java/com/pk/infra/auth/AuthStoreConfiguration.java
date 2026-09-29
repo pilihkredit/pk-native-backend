@@ -53,6 +53,14 @@ public class AuthStoreConfiguration {
     }
 
     @Bean
+    FaceVerifyTicketTtlConfigLoader faceVerifyTicketTtlConfigLoader(
+            AppConfigRepository appConfigRepository,
+            ObjectMapper objectMapper
+    ) {
+        return new FaceVerifyTicketTtlConfigLoader(appConfigRepository, objectMapper);
+    }
+
+    @Bean
     WhatsAppConfigLoader whatsAppConfigLoader(AppConfigRepository appConfigRepository, ObjectMapper objectMapper) {
         return new WhatsAppConfigLoader(appConfigRepository, objectMapper);
     }

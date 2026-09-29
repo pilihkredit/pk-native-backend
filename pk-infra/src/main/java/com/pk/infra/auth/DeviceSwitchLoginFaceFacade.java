@@ -15,7 +15,6 @@ import com.pk.core.profile.port.TrustDecisionKycPort;
 import com.pk.infra.ocr.OcrProviderConfigLoader;
 import com.pk.infra.profile.FaceComparisonBaselineResolver;
 import com.pk.infra.profile.FaceVerifyTicketSupport;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -23,7 +22,7 @@ import java.util.UUID;
  * Unauthenticated face verify for device-switch login. Does not modify mobile-change face APIs.
  */
 public class DeviceSwitchLoginFaceFacade {
-    private final Duration ticketTtl;
+    private final FaceVerifyTicketTtlConfigLoader ticketTtlLoader;
     private final UserAuthRepository userAuthRepository;
     private final TrustDecisionKycPort trustDecisionKycPort;
     private final AdvanceAiOcrPort advanceAiOcrPort;
@@ -34,7 +33,7 @@ public class DeviceSwitchLoginFaceFacade {
     private final DeviceSwitchLoginFaceAttemptLimiter attemptLimiter;
 
     public DeviceSwitchLoginFaceFacade(
-            Duration ticketTtl,
+            FaceVerifyTicketTtlConfigLoader ticketTtlLoader,
             UserAuthRepository userAuthRepository,
             TrustDecisionKycPort trustDecisionKycPort,
             AdvanceAiOcrPort advanceAiOcrPort,
@@ -44,7 +43,7 @@ public class DeviceSwitchLoginFaceFacade {
             OcrProviderConfigLoader configLoader,
             DeviceSwitchLoginFaceAttemptLimiter attemptLimiter
     ) {
-        this.ticketTtl = ticketTtl;
+        this.ticketTtlLoader = ticketTtlLoader;
         this.userAuthRepository = userAuthRepository;
         this.trustDecisionKycPort = trustDecisionKycPort;
         this.advanceAiOcrPort = advanceAiOcrPort;
@@ -110,7 +109,7 @@ public class DeviceSwitchLoginFaceFacade {
             );
             double similarity = advanceAiOcrPort.compareFaces(baselineImage, liveness.faceImage()).similarity();
             boolean verified = similarity >= configLoader.loadAdvanceAi().faceThreshold();
-            Instant expiresAt = now.plus(ticketTtl);
+            Instant expiresAt = now.plus(ticketTtlLoader.deviceSwitchLoginTtl());
             deviceSwitchFaceRepository.insert(new DeviceSwitchFaceVerificationRepository.FaceVerificationInsert(
                     token,
                     profile.userId(),

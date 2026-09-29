@@ -11,6 +11,7 @@ import com.pk.core.profile.port.AdvanceAiOcrPort;
 import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.MobileChangeFaceVerificationRepository;
 import com.pk.core.profile.port.TrustDecisionKycPort;
+import com.pk.infra.auth.FaceVerifyTicketTtlConfigLoader;
 import com.pk.infra.ocr.OcrProviderConfigLoader;
 import com.pk.infra.ocr.OcrProperties;
 import java.time.Duration;
@@ -35,12 +36,14 @@ class MobileChangeFaceFacadeTest {
         baselineResolver = mock(FaceComparisonBaselineResolver.class);
         verificationRepository = mock(MobileChangeFaceVerificationRepository.class);
         biometricImageStore = mock(BiometricImageStore.class);
+        FaceVerifyTicketTtlConfigLoader ticketTtlLoader = mock(FaceVerifyTicketTtlConfigLoader.class);
+        when(ticketTtlLoader.mobileChangeTtl()).thenReturn(Duration.ofMinutes(5));
         OcrProviderConfigLoader configLoader = mock(OcrProviderConfigLoader.class);
         OcrProperties properties = new OcrProperties();
         properties.setFaceThreshold(60);
         when(configLoader.loadAdvanceAi()).thenReturn(properties);
         facade = new MobileChangeFaceFacade(
-                Duration.ofMinutes(5),
+                ticketTtlLoader,
                 trustDecisionKycPort,
                 advanceAiOcrPort,
                 baselineResolver,

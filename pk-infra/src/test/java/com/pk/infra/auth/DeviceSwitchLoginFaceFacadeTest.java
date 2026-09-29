@@ -48,12 +48,14 @@ class DeviceSwitchLoginFaceFacadeTest {
         verificationRepository = mock(DeviceSwitchFaceVerificationRepository.class);
         biometricImageStore = mock(BiometricImageStore.class);
         attemptLimiter = mock(DeviceSwitchLoginFaceAttemptLimiter.class);
+        FaceVerifyTicketTtlConfigLoader ticketTtlLoader = mock(FaceVerifyTicketTtlConfigLoader.class);
+        when(ticketTtlLoader.deviceSwitchLoginTtl()).thenReturn(Duration.ofMinutes(5));
         OcrProviderConfigLoader configLoader = mock(OcrProviderConfigLoader.class);
         OcrProperties properties = new OcrProperties();
         properties.setFaceThreshold(60);
         when(configLoader.loadAdvanceAi()).thenReturn(properties);
         facade = new DeviceSwitchLoginFaceFacade(
-                Duration.ofMinutes(5),
+                ticketTtlLoader,
                 userAuthRepository,
                 trustDecisionKycPort,
                 advanceAiOcrPort,

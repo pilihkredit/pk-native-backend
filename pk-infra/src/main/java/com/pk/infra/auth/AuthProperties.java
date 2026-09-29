@@ -11,7 +11,6 @@ public class AuthProperties {
     private String jwtSecret = "local-dev-secret-change-in-prod-min-32-chars";
     private DeviceSwitchLivenessLicenseRateLimit deviceSwitchLivenessLicenseRateLimit =
             new DeviceSwitchLivenessLicenseRateLimit();
-    private FaceVerifyTicket faceVerifyTicket = new FaceVerifyTicket();
 
     public Duration accessTokenTtl() {
         return accessTokenTtl;
@@ -55,66 +54,6 @@ public class AuthProperties {
         this.deviceSwitchLivenessLicenseRateLimit = deviceSwitchLivenessLicenseRateLimit == null
                 ? new DeviceSwitchLivenessLicenseRateLimit()
                 : deviceSwitchLivenessLicenseRateLimit;
-    }
-
-    public FaceVerifyTicket faceVerifyTicket() {
-        return faceVerifyTicket;
-    }
-
-    public void setFaceVerifyTicket(FaceVerifyTicket faceVerifyTicket) {
-        this.faceVerifyTicket = faceVerifyTicket == null ? new FaceVerifyTicket() : faceVerifyTicket;
-    }
-
-    /** TTL for face-verify tickets (device-switch login, bank-card add, mobile change). */
-    public static class FaceVerifyTicket {
-        private Duration ttl = Duration.ofMinutes(5);
-        private Duration deviceSwitchLoginTtl;
-        private Duration bankCardAddTtl;
-        private Duration mobileChangeTtl;
-
-        public Duration ttl() {
-            return normalizeDefault(ttl);
-        }
-
-        public void setTtl(Duration ttl) {
-            this.ttl = ttl;
-        }
-
-        public Duration deviceSwitchLoginTtl() {
-            return effective(deviceSwitchLoginTtl);
-        }
-
-        public void setDeviceSwitchLoginTtl(Duration deviceSwitchLoginTtl) {
-            this.deviceSwitchLoginTtl = deviceSwitchLoginTtl;
-        }
-
-        public Duration bankCardAddTtl() {
-            return effective(bankCardAddTtl);
-        }
-
-        public void setBankCardAddTtl(Duration bankCardAddTtl) {
-            this.bankCardAddTtl = bankCardAddTtl;
-        }
-
-        public Duration mobileChangeTtl() {
-            return effective(mobileChangeTtl);
-        }
-
-        public void setMobileChangeTtl(Duration mobileChangeTtl) {
-            this.mobileChangeTtl = mobileChangeTtl;
-        }
-
-        private Duration effective(Duration override) {
-            return normalizeDefault(override != null ? override : ttl);
-        }
-
-        private static Duration normalizeDefault(Duration value) {
-            if (value == null || value.isZero() || value.isNegative()) {
-                return Duration.ofMinutes(5);
-            }
-            Duration minimum = Duration.ofMinutes(1);
-            return value.compareTo(minimum) < 0 ? minimum : value;
-        }
     }
 
     /** Rate limit for public {@code POST /auth/face/liveness-license}. */

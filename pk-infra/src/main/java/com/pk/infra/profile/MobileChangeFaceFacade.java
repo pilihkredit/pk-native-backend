@@ -8,13 +8,14 @@ import com.pk.core.profile.port.AdvanceAiOcrPort;
 import com.pk.core.profile.port.BiometricImageStore;
 import com.pk.core.profile.port.MobileChangeFaceVerificationRepository;
 import com.pk.core.profile.port.TrustDecisionKycPort;
+import com.pk.infra.auth.FaceVerifyTicketTtlConfigLoader;
 import com.pk.infra.ocr.OcrProviderConfigLoader;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
 public class MobileChangeFaceFacade {
-    private final Duration ticketTtl;
+    private final FaceVerifyTicketTtlConfigLoader ticketTtlLoader;
     private final TrustDecisionKycPort trustDecisionKycPort;
     private final AdvanceAiOcrPort advanceAiOcrPort;
     private final FaceComparisonBaselineResolver baselineResolver;
@@ -23,7 +24,7 @@ public class MobileChangeFaceFacade {
     private final OcrProviderConfigLoader configLoader;
 
     public MobileChangeFaceFacade(
-            Duration ticketTtl,
+            FaceVerifyTicketTtlConfigLoader ticketTtlLoader,
             TrustDecisionKycPort trustDecisionKycPort,
             AdvanceAiOcrPort advanceAiOcrPort,
             FaceComparisonBaselineResolver baselineResolver,
@@ -31,7 +32,7 @@ public class MobileChangeFaceFacade {
             BiometricImageStore biometricImageStore,
             OcrProviderConfigLoader configLoader
     ) {
-        this.ticketTtl = ticketTtl;
+        this.ticketTtlLoader = ticketTtlLoader;
         this.trustDecisionKycPort = trustDecisionKycPort;
         this.advanceAiOcrPort = advanceAiOcrPort;
         this.baselineResolver = baselineResolver;
@@ -69,6 +70,7 @@ public class MobileChangeFaceFacade {
         double similarity = advanceAiOcrPort.compareFaces(baselineImage, liveness.faceImage()).similarity();
         boolean verified = similarity >= configLoader.loadAdvanceAi().faceThreshold();
         Instant now = Instant.now();
+        Duration ticketTtl = ticketTtlLoader.mobileChangeTtl();
         Instant expiresAt = now.plus(ticketTtl);
         verificationRepository.insert(new MobileChangeFaceVerificationRepository.FaceVerificationInsert(
                 token,
