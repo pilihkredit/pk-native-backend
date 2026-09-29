@@ -26,15 +26,15 @@ class BankCardAddFaceGateServiceTest {
     }
 
     @Test
-    void consumeBeforeSaveRejectsMissingToken() {
-        assertThatThrownBy(() -> gate.consumeBeforeSave(1L, "device-1", null))
+    void consumeAfterSuccessfulAddRejectsMissingToken() {
+        assertThatThrownBy(() -> gate.consumeAfterSuccessfulAdd(1L, "device-1", null))
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.BANK_CARD_FACE_VERIFICATION_REQUIRED);
     }
 
     @Test
-    void consumeBeforeSaveRejectsExpiredOrMismatchedTicket() {
+    void consumeAfterSuccessfulAddRejectsExpiredOrMismatchedTicket() {
         Instant future = Instant.now().plusSeconds(300);
         Instant past = Instant.now().minusSeconds(30);
         when(repository.findByToken("ok")).thenReturn(Optional.of(ticket(1L, "device-1", "ok", future)));
@@ -45,38 +45,38 @@ class BankCardAddFaceGateServiceTest {
         when(repository.findByToken("expired"))
                 .thenReturn(Optional.of(ticket(1L, "device-1", "expired", past)));
 
-        assertThatThrownBy(() -> gate.consumeBeforeSave(1L, "device-1", "wrong-user"))
+        assertThatThrownBy(() -> gate.consumeAfterSuccessfulAdd(1L, "device-1", "wrong-user"))
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.BANK_CARD_FACE_VERIFICATION_REQUIRED);
-        assertThatThrownBy(() -> gate.consumeBeforeSave(1L, "device-1", "wrong-device"))
+        assertThatThrownBy(() -> gate.consumeAfterSuccessfulAdd(1L, "device-1", "wrong-device"))
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.BANK_CARD_FACE_VERIFICATION_REQUIRED);
-        assertThatThrownBy(() -> gate.consumeBeforeSave(1L, "device-1", "expired"))
+        assertThatThrownBy(() -> gate.consumeAfterSuccessfulAdd(1L, "device-1", "expired"))
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.BANK_CARD_FACE_VERIFICATION_EXPIRED);
     }
 
     @Test
-    void consumeBeforeSaveRejectsWhenConsumeReturnsFalse() {
+    void consumeAfterSuccessfulAddRejectsWhenConsumeReturnsFalse() {
         Instant future = Instant.now().plusSeconds(300);
         when(repository.findByToken("tok-1"))
                 .thenReturn(Optional.of(ticket(1L, "device-1", "tok-1", future)));
         when(repository.consume(eq("tok-1"), any(Instant.class))).thenReturn(false);
 
-        assertThatThrownBy(() -> gate.consumeBeforeSave(1L, "  device-1  ", "tok-1"))
+        assertThatThrownBy(() -> gate.consumeAfterSuccessfulAdd(1L, "  device-1  ", "tok-1"))
                 .isInstanceOf(ApiException.class)
                 .extracting("apiCode")
                 .isEqualTo(ApiCode.BANK_CARD_FACE_VERIFICATION_REQUIRED);
     }
 
     @Test
-    void consumeBeforeSaveConsumesValidTicket() {
+    void consumeAfterSuccessfulAddConsumesValidTicket() {
         Instant future = Instant.now().plusSeconds(300);
         when(repository.findByToken("tok-1"))
                 .thenReturn(Optional.of(ticket(1L, "device-1", "tok-1", future)));
         when(repository.consume(eq("tok-1"), any(Instant.class))).thenReturn(true);
 
-        gate.consumeBeforeSave(1L, "device-1", "tok-1");
+        gate.consumeAfterSuccessfulAdd(1L, "device-1", "tok-1");
 
         verify(repository).consume(eq("tok-1"), any(Instant.class));
     }

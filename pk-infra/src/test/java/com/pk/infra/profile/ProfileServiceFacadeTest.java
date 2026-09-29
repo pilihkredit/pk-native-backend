@@ -315,7 +315,7 @@ class ProfileServiceFacadeTest {
         verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
         verify(profileBankCardRepository).clearDefaultByUserId(10L);
         verify(profileBankCardRepository).insert(any());
-        verify(bankCardAddFaceGateService, never()).consumeBeforeSave(anyLong(), anyString(), any());
+        verify(bankCardAddFaceGateService, never()).consumeAfterSuccessfulAdd(anyLong(), anyString(), any());
     }
 
     @Test
@@ -324,7 +324,26 @@ class ProfileServiceFacadeTest {
 
         facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-2"));
 
-        verify(bankCardAddFaceGateService).consumeBeforeSave(10L, "device-1", null);
+        var order = inOrder(bankCardAddFaceGateService, profileSyncOrchestrator);
+        order.verify(bankCardAddFaceGateService).assertSaveAllowed(10L, "device-1", null);
+        order.verify(profileSyncOrchestrator).syncNow(any());
+        order.verify(bankCardAddFaceGateService).consumeAfterSuccessfulAdd(10L, "device-1", null);
+    }
+
+    @Test
+    void doesNotConsumeFaceTicketWhenLenderSyncFails() {
+        when(profileBankCardRepository.countActiveByUserId(10L)).thenReturn(1);
+        doThrow(new ApiException(ApiCode.BANK_CARD_VERIFICATION_FAILED))
+                .when(profileSyncOrchestrator)
+                .syncNow(any());
+
+        assertThatThrownBy(() -> facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-lender-fail")))
+                .isInstanceOf(ApiException.class)
+                .extracting("apiCode")
+                .isEqualTo(ApiCode.BANK_CARD_VERIFICATION_FAILED);
+
+        verify(bankCardAddFaceGateService).assertSaveAllowed(10L, "device-1", null);
+        verify(bankCardAddFaceGateService, never()).consumeAfterSuccessfulAdd(anyLong(), anyString(), any());
     }
 
     @Test

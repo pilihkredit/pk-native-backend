@@ -7,7 +7,11 @@ import com.pk.infra.auth.AuthDeviceNoNormalizer;
 import java.time.Instant;
 import java.util.Objects;
 
-/** PRD: every add-bank-card attempt requires face verification before save. */
+/**
+ * Face ticket for add-bank-card (2nd+ card): one successful lender bind per verify session.
+ * Failed saves (validation, KTA reject) do not consume the token; user may retry with the same token
+ * until {@link #consumeAfterSuccessfulAdd} runs or the ticket expires.
+ */
 public class BankCardAddFaceGateService {
     private final BankCardAddFaceVerificationRepository bankCardAddFaceRepository;
 
@@ -54,8 +58,8 @@ public class BankCardAddFaceGateService {
                 && !ticket.expiresAt().isAfter(now);
     }
 
-    /** Consumes ticket before persisting bank card so save success cannot follow a failed consume. */
-    public void consumeBeforeSave(long userId, String deviceNo, String faceVerifyToken) {
+    /** Marks ticket CONSUMED after one bank card is successfully synced to the lender. */
+    public void consumeAfterSuccessfulAdd(long userId, String deviceNo, String faceVerifyToken) {
         resolveUsableTicket(userId, deviceNo, faceVerifyToken);
         String token = normalizeToken(faceVerifyToken);
         if (!bankCardAddFaceRepository.consume(token, Instant.now())) {

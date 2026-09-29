@@ -237,7 +237,7 @@ public class ProfileServiceFacade {
 
         // PRD: face verification required when adding a card after the user already has at least one active card.
         if (activeCount > 0) {
-            bankCardAddFaceGateService.consumeBeforeSave(userId, deviceNo, command.faceVerifyToken());
+            bankCardAddFaceGateService.assertSaveAllowed(userId, deviceNo, command.faceVerifyToken());
         }
 
         EncryptedField encryptedCardNumber = sensitiveFieldEncryptor.encrypt(normalizedCardNumber);
@@ -273,6 +273,10 @@ public class ProfileServiceFacade {
                 command.device(),
                 new ProfileSyncPayload.BankCardProfilePayload(command.bankCode().trim(), normalizedCardNumber)
         ));
+
+        if (activeCount > 0) {
+            bankCardAddFaceGateService.consumeAfterSuccessfulAdd(userId, deviceNo, command.faceVerifyToken());
+        }
 
         refreshUserProfileMaster(userId, partnerUserId);
 
