@@ -13,6 +13,7 @@ import com.pk.core.profile.ProfileLoginLogData;
 import com.pk.core.profile.ProfilePersonalData;
 import com.pk.core.profile.ProfileTongdunData;
 import com.pk.core.profile.port.LenderBankCardPort;
+import com.pk.core.profile.port.LenderProfileSyncPort;
 import com.pk.core.profile.port.ProfileAfRepository;
 import com.pk.core.profile.port.ProfileBankCardRepository;
 import com.pk.core.profile.port.ProfileContactRepository;
@@ -31,6 +32,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import org.springframework.transaction.annotation.Transactional;
 
 public class ProfileServiceFacade {
     public static final String MODULE_COMPLETED = "COMPLETED";
@@ -198,6 +200,7 @@ public class ProfileServiceFacade {
         return new ContactsSaveResult(command.requestId(), MODULE_COMPLETED);
     }
 
+    @Transactional
     public BankCardSaveResult saveBankCard(
             long userId,
             String partnerUserId,
@@ -240,6 +243,21 @@ public class ProfileServiceFacade {
             bankCardAddFaceGateService.assertSaveAllowed(userId, deviceNo, command.faceVerifyToken());
         }
 
+        LenderProfileSyncPort.LenderProfileSyncResult lenderResult = profileSyncOrchestrator.syncNow(
+                new ProfileSyncJob(
+                        userId,
+                        partnerUserId,
+                        normalizedMobileNo,
+                        command.requestId(),
+                        ProfileSyncModule.BANK_CARD,
+                        command.device(),
+                        new ProfileSyncPayload.BankCardProfilePayload(
+                                command.bankCode().trim(),
+                                normalizedCardNumber
+                        )
+                )
+        );
+
         EncryptedField encryptedCardNumber = sensitiveFieldEncryptor.encrypt(normalizedCardNumber);
         profileBankCardRepository.clearDefaultByUserId(userId);
         ProfileBankCardData cardData = new ProfileBankCardData(
@@ -261,18 +279,14 @@ public class ProfileServiceFacade {
         } else {
             profileBankCardRepository.insert(cardData);
         }
+        if (lenderResult.externalInteractionId() != null) {
+            profileBankCardRepository.updateLastLenderInteraction(
+                    command.requestId(),
+                    lenderResult.externalInteractionId()
+            );
+        }
 
         persistDevice(userId, partnerUserId, command.requestId(), command.device());
-
-        profileSyncOrchestrator.syncNow(new ProfileSyncJob(
-                userId,
-                partnerUserId,
-                normalizedMobileNo,
-                command.requestId(),
-                ProfileSyncModule.BANK_CARD,
-                command.device(),
-                new ProfileSyncPayload.BankCardProfilePayload(command.bankCode().trim(), normalizedCardNumber)
-        ));
 
         if (activeCount > 0) {
             bankCardAddFaceGateService.consumeAfterSuccessfulAdd(userId, deviceNo, command.faceVerifyToken());

@@ -142,6 +142,9 @@ class ProfileServiceFacadeTest {
                         "{\"userId\":\"USR202506020001\",\"newUser\":false,\"updatedModules\":[\"profile\",\"device\"]}"
                 )
         );
+        when(profileSyncOrchestrator.syncNow(any())).thenReturn(
+                new LenderProfileSyncPort.LenderProfileSyncResult("U10001", null, null)
+        );
     }
 
     @Test
@@ -306,27 +309,36 @@ class ProfileServiceFacadeTest {
 
     @Test
     void savesBankCardAndReturnsPassedWithMaskedNumber() {
+        when(profileSyncOrchestrator.syncNow(any())).thenReturn(
+                new com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult("U10001", null, 99L)
+        );
+
         var result = facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-1"));
 
         assertThat(result.requestId()).isEqualTo("req-bank-1");
         assertThat(result.verifyStatus()).isEqualTo("PASSED");
         assertThat(result.cardNoMasked()).isEqualTo("****7890");
-        verify(profileSyncOrchestrator).syncNow(any());
+        var order = inOrder(profileSyncOrchestrator, profileBankCardRepository);
+        order.verify(profileSyncOrchestrator).syncNow(any());
+        order.verify(profileBankCardRepository).clearDefaultByUserId(10L);
+        order.verify(profileBankCardRepository).insert(any());
         verify(userDeviceWriter).upsertFromRequest(anyLong(), any(), any(), any());
-        verify(profileBankCardRepository).clearDefaultByUserId(10L);
-        verify(profileBankCardRepository).insert(any());
         verify(bankCardAddFaceGateService, never()).consumeAfterSuccessfulAdd(anyLong(), anyString(), any());
     }
 
     @Test
     void requiresFaceBeforeSavingSecondBankCard() {
         when(profileBankCardRepository.countActiveByUserId(10L)).thenReturn(1);
+        when(profileSyncOrchestrator.syncNow(any())).thenReturn(
+                new com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult("U10001", null, null)
+        );
 
         facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-2"));
 
-        var order = inOrder(bankCardAddFaceGateService, profileSyncOrchestrator);
+        var order = inOrder(bankCardAddFaceGateService, profileSyncOrchestrator, profileBankCardRepository);
         order.verify(bankCardAddFaceGateService).assertSaveAllowed(10L, "device-1", null);
         order.verify(profileSyncOrchestrator).syncNow(any());
+        order.verify(profileBankCardRepository).insert(any());
         order.verify(bankCardAddFaceGateService).consumeAfterSuccessfulAdd(10L, "device-1", null);
     }
 
@@ -344,6 +356,9 @@ class ProfileServiceFacadeTest {
 
         verify(bankCardAddFaceGateService).assertSaveAllowed(10L, "device-1", null);
         verify(bankCardAddFaceGateService, never()).consumeAfterSuccessfulAdd(anyLong(), anyString(), any());
+        verify(profileBankCardRepository, never()).insert(any());
+        verify(profileBankCardRepository, never()).updateById(any());
+        verify(profileBankCardRepository, never()).clearDefaultByUserId(anyLong());
     }
 
     @Test
@@ -380,10 +395,11 @@ class ProfileServiceFacadeTest {
         var result = facade.saveBankCard(10L, "U10001", "81234567890", sampleBankCardCommand("req-bank-update"));
 
         assertThat(result.verifyStatus()).isEqualTo("PASSED");
-        verify(profileBankCardRepository).clearDefaultByUserId(10L);
-        verify(profileBankCardRepository).updateById(any());
+        var order = inOrder(profileSyncOrchestrator, profileBankCardRepository);
+        order.verify(profileSyncOrchestrator).syncNow(any());
+        order.verify(profileBankCardRepository).clearDefaultByUserId(10L);
+        order.verify(profileBankCardRepository).updateById(any());
         verify(profileBankCardRepository, never()).insert(any());
-        verify(profileSyncOrchestrator).syncNow(any());
     }
 
     @Test

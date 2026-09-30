@@ -13,7 +13,7 @@ public class ProfileSyncOrchestrator {
     }
 
     /** Same synchronous path as {@link #scheduleAfterSave}; used when lender validation must precede persist. */
-    public void syncNow(ProfileSyncJob job) {
-        profileSyncHandler.syncOrThrow(job);
+    public com.pk.core.profile.port.LenderProfileSyncPort.LenderProfileSyncResult syncNow(ProfileSyncJob job) {
+        return profileSyncHandler.syncOrThrow(job);
     }
 }
