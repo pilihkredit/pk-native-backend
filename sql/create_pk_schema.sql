@@ -119,6 +119,25 @@ ON DUPLICATE KEY UPDATE
 
 INSERT INTO app_config (`key`, `value`)
 VALUES (
+    'device_switch_security',
+    CAST(
+        '{
+            "livenessLicenseMaxPerIp": 100,
+            "livenessLicenseMaxPerDevice": 5,
+            "livenessLicenseWindowMinutes": 10,
+            "livenessLicenseBlockMinutes": 15,
+            "faceVerifyMaxFailures": 5,
+            "faceVerifyFailWindowMinutes": 60,
+            "livenessSessionDurationSeconds": 600,
+            "deviceNoMaxLength": 128
+        }' AS JSON
+    )
+)
+ON DUPLICATE KEY UPDATE
+    `value` = VALUES(`value`);
+
+INSERT INTO app_config (`key`, `value`)
+VALUES (
     'reviewGuide.minJumpRating',
     CAST('4' AS JSON)
 )

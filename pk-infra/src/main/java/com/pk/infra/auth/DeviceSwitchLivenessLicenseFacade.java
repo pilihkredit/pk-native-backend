@@ -14,23 +14,26 @@ public class DeviceSwitchLivenessLicenseFacade {
     private final LoginDeviceSwitchGateService loginDeviceSwitchGateService;
     private final TrustDecisionIdentityFacade trustDecisionIdentityFacade;
     private final DeviceSwitchLivenessLicenseRateLimiter rateLimiter;
+    private final DeviceSwitchSecurityConfigLoader configLoader;
 
     public DeviceSwitchLivenessLicenseFacade(
             UserAuthRepository userAuthRepository,
             LoginDeviceSwitchGateService loginDeviceSwitchGateService,
             TrustDecisionIdentityFacade trustDecisionIdentityFacade,
-            DeviceSwitchLivenessLicenseRateLimiter rateLimiter
+            DeviceSwitchLivenessLicenseRateLimiter rateLimiter,
+            DeviceSwitchSecurityConfigLoader configLoader
     ) {
         this.userAuthRepository = userAuthRepository;
         this.loginDeviceSwitchGateService = loginDeviceSwitchGateService;
         this.trustDecisionIdentityFacade = trustDecisionIdentityFacade;
         this.rateLimiter = rateLimiter;
+        this.configLoader = configLoader;
     }
 
     public TrustDecisionIdentityFacade.LivenessLicenseResult obtainLicense(
             String mobileNo,
             String deviceNo,
-            int sessionDurationSeconds,
+            Integer sessionDurationSeconds,
             String clientIp,
             String clientRequestId,
             String traceId
@@ -38,7 +41,8 @@ public class DeviceSwitchLivenessLicenseFacade {
         if (!MobileNumberValidator.isValid(mobileNo)) {
             throw new ApiException(ApiCode.INVALID_MOBILE_NUMBER);
         }
-        String normalizedDevice = AuthDeviceNoNormalizer.requireNonBlank(deviceNo);
+        DeviceSwitchSecurityConfigLoader.Settings settings = configLoader.loadSettings();
+        String normalizedDevice = requireDeviceNoWithinLimit(deviceNo, settings.deviceNoMaxLength());
         UserProfileSummary profile = userAuthRepository.findByMobileNo(mobileNo)
                 .orElseThrow(() -> new ApiException(ApiCode.INVALID_REQUEST_PARAMETERS));
         if (!loginDeviceSwitchGateService.evaluateFaceRequiredForMobileCheck(
@@ -49,15 +53,28 @@ public class DeviceSwitchLivenessLicenseFacade {
                     ApiCode.INVALID_REQUEST_PARAMETERS,
                     "device-switch face verification is not required");
         }
+        int duration = sessionDurationSeconds == null
+                ? settings.livenessSessionDurationSeconds()
+                : sessionDurationSeconds;
         String normalizedIp = DeviceSwitchLivenessLicenseRateLimiter.normalizeClientIp(clientIp);
         rateLimiter.checkAndRecord(normalizedIp, normalizedDevice);
         return trustDecisionIdentityFacade.obtainLivenessLicense(
                 profile.userId(),
                 profile.partnerUserId(),
                 profile.mobileNo(),
-                sessionDurationSeconds,
+                duration,
                 clientRequestId,
                 traceId
         );
+    }
+
+    private static String requireDeviceNoWithinLimit(String deviceNo, int maxLength) {
+        String normalized = AuthDeviceNoNormalizer.requireNonBlank(deviceNo);
+        if (normalized.length() > maxLength) {
+            throw new ApiException(
+                    ApiCode.INVALID_REQUEST_PARAMETERS,
+                    "deviceNo exceeds the allowed length " + maxLength);
+        }
+        return normalized;
     }
 }

@@ -14,16 +14,27 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @Configuration
 public class AuthDeviceSwitchConfiguration {
     @Bean
-    DeviceSwitchLoginFaceAttemptLimiter deviceSwitchLoginFaceAttemptLimiter(StringRedisTemplate redisTemplate) {
-        return new DeviceSwitchLoginFaceAttemptLimiter(redisTemplate);
+    DeviceSwitchSecurityConfigLoader deviceSwitchSecurityConfigLoader(
+            com.pk.core.appconfig.port.AppConfigRepository appConfigRepository,
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper
+    ) {
+        return new DeviceSwitchSecurityConfigLoader(appConfigRepository, objectMapper);
+    }
+
+    @Bean
+    DeviceSwitchLoginFaceAttemptLimiter deviceSwitchLoginFaceAttemptLimiter(
+            StringRedisTemplate redisTemplate,
+            DeviceSwitchSecurityConfigLoader deviceSwitchSecurityConfigLoader
+    ) {
+        return new DeviceSwitchLoginFaceAttemptLimiter(redisTemplate, deviceSwitchSecurityConfigLoader);
     }
 
     @Bean
     DeviceSwitchLivenessLicenseRateLimiter deviceSwitchLivenessLicenseRateLimiter(
             StringRedisTemplate redisTemplate,
-            AuthProperties authProperties
+            DeviceSwitchSecurityConfigLoader deviceSwitchSecurityConfigLoader
     ) {
-        return new DeviceSwitchLivenessLicenseRateLimiter(redisTemplate, authProperties);
+        return new DeviceSwitchLivenessLicenseRateLimiter(redisTemplate, deviceSwitchSecurityConfigLoader);
     }
 
     @Bean
@@ -31,13 +42,15 @@ public class AuthDeviceSwitchConfiguration {
             UserAuthRepository userAuthRepository,
             LoginDeviceSwitchGateService loginDeviceSwitchGateService,
             TrustDecisionIdentityFacade trustDecisionIdentityFacade,
-            DeviceSwitchLivenessLicenseRateLimiter deviceSwitchLivenessLicenseRateLimiter
+            DeviceSwitchLivenessLicenseRateLimiter deviceSwitchLivenessLicenseRateLimiter,
+            DeviceSwitchSecurityConfigLoader deviceSwitchSecurityConfigLoader
     ) {
         return new DeviceSwitchLivenessLicenseFacade(
                 userAuthRepository,
                 loginDeviceSwitchGateService,
                 trustDecisionIdentityFacade,
-                deviceSwitchLivenessLicenseRateLimiter
+                deviceSwitchLivenessLicenseRateLimiter,
+                deviceSwitchSecurityConfigLoader
         );
     }
 

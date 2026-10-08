@@ -23,55 +23,67 @@ public class DeviceSwitchLivenessLicenseRateLimiter {
     private static final String EVENTS_SUFFIX = ":events";
 
     private final StringRedisTemplate redisTemplate;
-    private final AuthProperties.DeviceSwitchLivenessLicenseRateLimit rateLimit;
+    private final DeviceSwitchSecurityConfigLoader configLoader;
 
     public DeviceSwitchLivenessLicenseRateLimiter(
             StringRedisTemplate redisTemplate,
-            AuthProperties authProperties
+            DeviceSwitchSecurityConfigLoader configLoader
     ) {
         this.redisTemplate = redisTemplate;
-        this.rateLimit = authProperties.deviceSwitchLivenessLicenseRateLimit();
+        this.configLoader = configLoader;
     }
 
     /**
      * Validates both dimensions and records one successful invocation when allowed.
      */
     public void checkAndRecord(String clientIp, String deviceNo) {
+        DeviceSwitchSecurityConfigLoader.Settings settings = configLoader.loadSettings();
         String normalizedIp = normalizeClientIp(clientIp);
         String normalizedDevice = AuthDeviceNoNormalizer.requireNonBlank(deviceNo);
         long nowMillis = Instant.now().toEpochMilli();
         assertWindowAllowed(
                 ipEventsKey(normalizedIp),
                 ipBlockKey(normalizedIp),
-                maxInvocationsPerIp(),
+                settings.livenessLicenseMaxPerIp(),
+                settings.livenessLicenseWindow(),
+                settings.livenessLicenseBlock(),
                 nowMillis
         );
         assertWindowAllowed(
                 deviceEventsKey(normalizedDevice),
                 deviceBlockKey(normalizedDevice),
-                maxInvocationsPerDevice(),
+                settings.livenessLicenseMaxPerDevice(),
+                settings.livenessLicenseWindow(),
+                settings.livenessLicenseBlock(),
                 nowMillis
         );
-        recordEvent(ipEventsKey(normalizedIp), nowMillis);
-        recordEvent(deviceEventsKey(normalizedDevice), nowMillis);
+        recordEvent(ipEventsKey(normalizedIp), nowMillis, settings.livenessLicenseWindow());
+        recordEvent(deviceEventsKey(normalizedDevice), nowMillis, settings.livenessLicenseWindow());
     }
 
-    private void assertWindowAllowed(String eventsKey, String blockKey, int maxInvocations, long nowMillis) {
+    private void assertWindowAllowed(
+            String eventsKey,
+            String blockKey,
+            int maxInvocations,
+            Duration window,
+            Duration block,
+            long nowMillis
+    ) {
         assertNotBlocked(blockKey);
-        long windowStartMillis = nowMillis - windowMillis();
+        long windowStartMillis = nowMillis - window.toMillis();
         ZSetOperations<String, String> zSet = redisTemplate.opsForZSet();
         zSet.removeRangeByScore(eventsKey, 0, windowStartMillis);
         Long count = zSet.size(eventsKey);
         long current = count == null ? 0L : count;
         if (current >= maxInvocations) {
-            triggerBlock(blockKey, eventsKey, nowMillis);
+            triggerBlock(blockKey, eventsKey, nowMillis, block);
             throw rateLimitException();
         }
     }
 
-    private void recordEvent(String eventsKey, long nowMillis) {
+    private void recordEvent(String eventsKey, long nowMillis, Duration window) {
         redisTemplate.opsForZSet().add(eventsKey, UUID.randomUUID().toString(), nowMillis);
-        redisTemplate.expire(eventsKey, windowDuration().plus(Duration.ofMinutes(1)));
+        redisTemplate.expire(eventsKey, window.plus(Duration.ofMinutes(1)));
     }
 
     private void assertNotBlocked(String blockKey) {
@@ -87,39 +99,14 @@ public class DeviceSwitchLivenessLicenseRateLimiter {
         redisTemplate.delete(blockKey);
     }
 
-    private void triggerBlock(String blockKey, String eventsKey, long nowMillis) {
-        long blockedUntilMillis = nowMillis + blockMillis();
-        Duration blockDuration = blockDuration();
-        redisTemplate.opsForValue().set(blockKey, Long.toString(blockedUntilMillis), blockDuration);
+    private void triggerBlock(String blockKey, String eventsKey, long nowMillis, Duration block) {
+        long blockedUntilMillis = nowMillis + block.toMillis();
+        redisTemplate.opsForValue().set(blockKey, Long.toString(blockedUntilMillis), block);
         redisTemplate.delete(eventsKey);
     }
 
     private static ApiException rateLimitException() {
         return new ApiException(ApiCode.TOO_MANY_REQUESTS, CLIENT_MESSAGE);
-    }
-
-    private long windowMillis() {
-        return windowDuration().toMillis();
-    }
-
-    private long blockMillis() {
-        return blockDuration().toMillis();
-    }
-
-    private Duration windowDuration() {
-        return rateLimit.window();
-    }
-
-    private Duration blockDuration() {
-        return rateLimit.block();
-    }
-
-    private int maxInvocationsPerIp() {
-        return Math.max(1, rateLimit.maxInvocationsPerIp());
-    }
-
-    private int maxInvocationsPerDevice() {
-        return Math.max(1, rateLimit.maxInvocationsPerDevice());
     }
 
     private static String ipEventsKey(String clientIp) {

@@ -9,8 +9,6 @@ public class AuthProperties {
     private Duration refreshTokenTtl = Duration.ofDays(30);
     private Duration otpTtl = Duration.ofMinutes(5);
     private String jwtSecret = "local-dev-secret-change-in-prod-min-32-chars";
-    private DeviceSwitchLivenessLicenseRateLimit deviceSwitchLivenessLicenseRateLimit =
-            new DeviceSwitchLivenessLicenseRateLimit();
 
     public Duration accessTokenTtl() {
         return accessTokenTtl;
@@ -42,65 +40,5 @@ public class AuthProperties {
 
     public void setJwtSecret(String jwtSecret) {
         this.jwtSecret = jwtSecret;
-    }
-
-    public DeviceSwitchLivenessLicenseRateLimit deviceSwitchLivenessLicenseRateLimit() {
-        return deviceSwitchLivenessLicenseRateLimit;
-    }
-
-    public void setDeviceSwitchLivenessLicenseRateLimit(
-            DeviceSwitchLivenessLicenseRateLimit deviceSwitchLivenessLicenseRateLimit
-    ) {
-        this.deviceSwitchLivenessLicenseRateLimit = deviceSwitchLivenessLicenseRateLimit == null
-                ? new DeviceSwitchLivenessLicenseRateLimit()
-                : deviceSwitchLivenessLicenseRateLimit;
-    }
-
-    /** Rate limit for public {@code POST /auth/face/liveness-license}. */
-    public static class DeviceSwitchLivenessLicenseRateLimit {
-        private int maxInvocationsPerIp = 100;
-        private int maxInvocationsPerDevice = 5;
-        private int windowMinutes = 10;
-        private int blockMinutes = 15;
-
-        public int maxInvocationsPerIp() {
-            return maxInvocationsPerIp;
-        }
-
-        public void setMaxInvocationsPerIp(int maxInvocationsPerIp) {
-            this.maxInvocationsPerIp = maxInvocationsPerIp;
-        }
-
-        public int maxInvocationsPerDevice() {
-            return maxInvocationsPerDevice;
-        }
-
-        public void setMaxInvocationsPerDevice(int maxInvocationsPerDevice) {
-            this.maxInvocationsPerDevice = maxInvocationsPerDevice;
-        }
-
-        public int windowMinutes() {
-            return windowMinutes;
-        }
-
-        public void setWindowMinutes(int windowMinutes) {
-            this.windowMinutes = windowMinutes;
-        }
-
-        public int blockMinutes() {
-            return blockMinutes;
-        }
-
-        public void setBlockMinutes(int blockMinutes) {
-            this.blockMinutes = blockMinutes;
-        }
-
-        public Duration window() {
-            return Duration.ofMinutes(Math.max(1, windowMinutes));
-        }
-
-        public Duration block() {
-            return Duration.ofMinutes(Math.max(1, blockMinutes));
-        }
     }
 }

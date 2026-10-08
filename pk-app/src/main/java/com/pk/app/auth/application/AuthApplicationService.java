@@ -75,11 +75,10 @@ public class AuthApplicationService {
             HttpServletRequest httpRequest
     ) {
         validateDeviceNoMatchesHeader(request.deviceNo(), deviceNoHeader);
-        int duration = request.sessionDurationSeconds() == null ? 600 : request.sessionDurationSeconds();
         var result = deviceSwitchLivenessLicenseFacade.obtainLicense(
                 request.mobileNo(),
                 request.deviceNo(),
-                duration,
+                request.sessionDurationSeconds(),
                 clientIp,
                 RequestTrace.resolveClientRequestId(httpRequest, null),
                 RequestTrace.resolveTraceId(httpRequest)

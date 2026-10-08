@@ -27,6 +27,7 @@ class DeviceSwitchLivenessLicenseRateLimiterTest {
     private StringRedisTemplate redisTemplate;
     private ValueOperations<String, String> valueOperations;
     private ZSetOperations<String, String> zSetOperations;
+    private DeviceSwitchSecurityConfigLoader configLoader;
     private DeviceSwitchLivenessLicenseRateLimiter limiter;
 
     @BeforeEach
@@ -36,8 +37,10 @@ class DeviceSwitchLivenessLicenseRateLimiterTest {
         zSetOperations = mock(ZSetOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
-        AuthProperties authProperties = new AuthProperties();
-        limiter = new DeviceSwitchLivenessLicenseRateLimiter(redisTemplate, authProperties);
+        configLoader = mock(DeviceSwitchSecurityConfigLoader.class);
+        when(configLoader.loadSettings())
+                .thenReturn(DeviceSwitchSecurityConfigLoader.Settings.defaults());
+        limiter = new DeviceSwitchLivenessLicenseRateLimiter(redisTemplate, configLoader);
     }
 
     @Test

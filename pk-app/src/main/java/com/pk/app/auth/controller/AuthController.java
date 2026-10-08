@@ -217,16 +217,32 @@ public class AuthController {
         );
     }
 
+    /**
+     * Resolves the client IP behind our nginx: prefers the XFF entry appended by our own edge
+     * (the rightmost non-loopback hop — the first entry is client-spoofable), then X-Real-IP,
+     * then the socket address. Reading the first XFF entry let attackers rotate fake IPs and
+     * made everyone share the 127.0.0.1 rate-limit bucket.
+     */
     private static String resolveClientIp(HttpServletRequest request) {
         String forwardedFor = request.getHeader("X-Forwarded-For");
         if (forwardedFor != null && !forwardedFor.isBlank()) {
-            int commaIndex = forwardedFor.indexOf(',');
-            return commaIndex < 0 ? forwardedFor.trim() : forwardedFor.substring(0, commaIndex).trim();
+            String[] hops = forwardedFor.split(",");
+            for (int i = hops.length - 1; i >= 0; i--) {
+                String hop = hops[i].trim();
+                if (!hop.isEmpty() && !isLoopback(hop)) {
+                    return hop;
+                }
+            }
         }
         String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) {
+        if (realIp != null && !realIp.isBlank() && !isLoopback(realIp.trim())) {
             return realIp.trim();
         }
         return request.getRemoteAddr();
+    }
+
+    private static boolean isLoopback(String ip) {
+        return "127.0.0.1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)
+                || ip.startsWith("127.");
     }
 }
