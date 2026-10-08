@@ -30,4 +30,30 @@
         WHERE device_no = #{deviceNo}
           AND user_id = #{userId}
     </update>
+
+    <resultMap id="pushDeviceTargetMap" type="com.pk.core.push.PushDeviceTarget">
+        <constructor>
+            <arg column="id" javaType="_long"/>
+            <arg column="user_id" javaType="java.lang.Long"/>
+            <arg column="fcm_token" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findTargetsAfterId" resultMap="pushDeviceTargetMap">
+        SELECT id, user_id, fcm_token
+        FROM push_device
+        WHERE id &gt; #{idExclusive}
+          AND fcm_token IS NOT NULL
+          AND fcm_token &lt;&gt; ''
+        ORDER BY id ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findTargetsByUserId" resultMap="pushDeviceTargetMap">
+        SELECT id, user_id, fcm_token
+        FROM push_device
+        WHERE user_id = #{userId}
+          AND fcm_token IS NOT NULL
+          AND fcm_token &lt;&gt; ''
+    </select>
 </mapper>

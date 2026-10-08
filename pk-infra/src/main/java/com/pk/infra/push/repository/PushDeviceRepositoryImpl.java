@@ -1,8 +1,10 @@
 package com.pk.infra.push.repository;
 
 import com.pk.core.push.PushDeviceRegistration;
+import com.pk.core.push.PushDeviceTarget;
 import com.pk.core.push.port.PushDeviceRepository;
 import com.pk.infra.push.mapper.PushDeviceMapper;
+import java.util.List;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -34,5 +36,15 @@ public class PushDeviceRepositoryImpl implements PushDeviceRepository {
     @Override
     public void unbindUser(long userId, String deviceNo) {
         pushDeviceMapper.unbindUser(userId, deviceNo);
+    }
+
+    @Override
+    public List<PushDeviceTarget> findTargetsAfterId(long idExclusive, int limit) {
+        return pushDeviceMapper.findTargetsAfterId(idExclusive, limit);
+    }
+
+    @Override
+    public List<PushDeviceTarget> findTargetsByUserId(long userId) {
+        return pushDeviceMapper.findTargetsByUserId(userId);
     }
 }

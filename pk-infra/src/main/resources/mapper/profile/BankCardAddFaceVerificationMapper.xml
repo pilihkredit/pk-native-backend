@@ -3,7 +3,7 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.profile.mapper.BankCardAddFaceVerificationMapper">
 
-    <resultMap id="verificationMap"
+    <resultMap id="bankCardAddVerificationMap"
                type="com.pk.core.profile.port.BankCardAddFaceVerificationRepository$FaceVerificationData">
         <constructor>
             <arg column="id" javaType="_long"/>
@@ -38,7 +38,7 @@
         )
     </insert>
 
-    <select id="findByToken" resultMap="verificationMap">
+    <select id="findByToken" resultMap="bankCardAddVerificationMap">
         SELECT id, face_verify_token, user_id, partner_user_id, request_id, device_no,
                liveness_id, baseline_type, similarity, status, expires_at, consumed_at
         FROM user_bank_card_add_face_verification

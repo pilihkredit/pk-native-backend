@@ -3,7 +3,7 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pk.infra.auth.mapper.DeviceSwitchFaceVerificationMapper">
 
-    <resultMap id="verificationMap"
+    <resultMap id="deviceSwitchVerificationMap"
                type="com.pk.core.auth.port.DeviceSwitchFaceVerificationRepository$FaceVerificationData">
         <constructor>
             <arg column="id" javaType="_long"/>
@@ -38,7 +38,7 @@
         )
     </insert>
 
-    <select id="findByToken" resultMap="verificationMap">
+    <select id="findByToken" resultMap="deviceSwitchVerificationMap">
         SELECT id, face_verify_token, user_id, partner_user_id, request_id, device_no,
                liveness_id, baseline_type, similarity, status, expires_at, consumed_at
         FROM user_device_switch_face_verification
@@ -46,7 +46,7 @@
         LIMIT 1
     </select>
 
-    <select id="findReusablePendingByUserIdAndRequestId" resultMap="verificationMap">
+    <select id="findReusablePendingByUserIdAndRequestId" resultMap="deviceSwitchVerificationMap">
         SELECT id, face_verify_token, user_id, partner_user_id, request_id, device_no,
                liveness_id, baseline_type, similarity, status, expires_at, consumed_at
         FROM user_device_switch_face_verification

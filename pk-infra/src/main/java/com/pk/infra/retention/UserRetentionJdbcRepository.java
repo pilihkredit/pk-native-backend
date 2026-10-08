@@ -229,6 +229,8 @@ public class UserRetentionJdbcRepository {
         deleteIgnoreMissing("DELETE FROM user_device_switch_face_verification WHERE user_id = ?", userId);
         deleteIgnoreMissing("DELETE FROM user_bank_card_add_face_verification WHERE user_id = ?", userId);
         deleteIgnoreMissing("DELETE FROM user_mobile_change_log WHERE user_id = ?", userId);
+        deleteIgnoreMissing("DELETE FROM push_display_log WHERE user_id = ?", userId);
+        deleteIgnoreMissing("DELETE FROM push_task_audience WHERE resolved_user_id = ?", userId);
 
         // ---- profile satellites ----
         deleteIgnoreMissing("DELETE FROM user_profile_login_log WHERE user_id = ?", userId);

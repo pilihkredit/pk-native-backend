@@ -13,17 +13,11 @@ spring:
 
 pk:
   security:
-    field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY:local-dev-field-encryption-key-32b}
+    field-encryption-key: ${PK_FIELD_ENCRYPTION_KEY}
   debug:
     user-progress:
       enabled: ${PK_DEBUG_USER_PROGRESS_ENABLED}
       token: ${PK_DEBUG_USER_PROGRESS_TOKEN}
-  fcm:
-    enabled: ${PK_FCM_ENABLED:false}
-    project-id: ${PK_FCM_PROJECT_ID:}
-    credentials-path: "${PK_FCM_CREDENTIALS_PATH:}"
-    credentials-json: "${PK_FCM_CREDENTIALS_JSON:}"
-    credentials-json-base64: "${PK_FCM_CREDENTIALS_JSON_BASE64:}"
   lender:
     config:
       source: db
