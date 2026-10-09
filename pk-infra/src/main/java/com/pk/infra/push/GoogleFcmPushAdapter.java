@@ -12,8 +12,12 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GoogleFcmPushAdapter implements FcmPushPort {
+    private static final Logger log = LoggerFactory.getLogger(GoogleFcmPushAdapter.class);
+
     private final FcmProperties properties;
     private final GoogleServiceAccountTokenProvider tokenProvider;
     private final ObjectMapper objectMapper;
@@ -62,6 +66,7 @@ public class GoogleFcmPushAdapter implements FcmPushPort {
                 });
             }
             String payload = objectMapper.writeValueAsString(root);
+            log.info("FCM request body={}", redactDeviceToken(payload, command.fcmToken().trim()));
             HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                     .timeout(Duration.ofSeconds(20))
                     .header("Authorization", "Bearer " + tokenProvider.accessToken())
@@ -70,6 +75,7 @@ public class GoogleFcmPushAdapter implements FcmPushPort {
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             String body = response.body() == null ? "" : response.body();
+            log.info("FCM response status={} body={}", response.statusCode(), body);
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 return new FcmSendResult(false, null, body.isBlank()
                         ? ("HTTP " + response.statusCode())
@@ -83,5 +89,14 @@ public class GoogleFcmPushAdapter implements FcmPushPort {
         } catch (Exception exception) {
             throw new ApiException(ApiCode.SERVICE_UNAVAILABLE);
         }
+    }
+
+    private static String redactDeviceToken(String payload, String token) {
+        if (payload == null || token == null || token.isBlank() || token.length() <= 8) {
+            return payload;
+        }
+        String trimmed = token.trim();
+        String masked = trimmed.substring(0, 6) + "***" + trimmed.substring(trimmed.length() - 4);
+        return payload.replace(trimmed, masked);
     }
 }
