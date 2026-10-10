@@ -57,26 +57,6 @@
         LIMIT #{limit}
     </select>
 
-    <select id="findPendingRequiredForUser" resultMap="taskRowMap">
-        SELECT <include refid="allColumns"/>
-        FROM push_task t
-        WHERE t.push_type IN ('internal', 'all')
-          AND t.required_read = 1
-          AND t.cleared_at IS NULL
-          AND NOT EXISTS (
-              SELECT 1 FROM push_display_log d WHERE d.user_id = #{userId} AND d.task_id = t.id
-          )
-          AND (
-              t.audience_type = 'all'
-              OR EXISTS (
-                  SELECT 1 FROM push_task_audience a
-                  WHERE a.task_id = t.id AND a.resolved_user_id = #{userId}
-              )
-          )
-        ORDER BY t.published_at ASC, t.id ASC
-        LIMIT #{limit}
-    </select>
-
     <update id="tryMarkSending">
         UPDATE push_task
         SET status = 'SENDING'

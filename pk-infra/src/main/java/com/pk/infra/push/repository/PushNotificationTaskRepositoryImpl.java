@@ -55,11 +55,6 @@ public class PushNotificationTaskRepositoryImpl implements PushNotificationTaskR
     }
 
     @Override
-    public List<PushNotificationTask> findPendingRequiredForUser(long userId, int limit) {
-        return mapper.findPendingRequiredForUser(userId, limit).stream().map(this::toDomain).toList();
-    }
-
-    @Override
     public int markCleared(List<Long> taskIds, Instant clearedAt) {
         if (taskIds == null || taskIds.isEmpty()) {
             return 0;
