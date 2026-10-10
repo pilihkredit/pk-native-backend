@@ -19,12 +19,6 @@ public interface PushNotificationTaskRepository {
 
     void markFailed(long id, String statusMessage, Instant failedAt);
 
-    /**
-     * Mandatory in-app popups the user has not displayed yet, oldest publish first:
-     * internal/all + required_read, not cleared, no display log, audience matched.
-     */
-    List<PushNotificationTask> findPendingRequiredForUser(long userId, int limit);
-
     /** Marks cleared target tasks of a clear_required push; returns updated row count. */
     int markCleared(List<Long> taskIds, Instant clearedAt);
 }

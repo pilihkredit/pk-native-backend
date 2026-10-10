@@ -13,11 +13,6 @@ public interface PushNotificationTaskMapper {
 
     List<PushNotificationTaskRow> findReadyToDeliver(@Param("limit") int limit);
 
-    List<PushNotificationTaskRow> findPendingRequiredForUser(
-            @Param("userId") long userId,
-            @Param("limit") int limit
-    );
-
     int tryMarkSending(@Param("id") long id);
 
     int markCompleted(

@@ -15,7 +15,6 @@ import com.pk.core.auth.AuthenticatedPrincipal;
 import com.pk.core.push.PushNotificationTask;
 import com.pk.core.push.port.PushDisplayLogRepository;
 import com.pk.core.push.port.PushNotificationTaskRepository;
-import com.pk.infra.push.PushPayloadAssembler;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -31,26 +30,7 @@ class PushPopupApplicationServiceTest {
     void setUp() {
         taskRepository = mock(PushNotificationTaskRepository.class);
         displayLogRepository = mock(PushDisplayLogRepository.class);
-        service = new PushPopupApplicationService(
-                taskRepository, displayLogRepository, new PushPayloadAssembler());
-    }
-
-    @Test
-    void pendingPopupsMirrorFcmDataContract() {
-        when(taskRepository.findPendingRequiredForUser(10L, 20))
-                .thenReturn(List.of(mandatoryTask()));
-
-        var popups = service.pendingPopups(principal());
-
-        assertThat(popups).hasSize(1);
-        var popup = popups.get(0);
-        assertThat(popup.popupId()).isEqualTo("1001");
-        assertThat(popup.type()).isEqualTo("IN_APP_POPUP");
-        assertThat(popup.mandatory()).isEqualTo("true");
-        assertThat(popup.path()).startsWith("/h5/popup?");
-        assertThat(popup.path()).contains("title=Loan+approved");
-        assertThat(popup.showOn()).containsExactly("/profile");
-        assertThat(popup.clickUrl()).isEqualTo("/repay?from=notify");
+        service = new PushPopupApplicationService(taskRepository, displayLogRepository);
     }
 
     @Test
@@ -76,7 +56,7 @@ class PushPopupApplicationServiceTest {
 
     @Test
     void rejectsMissingPrincipal() {
-        assertThatThrownBy(() -> service.pendingPopups(null))
+        assertThatThrownBy(() -> service.markDisplayed(null, 1001L))
                 .isInstanceOf(ApiException.class);
     }
 
@@ -88,7 +68,7 @@ class PushPopupApplicationServiceTest {
         return new PushNotificationTask(
                 1001L, "t", "Loan approved", "Your loan has been approved", "Lihat",
                 PushNotificationTask.TYPE_ALL, true, List.of("/profile"),
-                "/h5/popup", "/profile/loan-history/123", "/repay?from=notify", null,
+                null, "/profile/loan-history/123", "/repay?from=notify", null,
                 "all", null, List.of(), null,
                 PushNotificationTask.STATUS_COMPLETED, null, 1, 1, 0,
                 null, Instant.now(), Instant.now()
