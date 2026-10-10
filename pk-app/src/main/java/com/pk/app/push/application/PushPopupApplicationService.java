@@ -66,6 +66,7 @@ public class PushPopupApplicationService {
                 task.body(),
                 payloadAssembler.buildPopupPath(task),
                 task.pushPages(),
+                blankToNull(task.targetUrl()),
                 blankToNull(task.externalUrl())
         );
     }

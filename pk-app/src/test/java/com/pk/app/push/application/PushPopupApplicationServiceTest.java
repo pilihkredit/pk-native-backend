@@ -47,10 +47,11 @@ class PushPopupApplicationServiceTest {
         assertThat(popup.popupId()).isEqualTo("1001");
         assertThat(popup.type()).isEqualTo("IN_APP_POPUP");
         assertThat(popup.mandatory()).isEqualTo("true");
-        assertThat(popup.path()).startsWith("/h5/popup?");
+        assertThat(popup.path()).startsWith("/in-app-popup?");
         assertThat(popup.path()).contains("title=Loan+approved");
         assertThat(popup.showOn()).containsExactly("/profile");
         assertThat(popup.clickUrl()).isEqualTo("/repay?from=notify");
+        assertThat(popup.popupUrl()).isEqualTo("/profile/loan-history/123");
     }
 
     @Test

@@ -30,24 +30,26 @@ class PushPayloadAssemblerTest {
         assertThat(path).contains("title=Loan+approved");
         assertThat(path).contains("button=Lihat");
         assertThat(URLDecoder.decode(path, StandardCharsets.UTF_8))
-                .contains("showOn=/profile,/home")
-                .contains("url=/profile/loan-history/123");
+                .contains("showOn=/profile,/home");
+        // Jump target is a standalone data field now, not a path query param.
+        assertThat(path).doesNotContain("url=");
+        assertThat(template.data().get("popupUrl")).isEqualTo("/profile/loan-history/123");
         assertThat(template.data()).doesNotContainKey("clickUrl");
     }
 
     @Test
-    void internalPopupUsesConfiguredInternalUrlAndSkipsBlankParams() {
+    void pathPrefixIsFixedAndSkipsBlankParams() {
         var task = task(PushNotificationTask.TYPE_INTERNAL, false, List.of(), "/h5/popup");
 
         var template = assembler.assemble(task);
 
         assertThat(template.data().get("mandatory")).isEqualTo("false");
         String path = template.data().get("path");
-        assertThat(path).startsWith("/h5/popup?");
+        // Client contract fixes the popup prefix; the backoffice internalUrl is ignored.
+        assertThat(path).startsWith("/in-app-popup?");
         assertThat(path).doesNotContain("showOn=");
         assertThat(path).doesNotContain("bannerUrl=");
-        assertThat(URLDecoder.decode(path, StandardCharsets.UTF_8))
-                .contains("url=/profile/loan-history/123");
+        assertThat(template.data().get("popupUrl")).isEqualTo("/profile/loan-history/123");
     }
 
     @Test
@@ -73,7 +75,7 @@ class PushPayloadAssemblerTest {
         assertThat(template.notificationTitle()).isEqualTo("Loan approved");
         assertThat(template.data().get("type")).isEqualTo("IN_APP_POPUP");
         assertThat(template.data().get("mandatory")).isEqualTo("true");
-        assertThat(template.data().get("path")).startsWith("/h5/popup?");
+        assertThat(template.data().get("path")).startsWith("/in-app-popup?");
         assertThat(template.data().get("clickUrl")).isEqualTo("/repay?from=notify");
     }
 

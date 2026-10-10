@@ -52,6 +52,9 @@ public class PushPayloadAssembler {
             data.put("type", TYPE_IN_APP_POPUP);
             data.put("mandatory", Boolean.toString(task.requiredRead()));
             data.put("path", buildPopupPath(task));
+            // Client contract: the popup button jump target is a standalone data field;
+            // absent means the button only closes the popup.
+            putIfNotBlank(data, "popupUrl", task.targetUrl());
             if (task.includesExternal()) {
                 putIfNotBlank(data, "clickUrl", task.externalUrl());
             }
@@ -70,13 +73,14 @@ public class PushPayloadAssembler {
         return new FcmTemplate(task.title(), task.body(), data);
     }
 
-    /** Popup path handed to the H5 preset popup page; also reused by the pending pull API. */
+    /**
+     * Popup path handed to the H5 preset popup page; also reused by the pending pull API.
+     * The prefix is fixed to {@value #DEFAULT_POPUP_PATH} per the client contract
+     * ("端内URL" backoffice input is obsolete); title/body/button/showOn/bannerUrl ride
+     * the query, the jump target lives in data.popupUrl instead.
+     */
     public String buildPopupPath(PushNotificationTask task) {
-        StringBuilder path = new StringBuilder();
-        String base = task.internalUrl() == null || task.internalUrl().isBlank()
-                ? DEFAULT_POPUP_PATH
-                : task.internalUrl().trim();
-        path.append(base);
+        StringBuilder path = new StringBuilder(DEFAULT_POPUP_PATH);
         StringBuilder query = new StringBuilder();
         appendQuery(query, "title", task.title());
         appendQuery(query, "body", task.body());
@@ -85,9 +89,8 @@ public class PushPayloadAssembler {
             appendQuery(query, "showOn", String.join(",", task.pushPages()));
         }
         appendQuery(query, "bannerUrl", task.bannerUrl());
-        appendQuery(query, "url", task.targetUrl());
         if (query.length() > 0) {
-            path.append(base.contains("?") ? '&' : '?').append(query);
+            path.append('?').append(query);
         }
         return path.toString();
     }

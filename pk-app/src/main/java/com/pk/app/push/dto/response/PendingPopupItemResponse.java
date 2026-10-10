@@ -14,6 +14,7 @@ public record PendingPopupItemResponse(
         String body,
         String path,
         List<String> showOn,
+        String popupUrl,
         String clickUrl
 ) {
 }
